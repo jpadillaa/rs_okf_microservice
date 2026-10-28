@@ -2,7 +2,7 @@
 
 **Estado:** decisión de implementación inicial; revisar únicamente las decisiones condicionadas a pruebas indicadas abajo.  
 **Producto:** un archivo `.pdf`, `.docx`, `.xlsx` o `.pptx` produce un bundle OKF v0.2.  
-**Contratos normativos:** [perfil documental OKF](https://chatgpt.com/library?file_id=libfile_c68ef3f3f8108191b414a8a632263394&account_id=personal) y [arquitectura técnica](https://chatgpt.com/library?file_id=libfile_791496d6b0e88191b9bf16e48563aa7a&account_id=personal). Este documento elige herramientas; no modifica esos contratos.
+**Contratos normativos:** [perfil documental OKF](../especificacion/ESPECIFICACION_OKF.md) y [arquitectura técnica](../arquitectura/ARQUITECTURA_TECNICA_MICROSERVICIO_OKF.md). Este documento elige herramientas; no modifica esos contratos.
 
 ## 1. Decisión de despliegue
 
@@ -57,7 +57,7 @@ No sustituirla automáticamente por un renderizador PPTX nuevo de Rust: la imple
 
 ## 6. Referencias de implementación
 
-- [Contrato OKF documental del proyecto](https://chatgpt.com/library?file_id=libfile_c68ef3f3f8108191b414a8a632263394&account_id=personal) y [arquitectura técnica](https://chatgpt.com/library?file_id=libfile_791496d6b0e88191b9bf16e48563aa7a&account_id=personal).
+- [Contrato OKF documental del proyecto](../especificacion/ESPECIFICACION_OKF.md) y [arquitectura técnica](../arquitectura/ARQUITECTURA_TECNICA_MICROSERVICIO_OKF.md).
 - [Xberg: funciones por formato](https://docs.xberg.io/features/), [estructura y resultados](https://docs.rs/xberg/latest/xberg/types/extraction/struct.ExtractedDocument.html), [renderizado de PDF](https://docs.xberg.io/guides/rust-core-api/).
 - [Calamine: rangos absolutos](https://docs.rs/calamine/latest/calamine/struct.Range.html); [AnyDoc: limitación PDF por páginas](https://github.com/firecrawl/anydoc/issues/62), [XLSX](https://github.com/firecrawl/anydoc/issues/10) y [PPTX](https://github.com/firecrawl/anydoc/issues/31).
 - [SQLite: WAL y procesos en un host](https://www.sqlite.org/wal.html); [redb: escritura multiproceso experimental](https://docs.rs/redb/latest/redb/).

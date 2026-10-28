@@ -1,6 +1,6 @@
 # Arquitectura técnica del microservicio OKF
 
-**Propósito.** Convertir un archivo PDF, DOCX, XLSX o PPTX en un bundle OKF v0.2 mediante un trabajo asíncrono. Este documento define componentes y despliegue, sin elegir lenguaje, servidor, base de datos ni sistema de colas. El contenido del bundle se rige por la [especificación OKF documental](https://chatgpt.com/library?file_id=libfile_c68ef3f3f8108191b414a8a632263394&account_id=personal); las etapas de conversión se describen en la [arquitectura conceptual](https://chatgpt.com/library?file_id=libfile_8c981d1e01148191bf2280b1ae1f591d&account_id=personal).
+**Propósito.** Convertir un archivo PDF, DOCX, XLSX o PPTX en un bundle OKF v0.2 mediante un trabajo asíncrono. Este documento define componentes y despliegue, sin elegir lenguaje, servidor, base de datos ni sistema de colas. El contenido del bundle se rige por la [especificación OKF documental](../especificacion/ESPECIFICACION_OKF.md); las etapas de conversión se describen en la [arquitectura conceptual](ARQUITECTURA_CONCEPTUAL_MICROSERVICIO_OKF.md).
 
 ## 1. Unidad de despliegue
 

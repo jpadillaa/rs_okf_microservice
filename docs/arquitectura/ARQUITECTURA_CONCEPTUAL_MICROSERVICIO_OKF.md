@@ -1,7 +1,7 @@
 # Arquitectura conceptual del microservicio de conversión a OKF
 
 **Entrada:** un archivo PDF, DOCX, XLSX o PPTX.  
-**Salida:** un bundle OKF v0.2 conforme al [perfil documental del proyecto](https://chatgpt.com/library?file_id=libfile_c68ef3f3f8108191b414a8a632263394&account_id=personal).
+**Salida:** un bundle OKF v0.2 conforme al [perfil documental del proyecto](../especificacion/ESPECIFICACION_OKF.md).
 
 ## 1. Frontera y contrato
 
