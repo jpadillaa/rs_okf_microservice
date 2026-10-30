@@ -293,10 +293,11 @@ pub fn parse_part(xml: &str, link: &dyn Fn(&str) -> Option<String>) -> anyhow::R
                     }
                 }
                 b"rPr" => {
-                    if let Some(size) = attr(&e, b"sz").and_then(|v| v.parse::<u32>().ok()) {
-                        if cell.is_none() && matches!(owner, Owner::Shape) {
-                            shape.max_size = Some(shape.max_size.map_or(size, |m| m.max(size)));
-                        }
+                    if let Some(size) = attr(&e, b"sz").and_then(|v| v.parse::<u32>().ok())
+                        && cell.is_none()
+                        && matches!(owner, Owner::Shape)
+                    {
+                        shape.max_size = Some(shape.max_size.map_or(size, |m| m.max(size)));
                     }
                 }
                 b"br" => {
@@ -360,10 +361,10 @@ pub fn parse_part(xml: &str, link: &dyn Fn(&str) -> Option<String>) -> anyhow::R
                         }
                     }
                     b"tc" => {
-                        if let (Some(c), Some(t)) = (cell.take(), table.as_mut()) {
-                            if let Some(row) = t.last_mut() {
-                                row.push(c.join("<br>").replace('|', "\\|"));
-                            }
+                        if let (Some(c), Some(t)) = (cell.take(), table.as_mut())
+                            && let Some(row) = t.last_mut()
+                        {
+                            row.push(c.join("<br>").replace('|', "\\|"));
                         }
                     }
                     b"tbl" => {

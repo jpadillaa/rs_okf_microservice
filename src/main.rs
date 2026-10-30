@@ -297,13 +297,13 @@ fn xml_text(xml: &str) -> String {
     loop {
         match reader.read_event() {
             Ok(quick_xml::events::Event::Text(t)) => {
-                if let Ok(s) = t.decode() {
-                    if !s.trim().is_empty() {
-                        if !out.is_empty() {
-                            out.push(' ')
-                        }
-                        out.push_str(&s);
+                if let Ok(s) = t.decode()
+                    && !s.trim().is_empty()
+                {
+                    if !out.is_empty() {
+                        out.push(' ')
                     }
+                    out.push_str(&s);
                 }
             }
             Ok(quick_xml::events::Event::GeneralRef(r)) => {
@@ -671,37 +671,35 @@ fn extract(bytes: &[u8], attempt: &FsPath) -> Result<Extraction> {
         let animated = raw.contains("<p:timing");
         let smap = rels_of(&mut z, &path);
         // Texto fijo del layout y del patrón, visible salvo que la diapositiva lo oculte.
-        if root_attr(&raw, b"showMasterSp").as_deref() != Some("0") {
-            if let Some(layout) = smap
+        if root_attr(&raw, b"showMasterSp").as_deref() != Some("0")
+            && let Some(layout) = smap
                 .values()
                 .find(|t| t.contains("slideLayouts/"))
                 .map(|t| resolve(&path, t))
-            {
-                if !layout_texts.contains_key(&layout) {
-                    let mut texts = Vec::new();
-                    if let Ok(b) = read_entry(&mut z, &layout) {
-                        let xml = String::from_utf8(b)?;
-                        texts.extend(static_texts(&xml)?);
-                        if root_attr(&xml, b"showMasterSp").as_deref() != Some("0") {
-                            let lmap = rels_of(&mut z, &layout);
-                            if let Some(master) = lmap
-                                .values()
-                                .find(|t| t.contains("slideMasters/"))
-                                .map(|t| resolve(&layout, t))
-                            {
-                                if let Ok(b) = read_entry(&mut z, &master) {
-                                    texts.extend(static_texts(&String::from_utf8(b)?)?);
-                                }
-                            }
+        {
+            if !layout_texts.contains_key(&layout) {
+                let mut texts = Vec::new();
+                if let Ok(b) = read_entry(&mut z, &layout) {
+                    let xml = String::from_utf8(b)?;
+                    texts.extend(static_texts(&xml)?);
+                    if root_attr(&xml, b"showMasterSp").as_deref() != Some("0") {
+                        let lmap = rels_of(&mut z, &layout);
+                        if let Some(master) = lmap
+                            .values()
+                            .find(|t| t.contains("slideMasters/"))
+                            .map(|t| resolve(&layout, t))
+                            && let Ok(b) = read_entry(&mut z, &master)
+                        {
+                            texts.extend(static_texts(&String::from_utf8(b)?)?);
                         }
                     }
-                    layout_texts.insert(layout.clone(), texts);
                 }
-                for text in &layout_texts[&layout] {
-                    match design_texts.iter_mut().find(|(t, _)| t == text) {
-                        Some((_, n)) => *n += 1,
-                        None => design_texts.push((text.clone(), 1)),
-                    }
+                layout_texts.insert(layout.clone(), texts);
+            }
+            for text in &layout_texts[&layout] {
+                match design_texts.iter_mut().find(|(t, _)| t == text) {
+                    Some((_, n)) => *n += 1,
+                    None => design_texts.push((text.clone(), 1)),
                 }
             }
         }
@@ -781,12 +779,12 @@ fn extract(bytes: &[u8], attempt: &FsPath) -> Result<Extraction> {
             s.title_inferred = inferred.is_some();
             inferred
         });
-        if let Some(i) = title_index {
-            if let Some(slide_xml::Block::Text(t)) = blocks[i].take() {
-                s.title = Some(t.flat_text());
-                if let Some(r) = t.rect {
-                    s.kicker = find_kicker(&blocks, r, t.max_size);
-                }
+        if let Some(i) = title_index
+            && let Some(slide_xml::Block::Text(t)) = blocks[i].take()
+        {
+            s.title = Some(t.flat_text());
+            if let Some(r) = t.rect {
+                s.kicker = find_kicker(&blocks, r, t.max_size);
             }
         }
         let mut assets = HashMap::<String, String>::new();
@@ -872,16 +870,16 @@ fn extract(bytes: &[u8], attempt: &FsPath) -> Result<Extraction> {
                     link_target(&nmap, &np, rid)
                 })?;
                 for block in notes.blocks {
-                    if let slide_xml::Block::Text(t) = block {
-                        if matches!(t.placeholder.as_deref(), None | Some("body")) {
-                            s.notes.extend(t.paragraphs.iter().flat_map(|p| {
-                                p.md.split('\n')
-                                    .map(str::trim)
-                                    .filter(|l| !l.is_empty())
-                                    .map(str::to_string)
-                                    .collect::<Vec<_>>()
-                            }));
-                        }
+                    if let slide_xml::Block::Text(t) = block
+                        && matches!(t.placeholder.as_deref(), None | Some("body"))
+                    {
+                        s.notes.extend(t.paragraphs.iter().flat_map(|p| {
+                            p.md.split('\n')
+                                .map(str::trim)
+                                .filter(|l| !l.is_empty())
+                                .map(str::to_string)
+                                .collect::<Vec<_>>()
+                        }));
                     }
                 }
             }
@@ -1836,19 +1834,20 @@ mod tests {
         z.finish().unwrap();
         assert!(validate_bundle(&bad).is_err());
     }
-    /// Presentaciones reales del curso; no se versionan, así que la prueba se omite si faltan.
-    fn corpus(name: &str) -> Option<(Vec<Slide>, Vec<Issue>, String)> {
-        let Ok(bytes) = fs::read(format!("datos_de_prueba/{name}.pptx")) else {
-            eprintln!("omitido: datos_de_prueba/{name}.pptx no existe");
-            return None;
-        };
+    /// Presentaciones reales del curso. Por defecto se usan las copias reducidas de
+    /// `examples/pptx/corpus` (XML íntegro, imágenes mínimas); `OKF_CORPUS_DIR` permite
+    /// apuntar a los originales.
+    fn corpus(name: &str) -> (Vec<Slide>, Vec<Issue>, String) {
+        let dir = std::env::var("OKF_CORPUS_DIR").unwrap_or_else(|_| "examples/pptx/corpus".into());
+        let path = format!("{dir}/{name}.pptx");
+        let bytes = fs::read(&path).unwrap_or_else(|e| panic!("no se pudo leer {path}: {e}"));
         let tmp = tempfile::tempdir().unwrap();
         let Extraction { slides, issues, .. } = extract(&bytes, tmp.path()).unwrap();
         let md = slides
             .iter()
             .map(|s| markdown_slide(s, name, "2026-01-01T00:00:00Z"))
             .collect();
-        Some((slides, issues, md))
+        (slides, issues, md)
     }
     fn text_lines(s: &Slide) -> Vec<String> {
         s.items
@@ -1862,9 +1861,7 @@ mod tests {
     }
     #[test]
     fn corpus_s1_infers_titles_labels_links_and_drops_icons() {
-        let Some((slides, issues, md)) = corpus("s1") else {
-            return;
-        };
+        let (slides, issues, md) = corpus("s1");
         assert_eq!(slides.len(), 29);
         assert!(slides.iter().all(|s| s.title.is_some() && s.title_inferred));
         assert!(issues.iter().all(|i| !i.text.contains("sin título")));
@@ -1892,12 +1889,8 @@ mod tests {
     }
     #[test]
     fn corpus_s2_s3_keep_entities_and_clean_notes() {
-        let Some((s2, issues2, md2)) = corpus("s2") else {
-            return;
-        };
-        let Some((s3, _, md3)) = corpus("s3") else {
-            return;
-        };
+        let (s2, issues2, md2) = corpus("s2");
+        let (s3, _, md3) = corpus("s3");
         assert_eq!((s2.len(), s3.len()), (27, 34));
         assert_eq!(s2[6].title.as_deref(), Some("Chunk Size & Chunk Overlap"));
         assert!(s2.iter().chain(&s3).all(|s| !s.title_inferred));

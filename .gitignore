@@ -1,5 +1,5 @@
 /target/
 /data/
-# Presentaciones reales usadas por las pruebas del corpus; se omiten si faltan.
+# Originales del corpus real; las pruebas usan las copias reducidas de examples/pptx/corpus.
 /datos_de_prueba/
 .DS_Store

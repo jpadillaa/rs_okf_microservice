@@ -1,0 +1,27 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      # Debe coincidir con `rust-version` de Cargo.toml.
+      - uses: dtolnay/rust-toolchain@master
+        with:
+          toolchain: "1.99"
+          components: rustfmt, clippy
+      - uses: Swatinem/rust-cache@v2
+      # El renderizador PPTX necesita una fuente TrueType (ver render_font en src/main.rs).
+      - name: Instalar fuente para el renderizado
+        run: sudo apt-get update && sudo apt-get install -y --no-install-recommends fonts-dejavu-core
+      - name: Formato
+        run: cargo fmt --check
+      - name: Clippy
+        run: cargo clippy --all-targets --locked -- -D warnings
+      - name: Pruebas
+        run: cargo test --locked

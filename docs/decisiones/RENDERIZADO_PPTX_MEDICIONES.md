@@ -23,7 +23,7 @@ La comparación es orientativa: los ejemplos son pequeños y sintéticos. Revisa
 
 ## Corpus real
 
-Se renderizaron tres presentaciones del curso, guardadas localmente en `datos_de_prueba/` (no versionado), con `okf-microservice bench-render` en compilación *release* sobre macOS. Solo se midió BetterOffice; LibreOffice no se volvió a ejecutar.
+Se renderizaron tres presentaciones del curso, cuyos originales se guardan localmente en `datos_de_prueba/` (no versionado), con `okf-microservice bench-render` en compilación *release* sobre macOS. Solo se midió BetterOffice; LibreOffice no se volvió a ejecutar.
 
 | Presentación | Original | Diapositivas / PNG | Tiempo de proceso | CPU usuario / sistema | RSS máximo | Tamaño PNG total |
 | --- | ---: | ---: | ---: | ---: | ---: | ---: |
@@ -34,5 +34,7 @@ Se renderizaron tres presentaciones del curso, guardadas localmente en `datos_de
 En ningún caso se omitieron imágenes (`skipped_images=0`). La memoria es unas diez veces la del ejemplo sintético y debe considerarse al fijar el límite del worker. La compilación de depuración es mucho más lenta: la primera conversión de `s1` tardó 33 s; las mediciones de presupuesto deben hacerse en *release*.
 
 **Revisión visual.** Los diagramas de `s1`, construidos con decenas de formas, SVG y flechas, conservan posición, colores y texto. Las presentaciones usan Barlow, Fira Sans y Lexend, que no estaban registradas; el renderizado sustituyó la fuente sin desbordes visibles, aunque con métricas distintas a las originales. Las diapositivas animadas de `s3` (21, 23, 25, 27 y 29) muestran una imagen a pantalla completa sobre el texto, porque la vista dibuja todas las formas a la vez: el conversor lo declara como `view_hides_text` y conserva el texto en el concepto. El corpus no contiene tablas nativas, gráficos ni SmartArt, de modo que esas fidelidades siguen sin medirse con material real.
+
+Las pruebas de aceptación usan copias reducidas de esas presentaciones en `examples/pptx/corpus/`, generadas con `examples/pptx/reduce_corpus.py`: conservan todo el XML y reemplazan imágenes y fuentes incrustadas, de modo que sirven para la extracción, no para medir el renderizado.
 
 **Conclusión:** se mantiene BetterOffice Raster como único renderizador. Revisar si aparecen tablas o gráficos reales con pérdidas, o si el límite de memoria del worker no admite unos 400 MB por conversión.
