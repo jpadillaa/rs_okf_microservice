@@ -59,7 +59,7 @@ def big_picture():
     return (f'<p:pic><p:nvPicPr><p:cNvPr id="12" name="Diagram"/><p:cNvPicPr/><p:nvPr/></p:nvPicPr><p:blipFill><a:blip r:embed="rIdImage"/>'
         '<a:stretch><a:fillRect/></a:stretch></p:blipFill><p:spPr><a:xfrm><a:off x="1500000" y="1400000"/><a:ext cx="6000000" cy="3500000"/></a:xfrm><a:prstGeom prst="rect"><a:avLst/></a:prstGeom></p:spPr></p:pic>')
 
-def package(slides, output, overrides=None):
+def package(slides, output, overrides=None, types=()):
     files = {
         "[Content_Types].xml": ('<Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types">'
             '<Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/>'
@@ -70,7 +70,8 @@ def package(slides, output, overrides=None):
             '<Override PartName="/ppt/theme/theme1.xml" ContentType="application/vnd.openxmlformats-officedocument.theme+xml"/>'
             + "".join(f'<Override PartName="/ppt/slides/slide{i}.xml" ContentType="application/vnd.openxmlformats-officedocument.presentationml.slide+xml"/>' for i in range(1, len(slides)+1))
             + '<Override PartName="/ppt/notesSlides/notesSlide1.xml" ContentType="application/vnd.openxmlformats-officedocument.presentationml.notesSlide+xml"/>'
-            '</Types>'),
+            + "".join(f'<Override PartName="{part}" ContentType="{kind}"/>' for part, kind in types)
+            + '</Types>'),
         "_rels/.rels": rels([("rId1", f"{R}/officeDocument", "ppt/presentation.xml")]),
         "ppt/presentation.xml": (f'<p:presentation xmlns:p="{P}" xmlns:a="{A}" xmlns:r="{R}">'
             '<p:sldMasterIdLst><p:sldMasterId id="2147483648" r:id="rIdMaster"/></p:sldMasterIdLst>'
@@ -147,6 +148,60 @@ def main():
     hidden = shape("Hidden slide contains table and image", title=True)
     package([title + body, no_title, hidden], OUT / "multiple.pptx")
     visual()
+    rich()
+
+MC = "http://schemas.openxmlformats.org/markup-compatibility/2006"
+A14 = "http://schemas.microsoft.com/office/drawing/2010/main"
+M = "http://schemas.openxmlformats.org/officeDocument/2006/math"
+
+def equation():
+    """Equation as PowerPoint writes it: OMML in mc:Choice, picture of it in mc:Fallback."""
+    def run(t):
+        return f'<m:r><a:rPr lang="en-US" i="1"><a:latin typeface="Cambria Math"/></a:rPr><m:t>{t}</m:t></m:r>'
+    omml = (f'<a14:m><m:oMathPara xmlns:m="{M}"><m:oMath>' + run("E") + run("=") + run("m")
+        + '<m:sSup><m:e>' + run("c") + '</m:e><m:sup>' + run("2") + '</m:sup></m:sSup>'
+        + run("+") + '<m:f><m:num>' + run("a") + '</m:num><m:den>' + run("b") + '</m:den></m:f>'
+        + '</m:oMath></m:oMathPara></a14:m>')
+    geometry = '<a:xfrm><a:off x="457200" y="1500000"/><a:ext cx="4000000" cy="900000"/></a:xfrm><a:prstGeom prst="rect"><a:avLst/></a:prstGeom>'
+    choice = (f'<mc:Choice xmlns:a14="{A14}" Requires="a14"><p:sp><p:nvSpPr><p:cNvPr id="4" name="Equation"/><p:cNvSpPr txBox="1"/><p:nvPr/></p:nvSpPr>'
+        f'<p:spPr>{geometry}</p:spPr><p:txBody><a:bodyPr/><a:lstStyle/><a:p>{omml}</a:p></p:txBody></p:sp></mc:Choice>')
+    fallback = (f'<mc:Fallback><p:sp><p:nvSpPr><p:cNvPr id="4" name="Equation"/><p:cNvSpPr txBox="1"/><p:nvPr/></p:nvSpPr>'
+        f'<p:spPr>{geometry}<a:blipFill><a:blip r:embed="rIdEquation"/><a:stretch><a:fillRect/></a:stretch></a:blipFill></p:spPr>'
+        '<p:txBody><a:bodyPr/><a:lstStyle/><a:p><a:r><a:rPr lang="en-US"><a:noFill/></a:rPr><a:t> </a:t></a:r></a:p></p:txBody></p:sp></mc:Fallback>')
+    return f'<mc:AlternateContent xmlns:mc="{MC}">{choice}{fallback}</mc:AlternateContent>'
+
+def described_shapes():
+    """A textless shape and a group, both with alternative text."""
+    rect = lambda i, x: (f'<p:sp><p:nvSpPr><p:cNvPr id="{i}" name="Box {i}"/><p:cNvSpPr/><p:nvPr/></p:nvSpPr><p:spPr><a:xfrm><a:off x="{x}" y="0"/>'
+        '<a:ext cx="500000" cy="500000"/></a:xfrm><a:prstGeom prst="rect"><a:avLst/></a:prstGeom></p:spPr></p:sp>')
+    group = ('<p:grpSp><p:nvGrpSpPr><p:cNvPr id="6" name="Group 6" descr="Ciclo: consulta, recuperación y respuesta"/><p:cNvGrpSpPr/><p:nvPr/></p:nvGrpSpPr>'
+        '<p:grpSpPr><a:xfrm><a:off x="5000000" y="1500000"/><a:ext cx="1500000" cy="500000"/><a:chOff x="0" y="0"/><a:chExt cx="1500000" cy="500000"/></a:xfrm></p:grpSpPr>'
+        + rect(7, 0) + rect(8, 1000000) + '</p:grpSp>')
+    arrow = ('<p:sp><p:nvSpPr><p:cNvPr id="9" name="Arrow" descr="Flecha de la consulta hacia el índice"/><p:cNvSpPr/><p:nvPr/></p:nvSpPr>'
+        '<p:spPr><a:xfrm><a:off x="5000000" y="2500000"/><a:ext cx="1500000" cy="300000"/></a:xfrm><a:prstGeom prst="rightArrow"><a:avLst/></a:prstGeom></p:spPr></p:sp>')
+    return group + arrow
+
+def rich():
+    """Equation, review comment and described shapes, as PowerPoint stores them."""
+    comments = (f'<p:cmLst xmlns:p="{P}"><p:cm authorId="0" dt="2026-10-30T10:00:00.000" idx="1"><p:pos x="10" y="10"/>'
+        '<p:text>Revisar la cifra de la ecuación</p:text></p:cm></p:cmLst>')
+    authors = f'<p:cmAuthorLst xmlns:p="{P}"><p:cmAuthor id="0" name="Revisora" initials="RV" lastIdx="1" clrIdx="0"/></p:cmAuthorLst>'
+    package([shape("Equations and comments", title=True) + equation() + described_shapes()], OUT / "rich.pptx", overrides={
+        "ppt/slides/_rels/slide1.xml.rels": rels([
+            ("rIdLayout", f"{R}/slideLayout", "../slideLayouts/slideLayout1.xml"),
+            ("rIdEquation", f"{R}/image", "../media/equation.png"),
+            ("rIdComments", f"{R}/comments", "../comments/comment1.xml")]),
+        "ppt/_rels/presentation.xml.rels": rels([
+            ("rId1", f"{R}/slide", "slides/slide1.xml"),
+            ("rIdMaster", f"{R}/slideMaster", "slideMasters/slideMaster1.xml"),
+            ("rIdAuthors", f"{R}/commentAuthors", "commentAuthors.xml")]),
+        "ppt/media/equation.png": PNG,
+        "ppt/comments/comment1.xml": comments,
+        "ppt/commentAuthors.xml": authors,
+    }, types=[
+        ("/ppt/comments/comment1.xml", "application/vnd.openxmlformats-officedocument.presentationml.comments+xml"),
+        ("/ppt/commentAuthors.xml", "application/vnd.openxmlformats-officedocument.presentationml.commentAuthors+xml"),
+    ])
 
 def visual():
     """One slide whose substantive content is only an image: converts as partial."""

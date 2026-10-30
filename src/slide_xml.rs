@@ -55,6 +55,8 @@ pub enum Block {
     /// Filas de celdas ya escapadas para una tabla Markdown.
     Table(Vec<Vec<String>>),
     Chart(String),
+    /// Texto alternativo de una forma sin imagen, un grupo o un marco gráfico.
+    AltText(String),
 }
 
 #[derive(Debug, Default)]
@@ -62,6 +64,126 @@ pub struct Part {
     pub blocks: Vec<Block>,
     pub background_images: usize,
     pub smartart_frames: usize,
+    /// Ecuaciones OMML convertidas a notación lineal.
+    pub equations: usize,
+}
+
+/// Prefijos de `mc:Choice Requires` cuyo contenido se interpreta; para cualquier otro se
+/// usa `mc:Fallback`, que PowerPoint escribe para lectores sin esa extensión.
+const SUPPORTED_CHOICES: &[&str] = &["a14"];
+
+#[derive(Default)]
+struct MathNode {
+    name: Vec<u8>,
+    val: Option<String>,
+    text: String,
+    children: Vec<MathNode>,
+}
+
+impl MathNode {
+    fn child(&self, name: &[u8]) -> Option<&MathNode> {
+        self.children.iter().find(|c| c.name == name)
+    }
+    /// Valor `m:val` de una propiedad, p. ej. `m:begChr` dentro de `m:dPr`.
+    fn prop(&self, pr: &[u8], name: &[u8]) -> Option<String> {
+        self.child(pr)?.child(name)?.val.clone()
+    }
+}
+
+/// Notación lineal aproximada a UnicodeMath: `c^2`, `a/b`, `√(x)`, `∑_(i=1)^n`.
+fn linear(n: &MathNode) -> String {
+    let part = |name: &[u8]| n.child(name).map(linear).unwrap_or_default();
+    let wrap = |name: &[u8]| {
+        let s = part(name);
+        if s.chars().count() <= 1 || s.chars().all(|c| c.is_ascii_digit()) {
+            s
+        } else {
+            format!("({s})")
+        }
+    };
+    match n.name.as_slice() {
+        b"t" => n.text.clone(),
+        b"sSup" => format!("{}^{}", wrap(b"e"), wrap(b"sup")),
+        b"sSub" => format!("{}_{}", wrap(b"e"), wrap(b"sub")),
+        b"sSubSup" => format!("{}_{}^{}", wrap(b"e"), wrap(b"sub"), wrap(b"sup")),
+        b"sPre" => format!("_{}^{}{}", wrap(b"sub"), wrap(b"sup"), wrap(b"e")),
+        b"f" => format!("{}/{}", wrap(b"num"), wrap(b"den")),
+        b"rad" => match part(b"deg") {
+            d if d.is_empty() => format!("√{}", wrap(b"e")),
+            d => format!("√({d}&{})", part(b"e")),
+        },
+        b"d" => {
+            let open = n.prop(b"dPr", b"begChr").unwrap_or_else(|| "(".into());
+            let close = n.prop(b"dPr", b"endChr").unwrap_or_else(|| ")".into());
+            let sep = n.prop(b"dPr", b"sepChr").unwrap_or_else(|| "|".into());
+            let items: Vec<String> = n
+                .children
+                .iter()
+                .filter(|c| c.name == b"e")
+                .map(linear)
+                .collect();
+            format!("{open}{}{close}", items.join(&sep))
+        }
+        b"nary" => {
+            let op = n.prop(b"naryPr", b"chr").unwrap_or_else(|| "∫".into());
+            let mut s = op;
+            if n.child(b"sub").is_some_and(|c| !linear(c).is_empty()) {
+                s.push('_');
+                s.push_str(&wrap(b"sub"));
+            }
+            if n.child(b"sup").is_some_and(|c| !linear(c).is_empty()) {
+                s.push('^');
+                s.push_str(&wrap(b"sup"));
+            }
+            format!("{s} {}", part(b"e"))
+        }
+        b"func" => format!("{} {}", part(b"fName"), part(b"e")),
+        b"limLow" => format!("{}_{}", part(b"e"), wrap(b"lim")),
+        b"limUpp" => format!("{}^{}", part(b"e"), wrap(b"lim")),
+        b"acc" => {
+            let chr = n.prop(b"accPr", b"chr").unwrap_or_else(|| "\u{302}".into());
+            format!("{}{chr}", part(b"e"))
+        }
+        b"m" => {
+            let rows: Vec<String> = n
+                .children
+                .iter()
+                .filter(|c| c.name == b"mr")
+                .map(|r| {
+                    r.children
+                        .iter()
+                        .filter(|c| c.name == b"e")
+                        .map(linear)
+                        .collect::<Vec<_>>()
+                        .join("&")
+                })
+                .collect();
+            format!("■({})", rows.join("@"))
+        }
+        b"eqArr" => {
+            let rows: Vec<String> = n
+                .children
+                .iter()
+                .filter(|c| c.name == b"e")
+                .map(linear)
+                .collect();
+            format!("█({})", rows.join("@"))
+        }
+        name if name.ends_with(b"Pr") => String::new(),
+        _ => n.children.iter().map(linear).collect(),
+    }
+}
+
+fn resolve_ref(r: &quick_xml::events::BytesRef<'_>) -> anyhow::Result<String> {
+    Ok(match r.resolve_char_ref()? {
+        Some(c) => c.to_string(),
+        None => {
+            let name = r.decode()?;
+            quick_xml::escape::resolve_predefined_entity(&name)
+                .map(str::to_string)
+                .unwrap_or_else(|| format!("&{name};"))
+        }
+    })
 }
 
 #[derive(Clone, Copy, Default)]
@@ -128,6 +250,16 @@ impl ParaBuilder {
             _ => self.md.push_str(&escaped),
         }
     }
+    /// Inserta una ecuación como código en línea, para que `^` y `_` sean literales.
+    fn push_math(&mut self, text: &str) {
+        self.flush_run();
+        if text.is_empty() {
+            return;
+        }
+        self.plain.push_str(text);
+        let fence = if text.contains('`') { "``" } else { "`" };
+        self.md.push_str(&format!("{fence}{text}{fence}"));
+    }
     fn finish(mut self) -> Option<Paragraph> {
         self.flush_run();
         if self.plain.trim().is_empty() {
@@ -178,8 +310,101 @@ pub fn parse_part(xml: &str, link: &dyn Fn(&str) -> Option<String>) -> anyhow::R
     let mut para: Option<ParaBuilder> = None;
     let mut in_t = false;
     let mut in_bg = false;
+    let mut shape_descr: Option<String> = None;
+    // Por cada mc:AlternateContent abierto: si ya se eligió una rama.
+    let mut alternates: Vec<bool> = Vec::new();
+    let mut skip = 0usize;
+    let mut math: Vec<MathNode> = Vec::new();
     loop {
         let event = reader.read_event()?;
+        // Rama de mc:AlternateContent descartada: se ignora todo su subárbol.
+        if skip > 0 {
+            match &event {
+                Event::Start(_) => skip += 1,
+                Event::End(_) => skip -= 1,
+                Event::Eof => break,
+                _ => {}
+            }
+            continue;
+        }
+        // Ecuación OMML: se captura el subárbol de m:oMath y se linealiza al cerrarlo.
+        if !math.is_empty()
+            || matches!(&event, Event::Start(e) if e.local_name().as_ref() == b"oMath")
+        {
+            match event {
+                Event::Start(e) => math.push(MathNode {
+                    name: e.local_name().as_ref().to_vec(),
+                    val: attr(&e, b"val"),
+                    ..MathNode::default()
+                }),
+                Event::Empty(e) => {
+                    if let Some(top) = math.last_mut() {
+                        top.children.push(MathNode {
+                            name: e.local_name().as_ref().to_vec(),
+                            val: attr(&e, b"val"),
+                            ..MathNode::default()
+                        });
+                    }
+                }
+                Event::Text(t) => {
+                    if let Some(top) = math.last_mut().filter(|n| n.name == b"t") {
+                        top.text.push_str(&t.decode()?);
+                    }
+                }
+                Event::GeneralRef(r) => {
+                    if let Some(top) = math.last_mut().filter(|n| n.name == b"t") {
+                        top.text.push_str(&resolve_ref(&r)?);
+                    }
+                }
+                Event::End(_) => {
+                    if let Some(node) = math.pop() {
+                        match math.last_mut() {
+                            Some(parent) => parent.children.push(node),
+                            None => {
+                                part.equations += 1;
+                                if let Some(p) = para.as_mut() {
+                                    p.push_math(&linear(&node));
+                                }
+                            }
+                        }
+                    }
+                }
+                Event::Eof => break,
+                _ => {}
+            }
+            continue;
+        }
+        match &event {
+            Event::Start(e) if e.local_name().as_ref() == b"Choice" => {
+                let requires = attr(e, b"Requires").unwrap_or_default();
+                let supported = requires
+                    .split_whitespace()
+                    .all(|p| SUPPORTED_CHOICES.contains(&p));
+                match alternates.last_mut() {
+                    Some(chosen) if !*chosen && supported => *chosen = true,
+                    _ => {
+                        skip = 1;
+                        continue;
+                    }
+                }
+            }
+            Event::Start(e) if e.local_name().as_ref() == b"Fallback" => {
+                match alternates.last_mut() {
+                    Some(chosen) if !*chosen => *chosen = true,
+                    _ => {
+                        skip = 1;
+                        continue;
+                    }
+                }
+            }
+            Event::Start(e) if e.local_name().as_ref() == b"AlternateContent" => {
+                alternates.push(false)
+            }
+            Event::End(e) if e.local_name().as_ref() == b"AlternateContent" => {
+                alternates.pop();
+            }
+            _ => {}
+        }
         let (start, is_empty) = match &event {
             Event::Start(e) => (Some(e.clone()), false),
             Event::Empty(e) => (Some(e.clone()), true),
@@ -196,6 +421,7 @@ pub fn parse_part(xml: &str, link: &dyn Fn(&str) -> Option<String>) -> anyhow::R
                     owner = Owner::Shape;
                     shape = TextShape::default();
                     shape_link = None;
+                    shape_descr = None;
                     has_rect = false;
                     blip_rid = None;
                     svg_rid = None;
@@ -214,8 +440,16 @@ pub fn parse_part(xml: &str, link: &dyn Fn(&str) -> Option<String>) -> anyhow::R
                     frame_smartart = false;
                 }
                 b"cNvPr" => {
-                    if matches!(owner, Owner::Picture) {
-                        picture.descr = attr(&e, b"descr").filter(|d| !d.trim().is_empty());
+                    let descr = attr(&e, b"descr").filter(|d| !d.trim().is_empty());
+                    match parent {
+                        Some(b"nvPicPr") => picture.descr = descr,
+                        Some(b"nvSpPr") | Some(b"nvCxnSpPr") => shape_descr = descr,
+                        Some(b"nvGrpSpPr") | Some(b"nvGraphicFramePr") => {
+                            if let Some(d) = descr {
+                                part.blocks.push(Block::AltText(d));
+                            }
+                        }
+                        _ => {}
                     }
                 }
                 b"hlinkClick" => {
@@ -323,16 +557,7 @@ pub fn parse_part(xml: &str, link: &dyn Fn(&str) -> Option<String>) -> anyhow::R
             }
             Event::GeneralRef(r) if in_t => {
                 if let Some(p) = para.as_mut() {
-                    let resolved = match r.resolve_char_ref()? {
-                        Some(c) => c.to_string(),
-                        None => {
-                            let name = r.decode()?;
-                            quick_xml::escape::resolve_predefined_entity(&name)
-                                .map(str::to_string)
-                                .unwrap_or_else(|| format!("&{name};"))
-                        }
-                    };
-                    p.run_text.push_str(&resolved);
+                    p.run_text.push_str(&resolve_ref(&r)?);
                 }
             }
             Event::CData(t) if in_t => {
@@ -382,8 +607,10 @@ pub fn parse_part(xml: &str, link: &dyn Fn(&str) -> Option<String>) -> anyhow::R
                             part.blocks.push(Block::Picture(Picture {
                                 rect: text.rect,
                                 rid,
-                                descr: None,
+                                descr: shape_descr.take(),
                             }));
+                        } else if let Some(d) = shape_descr.take() {
+                            part.blocks.push(Block::AltText(d));
                         }
                         if !text.paragraphs.is_empty() {
                             part.blocks.push(Block::Text(text));
@@ -553,6 +780,32 @@ mod tests {
             })
         );
         assert_eq!(texts(&part).len(), 1);
+    }
+
+    #[test]
+    fn alternate_content_uses_one_branch_and_math_is_linearized() {
+        let math = r#"<a14:m><m:oMathPara xmlns:m="m"><m:oMath><m:rad><m:radPr><m:degHide m:val="1"/></m:radPr><m:deg/><m:e><m:r><m:t>x</m:t></m:r></m:e></m:rad><m:r><m:t>&lt;</m:t></m:r><m:nary><m:naryPr><m:chr m:val="∑"/></m:naryPr><m:sub><m:r><m:t>i=1</m:t></m:r></m:sub><m:sup><m:r><m:t>n</m:t></m:r></m:sup><m:e><m:sSub><m:e><m:r><m:t>a</m:t></m:r></m:e><m:sub><m:r><m:t>i</m:t></m:r></m:sub></m:sSub></m:e></m:nary><m:d><m:dPr><m:begChr m:val="["/><m:endChr m:val="]"/></m:dPr><m:e><m:r><m:t>0,1</m:t></m:r></m:e></m:d></m:oMath></m:oMathPara></a14:m>"#;
+        let shape = |id: &str, body: &str| {
+            format!(
+                r#"<p:sp><p:nvSpPr><p:cNvPr id="{id}" name="s"/></p:nvSpPr><p:spPr/><p:txBody><a:p>{body}</a:p></p:txBody></p:sp>"#
+            )
+        };
+        let xml = format!(
+            r#"<p:sld {NS} xmlns:mc="mc"><p:cSld><p:spTree>
+            <mc:AlternateContent><mc:Choice Requires="a14">{}</mc:Choice><mc:Fallback>{}</mc:Fallback></mc:AlternateContent>
+            <mc:AlternateContent><mc:Choice Requires="p159">{}</mc:Choice><mc:Fallback>{}</mc:Fallback></mc:AlternateContent>
+            </p:spTree></p:cSld></p:sld>"#,
+            shape("1", math),
+            shape("2", "<a:r><a:t>respaldo de la ecuación</a:t></a:r>"),
+            shape("3", "<a:r><a:t>extensión desconocida</a:t></a:r>"),
+            shape("4", "<a:r><a:t>respaldo usado</a:t></a:r>"),
+        );
+        let part = parse_part(&xml, &|_| None).unwrap();
+        assert_eq!(
+            texts(&part),
+            vec!["`√x<∑_(i=1)^n a_i[0,1]`", "respaldo usado"]
+        );
+        assert_eq!(part.equations, 1);
     }
 
     #[test]

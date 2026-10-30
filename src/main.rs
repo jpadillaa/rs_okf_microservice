@@ -237,6 +237,15 @@ enum Item {
     Table(String),
     Image { path: String, alt: Option<String> },
     Chart(String),
+    AltText(String),
+}
+/// Comentario de revisión (formato clásico o moderno) con sus respuestas.
+#[derive(Clone, Default, Debug)]
+struct Comment {
+    author: Option<String>,
+    date: Option<String>,
+    text: String,
+    replies: Vec<Comment>,
 }
 #[derive(Clone, Default)]
 struct Slide {
@@ -257,6 +266,7 @@ struct Slide {
     visual_only: bool,
     /// La vista estática muestra una imagen sobre texto que una animación presenta en secuencia.
     view_hides_text: bool,
+    comments: Vec<Comment>,
 }
 /// `Loss` señala pérdida o incertidumbre sustantiva y vuelve `partial` el bundle;
 /// `Note` se informa sin afectar el estado.
@@ -661,6 +671,7 @@ fn extract(bytes: &[u8], attempt: &FsPath) -> Result<Extraction> {
             .get(&resolve(part, target))
             .map(|n| format!("slide-{n:03}.md"))
     };
+    let authors = comment_authors(&mut z);
     let mut layout_texts = HashMap::<String, Vec<String>>::new();
     let mut design_texts = Vec::<(String, usize)>::new();
     let slide_area = (slide_size.0 as f64) * (slide_size.1 as f64);
@@ -727,6 +738,7 @@ fn extract(bytes: &[u8], attempt: &FsPath) -> Result<Extraction> {
             )));
         }
         s.decorative_images += part.background_images;
+        let equations = part.equations;
         let mut blocks: Vec<Option<slide_xml::Block>> = part.blocks.into_iter().map(Some).collect();
         // Numeración visible: marcador sldNum o contador "NN / total" en un cuadro de texto.
         for b in blocks.iter_mut() {
@@ -843,6 +855,11 @@ fn extract(bytes: &[u8], attempt: &FsPath) -> Result<Extraction> {
                     };
                     s.items.push(Item::Image { path: asset, alt });
                 }
+                slide_xml::Block::AltText(d) => {
+                    if let Some(d) = meaningful_alt(Some(&d)) {
+                        s.items.push(Item::AltText(d));
+                    }
+                }
                 slide_xml::Block::Chart(rid) => {
                     if let Some(target) = smap.get(&rid) {
                         let cp = resolve(&path, target);
@@ -858,6 +875,12 @@ fn extract(bytes: &[u8], attempt: &FsPath) -> Result<Extraction> {
                         }
                     }
                 }
+            }
+        }
+        for target in smap.values().filter(|t| t.contains("comments/")) {
+            if let Ok(b) = read_entry(&mut z, &resolve(&path, target)) {
+                s.comments
+                    .extend(parse_comments(&String::from_utf8(b)?, &authors)?);
             }
         }
         // Las notas son una parte OOXML aparte; se omiten sus marcadores de imagen,
@@ -892,7 +915,7 @@ fn extract(bytes: &[u8], attempt: &FsPath) -> Result<Extraction> {
                     .iter()
                     .map(|p| p.plain.chars().filter(|c| c.is_alphanumeric()).count())
                     .sum(),
-                Item::Table(md) | Item::Chart(md) => {
+                Item::Table(md) | Item::Chart(md) | Item::AltText(md) => {
                     md.chars().filter(|c| c.is_alphanumeric()).count()
                 }
                 Item::Image { .. } => 0,
@@ -903,6 +926,17 @@ fn extract(bytes: &[u8], attempt: &FsPath) -> Result<Extraction> {
         if s.visual_only {
             all_issues.push(Issue::loss(format!(
                 "Diapositiva {n}: contenido solo visual; la imagen se adjunta sin transcripción"
+            )));
+        }
+        if equations > 0 {
+            all_issues.push(Issue::note(format!(
+                "Diapositiva {n}: {equations} ecuación(es) convertidas a notación lineal; la vista conserva su forma"
+            )));
+        }
+        if !s.comments.is_empty() {
+            let total: usize = s.comments.iter().map(|c| 1 + c.replies.len()).sum();
+            all_issues.push(Issue::note(format!(
+                "Diapositiva {n}: {total} comentario(s) de revisión conservados como contenido auxiliar"
             )));
         }
         if s.view_hides_text {
@@ -1089,6 +1123,10 @@ fn markdown_slide(s: &Slide, deck: &str, instant: &str) -> String {
                 out.push_str(&format!("![{alt}](../{path})\n\n"));
             }
             Item::Chart(text) => out.push_str(&format!("{text}\n\n")),
+            Item::AltText(text) => out.push_str(&format!(
+                "> Texto alternativo: {}\n\n",
+                slide_xml::escape_inline(text)
+            )),
         }
     }
     if s.items.is_empty() {
@@ -1102,7 +1140,114 @@ fn markdown_slide(s: &Slide, deck: &str, instant: &str) -> String {
         out.push_str(&s.notes.join("\n\n"));
         out.push('\n');
     }
+    if !s.comments.is_empty() {
+        out.push_str("\n## Comentarios de revisión\n\n> Comentarios del archivo original; no forman parte del contenido presentado.\n\n");
+        fn line(c: &Comment, indent: &str) -> String {
+            let mut head = format!(
+                "{indent}- **{}**",
+                slide_xml::escape_inline(c.author.as_deref().unwrap_or("Autor desconocido"))
+            );
+            if let Some(d) = &c.date {
+                head.push_str(&format!(" · {d}"));
+            }
+            let text = c.text.split_whitespace().collect::<Vec<_>>().join(" ");
+            let mut out = format!("{head}: {}\n", slide_xml::escape_inline(&text));
+            for r in &c.replies {
+                out.push_str(&line(r, &format!("{indent}  ")));
+            }
+            out
+        }
+        for c in &s.comments {
+            out.push_str(&line(c, ""));
+        }
+    }
     out
+}
+/// Autores de comentarios: `commentAuthors.xml` (clásico) y `authors.xml` (moderno).
+fn comment_authors(z: &mut ZipArchive<Cursor<&[u8]>>) -> HashMap<String, String> {
+    let mut authors = HashMap::new();
+    for part in ["ppt/commentAuthors.xml", "ppt/authors.xml"] {
+        let Ok(b) = read_entry(z, part) else { continue };
+        let xml = String::from_utf8_lossy(&b);
+        let mut reader = quick_xml::Reader::from_str(&xml);
+        loop {
+            match reader.read_event() {
+                Ok(quick_xml::events::Event::Start(e)) | Ok(quick_xml::events::Event::Empty(e))
+                    if matches!(e.local_name().as_ref(), b"cmAuthor" | b"author") =>
+                {
+                    if let (Some(id), Some(name)) = (attr(&e, b"id"), attr(&e, b"name")) {
+                        authors.insert(id, name);
+                    }
+                }
+                Ok(quick_xml::events::Event::Eof) | Err(_) => break,
+                _ => {}
+            }
+        }
+    }
+    authors
+}
+/// Lee comentarios clásicos (`p:cm` con `p:text`) y modernos (`p188:cm` con párrafos
+/// DrawingML y `p188:reply`).
+fn parse_comments(xml: &str, authors: &HashMap<String, String>) -> Result<Vec<Comment>> {
+    let mut reader = quick_xml::Reader::from_str(xml);
+    let mut open: Vec<Comment> = Vec::new();
+    let mut done = Vec::new();
+    let mut in_text = false;
+    loop {
+        match reader.read_event()? {
+            quick_xml::events::Event::Start(e) => match e.local_name().as_ref() {
+                b"cm" | b"reply" => open.push(Comment {
+                    author: attr(&e, b"authorId").map(|id| authors.get(&id).cloned().unwrap_or(id)),
+                    date: attr(&e, b"dt")
+                        .or_else(|| attr(&e, b"created"))
+                        .map(|d| d.chars().take(10).collect()),
+                    ..Comment::default()
+                }),
+                b"text" | b"t" => in_text = true,
+                _ => {}
+            },
+            quick_xml::events::Event::Text(t) if in_text => {
+                if let Some(c) = open.last_mut() {
+                    c.text.push_str(&t.decode()?);
+                }
+            }
+            quick_xml::events::Event::GeneralRef(r) if in_text => {
+                if let Some(c) = open.last_mut()
+                    && let Some(s) = r.resolve_char_ref()?.map(String::from).or_else(|| {
+                        r.decode().ok().and_then(|n| {
+                            quick_xml::escape::resolve_predefined_entity(&n).map(str::to_string)
+                        })
+                    })
+                {
+                    c.text.push_str(&s);
+                }
+            }
+            quick_xml::events::Event::End(e) => match e.local_name().as_ref() {
+                b"text" | b"t" => in_text = false,
+                b"p" => {
+                    if let Some(c) = open.last_mut() {
+                        c.text.push('\n');
+                    }
+                }
+                b"reply" => {
+                    if let Some(r) = open.pop()
+                        && let Some(parent) = open.last_mut()
+                    {
+                        parent.replies.push(r);
+                    }
+                }
+                b"cm" => {
+                    if let Some(c) = open.pop() {
+                        done.push(c);
+                    }
+                }
+                _ => {}
+            },
+            quick_xml::events::Event::Eof => break,
+            _ => {}
+        }
+    }
+    Ok(done)
 }
 fn write_zip_file(zip: &mut ZipWriter<fs::File>, name: &str, data: &[u8]) -> Result<()> {
     zip.start_file(name, SimpleFileOptions::default())?;
@@ -1909,6 +2054,54 @@ mod tests {
         assert!(issues2.iter().any(|i| i.severity == Severity::Note
             && i.text.contains("Texto del diseño")
             && i.text.contains("MISO – Maestría en Ingeniería de Software")));
+    }
+    #[test]
+    fn equations_comments_and_alt_text_are_kept_without_duplicates() {
+        let bytes = example("rich");
+        let tmp = tempfile::tempdir().unwrap();
+        let extraction = extract(&bytes, tmp.path()).unwrap();
+        let s = &extraction.slides[0];
+        let md = markdown_slide(s, "rich.pptx", "2026-01-01T00:00:00Z");
+        assert!(md.contains("- `E=mc^2+a/b`"), "{md}");
+        // La imagen de mc:Fallback representa la misma ecuación: no se adjunta.
+        assert!(s.image_paths.is_empty());
+        assert!(md.contains("> Texto alternativo: Ciclo: consulta, recuperación y respuesta"));
+        assert!(md.contains("> Texto alternativo: Flecha de la consulta hacia el índice"));
+        assert!(md.contains("- **Revisora** · 2026-10-30: Revisar la cifra de la ecuación"));
+        let notes: Vec<&str> = extraction
+            .issues
+            .iter()
+            .filter(|i| i.severity == Severity::Note)
+            .map(|i| i.text.as_str())
+            .collect();
+        assert!(notes.iter().any(|n| n.contains("ecuación(es) convertidas")));
+        assert!(
+            notes
+                .iter()
+                .any(|n| n.contains("1 comentario(s) de revisión"))
+        );
+        let (zip, state) = build_bundle(
+            &bytes,
+            "rich.pptx",
+            &hex(&Sha256::digest(&bytes)),
+            &extraction,
+            tmp.path(),
+        )
+        .unwrap();
+        assert_eq!(state, "complete");
+        validate_bundle(&zip).unwrap();
+    }
+    #[test]
+    fn modern_comments_keep_authors_and_replies() {
+        let authors = HashMap::from([("{A1}".to_string(), "Ana".to_string())]);
+        let xml = r#"<p188:cmLst xmlns:p188="p188" xmlns:a="a"><p188:cm id="{C1}" authorId="{A1}" created="2026-10-29T09:15:00.000"><p188:replyLst><p188:reply id="{R1}" authorId="{B2}" created="2026-10-30T11:00:00.000"><p188:txBody><a:p><a:r><a:t>Hecho</a:t></a:r></a:p></p188:txBody></p188:reply></p188:replyLst><p188:txBody><a:p><a:r><a:t>Falta la fuente &amp; la fecha</a:t></a:r></a:p></p188:txBody></p188:cm></p188:cmLst>"#;
+        let comments = parse_comments(xml, &authors).unwrap();
+        assert_eq!(comments.len(), 1);
+        assert_eq!(comments[0].author.as_deref(), Some("Ana"));
+        assert_eq!(comments[0].date.as_deref(), Some("2026-10-29"));
+        assert_eq!(comments[0].text.trim(), "Falta la fuente & la fecha");
+        assert_eq!(comments[0].replies[0].author.as_deref(), Some("{B2}"));
+        assert_eq!(comments[0].replies[0].text.trim(), "Hecho");
     }
     #[test]
     fn chart_cache_values_are_recoverable_from_chart_xml() {
