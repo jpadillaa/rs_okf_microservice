@@ -3,3 +3,5 @@
 # Originales del corpus real; las pruebas usan las copias reducidas de examples/pptx/corpus.
 /datos_de_prueba/
 .DS_Store
+# Bundles generados localmente para revisión manual.
+/output/

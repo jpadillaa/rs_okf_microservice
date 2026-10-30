@@ -19,6 +19,9 @@ pub struct Paragraph {
     pub plain: String,
     /// Markdown escapado con enlaces resueltos; mismas líneas que `plain`.
     pub md: String,
+    /// Formato explícito de la primera ejecución con texto (tamaño, negrita, cursiva,
+    /// subrayado, color); permite distinguir partes de un título con estilos distintos.
+    pub style: String,
 }
 
 #[derive(Clone, Debug, Default)]
@@ -226,6 +229,8 @@ struct ParaBuilder {
     md: String,
     run_text: String,
     run_link: Option<String>,
+    run_style: String,
+    style: Option<String>,
 }
 
 impl ParaBuilder {
@@ -234,6 +239,9 @@ impl ParaBuilder {
             return;
         }
         let text = normalize_breaks(&std::mem::take(&mut self.run_text));
+        if self.style.is_none() && !text.trim().is_empty() {
+            self.style = Some(self.run_style.clone());
+        }
         self.plain.push_str(&text);
         let escaped = escape_inline(&text);
         match self.run_link.take() {
@@ -275,6 +283,7 @@ impl ParaBuilder {
             level: self.level,
             plain: self.plain.trim_end().to_string(),
             md: md.trim().to_string(),
+            style: self.style.unwrap_or_default(),
         })
     }
 }
@@ -524,14 +533,32 @@ pub fn parse_part(xml: &str, link: &dyn Fn(&str) -> Option<String>) -> anyhow::R
                     if let Some(p) = para.as_mut() {
                         p.flush_run();
                         p.run_link = shape_link.clone();
+                        p.run_style.clear();
                     }
                 }
                 b"rPr" => {
+                    if let Some(p) = para.as_mut() {
+                        for key in [b"sz".as_slice(), b"b", b"i", b"u"] {
+                            if let Some(v) = attr(&e, key) {
+                                p.run_style
+                                    .push_str(&format!("{}={v};", String::from_utf8_lossy(key)));
+                            }
+                        }
+                    }
                     if let Some(size) = attr(&e, b"sz").and_then(|v| v.parse::<u32>().ok())
                         && cell.is_none()
                         && matches!(owner, Owner::Shape)
                     {
                         shape.max_size = Some(shape.max_size.map_or(size, |m| m.max(size)));
+                    }
+                }
+                b"srgbClr" | b"schemeClr"
+                    if matches!(parent, Some(b"solidFill"))
+                        && matches!(grandparent, Some(b"rPr")) =>
+                {
+                    if let Some(p) = para.as_mut() {
+                        p.run_style
+                            .push_str(&format!("color={};", attr(&e, b"val").unwrap_or_default()));
                     }
                 }
                 b"br" => {

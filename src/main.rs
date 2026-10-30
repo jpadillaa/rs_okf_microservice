@@ -294,6 +294,16 @@ impl Issue {
         }
     }
 }
+/// Números de las diapositivas afectadas por cada incidencia que se informa agrupada.
+#[derive(Default)]
+struct GroupedIssues {
+    visual_only: Vec<usize>,
+    view_hides_text: Vec<usize>,
+    animated: Vec<usize>,
+    empty: Vec<usize>,
+    untitled: Vec<usize>,
+    inferred: Vec<usize>,
+}
 struct Extraction {
     slides: Vec<Slide>,
     issues: Vec<Issue>,
@@ -484,19 +494,21 @@ fn infer_title(blocks: &[Option<slide_xml::Block>], slide_height: i64) -> Option
         .is_none_or(|r| (r.y as f64) < slide_height as f64 * 0.6);
     (ties == 1 && smaller && near_top && shape.flat_text().chars().count() <= 150).then_some(best)
 }
-/// Antetítulo: texto breve en mayúsculas situado justo encima del título.
+/// Antetítulo: texto breve en mayúsculas situado justo encima del título. Devuelve
+/// la posición de su bloque.
 fn find_kicker(
     blocks: &[Option<slide_xml::Block>],
     title: slide_xml::Rect,
     title_size: Option<u32>,
-) -> Option<String> {
+) -> Option<usize> {
     blocks
         .iter()
-        .filter_map(|b| match b {
-            Some(slide_xml::Block::Text(t)) => Some(t),
+        .enumerate()
+        .filter_map(|(i, b)| match b {
+            Some(slide_xml::Block::Text(t)) => Some((i, t)),
             _ => None,
         })
-        .filter_map(|t| {
+        .filter_map(|(i, t)| {
             let r = t.rect?;
             let text = t.flat_text();
             let letters = text.chars().filter(|c| c.is_alphabetic()).count() >= 3;
@@ -512,10 +524,101 @@ fn find_kicker(
                 _ => true,
             };
             (letters && upper && above && overlaps && smaller && text.chars().count() <= 80)
-                .then_some((bottom, text))
+                .then_some((bottom, i))
         })
         .max_by_key(|(bottom, _)| *bottom)
-        .map(|(_, text)| text)
+        .map(|(_, i)| i)
+}
+/// Texto de un título. Los párrafos con el mismo formato forman una línea partida y se
+/// unen con un espacio; un cambio de formato (p. ej. un subtítulo en otro color) se
+/// separa con « · ».
+fn title_text(t: &slide_xml::TextShape) -> String {
+    let mut segments: Vec<(&str, Vec<&str>)> = Vec::new();
+    for p in &t.paragraphs {
+        let words: Vec<&str> = p.plain.split_whitespace().collect();
+        if words.is_empty() {
+            continue;
+        }
+        match segments.last_mut() {
+            Some((style, w)) if *style == p.style => w.extend(words),
+            _ => segments.push((&p.style, words)),
+        }
+    }
+    segments
+        .iter()
+        .map(|(_, w)| w.join(" "))
+        .collect::<Vec<_>>()
+        .join(" · ")
+}
+/// Número breve que ocupa por sí solo una forma: el distintivo de un paso o tarjeta.
+fn badge_number(t: &slide_xml::TextShape) -> Option<&str> {
+    let [p] = t.paragraphs.as_slice() else {
+        return None;
+    };
+    let n = p.plain.trim();
+    (!n.is_empty() && n.len() <= 2 && n.chars().all(|c| c.is_ascii_digit())).then_some(n)
+}
+/// Une cada número de paso con la forma de texto que le sigue cuando están contiguas
+/// (a menos de un tamaño del distintivo), para que el contenido diga «1. Tarea» y no
+/// «1» y «Tarea» por separado.
+fn attach_badges(blocks: &mut [Option<slide_xml::Block>]) {
+    for i in 0..blocks.len() {
+        let Some(slide_xml::Block::Text(badge)) = &blocks[i] else {
+            continue;
+        };
+        let (Some(n), Some(r)) = (badge_number(badge), badge.rect) else {
+            continue;
+        };
+        let n = n.to_string();
+        let Some(j) = (i + 1..blocks.len()).find(|&j| blocks[j].is_some()) else {
+            continue;
+        };
+        let Some(slide_xml::Block::Text(label)) = &mut blocks[j] else {
+            continue;
+        };
+        let reach = r.cx.max(r.cy);
+        let near = label.rect.is_some_and(|l| {
+            l.x < r.x + r.cx + reach
+                && l.x + l.cx > r.x - reach
+                && l.y < r.y + r.cy + reach
+                && l.y + l.cy > r.y - reach
+        });
+        if !near || badge_number(label).is_some() {
+            continue;
+        }
+        if let Some(first) = label.paragraphs.first_mut() {
+            first.plain = format!("{n}. {}", first.plain);
+            first.md = slide_xml::escape_line_start(&format!("{n}. {}", first.md));
+            blocks[i] = None;
+        }
+    }
+}
+/// «Diapositiva 4» o «Diapositivas 4–6, 11 y 19»: los tramos de tres o más
+/// diapositivas consecutivas se abrevian.
+fn slides_phrase(ns: &[usize]) -> String {
+    if let [n] = ns {
+        return format!("Diapositiva {n}");
+    }
+    let mut parts = Vec::new();
+    let mut start = 0;
+    while start < ns.len() {
+        let mut end = start;
+        while end + 1 < ns.len() && ns[end + 1] == ns[end] + 1 {
+            end += 1;
+        }
+        if end - start >= 2 {
+            parts.push(format!("{}–{}", ns[start], ns[end]));
+        } else {
+            parts.extend(ns[start..=end].iter().map(usize::to_string));
+        }
+        start = end + 1;
+    }
+    let last = parts.pop().unwrap_or_default();
+    if parts.is_empty() {
+        format!("Diapositivas {last}")
+    } else {
+        format!("Diapositivas {} y {last}", parts.join(", "))
+    }
 }
 /// Atributo del elemento raíz de una parte XML (`show`, `showMasterSp`).
 fn root_attr(xml: &str, name: &[u8]) -> Option<String> {
@@ -540,7 +643,8 @@ fn static_texts(xml: &str) -> Result<Vec<String>> {
             slide_xml::Block::Text(t) if t.placeholder.is_none() => Some(t.flat_text()),
             _ => None,
         })
-        .filter(|t| !t.is_empty())
+        // Un carácter suelto (p. ej. un glifo de una fuente de símbolos) no es texto legible.
+        .filter(|t| t.chars().filter(|c| c.is_alphanumeric()).count() >= 2)
         .collect())
 }
 /// Fracción del área de `a` cubierta por `b`.
@@ -674,6 +778,7 @@ fn extract(bytes: &[u8], attempt: &FsPath) -> Result<Extraction> {
     let authors = comment_authors(&mut z);
     let mut layout_texts = HashMap::<String, Vec<String>>::new();
     let mut design_texts = Vec::<(String, usize)>::new();
+    let mut grouped = GroupedIssues::default();
     let slide_area = (slide_size.0 as f64) * (slide_size.1 as f64);
     let cover =
         |r: Option<slide_xml::Rect>| r.map_or(0.0, |r| (r.cx as f64 * r.cy as f64) / slide_area);
@@ -794,11 +899,16 @@ fn extract(bytes: &[u8], attempt: &FsPath) -> Result<Extraction> {
         if let Some(i) = title_index
             && let Some(slide_xml::Block::Text(t)) = blocks[i].take()
         {
-            s.title = Some(t.flat_text());
-            if let Some(r) = t.rect {
-                s.kicker = find_kicker(&blocks, r, t.max_size);
+            s.title = Some(title_text(&t));
+            // El antetítulo queda en el frontmatter y no se repite en el contenido.
+            if let Some(r) = t.rect
+                && let Some(k) = find_kicker(&blocks, r, t.max_size)
+                && let Some(slide_xml::Block::Text(kicker)) = blocks[k].take()
+            {
+                s.kicker = Some(kicker.flat_text());
             }
         }
+        attach_badges(&mut blocks);
         let mut assets = HashMap::<String, String>::new();
         let mut largest_image = 0.0f64;
         for block in blocks.into_iter().flatten() {
@@ -924,9 +1034,7 @@ fn extract(bytes: &[u8], attempt: &FsPath) -> Result<Extraction> {
         s.visual_only = largest_image >= VISUAL_ONLY_AREA && body_chars < VISUAL_ONLY_MAX_CHARS;
         let n = index + 1;
         if s.visual_only {
-            all_issues.push(Issue::loss(format!(
-                "Diapositiva {n}: contenido solo visual; la imagen se adjunta sin transcripción"
-            )));
+            grouped.visual_only.push(n);
         }
         if equations > 0 {
             all_issues.push(Issue::note(format!(
@@ -940,26 +1048,54 @@ fn extract(bytes: &[u8], attempt: &FsPath) -> Result<Extraction> {
             )));
         }
         if s.view_hides_text {
-            all_issues.push(Issue::loss(format!(
-                "Diapositiva {n}: la vista estática muestra una imagen sobre texto que la animación presenta en secuencia; el texto está en el concepto, no en la vista"
-            )));
+            grouped.view_hides_text.push(n);
         } else if animated {
-            all_issues.push(Issue::note(format!(
-                "Diapositiva {n} contiene animaciones; la vista muestra todas las formas a la vez"
-            )));
+            grouped.animated.push(n);
         }
         if s.items.is_empty() && s.title.is_none() {
-            all_issues.push(Issue::note(format!(
-                "Diapositiva {n} sin contenido propio extraíble; lo visible procede del diseño y queda en la vista"
-            )));
+            grouped.empty.push(n);
         } else if s.title.is_none() {
-            all_issues.push(Issue::note(format!("Diapositiva {n} sin título explícito")));
+            grouped.untitled.push(n);
         } else if s.title_inferred {
-            all_issues.push(Issue::note(format!(
-                "Diapositiva {n}: título inferido por tamaño y posición del texto"
-            )));
+            grouped.inferred.push(n);
         }
         slides.push(s);
+    }
+    // Una línea por tipo de incidencia, con la lista de diapositivas afectadas.
+    for (ns, severity, text) in [
+        (
+            &grouped.visual_only,
+            Severity::Loss,
+            ": contenido solo visual; la imagen se adjunta sin transcripción",
+        ),
+        (
+            &grouped.view_hides_text,
+            Severity::Loss,
+            ": la vista estática muestra una imagen sobre texto que la animación presenta en secuencia; el texto está en el concepto, no en la vista",
+        ),
+        (
+            &grouped.animated,
+            Severity::Note,
+            ": contiene animaciones; la vista muestra todas las formas a la vez",
+        ),
+        (
+            &grouped.empty,
+            Severity::Note,
+            " sin contenido propio extraíble; lo visible procede del diseño y queda en la vista",
+        ),
+        (&grouped.untitled, Severity::Note, " sin título explícito"),
+        (
+            &grouped.inferred,
+            Severity::Note,
+            ": título inferido por tamaño y posición del texto",
+        ),
+    ] {
+        if !ns.is_empty() {
+            all_issues.push(Issue {
+                severity,
+                text: format!("{}{text}", slides_phrase(ns)),
+            });
+        }
     }
     for (text, count) in &design_texts {
         all_issues.push(Issue::note(format!(
@@ -992,11 +1128,12 @@ fn slide_description(s: &Slide, deck: &str) -> String {
         d.push_str(t);
     }
     d.push('.');
+    // Primera línea con palabras; un número de paso no describe la diapositiva.
     let first = s.items.iter().find_map(|i| match i {
         Item::Text(p) => p
             .iter()
             .map(|p| p.plain.split_whitespace().collect::<Vec<_>>().join(" "))
-            .find(|l| !l.is_empty() && s.kicker.as_deref() != Some(l.as_str())),
+            .find(|l| l.chars().filter(|c| c.is_alphabetic()).count() >= 3),
         _ => None,
     });
     match first {
@@ -1069,7 +1206,9 @@ fn markdown_slide(s: &Slide, deck: &str, instant: &str) -> String {
     if s.view_hides_text {
         out.push_str("view_hides_text: true\n");
     }
-    if s.title.is_none() || s.title_inferred || s.visual_only {
+    // Un título inferido cumple reglas estrictas (único, breve, arriba, destacado) y no
+    // vuelve borrador el concepto; queda marcado con `title_inferred`.
+    if s.title.is_none() || s.visual_only {
         out.push_str("status: draft\n");
     }
     out.push_str("---\n\n");
@@ -2015,6 +2154,25 @@ mod tests {
         let s18 = &slides[17];
         assert_eq!(s18.title.as_deref(), Some("Localizar el fallo"));
         assert_eq!(s18.kicker.as_deref(), Some("ARQUITECTURA Y DIAGNÓSTICO"));
+        // El antetítulo no se repite en el contenido y los títulos inferidos no son borrador.
+        assert!(!text_lines(s18).contains(&"ARQUITECTURA Y DIAGNÓSTICO".to_string()));
+        assert!(!md.contains("status: draft"));
+        // Los números de paso se unen con su etiqueta.
+        let s12 = text_lines(&slides[11]);
+        assert_eq!(
+            s12[..2],
+            ["1. Tarea".to_string(), "2. Evidencia".to_string()]
+        );
+        assert!(md.contains("- 1\\. Tarea\n- 2\\. Evidencia"));
+        assert!(
+            md.contains(
+                "description: \"Diapositiva 12 de s1: El recorrido de la clase. 1. Tarea\""
+            )
+        );
+        // Las observaciones repetidas se agrupan en una línea.
+        assert!(issues.iter().any(
+            |i| i.text == "Diapositivas 1–29: título inferido por tamaño y posición del texto"
+        ));
         assert_eq!(slides[4].visible_label.as_deref(), Some("05"));
         assert!(
             slides
@@ -2051,6 +2209,20 @@ mod tests {
         assert_eq!(s2.iter().filter(|s| s.visual_only).count(), 15);
         // Animación con imagen a pantalla completa sobre el texto (s3, diapositiva 21).
         assert!(s3[20].view_hides_text && !s3[20].visual_only);
+        // Un cambio de formato separa las partes del título; una línea partida se une.
+        assert_eq!(
+            s3[20].title.as_deref(),
+            Some("Fidelidad (Faithfulness) · Componente: Generador")
+        );
+        assert_eq!(
+            s3[14].title.as_deref(),
+            Some("Retrieval Augmented Generation Assessment")
+        );
+        assert_eq!(
+            s3[27].title.as_deref(),
+            Some("Exhaustividad del contexto · Componente: Recuperador")
+        );
+        assert!(issues2.iter().all(|i| !i.text.ends_with("«c»")));
         assert!(issues2.iter().any(|i| i.severity == Severity::Note
             && i.text.contains("Texto del diseño")
             && i.text.contains("MISO – Maestría en Ingeniería de Software")));
