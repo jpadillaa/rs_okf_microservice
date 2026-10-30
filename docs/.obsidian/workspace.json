@@ -13,12 +13,12 @@
             "state": {
               "type": "markdown",
               "state": {
-                "file": "decisiones/STACK_TECNOLOGICO_MICROSERVICIO_OKF.md",
+                "file": "README.md",
                 "mode": "source",
                 "source": false
               },
               "icon": "lucide-file",
-              "title": "STACK_TECNOLOGICO_MICROSERVICIO_OKF"
+              "title": "README"
             }
           }
         ]
@@ -99,7 +99,7 @@
             "state": {
               "type": "backlink",
               "state": {
-                "file": "decisiones/STACK_TECNOLOGICO_MICROSERVICIO_OKF.md",
+                "file": "README.md",
                 "collapseAll": false,
                 "extraContext": false,
                 "sortOrder": "alphabetical",
@@ -118,7 +118,7 @@
             "state": {
               "type": "outgoing-link",
               "state": {
-                "file": "decisiones/STACK_TECNOLOGICO_MICROSERVICIO_OKF.md",
+                "file": "README.md",
                 "linksCollapsed": false,
                 "unlinkedCollapsed": true
               },
@@ -161,7 +161,7 @@
             "state": {
               "type": "outline",
               "state": {
-                "file": "decisiones/STACK_TECNOLOGICO_MICROSERVICIO_OKF.md",
+                "file": "README.md",
                 "followCursor": false,
                 "showSearch": false,
                 "searchQuery": ""
@@ -190,11 +190,12 @@
   },
   "active": "f00c288a036cf4be",
   "lastOpenFiles": [
+    "decisiones/RENDERIZADO_PPTX_MEDICIONES.md",
+    "decisiones/STACK_TECNOLOGICO_MICROSERVICIO_OKF.md",
     "README.md",
     "arquitectura/DIAGRAMA_MICROSERVICIO_OKF.md",
     "arquitectura/ARQUITECTURA_TECNICA_MICROSERVICIO_OKF.md",
     "arquitectura/ARQUITECTURA_CONCEPTUAL_MICROSERVICIO_OKF.md",
-    "especificacion/ESPECIFICACION_OKF.md",
-    "decisiones/STACK_TECNOLOGICO_MICROSERVICIO_OKF.md"
+    "especificacion/ESPECIFICACION_OKF.md"
   ]
 }
