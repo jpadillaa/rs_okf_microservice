@@ -54,7 +54,12 @@ def slide_xml(body, hidden=False):
             '<a:chOff x="0" y="0"/><a:chExt cx="0" cy="0"/></a:xfrm>'
             f'</p:grpSpPr>{body}</p:spTree></p:cSld><p:clrMapOvr><a:masterClrMapping/></p:clrMapOvr></p:sld>')
 
-def package(slides, output):
+def big_picture():
+    """Picture covering about 45 % of the slide, with no alternative text."""
+    return (f'<p:pic><p:nvPicPr><p:cNvPr id="12" name="Diagram"/><p:cNvPicPr/><p:nvPr/></p:nvPicPr><p:blipFill><a:blip r:embed="rIdImage"/>'
+        '<a:stretch><a:fillRect/></a:stretch></p:blipFill><p:spPr><a:xfrm><a:off x="1500000" y="1400000"/><a:ext cx="6000000" cy="3500000"/></a:xfrm><a:prstGeom prst="rect"><a:avLst/></a:prstGeom></p:spPr></p:pic>')
+
+def package(slides, output, overrides=None):
     files = {
         "[Content_Types].xml": ('<Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types">'
             '<Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/>'
@@ -129,6 +134,7 @@ def package(slides, output):
     files["ppt/slides/_rels/slide3.xml.rels"] = rels([
         ("rIdLayout", f"{R}/slideLayout", "../slideLayouts/slideLayout1.xml"),
         ("rIdImage", f"{R}/image", "../media/pixel.png")])
+    files.update(overrides or {})
     with ZipFile(output, "w", ZIP_DEFLATED) as z:
         for name, content in files.items():
             z.writestr(name, content)
@@ -140,6 +146,16 @@ def main():
     no_title = shape("This slide has no title placeholder")
     hidden = shape("Hidden slide contains table and image", title=True)
     package([title + body, no_title, hidden], OUT / "multiple.pptx")
+    visual()
+
+def visual():
+    """One slide whose substantive content is only an image: converts as partial."""
+    package([shape("Visual-only diagram", title=True) + big_picture()], OUT / "visual.pptx", overrides={
+        "ppt/slides/_rels/slide1.xml.rels": rels([
+            ("rIdLayout", f"{R}/slideLayout", "../slideLayouts/slideLayout1.xml"),
+            ("rIdImage", f"{R}/image", "../media/pixel.png")]),
+        "ppt/media/pixel.png": PNG,
+    })
 
 if __name__ == "__main__":
     main()

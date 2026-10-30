@@ -25,6 +25,8 @@ use uuid::Uuid;
 use yaml_serde::Value as YamlValue;
 use zip::{ZipArchive, ZipWriter, write::SimpleFileOptions};
 
+mod slide_xml;
+
 const MAX_UPLOAD: usize = 100 * 1024 * 1024;
 const MAX_ZIP_ENTRY: u64 = 128 * 1024 * 1024;
 const MAX_ZIP_TOTAL: u64 = 512 * 1024 * 1024;
@@ -228,18 +230,65 @@ fn router(a: App) -> Router {
         .with_state(a)
 }
 
+/// Elemento del flujo de una diapositiva, en orden del árbol de formas.
+#[derive(Clone)]
+enum Item {
+    Text(Vec<slide_xml::Paragraph>),
+    Table(String),
+    Image { path: String, alt: Option<String> },
+    Chart(String),
+}
 #[derive(Clone, Default)]
 struct Slide {
     idx: usize,
     slide_id: Option<u32>,
     title: Option<String>,
-    texts: Vec<String>,
-    tables: Vec<String>,
-    notes: String,
+    title_inferred: bool,
+    kicker: Option<String>,
+    section: Option<String>,
+    items: Vec<Item>,
+    notes: Vec<String>,
     image_paths: Vec<String>,
+    decorative_images: usize,
     chart_paths: Vec<String>,
     visible_label: Option<String>,
     hidden: bool,
+    /// El contenido sustantivo está solo en una imagen, sin transcripción.
+    visual_only: bool,
+    /// La vista estática muestra una imagen sobre texto que una animación presenta en secuencia.
+    view_hides_text: bool,
+}
+/// `Loss` señala pérdida o incertidumbre sustantiva y vuelve `partial` el bundle;
+/// `Note` se informa sin afectar el estado.
+#[derive(Clone, Copy, PartialEq, Debug)]
+enum Severity {
+    Loss,
+    Note,
+}
+#[derive(Clone, Debug)]
+struct Issue {
+    severity: Severity,
+    text: String,
+}
+impl Issue {
+    fn loss(text: String) -> Self {
+        Issue {
+            severity: Severity::Loss,
+            text,
+        }
+    }
+    fn note(text: String) -> Self {
+        Issue {
+            severity: Severity::Note,
+            text,
+        }
+    }
+}
+struct Extraction {
+    slides: Vec<Slide>,
+    issues: Vec<Issue>,
+    /// Texto de formas fijas del diseño (layout o patrón) y cuántas diapositivas lo muestran.
+    design_texts: Vec<(String, usize)>,
 }
 fn xml_text(xml: &str) -> String {
     let mut reader = quick_xml::Reader::from_str(xml);
@@ -255,6 +304,21 @@ fn xml_text(xml: &str) -> String {
                         }
                         out.push_str(&s);
                     }
+                }
+            }
+            Ok(quick_xml::events::Event::GeneralRef(r)) => {
+                let resolved = r
+                    .resolve_char_ref()
+                    .ok()
+                    .flatten()
+                    .map(String::from)
+                    .or_else(|| {
+                        r.decode().ok().and_then(|name| {
+                            quick_xml::escape::resolve_predefined_entity(&name).map(str::to_string)
+                        })
+                    });
+                if let Some(s) = resolved {
+                    out.push_str(&s);
                 }
             }
             Ok(quick_xml::events::Event::Eof) => break,
@@ -346,33 +410,198 @@ fn resolve(base: &str, target: &str) -> String {
     }
     parts.join("/")
 }
-fn extract(bytes: &[u8], attempt: &FsPath) -> Result<(Vec<Slide>, Vec<String>)> {
+/// Umbral de área (fracción de la diapositiva) bajo el cual una imagen sin texto
+/// alternativo útil se considera un icono decorativo.
+const DECORATIVE_AREA: f64 = 0.01;
+
+fn meaningful_alt(descr: Option<&str>) -> Option<String> {
+    let d = descr?.split_whitespace().collect::<Vec<_>>().join(" ");
+    let lower = d.to_ascii_lowercase();
+    let filename = [
+        ".png", ".jpg", ".jpeg", ".gif", ".svg", ".emf", ".wmf", ".bmp", ".tif", ".tiff", ".webp",
+    ]
+    .iter()
+    .any(|ext| lower.ends_with(ext));
+    (!d.is_empty() && !filename).then_some(d)
+}
+/// Detecta un contador visible "05 / 29" cuyo total coincide con la presentación.
+fn page_label(text: &str, total: usize) -> Option<String> {
+    let (num, den) = text.split_once('/')?;
+    let (num, den) = (num.trim(), den.trim());
+    let digits = |s: &str| !s.is_empty() && s.len() <= 4 && s.chars().all(|c| c.is_ascii_digit());
+    (digits(num) && digits(den) && den.parse::<usize>().ok() == Some(total))
+        .then(|| num.to_string())
+}
+fn table_markdown(rows: &[Vec<String>]) -> String {
+    let cols = rows.iter().map(Vec::len).max().unwrap_or(0);
+    let mut md = String::new();
+    for (row_index, row) in rows.iter().enumerate() {
+        md.push('|');
+        for col in 0..cols {
+            md.push(' ');
+            md.push_str(row.get(col).map(String::as_str).unwrap_or(""));
+            md.push_str(" |")
+        }
+        md.push('\n');
+        if row_index == 0 {
+            md.push('|');
+            for _ in 0..cols {
+                md.push_str(" --- |")
+            }
+            md.push('\n');
+        }
+    }
+    md
+}
+/// Elige como título el texto de mayor tamaño cuando no hay marcador de título:
+/// debe ser único, breve, estar en la parte superior y destacar sobre otro texto.
+fn infer_title(blocks: &[Option<slide_xml::Block>], slide_height: i64) -> Option<usize> {
+    // Los glifos decorativos (comillas, números en círculos) no compiten por el título.
+    let sized: Vec<(usize, u32, &slide_xml::TextShape)> = blocks
+        .iter()
+        .enumerate()
+        .filter_map(|(i, b)| match b {
+            Some(slide_xml::Block::Text(t)) => t.max_size.map(|s| (i, s, t)),
+            _ => None,
+        })
+        .filter(|(_, _, t)| t.flat_text().chars().filter(|c| c.is_alphabetic()).count() >= 3)
+        .collect();
+    let (best, size, shape) = sized.iter().max_by_key(|(_, s, _)| *s).copied()?;
+    let ties = sized.iter().filter(|(_, s, _)| *s == size).count();
+    let smaller = sized.iter().any(|(_, s, _)| *s < size);
+    let near_top = shape
+        .rect
+        .is_none_or(|r| (r.y as f64) < slide_height as f64 * 0.6);
+    (ties == 1 && smaller && near_top && shape.flat_text().chars().count() <= 150).then_some(best)
+}
+/// Antetítulo: texto breve en mayúsculas situado justo encima del título.
+fn find_kicker(
+    blocks: &[Option<slide_xml::Block>],
+    title: slide_xml::Rect,
+    title_size: Option<u32>,
+) -> Option<String> {
+    blocks
+        .iter()
+        .filter_map(|b| match b {
+            Some(slide_xml::Block::Text(t)) => Some(t),
+            _ => None,
+        })
+        .filter_map(|t| {
+            let r = t.rect?;
+            let text = t.flat_text();
+            let letters = text.chars().filter(|c| c.is_alphabetic()).count() >= 3;
+            let upper = text
+                .chars()
+                .filter(|c| c.is_alphabetic())
+                .all(|c| !c.is_lowercase());
+            let bottom = r.y + r.cy;
+            let above = bottom <= title.y + title.cy / 4 && title.y - bottom <= title.cy;
+            let overlaps = r.x < title.x + title.cx && r.x + r.cx > title.x;
+            let smaller = match (t.max_size, title_size) {
+                (Some(a), Some(b)) => a < b,
+                _ => true,
+            };
+            (letters && upper && above && overlaps && smaller && text.chars().count() <= 80)
+                .then_some((bottom, text))
+        })
+        .max_by_key(|(bottom, _)| *bottom)
+        .map(|(_, text)| text)
+}
+/// Atributo del elemento raíz de una parte XML (`show`, `showMasterSp`).
+fn root_attr(xml: &str, name: &[u8]) -> Option<String> {
+    let mut reader = quick_xml::Reader::from_str(xml);
+    loop {
+        match reader.read_event() {
+            Ok(quick_xml::events::Event::Start(e)) | Ok(quick_xml::events::Event::Empty(e)) => {
+                return attr(&e, name);
+            }
+            Ok(quick_xml::events::Event::Eof) | Err(_) => return None,
+            _ => {}
+        }
+    }
+}
+/// Texto de las formas que no son marcadores de posición; en un layout o patrón se
+/// muestra en cada diapositiva que lo usa.
+fn static_texts(xml: &str) -> Result<Vec<String>> {
+    Ok(slide_xml::parse_part(xml, &|_| None)?
+        .blocks
+        .into_iter()
+        .filter_map(|b| match b {
+            slide_xml::Block::Text(t) if t.placeholder.is_none() => Some(t.flat_text()),
+            _ => None,
+        })
+        .filter(|t| !t.is_empty())
+        .collect())
+}
+/// Fracción del área de `a` cubierta por `b`.
+fn covered_fraction(a: slide_xml::Rect, b: slide_xml::Rect) -> f64 {
+    let w = (a.x + a.cx).min(b.x + b.cx) - a.x.max(b.x);
+    let h = (a.y + a.cy).min(b.y + b.cy) - a.y.max(b.y);
+    let area = a.cx as f64 * a.cy as f64;
+    if w <= 0 || h <= 0 || area <= 0.0 {
+        return 0.0;
+    }
+    (w as f64 * h as f64) / area
+}
+/// Una imagen que cubre al menos esta fracción de la diapositiva, sin texto que la
+/// acompañe, constituye contenido solo visual.
+const VISUAL_ONLY_AREA: f64 = 0.15;
+const VISUAL_ONLY_MAX_CHARS: usize = 40;
+fn extract(bytes: &[u8], attempt: &FsPath) -> Result<Extraction> {
     let mut z = ZipArchive::new(Cursor::new(bytes))?;
     enforce_package_limits(&mut z)?;
     let pres = String::from_utf8(read_entry(&mut z, "ppt/presentation.xml")?)?;
     let rels = String::from_utf8(read_entry(&mut z, "ppt/_rels/presentation.xml.rels")?)?;
     let relmap = relationship_map(&rels);
     let mut order = Vec::<(u32, String, bool)>::new();
+    let mut sections = HashMap::<u32, String>::new();
+    let mut current_section: Option<String> = None;
+    let mut slide_size = (12_192_000i64, 6_858_000i64);
     let mut rd = quick_xml::Reader::from_str(&pres);
     loop {
         match rd.read_event() {
             Ok(quick_xml::events::Event::Start(e)) | Ok(quick_xml::events::Event::Empty(e))
                 if e.local_name().as_ref() == b"sldId" =>
             {
-                if let (Some(id), Some(rid)) = (
-                    attr(&e, b"id").and_then(|x| x.parse().ok()),
-                    e.attributes()
-                        .flatten()
-                        .find(|a| a.key.as_ref().ends_with(b":id"))
-                        .and_then(|a| String::from_utf8(a.value.into_owned()).ok()),
-                ) {
-                    if let Some(target) = relmap.get(&rid) {
-                        order.push((
-                            id,
-                            resolve("ppt/presentation.xml", target),
-                            attr(&e, b"show").as_deref() == Some("0"),
-                        ));
+                let id = attr(&e, b"id").and_then(|x| x.parse().ok());
+                let rid = e
+                    .attributes()
+                    .flatten()
+                    .find(|a| a.key.as_ref().ends_with(b":id"))
+                    .and_then(|a| String::from_utf8(a.value.into_owned()).ok());
+                match (id, rid) {
+                    (Some(id), Some(rid)) => {
+                        if let Some(target) = relmap.get(&rid) {
+                            order.push((
+                                id,
+                                resolve("ppt/presentation.xml", target),
+                                attr(&e, b"show").as_deref() == Some("0"),
+                            ));
+                        }
                     }
+                    // Las secciones (p14:sectionLst) enumeran diapositivas sin r:id.
+                    (Some(id), None) => {
+                        if let Some(name) = &current_section {
+                            sections.insert(id, name.clone());
+                        }
+                    }
+                    _ => {}
+                }
+            }
+            Ok(quick_xml::events::Event::Start(e)) if e.local_name().as_ref() == b"section" => {
+                current_section = attr(&e, b"name")
+            }
+            Ok(quick_xml::events::Event::End(e)) if e.local_name().as_ref() == b"section" => {
+                current_section = None
+            }
+            Ok(quick_xml::events::Event::Start(e)) | Ok(quick_xml::events::Event::Empty(e))
+                if e.local_name().as_ref() == b"sldSz" =>
+            {
+                if let (Some(cx), Some(cy)) = (
+                    attr(&e, b"cx").and_then(|v| v.parse().ok()),
+                    attr(&e, b"cy").and_then(|v| v.parse().ok()),
+                ) {
+                    slide_size = (cx, cy);
                 }
             }
             Ok(quick_xml::events::Event::Eof) => break,
@@ -383,42 +612,99 @@ fn extract(bytes: &[u8], attempt: &FsPath) -> Result<(Vec<Slide>, Vec<String>)> 
     if order.is_empty() {
         bail!("PPTX no contiene diapositivas en la secuencia de presentación")
     }
+    let total = order.len();
+    let positions: HashMap<String, usize> = order
+        .iter()
+        .enumerate()
+        .map(|(i, (_, path, _))| (path.clone(), i + 1))
+        .collect();
     let mut slides = Vec::new();
     let mut all_issues = Vec::new();
     for i in 0..z.len() {
         let name = z.by_index(i)?.name().to_string().to_ascii_lowercase();
         if name.starts_with("ppt/embeddings/") {
-            all_issues.push(format!("Objeto incrustado no interpretado: {name}"));
+            all_issues.push(Issue::loss(format!(
+                "Objeto incrustado no interpretado: {name}"
+            )));
         }
         if name.starts_with("ppt/media/")
             && [".mp3", ".wav", ".m4a", ".mp4", ".mov", ".avi"]
                 .iter()
                 .any(|ext| name.ends_with(ext))
         {
-            all_issues.push(format!(
+            all_issues.push(Issue::loss(format!(
                 "Audio o video conservado solo en el original: {name}"
-            ));
+            )));
         }
     }
     fs::create_dir_all(attempt.join("assets"))?;
+    let rels_of = |z: &mut ZipArchive<Cursor<&[u8]>>, part: &str| -> HashMap<String, String> {
+        let relpath = part
+            .rsplit_once('/')
+            .map(|(p, file)| format!("{p}/_rels/{file}.rels"))
+            .unwrap_or_default();
+        relationship_map(
+            &String::from_utf8(read_entry(z, &relpath).unwrap_or_default()).unwrap_or_default(),
+        )
+    };
+    // Destino Markdown de un hipervínculo: URL externa o concepto de otra diapositiva.
+    let link_target = |map: &HashMap<String, String>, part: &str, rid: &str| -> Option<String> {
+        let target = map.get(rid)?;
+        let lower = target.to_ascii_lowercase();
+        if lower.starts_with("http://")
+            || lower.starts_with("https://")
+            || lower.starts_with("mailto:")
+        {
+            return Some(target.clone());
+        }
+        positions
+            .get(&resolve(part, target))
+            .map(|n| format!("slide-{n:03}.md"))
+    };
+    let mut layout_texts = HashMap::<String, Vec<String>>::new();
+    let mut design_texts = Vec::<(String, usize)>::new();
+    let slide_area = (slide_size.0 as f64) * (slide_size.1 as f64);
+    let cover =
+        |r: Option<slide_xml::Rect>| r.map_or(0.0, |r| (r.cx as f64 * r.cy as f64) / slide_area);
     for (index, (slide_id, path, hidden)) in order.into_iter().enumerate() {
         let raw = String::from_utf8(read_entry(&mut z, &path)?)?;
-        if raw.contains("<p:timing") {
-            all_issues.push(format!(
-                "Diapositiva {} contiene animaciones no representadas",
-                index + 1
-            ));
+        let animated = raw.contains("<p:timing");
+        let smap = rels_of(&mut z, &path);
+        // Texto fijo del layout y del patrón, visible salvo que la diapositiva lo oculte.
+        if root_attr(&raw, b"showMasterSp").as_deref() != Some("0") {
+            if let Some(layout) = smap
+                .values()
+                .find(|t| t.contains("slideLayouts/"))
+                .map(|t| resolve(&path, t))
+            {
+                if !layout_texts.contains_key(&layout) {
+                    let mut texts = Vec::new();
+                    if let Ok(b) = read_entry(&mut z, &layout) {
+                        let xml = String::from_utf8(b)?;
+                        texts.extend(static_texts(&xml)?);
+                        if root_attr(&xml, b"showMasterSp").as_deref() != Some("0") {
+                            let lmap = rels_of(&mut z, &layout);
+                            if let Some(master) = lmap
+                                .values()
+                                .find(|t| t.contains("slideMasters/"))
+                                .map(|t| resolve(&layout, t))
+                            {
+                                if let Ok(b) = read_entry(&mut z, &master) {
+                                    texts.extend(static_texts(&String::from_utf8(b)?)?);
+                                }
+                            }
+                        }
+                    }
+                    layout_texts.insert(layout.clone(), texts);
+                }
+                for text in &layout_texts[&layout] {
+                    match design_texts.iter_mut().find(|(t, _)| t == text) {
+                        Some((_, n)) => *n += 1,
+                        None => design_texts.push((text.clone(), 1)),
+                    }
+                }
+            }
         }
-        let relpath = path
-            .rsplit_once('/')
-            .map(|(p, _)| format!("{p}/_rels/{}.rels", path.rsplit('/').next().unwrap()))
-            .unwrap_or_default();
-        let sr = if !relpath.is_empty() {
-            String::from_utf8(read_entry(&mut z, &relpath).unwrap_or_default()).unwrap_or_default()
-        } else {
-            String::new()
-        };
-        let smap = relationship_map(&sr);
         let raw_hidden = quick_xml::Reader::from_str(&raw)
             .read_event()
             .ok()
@@ -432,209 +718,283 @@ fn extract(bytes: &[u8], attempt: &FsPath) -> Result<(Vec<Slide>, Vec<String>)> 
             idx: index + 1,
             slide_id: Some(slide_id),
             hidden: hidden || raw_hidden,
+            section: sections.get(&slide_id).cloned(),
             ..Slide::default()
         };
-        s.image_paths = smap
-            .values()
-            .filter(|target| {
-                matches!(
-                    FsPath::new(target)
-                        .extension()
-                        .and_then(|e| e.to_str())
-                        .map(str::to_ascii_lowercase)
-                        .as_deref(),
-                    Some("png" | "jpg" | "jpeg" | "gif" | "bmp" | "tif" | "tiff" | "svg" | "webp")
-                )
+        let part = slide_xml::parse_part(&raw, &|rid| link_target(&smap, &path, rid))?;
+        if part.smartart_frames > 0 {
+            all_issues.push(Issue::loss(format!(
+                "Diapositiva {} contiene SmartArt cuyo texto no se extrajo",
+                index + 1
+            )));
+        }
+        s.decorative_images += part.background_images;
+        let mut blocks: Vec<Option<slide_xml::Block>> = part.blocks.into_iter().map(Some).collect();
+        // Numeración visible: marcador sldNum o contador "NN / total" en un cuadro de texto.
+        for b in blocks.iter_mut() {
+            if let Some(slide_xml::Block::Text(t)) = b {
+                let text = t.flat_text();
+                let label = match t.placeholder.as_deref() {
+                    Some("sldNum") => {
+                        Some(text.chars().all(|c| c.is_ascii_digit()).then_some(text))
+                    }
+                    None => page_label(&text, total).map(Some),
+                    _ => None,
+                };
+                if let Some(label) = label {
+                    if label.is_some() {
+                        s.visible_label = label;
+                    }
+                    *b = None;
+                }
+            }
+        }
+        // La vista dibuja todas las formas a la vez: una imagen grande posterior a un texto
+        // lo tapa, aunque en la presentación la animación los muestre en secuencia.
+        if animated {
+            let mut earlier: Vec<Option<slide_xml::Rect>> = Vec::new();
+            for b in blocks.iter().flatten() {
+                match b {
+                    slide_xml::Block::Text(t) => earlier.push(t.rect),
+                    slide_xml::Block::Picture(p) => {
+                        let c = cover(p.rect);
+                        if c >= 0.5
+                            && earlier.iter().any(|t| {
+                                c >= 0.9
+                                    || t.zip(p.rect)
+                                        .is_some_and(|(t, p)| covered_fraction(t, p) >= 0.5)
+                            })
+                        {
+                            s.view_hides_text = true;
+                        }
+                    }
+                    _ => {}
+                }
+            }
+        }
+        let explicit = blocks.iter().position(|b| {
+            matches!(b, Some(slide_xml::Block::Text(t))
+                if matches!(t.placeholder.as_deref(), Some("title") | Some("ctrTitle")))
+        });
+        let title_index = explicit.or_else(|| {
+            let inferred = infer_title(&blocks, slide_size.1);
+            s.title_inferred = inferred.is_some();
+            inferred
+        });
+        if let Some(i) = title_index {
+            if let Some(slide_xml::Block::Text(t)) = blocks[i].take() {
+                s.title = Some(t.flat_text());
+                if let Some(r) = t.rect {
+                    s.kicker = find_kicker(&blocks, r, t.max_size);
+                }
+            }
+        }
+        let mut assets = HashMap::<String, String>::new();
+        let mut largest_image = 0.0f64;
+        for block in blocks.into_iter().flatten() {
+            match block {
+                slide_xml::Block::Text(t) => s.items.push(Item::Text(t.paragraphs)),
+                slide_xml::Block::Table(rows) => s.items.push(Item::Table(table_markdown(&rows))),
+                slide_xml::Block::Picture(p) => {
+                    let alt = meaningful_alt(p.descr.as_deref());
+                    let small = p.rect.is_some_and(|r| {
+                        (r.cx as f64) * (r.cy as f64) < slide_area * DECORATIVE_AREA
+                    });
+                    if alt.is_none() && small {
+                        s.decorative_images += 1;
+                        continue;
+                    }
+                    let Some(target) = smap.get(&p.rid) else {
+                        all_issues.push(Issue::loss(format!(
+                            "Diapositiva {}: imagen sin relación resoluble ({})",
+                            index + 1,
+                            p.rid
+                        )));
+                        continue;
+                    };
+                    if target.contains("://") {
+                        all_issues.push(Issue::loss(format!(
+                            "Diapositiva {}: imagen vinculada externamente no incluida: {target}",
+                            index + 1
+                        )));
+                        continue;
+                    }
+                    if alt.is_none() {
+                        largest_image = largest_image.max(cover(p.rect));
+                    }
+                    let rp = resolve(&path, target);
+                    let asset = match assets.get(&rp) {
+                        Some(a) => a.clone(),
+                        None => {
+                            let data = read_entry(&mut z, &rp)?;
+                            let ext = FsPath::new(&rp)
+                                .extension()
+                                .and_then(|x| x.to_str())
+                                .unwrap_or("bin")
+                                .to_ascii_lowercase();
+                            let name = format!(
+                                "assets/slide-{:03}-image-{:02}.{ext}",
+                                index + 1,
+                                assets.len() + 1
+                            );
+                            fs::write(attempt.join(&name), data)?;
+                            assets.insert(rp, name.clone());
+                            s.image_paths.push(name.clone());
+                            name
+                        }
+                    };
+                    s.items.push(Item::Image { path: asset, alt });
+                }
+                slide_xml::Block::Chart(rid) => {
+                    if let Some(target) = smap.get(&rid) {
+                        let cp = resolve(&path, target);
+                        s.chart_paths.push(cp.clone());
+                        if let Ok(b) = read_entry(&mut z, &cp) {
+                            let text = chart_text(std::str::from_utf8(&b)?);
+                            if !text.is_empty() {
+                                s.items.push(Item::Chart(format!(
+                                    "Datos del gráfico: {}",
+                                    slide_xml::escape_inline(&text)
+                                )));
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        // Las notas son una parte OOXML aparte; se omiten sus marcadores de imagen,
+        // número, encabezado, pie y fecha.
+        if let Some(target) = smap.values().find(|t| t.contains("notesSlides/")) {
+            let np = resolve(&path, target);
+            if let Ok(b) = read_entry(&mut z, &np) {
+                let nmap = rels_of(&mut z, &np);
+                let notes = slide_xml::parse_part(std::str::from_utf8(&b)?, &|rid| {
+                    link_target(&nmap, &np, rid)
+                })?;
+                for block in notes.blocks {
+                    if let slide_xml::Block::Text(t) = block {
+                        if matches!(t.placeholder.as_deref(), None | Some("body")) {
+                            s.notes.extend(t.paragraphs.iter().flat_map(|p| {
+                                p.md.split('\n')
+                                    .map(str::trim)
+                                    .filter(|l| !l.is_empty())
+                                    .map(str::to_string)
+                                    .collect::<Vec<_>>()
+                            }));
+                        }
+                    }
+                }
+            }
+        }
+        let body_chars: usize = s
+            .items
+            .iter()
+            .map(|i| match i {
+                Item::Text(p) => p
+                    .iter()
+                    .map(|p| p.plain.chars().filter(|c| c.is_alphanumeric()).count())
+                    .sum(),
+                Item::Table(md) | Item::Chart(md) => {
+                    md.chars().filter(|c| c.is_alphanumeric()).count()
+                }
+                Item::Image { .. } => 0,
             })
-            .map(|target| resolve(&path, target))
-            .collect();
-        // Text is read from shape text bodies; table cell text remains separately tabulated.
-        let mut rr = quick_xml::Reader::from_str(&raw);
-        let mut in_table = false;
-        let mut in_shape = false;
-        let mut shape_title = false;
-        let mut shape_display_label = false;
-        let mut table_rows: Vec<Vec<String>> = Vec::new();
-        let mut table_row: Vec<String> = Vec::new();
-        let mut table_cell = String::new();
-        let mut in_cell = false;
-        let mut shape_text = String::new();
-        loop {
-            match rr.read_event() {
-                Ok(quick_xml::events::Event::Start(e)) if e.local_name().as_ref() == b"sp" => {
-                    in_shape = true;
-                    shape_title = false;
-                    shape_display_label = false;
-                    shape_text.clear()
-                }
-                Ok(quick_xml::events::Event::Empty(e)) if e.local_name().as_ref() == b"ph" => {
-                    if attr(&e, b"type").as_deref() == Some("title")
-                        || attr(&e, b"type").as_deref() == Some("ctrTitle")
-                    {
-                        shape_title = true
-                    }
-                    if attr(&e, b"type").as_deref() == Some("sldNum") {
-                        shape_display_label = true
-                    }
-                }
-                Ok(quick_xml::events::Event::Start(e)) if e.local_name().as_ref() == b"ph" => {
-                    if attr(&e, b"type").as_deref() == Some("title")
-                        || attr(&e, b"type").as_deref() == Some("ctrTitle")
-                    {
-                        shape_title = true
-                    }
-                    if attr(&e, b"type").as_deref() == Some("sldNum") {
-                        shape_display_label = true
-                    }
-                }
-                Ok(quick_xml::events::Event::Start(e)) if e.local_name().as_ref() == b"tbl" => {
-                    in_table = true;
-                    table_rows.clear()
-                }
-                Ok(quick_xml::events::Event::Start(e))
-                    if e.local_name().as_ref() == b"tr" && in_table =>
-                {
-                    table_row.clear()
-                }
-                Ok(quick_xml::events::Event::Start(e))
-                    if e.local_name().as_ref() == b"tc" && in_table =>
-                {
-                    in_cell = true;
-                    table_cell.clear()
-                }
-                Ok(quick_xml::events::Event::End(e))
-                    if e.local_name().as_ref() == b"tc" && in_table =>
-                {
-                    table_row.push(table_cell.trim().to_string());
-                    in_cell = false
-                }
-                Ok(quick_xml::events::Event::End(e))
-                    if e.local_name().as_ref() == b"tr" && in_table =>
-                {
-                    table_rows.push(table_row.clone())
-                }
-                Ok(quick_xml::events::Event::End(e)) if e.local_name().as_ref() == b"tbl" => {
-                    in_table = false;
-                    if !table_rows.is_empty() {
-                        let cols = table_rows.iter().map(Vec::len).max().unwrap_or(0);
-                        let mut md = String::new();
-                        for (row_index, row) in table_rows.iter().enumerate() {
-                            md.push('|');
-                            for col in 0..cols {
-                                md.push(' ');
-                                md.push_str(row.get(col).map(String::as_str).unwrap_or(""));
-                                md.push_str(" |")
-                            }
-                            md.push('\n');
-                            if row_index == 0 {
-                                md.push('|');
-                                for _ in 0..cols {
-                                    md.push_str(" --- |")
-                                }
-                                md.push('\n');
-                            }
-                        }
-                        s.tables.push(md)
-                    }
-                }
-                Ok(quick_xml::events::Event::Text(t)) => {
-                    if let Ok(v) = t.decode() {
-                        let v = v.into_owned();
-                        if !v.trim().is_empty() {
-                            if in_table {
-                                if in_cell {
-                                    if !table_cell.is_empty() {
-                                        table_cell.push(' ')
-                                    }
-                                    table_cell.push_str(&v)
-                                }
-                            } else if in_shape {
-                                if !shape_text.is_empty() {
-                                    shape_text.push(' ')
-                                }
-                                shape_text.push_str(&v)
-                            }
-                        }
-                    }
-                }
-                Ok(quick_xml::events::Event::End(e)) if e.local_name().as_ref() == b"sp" => {
-                    if !shape_text.trim().is_empty() {
-                        let t = shape_text.trim().to_owned();
-                        if shape_title {
-                            s.title = Some(t.clone())
-                        }
-                        if shape_display_label && t.chars().all(|c| c.is_ascii_digit()) {
-                            s.visible_label = Some(t.clone())
-                        }
-                        s.texts.push(t);
-                    }
-                    shape_text.clear();
-                    in_shape = false
-                }
-                Ok(quick_xml::events::Event::Empty(e)) if e.local_name().as_ref() == b"blip" => {
-                    if let Some(rid) = e
-                        .attributes()
-                        .flatten()
-                        .find(|a| a.key.as_ref().ends_with(b":embed"))
-                        .and_then(|a| String::from_utf8(a.value.into_owned()).ok())
-                    {
-                        if let Some(t) = smap.get(&rid) {
-                            s.image_paths.push(resolve(&path, t));
-                        }
-                    }
-                }
-                Ok(quick_xml::events::Event::Empty(e))
-                    if e.local_name().as_ref() == b"graphicData" =>
-                {
-                    if let Some(uri) = attr(&e, b"uri") {
-                        if uri.contains("chart") { /* relationship resolved by chart frame below */
-                        }
-                    }
-                }
-                Ok(quick_xml::events::Event::Eof) => break,
-                Err(e) => return Err(e.into()),
-                _ => {}
-            }
+            .sum();
+        s.visual_only = largest_image >= VISUAL_ONLY_AREA && body_chars < VISUAL_ONLY_MAX_CHARS;
+        let n = index + 1;
+        if s.visual_only {
+            all_issues.push(Issue::loss(format!(
+                "Diapositiva {n}: contenido solo visual; la imagen se adjunta sin transcripción"
+            )));
         }
-        s.image_paths.sort();
-        s.image_paths.dedup();
-        // Resolve table/chart relationships and materialize referenced picture bytes.
-        for i in 0..s.image_paths.len() {
-            let rp = s.image_paths[i].clone();
-            let data = read_entry(&mut z, &rp)?;
-            let ext = FsPath::new(&rp)
-                .extension()
-                .and_then(|x| x.to_str())
-                .unwrap_or("bin");
-            let name = format!("assets/slide-{:03}-image-{:02}.{ext}", index + 1, i + 1);
-            fs::write(attempt.join(&name), data)?;
-            s.image_paths[i] = name;
+        if s.view_hides_text {
+            all_issues.push(Issue::loss(format!(
+                "Diapositiva {n}: la vista estática muestra una imagen sobre texto que la animación presenta en secuencia; el texto está en el concepto, no en la vista"
+            )));
+        } else if animated {
+            all_issues.push(Issue::note(format!(
+                "Diapositiva {n} contiene animaciones; la vista muestra todas las formas a la vez"
+            )));
         }
-        // Notes are a separate OOXML part related to this slide.
-        for target in smap.values() {
-            if target.contains("notesSlides/") {
-                let np = resolve(&path, target);
-                if let Ok(b) = read_entry(&mut z, &np) {
-                    s.notes = xml_text(std::str::from_utf8(&b)?);
-                }
-            }
-            if target.contains("charts/") {
-                let cp = resolve(&path, target);
-                s.chart_paths.push(cp.clone());
-                if let Ok(b) = read_entry(&mut z, &cp) {
-                    let text = chart_text(std::str::from_utf8(&b)?);
-                    if !text.is_empty() {
-                        s.texts.push(format!("Datos del gráfico: {text}"));
-                    }
-                }
-            }
-        }
-        if s.title.is_none() {
-            all_issues.push(format!("Diapositiva {} sin título explícito", index + 1));
+        if s.items.is_empty() && s.title.is_none() {
+            all_issues.push(Issue::note(format!(
+                "Diapositiva {n} sin contenido propio extraíble; lo visible procede del diseño y queda en la vista"
+            )));
+        } else if s.title.is_none() {
+            all_issues.push(Issue::note(format!("Diapositiva {n} sin título explícito")));
+        } else if s.title_inferred {
+            all_issues.push(Issue::note(format!(
+                "Diapositiva {n}: título inferido por tamaño y posición del texto"
+            )));
         }
         slides.push(s);
     }
-    Ok((slides, all_issues))
+    for (text, count) in &design_texts {
+        all_issues.push(Issue::note(format!(
+            "Texto del diseño visible en {count} diapositiva(s), registrado en documento.md y no repetido en sus conceptos: «{}»",
+            truncate_chars(text, 120)
+        )));
+    }
+    Ok(Extraction {
+        slides,
+        issues: all_issues,
+        design_texts,
+    })
+}
+/// Recorta en un límite de palabra y marca el corte con «…».
+fn truncate_chars(s: &str, max: usize) -> String {
+    if s.chars().count() <= max {
+        return s.to_string();
+    }
+    let cut: String = s.chars().take(max).collect();
+    let cut = cut.rsplit_once(' ').map_or(cut.as_str(), |(head, _)| head);
+    format!("{}…", cut.trim_end())
+}
+fn slide_description(s: &Slide, deck: &str) -> String {
+    let mut d = format!("Diapositiva {} de {deck}", s.idx);
+    if s.hidden {
+        d.push_str(" (oculta)");
+    }
+    if let Some(t) = &s.title {
+        d.push_str(": ");
+        d.push_str(t);
+    }
+    d.push('.');
+    let first = s.items.iter().find_map(|i| match i {
+        Item::Text(p) => p
+            .iter()
+            .map(|p| p.plain.split_whitespace().collect::<Vec<_>>().join(" "))
+            .find(|l| !l.is_empty() && s.kicker.as_deref() != Some(l.as_str())),
+        _ => None,
+    });
+    match first {
+        Some(line) => {
+            d.push(' ');
+            d.push_str(&truncate_chars(&line, 160));
+        }
+        None if s.visual_only => d.push_str(" Contenido solo visual."),
+        None => {}
+    }
+    d
+}
+fn index_entry(s: &Slide, href: &str) -> String {
+    let label = match &s.title {
+        Some(t) => format!("Diapositiva {}: {}", s.idx, slide_xml::escape_inline(t)),
+        None => format!("Diapositiva {}", s.idx),
+    };
+    let mut flags = Vec::new();
+    if s.hidden {
+        flags.push("oculta");
+    }
+    if s.visual_only {
+        flags.push("contenido solo visual");
+    }
+    let suffix = if flags.is_empty() {
+        String::new()
+    } else {
+        format!(" — {}", flags.join(", "))
+    };
+    format!("- [{label}]({href}){suffix}\n")
 }
 fn esc(s: &str) -> String {
     s.replace('\\', "\\\\")
@@ -647,11 +1007,11 @@ fn yaml(s: &str) -> String {
 fn hex(b: &[u8]) -> String {
     b.iter().map(|v| format!("{v:02x}")).collect()
 }
-fn markdown_slide(s: &Slide, hash: &str, instant: &str, assets: &[String]) -> String {
+fn markdown_slide(s: &Slide, deck: &str, instant: &str) -> String {
     let mut out = format!(
         "---\ntype: Slide\ntitle: {}\ndescription: {}\nsources:\n  - id: original\n    resource: /references/original.pptx\ngenerated:\n  by: process:document-conversion\n  at: {}\nsource_spans:\n  - id: slide-{}\n    source_id: original\n    kind: pptx_slide\n    slide_index: {}\n",
         yaml(s.title.as_deref().unwrap_or("Diapositiva sin título")),
-        yaml(&format!("Contenido extraído de la diapositiva {}.", s.idx)),
+        yaml(&slide_description(s, deck)),
         yaml(instant),
         s.idx,
         s.idx
@@ -662,12 +1022,30 @@ fn markdown_slide(s: &Slide, hash: &str, instant: &str, assets: &[String]) -> St
     if let Some(label) = &s.visible_label {
         out.push_str(&format!("    display_label: {}\n", yaml(label)));
     }
-    if s.title.is_none() {
+    if s.title_inferred {
+        out.push_str("title_inferred: true\n");
+    }
+    if let Some(kicker) = &s.kicker {
+        out.push_str(&format!("kicker: {}\n", yaml(kicker)));
+    }
+    if let Some(section) = &s.section {
+        out.push_str(&format!("section: {}\n", yaml(section)));
+    }
+    if s.visual_only {
+        out.push_str("visual_only: true\n");
+    }
+    if s.view_hides_text {
+        out.push_str("view_hides_text: true\n");
+    }
+    if s.title.is_none() || s.title_inferred || s.visual_only {
         out.push_str("status: draft\n");
     }
     out.push_str("---\n\n");
     if let Some(title) = &s.title {
-        out.push_str(&format!("# {}\n\n", title));
+        out.push_str(&format!("# {}\n\n", slide_xml::escape_inline(title)));
+        if s.title_inferred {
+            out.push_str("> Título inferido por tamaño y posición del texto; la diapositiva no tiene marcador de título.\n\n");
+        }
     } else {
         out.push_str(&format!(
             "# Diapositiva {} (sin título explícito)\n\n",
@@ -677,35 +1055,55 @@ fn markdown_slide(s: &Slide, hash: &str, instant: &str, assets: &[String]) -> St
     if s.hidden {
         out.push_str("> Diapositiva oculta en la presentación original.\n\n");
     }
-    out.push_str("## Texto\n\n");
-    for t in &s.texts {
-        out.push_str(&format!("- {}\n", t));
+    if s.visual_only {
+        out.push_str("> Contenido solo visual: lo sustantivo está en la imagen y no tiene transcripción.\n\n");
     }
-    if s.texts.is_empty() {
+    if s.view_hides_text {
+        out.push_str("> La vista estática muestra una imagen sobre texto que la animación original presenta en secuencia; el texto se conserva abajo.\n\n");
+    }
+    out.push_str("## Contenido\n\n");
+    let mut in_list = false;
+    let mut image_no = 0;
+    for item in &s.items {
+        if in_list && !matches!(item, Item::Text(_)) {
+            out.push('\n');
+            in_list = false;
+        }
+        match item {
+            Item::Text(paragraphs) => {
+                for p in paragraphs {
+                    let indent = "  ".repeat(p.level as usize);
+                    let mut lines = p.md.split('\n');
+                    out.push_str(&format!("{indent}- {}\n", lines.next().unwrap_or("")));
+                    for line in lines {
+                        out.push_str(&format!("{indent}  {line}\n"));
+                    }
+                }
+                in_list = true;
+            }
+            Item::Table(md) => out.push_str(&format!("{md}\n")),
+            Item::Image { path, alt } => {
+                image_no += 1;
+                let alt = alt
+                    .as_deref()
+                    .map(slide_xml::escape_inline)
+                    .unwrap_or_else(|| format!("Imagen {image_no} de la diapositiva {}", s.idx));
+                out.push_str(&format!("![{alt}](../{path})\n\n"));
+            }
+            Item::Chart(text) => out.push_str(&format!("{text}\n\n")),
+        }
+    }
+    if s.items.is_empty() {
         out.push_str("Sin texto extraído.\n");
     }
-    if !s.tables.is_empty() {
-        out.push_str("\n## Tablas\n\n");
-        for (i, t) in s.tables.iter().enumerate() {
-            out.push_str(&format!("Tabla {}\n\n{}\n", i + 1, t));
-        }
-    }
-    if !assets.is_empty() {
-        out.push_str("## Imágenes\n\n");
-        for a in assets {
-            out.push_str(&format!("![Imagen de diapositiva {}](../{})\n\n", s.idx, a));
-        }
-    }
-    if !s.chart_paths.is_empty() {
-        out.push_str("## Gráficos\n\n");
-        out.push_str("Datos recuperados del XML del gráfico, cuando estuvieron disponibles.\n\n");
+    while out.ends_with("\n\n") {
+        out.pop();
     }
     if !s.notes.is_empty() {
-        out.push_str("## Notas del presentador\n\n");
-        out.push_str(s.notes.trim());
-        out.push_str("\n");
+        out.push_str("\n## Notas del presentador\n\n");
+        out.push_str(&s.notes.join("\n\n"));
+        out.push('\n');
     }
-    let _ = hash;
     out
 }
 fn write_zip_file(zip: &mut ZipWriter<fs::File>, name: &str, data: &[u8]) -> Result<()> {
@@ -732,10 +1130,10 @@ fn build_bundle(
     bytes: &[u8],
     filename: &str,
     hash: &str,
-    slides: &[Slide],
-    issues: &[String],
+    extraction: &Extraction,
     attempt: &FsPath,
 ) -> Result<(PathBuf, String)> {
+    let slides = &extraction.slides;
     let started = Instant::now();
     let mut ppt = Presentation::open(bytes)?;
     let font = render_font()?;
@@ -745,7 +1143,7 @@ fn build_bundle(
         bail!("cantidad de vistas no coincide con diapositivas")
     }
     let generated = chrono_now();
-    let mut allissues = issues.to_vec();
+    let mut allissues = extraction.issues.clone();
     let zip_path = attempt.join("bundle.zip");
     let f = fs::File::create(&zip_path)?;
     let mut z = ZipWriter::new(f);
@@ -760,13 +1158,12 @@ fn build_bundle(
         let view = format!("assets/slide-{:03}.png", s.idx);
         write_zip_file(&mut z, &view, &rendered.bytes)?;
         if rendered.skipped_images > 0 {
-            allissues.push(format!(
+            allissues.push(Issue::loss(format!(
                 "Diapositiva {}: renderizador omitió {} imagen(es)",
                 s.idx, rendered.skipped_images
-            ));
+            )));
         }
-        let assets = s.image_paths.clone();
-        let mut md = markdown_slide(s, hash, &generated, &assets);
+        let mut md = markdown_slide(s, filename, &generated);
         md.push_str(&format!(
             "\n## Vista visual\n\n![Vista de la diapositiva {}](../assets/slide-{:03}.png)\n",
             s.idx, s.idx
@@ -790,37 +1187,64 @@ fn build_bundle(
         .unwrap_or("pptx");
     let orig = format!("references/original.{original_ext}");
     write_zip_file(&mut z, &orig, bytes)?;
-    let state = if allissues.is_empty() {
+    let (losses, notes): (Vec<&Issue>, Vec<&Issue>) =
+        allissues.iter().partition(|i| i.severity == Severity::Loss);
+    let state = if losses.is_empty() {
         "complete"
     } else {
         "partial"
     };
-    let slide_links = (1..=slides.len())
-        .map(|i| format!("- [Diapositiva {i}](contenido/slide-{i:03}.md)\n"))
+    let slide_links = slides
+        .iter()
+        .map(|s| index_entry(s, &format!("contenido/slide-{:03}.md", s.idx)))
         .collect::<String>();
-    let content_slide_links = (1..=slides.len())
-        .map(|i| format!("- [Diapositiva {i}](slide-{i:03}.md)\n"))
+    let content_slide_links = slides
+        .iter()
+        .map(|s| index_entry(s, &format!("slide-{:03}.md", s.idx)))
         .collect::<String>();
+    let design_md = if extraction.design_texts.is_empty() {
+        String::new()
+    } else {
+        let lines = extraction
+            .design_texts
+            .iter()
+            .map(|(t, n)| {
+                format!(
+                    "- {} ({n} diapositiva(s))\n",
+                    slide_xml::escape_line_start(&slide_xml::escape_inline(t))
+                )
+            })
+            .collect::<String>();
+        format!(
+            "\n## Texto del diseño\n\nFormas fijas del layout o del patrón, visibles en las diapositivas que los usan y no repetidas en sus conceptos.\n\n{lines}"
+        )
+    };
     let index = format!(
         "---\nokf_version: \"0.2\"\n---\n\n# Bundle OKF\n\n- [Documento fuente](documento.md)\n- [Índice de diapositivas](contenido/index.md)\n- [Informe de conversión](conversion-report.md)\n\n## Diapositivas\n\n{slide_links}"
     );
     let contents_index = format!("# Contenido\n\n## Diapositivas\n\n{content_slide_links}");
     let doc = format!(
-        "---\ntype: Source Document\ntitle: {}\ndescription: Presentación fuente convertida a conceptos OKF por diapositiva.\nsources:\n  - id: original\n    resource: /{orig}\ngenerated:\n  by: process:document-conversion\n  at: {}\nsource_file:\n  path: {}\n  sha256: {}\n---\n\n# {}\n\nPresentación de {} diapositivas.\n",
+        "---\ntype: Source Document\ntitle: {}\ndescription: Presentación fuente convertida a conceptos OKF por diapositiva.\nsources:\n  - id: original\n    resource: /{orig}\ngenerated:\n  by: process:document-conversion\n  at: {}\nsource_file:\n  path: {}\n  sha256: {}\n---\n\n# {}\n\nPresentación de {} diapositivas.\n{design_md}",
         yaml(filename),
         yaml(&generated),
         yaml(&orig),
         hash,
-        filename,
+        slide_xml::escape_inline(filename),
         slides.len()
     );
-    let issue_md = if allissues.is_empty() {
-        "Sin incidencias editoriales detectadas.".to_string()
-    } else {
-        allissues.iter().map(|i| format!("- {i}\n")).collect()
+    let list = |items: &[&Issue], empty: &str| -> String {
+        if items.is_empty() {
+            format!("{empty}\n")
+        } else {
+            items
+                .iter()
+                .map(|i| format!("- {}\n", slide_xml::escape_inline(&i.text)))
+                .collect()
+        }
     };
+    let count = |f: fn(&Slide) -> bool| slides.iter().filter(|s| f(s)).count();
     let report = format!(
-        "---\ntype: Conversion Report\ntitle: Informe de conversión\ngenerated:\n  by: process:document-conversion\n  at: {}\nstatus: {}\nformat: pptx\nsha256: {}\n---\n\n# Informe de conversión PPTX\n\n- Estado: `{}`\n- Diapositivas inventariadas: {}\n- Diapositivas representadas con concepto y vista: {}\n- Vistas adjuntas: {}\n- Imágenes adjuntas: {}\n- Vistas: BetterOffice PPTX Raster (Rust)\n- Duración de ensamblado/renderizado: {} ms\n\n## Incidencias\n\n{}\n",
+        "---\ntype: Conversion Report\ntitle: Informe de conversión\ngenerated:\n  by: process:document-conversion\n  at: {}\nstatus: {}\nformat: pptx\nsha256: {}\n---\n\n# Informe de conversión PPTX\n\n- Estado: `{}`\n- Diapositivas inventariadas: {}\n- Diapositivas representadas con concepto y vista: {}\n- Vistas adjuntas: {}\n- Diapositivas con contenido solo visual: {}\n- Títulos inferidos: {}; diapositivas sin título: {}\n- Imágenes adjuntas: {}\n- Imágenes decorativas visibles solo en las vistas (iconos sin texto alternativo útil, menos del 1 % del área, o fondos): {}\n- Vistas: BetterOffice PPTX Raster (Rust)\n- Duración de ensamblado/renderizado: {} ms\n\n## Incidencias\n\nPérdidas o incertidumbres sustantivas; determinan el estado `partial`.\n\n{}\n## Observaciones\n\nInformación sobre la conversión que no afecta el estado.\n\n{}",
         yaml(&generated),
         state,
         hash,
@@ -828,9 +1252,14 @@ fn build_bundle(
         slides.len(),
         slides.len(),
         slides.len(),
+        count(|s| s.visual_only),
+        count(|s| s.title_inferred),
+        count(|s| s.title.is_none()),
         slides.iter().map(|s| s.image_paths.len()).sum::<usize>(),
+        slides.iter().map(|s| s.decorative_images).sum::<usize>(),
         started.elapsed().as_millis(),
-        issue_md
+        list(&losses, "Sin pérdidas ni incertidumbres sustantivas."),
+        list(&notes, "Sin observaciones.")
     );
     write_zip_file(&mut z, "index.md", index.as_bytes())?;
     write_zip_file(&mut z, "contenido/index.md", contents_index.as_bytes())?;
@@ -953,7 +1382,18 @@ fn validate_bundle(path: &FsPath) -> Result<()> {
         let mut pos = 0;
         while let Some(start) = md[pos..].find("](") {
             let s = pos + start + 2;
-            if let Some(end) = md[s..].find(')') {
+            // `\](` es texto literal escapado, no un enlace.
+            if md[..pos + start].ends_with('\\') {
+                pos = s;
+                continue;
+            }
+            // Un destino entre `<` y `>` puede contener paréntesis.
+            let close = if md[s..].starts_with('<') {
+                md[s..].find('>').map(|i| i + 1)
+            } else {
+                md[s..].find(')')
+            };
+            if let Some(end) = close {
                 let target = md[s..s + end]
                     .trim()
                     .trim_start_matches('<')
@@ -1003,11 +1443,11 @@ async fn work_one(a: &App) -> Result<bool> {
     let result = (|| -> Result<(String, PathBuf)> {
         let bytes = fs::read(a.root.join(original))?;
         let hash = hex(&Sha256::digest(&bytes));
-        let (slides, issues) = extract(&bytes, &attempt)?;
-        if slides.is_empty() {
+        let extraction = extract(&bytes, &attempt)?;
+        if extraction.slides.is_empty() {
             bail!("sin diapositivas")
         };
-        let (bundle, state) = build_bundle(&bytes, &filename, &hash, &slides, &issues, &attempt)?;
+        let (bundle, state) = build_bundle(&bytes, &filename, &hash, &extraction, &attempt)?;
         Ok((state, bundle))
     })();
     match result {
@@ -1221,7 +1661,10 @@ mod tests {
             .unwrap()
             .read_to_string(&mut content_index)
             .unwrap();
-        assert!(content_index.contains("slide-001.md"));
+        assert!(content_index.contains("[Diapositiva 1: A simple OKF test deck](slide-001.md)"));
+        assert!(concept.contains(
+            "description: \"Diapositiva 1 de simple.pptx: A simple OKF test deck. One short paragraph of slide content\""
+        ));
         let multi = example("multiple");
         enqueue(&a, "multi", "multiple.pptx", &multi, "queued", 0, 0).await;
         assert!(work_one(&a).await.unwrap());
@@ -1234,7 +1677,8 @@ mod tests {
                     |r| Ok((r.get(0)?, r.get(1)?)),
                 )
                 .unwrap();
-        assert_eq!(state, "partial");
+        // Una diapositiva sin título es una observación, no una pérdida.
+        assert_eq!(state, "complete");
         assert_eq!(attempt, 1);
         let mut z =
             ZipArchive::new(fs::File::open(a.root.join("published/multi/bundle.zip")).unwrap())
@@ -1247,7 +1691,7 @@ mod tests {
         assert!(slide.contains("slide_index: 3"));
         assert!(slide.contains("slide_id: 258"));
         assert!(slide.contains("oculta"));
-        assert!(slide.contains("## Tablas"));
+        assert!(slide.contains("## Contenido"));
         assert!(slide.contains("| Name | Value |"));
         assert!(slide.contains("| alpha | 1 |"));
         let mut noted = String::new();
@@ -1276,7 +1720,45 @@ mod tests {
             .unwrap();
         assert!(report.contains("Diapositivas inventariadas: 3"));
         assert!(report.contains("Diapositivas representadas con concepto y vista: 3"));
-        assert!(report.contains("sin título"));
+        let observations = report.split("## Observaciones").nth(1).unwrap();
+        assert!(observations.contains("Diapositiva 2 sin título explícito"));
+        assert!(report.contains("Sin pérdidas ni incertidumbres sustantivas."));
+        let mut index = String::new();
+        z.by_name("index.md")
+            .unwrap()
+            .read_to_string(&mut index)
+            .unwrap();
+        assert!(index.contains("(contenido/slide-003.md) — oculta"));
+        let visual = example("visual");
+        enqueue(&a, "visual", "visual.pptx", &visual, "queued", 0, 0).await;
+        assert!(work_one(&a).await.unwrap());
+        let state: String =
+            a.db.lock()
+                .await
+                .query_row("SELECT status FROM jobs WHERE id='visual'", [], |r| {
+                    r.get(0)
+                })
+                .unwrap();
+        assert_eq!(state, "partial");
+        let mut z =
+            ZipArchive::new(fs::File::open(a.root.join("published/visual/bundle.zip")).unwrap())
+                .unwrap();
+        let mut slide = String::new();
+        z.by_name("contenido/slide-001.md")
+            .unwrap()
+            .read_to_string(&mut slide)
+            .unwrap();
+        assert!(slide.contains("visual_only: true"));
+        assert!(slide.contains("status: draft"));
+        assert!(slide.contains("Contenido solo visual"));
+        assert!(slide.contains("../assets/slide-001-image-01.png"));
+        let mut visual_report = String::new();
+        z.by_name("conversion-report.md")
+            .unwrap()
+            .read_to_string(&mut visual_report)
+            .unwrap();
+        let losses = visual_report.split("## Observaciones").next().unwrap();
+        assert!(losses.contains("Diapositiva 1: contenido solo visual"));
         let expected_hash = hex(&Sha256::digest(&multi));
         assert!(report.contains(&expected_hash));
         let interrupted = example("simple");
@@ -1328,13 +1810,12 @@ mod tests {
         let simple = example("simple");
         let attempt = tmp.path().join("validator");
         fs::create_dir_all(&attempt).unwrap();
-        let (slides, issues) = extract(&simple, &attempt).unwrap();
+        let extraction = extract(&simple, &attempt).unwrap();
         let good = build_bundle(
             &simple,
             "simple.pptx",
             &hex(&Sha256::digest(&simple)),
-            &slides,
-            &issues,
+            &extraction,
             &attempt,
         )
         .unwrap()
@@ -1354,6 +1835,87 @@ mod tests {
         }
         z.finish().unwrap();
         assert!(validate_bundle(&bad).is_err());
+    }
+    /// Presentaciones reales del curso; no se versionan, así que la prueba se omite si faltan.
+    fn corpus(name: &str) -> Option<(Vec<Slide>, Vec<Issue>, String)> {
+        let Ok(bytes) = fs::read(format!("datos_de_prueba/{name}.pptx")) else {
+            eprintln!("omitido: datos_de_prueba/{name}.pptx no existe");
+            return None;
+        };
+        let tmp = tempfile::tempdir().unwrap();
+        let Extraction { slides, issues, .. } = extract(&bytes, tmp.path()).unwrap();
+        let md = slides
+            .iter()
+            .map(|s| markdown_slide(s, name, "2026-01-01T00:00:00Z"))
+            .collect();
+        Some((slides, issues, md))
+    }
+    fn text_lines(s: &Slide) -> Vec<String> {
+        s.items
+            .iter()
+            .filter_map(|i| match i {
+                Item::Text(p) => Some(p.iter().map(|p| p.plain.clone()).collect::<Vec<_>>()),
+                _ => None,
+            })
+            .flatten()
+            .collect()
+    }
+    #[test]
+    fn corpus_s1_infers_titles_labels_links_and_drops_icons() {
+        let Some((slides, issues, md)) = corpus("s1") else {
+            return;
+        };
+        assert_eq!(slides.len(), 29);
+        assert!(slides.iter().all(|s| s.title.is_some() && s.title_inferred));
+        assert!(issues.iter().all(|i| !i.text.contains("sin título")));
+        // Títulos inferidos e iconos se informan, pero no son pérdidas.
+        assert!(issues.iter().all(|i| i.severity == Severity::Note));
+        let s18 = &slides[17];
+        assert_eq!(s18.title.as_deref(), Some("Localizar el fallo"));
+        assert_eq!(s18.kicker.as_deref(), Some("ARQUITECTURA Y DIAGNÓSTICO"));
+        assert_eq!(slides[4].visible_label.as_deref(), Some("05"));
+        assert!(
+            slides
+                .iter()
+                .all(|s| text_lines(s).iter().all(|t| !t.contains(" / 29")))
+        );
+        // Fragmentos de un mismo párrafo se unen sin espacios añadidos.
+        assert!(!md.contains("Determinismo  hasta"));
+        // Las notas conservan sus bloques y no arrastran el número de diapositiva.
+        let notes = &slides[1].notes;
+        assert_eq!(notes.first().map(String::as_str), Some("GUÍA DOCENTE"));
+        assert!(notes.iter().all(|n| n.trim() != "2" && !n.ends_with(" 2")));
+        assert!(md.contains("](https://misw4411-aplicaciones-basadas-en-llms.github.io/llm-retrieval-engineering-course/)"));
+        assert!(slides.iter().map(|s| s.decorative_images).sum::<usize>() >= 80);
+        assert!(slides.iter().map(|s| s.image_paths.len()).sum::<usize>() <= 20);
+        assert!(md.contains("- \\+ consulta"));
+    }
+    #[test]
+    fn corpus_s2_s3_keep_entities_and_clean_notes() {
+        let Some((s2, issues2, md2)) = corpus("s2") else {
+            return;
+        };
+        let Some((s3, _, md3)) = corpus("s3") else {
+            return;
+        };
+        assert_eq!((s2.len(), s3.len()), (27, 34));
+        assert_eq!(s2[6].title.as_deref(), Some("Chunk Size & Chunk Overlap"));
+        assert!(s2.iter().chain(&s3).all(|s| !s.title_inferred));
+        for md in [&md2, &md3] {
+            assert!(!md.contains("‹#›"));
+        }
+        // Diapositiva solo visual: la imagen se enlaza y las notas se conservan.
+        let s3_4 = &s3[3];
+        assert!(s3_4.title.is_none());
+        assert!(matches!(s3_4.items.as_slice(), [Item::Image { .. }]));
+        assert!(s3_4.notes.iter().any(|n| n.contains("vecino más cercano")));
+        assert!(s3_4.visual_only && s2[6].visual_only);
+        assert_eq!(s2.iter().filter(|s| s.visual_only).count(), 15);
+        // Animación con imagen a pantalla completa sobre el texto (s3, diapositiva 21).
+        assert!(s3[20].view_hides_text && !s3[20].visual_only);
+        assert!(issues2.iter().any(|i| i.severity == Severity::Note
+            && i.text.contains("Texto del diseño")
+            && i.text.contains("MISO – Maestría en Ingeniería de Software")));
     }
     #[test]
     fn chart_cache_values_are_recoverable_from_chart_xml() {
