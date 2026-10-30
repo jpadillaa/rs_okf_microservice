@@ -2,7 +2,9 @@
 //! (memoria, tiempo), con una reserva que se renueva mientras dura; los fallos se
 //! clasifican en permanentes y transitorios, y al arrancar se reconcilia el estado de
 //! la base con lo que hay en disco.
-use crate::{App, build_bundle, extract, frontmatter, now, validate_bundle};
+use crate::App;
+use crate::bundle::{frontmatter, validate_bundle};
+use crate::now;
 use anyhow::{Context, Result, bail};
 use rusqlite::{OptionalExtension, Transaction, params};
 use sha2::{Digest, Sha256};
@@ -121,22 +123,11 @@ pub struct Converted {
 
 /// Convierte un original en el directorio del intento. Es el trabajo del proceso hijo.
 pub fn convert(cfg: &Config, original: &Path, filename: &str, dir: &Path) -> Result<Converted> {
+    let format = crate::format::require(filename)?;
     let bytes = fs::read(original)
         .with_context(|| format!("no se pudo leer el original {}", original.display()))?;
-    let hash = crate::hex(&Sha256::digest(&bytes));
-    let extraction = extract(&bytes, dir)?;
-    let slides = extraction.slides.len();
-    if slides == 0 {
-        return Err(Rejected("sin diapositivas".into()).into());
-    }
-    if slides > cfg.max_slides {
-        return Err(Rejected(format!(
-            "la presentación tiene {slides} diapositivas; el máximo admitido es {}",
-            cfg.max_slides
-        ))
-        .into());
-    }
-    let (bundle, status) = build_bundle(&bytes, filename, &hash, &extraction, dir)?;
+    let hash = crate::bundle::hex(&Sha256::digest(&bytes));
+    let (bundle, status) = format.convert(cfg, &bytes, filename, &hash, dir)?;
     Ok(Converted { status, bundle })
 }
 
