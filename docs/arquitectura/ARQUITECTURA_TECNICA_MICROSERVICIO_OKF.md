@@ -47,3 +47,37 @@ Estados: `queued → processing → validating → complete | partial | failed`.
 - Se establecen límites configurables de tamaño de entrada, trabajos simultáneos, uso de recursos y tiempo de extracción. La admisión y el worker aplican control de carga.
 - Los archivos de entrada se tratan como datos no confiables: se limitan expansión y recursos, se evita ejecutar contenido incrustado y se registran errores de extracción sin omitir contenido sustantivo en silencio.
 - Se conservan referencias al original y un informe de cobertura. La aceptación del resultado requiere los dos controles de calidad definidos en la especificación OKF documental.
+
+## 5. Implementación en la primera entrega
+
+**Conversión aislada.** El worker ejecuta cada conversión en un proceso hijo (`okf-microservice convert`, subcomando interno) y lo vigila cada 100 ms. Lo termina si su memoria residente supera el límite o si vence el plazo. La memoria se mide en `/proc` en Linux y con `ps` en otros sistemas; si no puede medirse, el worker no arranca. El límite de memoria es la garantía de recursos: el número de diapositivas no la predice, porque el consumo depende de las imágenes (ver [Decisión de renderizado PPTX](../decisiones/RENDERIZADO_PPTX_MEDICIONES.md)). Cada worker convierte un trabajo a la vez; la concurrencia se controla con el número de workers. La validación ocurre dentro de `processing`, antes de publicar, y no se registra como estado aparte.
+
+| Variable | Predeterminado | Efecto |
+| --- | ---: | --- |
+| `OKF_MAX_MEMORY_MB` | 500 | Memoria residente máxima del proceso de conversión. |
+| `OKF_MAX_SLIDES` | 300 | Diapositivas máximas por presentación. |
+| `OKF_CONVERSION_TIMEOUT_S` | 300 | Duración máxima de una conversión. |
+| `OKF_LEASE_S` | 60 | Vigencia de la asignación; el worker la renueva cada tercio mientras convierte. |
+| `OKF_MAX_ATTEMPTS` | 3 | Intentos máximos ante fallos transitorios. |
+| `OKF_RETRY_BASE_S` | 30 | Espera antes del primer reintento; se duplica en cada intento, con tope de una hora. |
+
+**Asignación.** Si la renovación encuentra que el trabajo ya pertenece a otro intento, el worker termina el proceso hijo y abandona el suyo sin publicar. Antes de publicar renueva la asignación para confirmar que sigue siendo suya. El registro final solo se escribe para el intento vigente.
+
+**Reintentos clasificados.** Un fallo permanente termina en `failed` en el primer intento: archivo inválido o dañado, límite de tamaño, diapositivas, memoria o tiempo superado, o bundle que no supera la validación. Un fallo transitorio vuelve a `queued` con espera creciente mientras queden intentos: errores del sistema de archivos (disco lleno, permisos, original inaccesible), un proceso hijo que termina de forma anormal o un worker interrumpido cuya asignación vence. Al agotar los intentos, el trabajo termina en `failed` y el error indica cuántos se hicieron.
+
+**Reconciliación al arrancar.** Antes de reclamar trabajos, el worker:
+
+- elimina las publicaciones a medio hacer (`published/.<id>.tmp`);
+- completa el registro de los trabajos cuyo bundle llegó a publicarse antes de una interrupción, si el bundle supera la validación, y descarta el bundle si no la supera;
+- reencola los trabajos terminados cuyo bundle publicado ya no existe;
+- borra los directorios de intentos de trabajos terminados o desconocidos.
+
+La recuperación de asignaciones vencidas aplica las mismas reglas cada vez que el worker reclama un trabajo.
+
+**Validación antes de publicar.** Además de la conformidad OKF y de los enlaces internos, el validador comprueba:
+
+- que cada `source_spans` cite una fuente declarada en `sources`;
+- que el SHA-256 del informe y de `documento.md` coincida con `references/original.pptx`;
+- que exista un concepto por diapositiva del original, con su `slide_index` y `slide_id` en el orden de la presentación;
+- que ambos índices enumeren las diapositivas en ese orden;
+- que los índices reservados distintos del raíz no lleven frontmatter.

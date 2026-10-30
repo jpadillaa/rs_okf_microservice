@@ -20,12 +20,13 @@ use std::{
     time::{Duration, Instant, SystemTime, UNIX_EPOCH},
 };
 use tokio::sync::Mutex;
-use tracing::{error, info};
+use tracing::info;
 use uuid::Uuid;
 use yaml_serde::Value as YamlValue;
 use zip::{ZipArchive, ZipWriter, write::SimpleFileOptions};
 
 mod slide_xml;
+mod worker;
 
 const MAX_UPLOAD: usize = 100 * 1024 * 1024;
 const MAX_ZIP_ENTRY: u64 = 128 * 1024 * 1024;
@@ -47,6 +48,16 @@ enum Command {
     Worker {
         #[arg(long, default_value_t = 1000)]
         poll_ms: u64,
+        /// Procesa los trabajos disponibles y termina cuando la cola queda vacía.
+        #[arg(long)]
+        once: bool,
+    },
+    /// Uso interno del worker: convierte un original en el directorio de un intento.
+    #[command(hide = true)]
+    Convert {
+        original: PathBuf,
+        attempt: PathBuf,
+        filename: String,
     },
     /// Render every PPTX slide with the selected native Rust backend.
     BenchRender { pptx: PathBuf, output: PathBuf },
@@ -56,6 +67,10 @@ enum Command {
 struct App {
     root: PathBuf,
     db: Arc<Mutex<Connection>>,
+    cfg: Arc<worker::Config>,
+    /// Ejecutable para convertir en un proceso hijo vigilado; `None` convierte en el
+    /// propio proceso (pruebas unitarias).
+    converter: Option<PathBuf>,
 }
 #[derive(Deserialize, Serialize)]
 struct Accepted {
@@ -77,10 +92,22 @@ fn app(root: PathBuf) -> Result<App> {
     let db = Connection::open(root.join("jobs.sqlite3"))?;
     db.pragma_update(None, "journal_mode", "WAL")?;
     db.busy_timeout(Duration::from_secs(5))?;
-    db.execute_batch("CREATE TABLE IF NOT EXISTS jobs(id TEXT PRIMARY KEY, filename TEXT NOT NULL, original TEXT NOT NULL, sha256 TEXT NOT NULL, status TEXT NOT NULL, attempt INTEGER NOT NULL DEFAULT 0, lease_until INTEGER, bundle TEXT, error TEXT, created_at INTEGER NOT NULL); CREATE INDEX IF NOT EXISTS jobs_status ON jobs(status, created_at);")?;
+    db.execute_batch("CREATE TABLE IF NOT EXISTS jobs(id TEXT PRIMARY KEY, filename TEXT NOT NULL, original TEXT NOT NULL, sha256 TEXT NOT NULL, status TEXT NOT NULL, attempt INTEGER NOT NULL DEFAULT 0, lease_until INTEGER, bundle TEXT, error TEXT, created_at INTEGER NOT NULL, retry_at INTEGER); CREATE INDEX IF NOT EXISTS jobs_status ON jobs(status, created_at);")?;
+    // Bases creadas antes de los reintentos con espera.
+    let has_retry = db
+        .prepare("SELECT 1 FROM pragma_table_info('jobs') WHERE name='retry_at'")?
+        .exists([])?;
+    if !has_retry
+        && let Err(e) = db.execute_batch("ALTER TABLE jobs ADD COLUMN retry_at INTEGER")
+        && !e.to_string().contains("duplicate column")
+    {
+        return Err(e.into());
+    }
     Ok(App {
         root,
         db: Arc::new(Mutex::new(db)),
+        cfg: Arc::new(worker::Config::from_env()?),
+        converter: None,
     })
 }
 fn now() -> i64 {
@@ -1640,16 +1667,37 @@ fn validate_bundle(path: &FsPath) -> Result<()> {
             {
                 bail!("concepto {name} carece de metadatos requeridos")
             }
-            if let Some(sources) = fm.get("sources").and_then(YamlValue::as_sequence) {
-                for source in sources {
-                    if let Some(resource) = source.get("resource").and_then(YamlValue::as_str) {
-                        let resource = resource.trim_start_matches('/');
-                        if !names.contains(resource) {
-                            bail!("recurso de origen sin resolver en {name}: {resource}")
-                        }
+            let sources = fm
+                .get("sources")
+                .and_then(YamlValue::as_sequence)
+                .map(Vec::as_slice)
+                .unwrap_or_default();
+            for source in sources {
+                if let Some(resource) = source.get("resource").and_then(YamlValue::as_str) {
+                    let resource = resource.trim_start_matches('/');
+                    if !names.contains(resource) {
+                        bail!("recurso de origen sin resolver en {name}: {resource}")
                     }
                 }
             }
+            // Cada localizador apunta a una fuente declarada en el mismo concepto.
+            let source_ids: Vec<&str> = sources
+                .iter()
+                .filter_map(|s| s.get("id").and_then(YamlValue::as_str))
+                .collect();
+            for span in fm
+                .get("source_spans")
+                .and_then(YamlValue::as_sequence)
+                .map(Vec::as_slice)
+                .unwrap_or_default()
+            {
+                let source = span.get("source_id").and_then(YamlValue::as_str);
+                if !source.is_some_and(|s| source_ids.contains(&s)) {
+                    bail!("source_spans de {name} cita una fuente no declarada: {source:?}")
+                }
+            }
+        } else if name != "index.md" && md.starts_with("---\n") {
+            bail!("{name} es un índice reservado y no admite frontmatter; solo el índice raíz")
         }
         if let Some(suffix) = name
             .strip_prefix("contenido/slide-")
@@ -1689,89 +1737,118 @@ fn validate_bundle(path: &FsPath) -> Result<()> {
             }
         }
     }
+    validate_against_original(&mut z, &names)
+}
+/// Integridad frente al original: huella SHA-256, una diapositiva por concepto en el
+/// orden de la presentación y los índices en ese mismo orden.
+fn validate_against_original(
+    z: &mut ZipArchive<fs::File>,
+    names: &std::collections::HashSet<String>,
+) -> Result<()> {
+    let mut original = Vec::new();
+    z.by_name("references/original.pptx")?
+        .read_to_end(&mut original)?;
+    let mut read = |name: &str| -> Result<String> {
+        let mut s = String::new();
+        z.by_name(name)?.read_to_string(&mut s)?;
+        Ok(s)
+    };
+    let (report, doc, root, contents) = (
+        read("conversion-report.md")?,
+        read("documento.md")?,
+        read("index.md")?,
+        read("contenido/index.md")?,
+    );
+    let hash = hex(&Sha256::digest(&original));
+    if frontmatter(&report)?
+        .get("sha256")
+        .and_then(YamlValue::as_str)
+        != Some(hash.as_str())
+    {
+        bail!("el SHA-256 del informe no coincide con references/original.pptx")
+    }
+    let doc_hash = frontmatter(&doc)?
+        .get("source_file")
+        .and_then(|f| f.get("sha256"))
+        .and_then(YamlValue::as_str)
+        .map(str::to_string);
+    if doc_hash.as_deref() != Some(hash.as_str()) {
+        bail!("el SHA-256 de documento.md no coincide con references/original.pptx")
+    }
+    let ids = presentation_slide_ids(&original)?;
+    let mut concepts: Vec<&String> = names
+        .iter()
+        .filter(|n| n.starts_with("contenido/slide-") && n.ends_with(".md"))
+        .collect();
+    concepts.sort();
+    let expected: Vec<String> = (1..=ids.len())
+        .map(|n| format!("contenido/slide-{n:03}.md"))
+        .collect();
+    if concepts.len() != expected.len() || concepts.iter().zip(&expected).any(|(a, b)| *a != b) {
+        bail!(
+            "el bundle tiene {} conceptos de diapositiva y el original {} diapositivas",
+            concepts.len(),
+            ids.len()
+        )
+    }
+    for (n, (name, id)) in expected.iter().zip(&ids).enumerate() {
+        let fm = frontmatter(&read(name)?)?;
+        let span = fm
+            .get("source_spans")
+            .and_then(YamlValue::as_sequence)
+            .and_then(|s| s.first())
+            .with_context(|| format!("{name} carece de source_spans"))?;
+        let index = span.get("slide_index").and_then(YamlValue::as_u64);
+        let slide_id = span.get("slide_id").and_then(YamlValue::as_u64);
+        if index != Some(n as u64 + 1) || slide_id != Some(u64::from(*id)) {
+            bail!(
+                "{name} no corresponde a la diapositiva {} del original (slide_id {id})",
+                n + 1
+            )
+        }
+    }
+    for (index, prefix) in [(&root, "](contenido/slide-"), (&contents, "](slide-")] {
+        let listed: Vec<usize> = index
+            .match_indices(prefix)
+            .filter_map(|(i, _)| index[i + prefix.len()..].get(..3)?.parse().ok())
+            .collect();
+        if listed != (1..=ids.len()).collect::<Vec<_>>() {
+            bail!("un índice no enumera las diapositivas en el orden del original")
+        }
+    }
     Ok(())
+}
+/// Identificadores de las diapositivas en el orden de la presentación. Las entradas
+/// de secciones (`p14:sldId`) no llevan `r:id` y no cuentan.
+fn presentation_slide_ids(pptx: &[u8]) -> Result<Vec<u32>> {
+    let mut z = ZipArchive::new(Cursor::new(pptx))?;
+    let pres = String::from_utf8(read_entry(&mut z, "ppt/presentation.xml")?)?;
+    let mut rd = quick_xml::Reader::from_str(&pres);
+    let mut ids = Vec::new();
+    loop {
+        match rd.read_event()? {
+            quick_xml::events::Event::Start(e) | quick_xml::events::Event::Empty(e)
+                if e.local_name().as_ref() == b"sldId"
+                    && e.attributes()
+                        .flatten()
+                        .any(|a| a.key.as_ref().ends_with(b":id")) =>
+            {
+                ids.push(
+                    attr(&e, b"id")
+                        .and_then(|v| v.parse().ok())
+                        .context("sldId sin identificador numérico")?,
+                )
+            }
+            quick_xml::events::Event::Eof => break,
+            _ => {}
+        }
+    }
+    Ok(ids)
 }
 fn chrono_now() -> String {
     chrono::Utc::now().to_rfc3339_opts(chrono::SecondsFormat::Secs, true)
 }
 
-async fn claim(a: &App) -> Result<Option<(String, String, String, u32)>> {
-    let mut db = a.db.lock().await;
-    let tx = db.transaction()?;
-    tx.execute("UPDATE jobs SET status='queued',lease_until=NULL,error='worker anterior interrumpido; se reprocesará el original' WHERE status IN ('processing','validating') AND lease_until < ?1",[now()])?;
-    let row:Option<(String,String,String,u32)>=tx.query_row("SELECT id,filename,original,attempt FROM jobs WHERE status='queued' ORDER BY created_at LIMIT 1",[],|r|Ok((r.get(0)?,r.get(1)?,r.get(2)?,r.get(3)?))).optional()?;
-    if let Some((id, _, _, attempt)) = &row {
-        tx.execute(
-            "UPDATE jobs SET status='processing',attempt=?2,lease_until=?3,error=NULL WHERE id=?1",
-            params![id, attempt + 1, now() + 600],
-        )?;
-    }
-    tx.commit()?;
-    Ok(row.map(|(id, f, o, n)| (id, f, o, n + 1)))
-}
-async fn work_one(a: &App) -> Result<bool> {
-    let Some((id, filename, original, attempt_no)) = claim(a).await? else {
-        return Ok(false);
-    };
-    let attempt = a
-        .root
-        .join("attempts")
-        .join(&id)
-        .join(format!("{attempt_no}"));
-    if attempt.exists() {
-        fs::remove_dir_all(&attempt)?
-    }
-    fs::create_dir_all(&attempt)?;
-    let result = (|| -> Result<(String, PathBuf)> {
-        let bytes = fs::read(a.root.join(original))?;
-        let hash = hex(&Sha256::digest(&bytes));
-        let extraction = extract(&bytes, &attempt)?;
-        if extraction.slides.is_empty() {
-            bail!("sin diapositivas")
-        };
-        let (bundle, state) = build_bundle(&bytes, &filename, &hash, &extraction, &attempt)?;
-        Ok((state, bundle))
-    })();
-    match result {
-        Ok((status, bundle)) => {
-            let pubdir = a.root.join("published").join(&id);
-            let staging = a.root.join("published").join(format!(".{id}.tmp"));
-            if staging.exists() {
-                fs::remove_dir_all(&staging)?
-            }
-            fs::create_dir_all(&staging)?;
-            let finalzip = staging.join("bundle.zip");
-            fs::copy(bundle, &finalzip)?;
-            if pubdir.exists() {
-                fs::remove_dir_all(&pubdir)?
-            }
-            fs::rename(&staging, &pubdir)?;
-            let db = a.db.lock().await;
-            db.execute(
-                "UPDATE jobs SET status=?2,bundle=?3,lease_until=NULL,error=NULL WHERE id=?1",
-                params![id, status, format!("published/{id}/bundle.zip")],
-            )?;
-            info!(%id,%status,attempt_no,"trabajo publicado");
-        }
-        Err(e) => {
-            error!(%id,error=%e,"falló conversión");
-            let db = a.db.lock().await;
-            db.execute(
-                "UPDATE jobs SET status='failed',lease_until=NULL,error=?2 WHERE id=?1",
-                params![id, e.to_string()],
-            )?;
-        }
-    }
-    Ok(true)
-}
-async fn worker(root: PathBuf, poll_ms: u64) -> Result<()> {
-    let a = app(root)?;
-    loop {
-        if !work_one(&a).await? {
-            tokio::time::sleep(Duration::from_millis(poll_ms)).await;
-        }
-    }
-}
 fn bench_render(input: &FsPath, output: &FsPath) -> Result<()> {
     let started = Instant::now();
     let bytes = fs::read(input)?;
@@ -1806,14 +1883,22 @@ fn bench_render(input: &FsPath, output: &FsPath) -> Result<()> {
 }
 #[tokio::main]
 async fn main() -> Result<()> {
+    // Los registros van a la salida de error: la estándar del subcomando `convert`
+    // transporta su resultado al worker.
     tracing_subscriber::fmt()
         .with_env_filter(tracing_subscriber::EnvFilter::from_default_env())
+        .with_writer(std::io::stderr)
         .init();
     let cli = Cli::parse();
     let root = PathBuf::from(std::env::var("OKF_DATA_DIR").unwrap_or_else(|_| "data".into()));
     match cli.command {
         Command::Api { bind } => serve(root, &bind).await,
-        Command::Worker { poll_ms } => worker(root, poll_ms).await,
+        Command::Worker { poll_ms, once } => worker::worker(root, poll_ms, once).await,
+        Command::Convert {
+            original,
+            attempt,
+            filename,
+        } => worker::convert_command(&original, &attempt, &filename),
         Command::BenchRender { pptx, output } => bench_render(&pptx, &output),
     }
 }
@@ -1821,6 +1906,23 @@ async fn main() -> Result<()> {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use worker::{FailureKind, renew, work_one};
+    /// Aplicación de prueba: conversión en el propio proceso y reintentos sin espera.
+    fn test_app(root: &FsPath) -> App {
+        let mut a = app(root.to_path_buf()).unwrap();
+        Arc::make_mut(&mut a.cfg).retry_base_s = 0;
+        a
+    }
+    async fn job(a: &App, id: &str) -> (String, u32, Option<String>, Option<String>) {
+        a.db.lock()
+            .await
+            .query_row(
+                "SELECT status,attempt,error,bundle FROM jobs WHERE id=?1",
+                [id],
+                |r| Ok((r.get(0)?, r.get(1)?, r.get(2)?, r.get(3)?)),
+            )
+            .unwrap()
+    }
     use tower::ServiceExt;
     async fn enqueue(
         a: &App,
@@ -1844,7 +1946,7 @@ mod tests {
     #[tokio::test]
     async fn pptx_end_to_end_complete_partial_and_durable_recovery() {
         let tmp = tempfile::tempdir().unwrap();
-        let a = app(tmp.path().to_path_buf()).unwrap();
+        let a = test_app(tmp.path());
         let simple = example("simple");
         let boundary = "pptx-test-boundary";
         let mut body = format!("--{boundary}\r\nContent-Disposition: form-data; name=\"file\"; filename=\"simple.pptx\"\r\nContent-Type: application/vnd.openxmlformats-officedocument.presentationml.presentation\r\n\r\n").into_bytes();
@@ -2069,13 +2171,14 @@ mod tests {
                 .unwrap();
         assert_eq!(state, "complete");
         assert_eq!(attempt, 2);
-        assert!(stale.exists());
-        assert!(a.root.join("attempts/recovery/2/bundle.zip").exists());
+        // Publicado el bundle, los intentos (incluido el abandonado) se eliminan.
+        assert!(!a.root.join("attempts/recovery").exists());
+        assert!(a.root.join("published/recovery/bundle.zip").exists());
     }
     #[tokio::test]
     async fn malformed_pptx_fails_without_publishing_and_missing_view_is_rejected() {
         let tmp = tempfile::tempdir().unwrap();
-        let a = app(tmp.path().to_path_buf()).unwrap();
+        let a = test_app(tmp.path());
         enqueue(&a, "broken", "broken.pptx", b"not a pptx", "queued", 0, 0).await;
         assert!(work_one(&a).await.unwrap());
         let (state, bundle): (String, Option<String>) =
@@ -2117,6 +2220,278 @@ mod tests {
         }
         z.finish().unwrap();
         assert!(validate_bundle(&bad).is_err());
+    }
+    #[tokio::test]
+    async fn failures_are_classified_and_transient_ones_retried_up_to_the_limit() {
+        let tmp = tempfile::tempdir().unwrap();
+        let mut a = test_app(tmp.path());
+        // Original ausente: error del sistema de archivos, transitorio.
+        enqueue(&a, "missing", "missing.pptx", b"x", "queued", 0, 0).await;
+        fs::remove_file(a.root.join("originals/missing.pptx")).unwrap();
+        assert!(work_one(&a).await.unwrap());
+        let (state, attempt, error, _) = job(&a, "missing").await;
+        assert_eq!((state.as_str(), attempt), ("queued", 1));
+        assert!(error.unwrap().contains("se reintentará"));
+        assert!(work_one(&a).await.unwrap());
+        assert!(work_one(&a).await.unwrap());
+        let (state, attempt, error, _) = job(&a, "missing").await;
+        assert_eq!((state.as_str(), attempt), ("failed", 3));
+        assert!(error.unwrap().starts_with("falló tras 3 intentos"));
+        assert!(!work_one(&a).await.unwrap());
+        assert!(!a.root.join("attempts/missing").exists());
+        // Archivo inválido: permanente, sin reintentos.
+        enqueue(&a, "broken", "broken.pptx", b"not a pptx", "queued", 0, 0).await;
+        assert!(work_one(&a).await.unwrap());
+        let (state, attempt, error, _) = job(&a, "broken").await;
+        assert_eq!((state.as_str(), attempt), ("failed", 1));
+        assert!(!error.unwrap().contains("reintent"));
+        // Límite de diapositivas: permanente.
+        Arc::make_mut(&mut a.cfg).max_slides = 2;
+        enqueue(
+            &a,
+            "long",
+            "multiple.pptx",
+            &example("multiple"),
+            "queued",
+            0,
+            0,
+        )
+        .await;
+        assert!(work_one(&a).await.unwrap());
+        let (state, attempt, error, bundle) = job(&a, "long").await;
+        assert_eq!((state.as_str(), attempt, bundle), ("failed", 1, None));
+        assert!(
+            error
+                .unwrap()
+                .contains("3 diapositivas; el máximo admitido es 2")
+        );
+        assert_eq!(
+            worker::classify(&anyhow::Error::new(std::io::Error::from(
+                std::io::ErrorKind::StorageFull
+            ))),
+            FailureKind::Transient
+        );
+    }
+    #[tokio::test]
+    async fn leases_are_renewed_by_their_owner_and_expired_ones_bounded() {
+        let tmp = tempfile::tempdir().unwrap();
+        let a = test_app(tmp.path());
+        enqueue(
+            &a,
+            "owned",
+            "simple.pptx",
+            &example("simple"),
+            "processing",
+            1,
+            now() + 5,
+        )
+        .await;
+        assert!(renew(&a, "owned", 1).await.unwrap());
+        let lease: i64 =
+            a.db.lock()
+                .await
+                .query_row("SELECT lease_until FROM jobs WHERE id='owned'", [], |r| {
+                    r.get(0)
+                })
+                .unwrap();
+        assert!(lease >= now() + a.cfg.lease_s - 1);
+        // Otro worker reclamó el trabajo (intento 2): el intento 1 ya no puede renovarla.
+        assert!(!renew(&a, "owned", 2).await.unwrap());
+        // Un trabajo que interrumpe al worker en cada intento se detiene en el máximo.
+        enqueue(
+            &a,
+            "crashy",
+            "simple.pptx",
+            &example("simple"),
+            "processing",
+            3,
+            now() - 1,
+        )
+        .await;
+        a.db.lock()
+            .await
+            .execute(
+                "UPDATE jobs SET status='done-elsewhere' WHERE id='owned'",
+                [],
+            )
+            .unwrap();
+        assert!(!work_one(&a).await.unwrap());
+        let (state, _, error, _) = job(&a, "crashy").await;
+        assert_eq!(state, "failed");
+        assert!(error.unwrap().contains("se interrumpió en 3 intentos"));
+    }
+    /// Bundle válido de un ejemplo, construido como lo haría el worker.
+    fn bundle_of(name: &str, dir: &FsPath) -> PathBuf {
+        let bytes = example(name);
+        fs::create_dir_all(dir).unwrap();
+        let extraction = extract(&bytes, dir).unwrap();
+        build_bundle(
+            &bytes,
+            &format!("{name}.pptx"),
+            &hex(&Sha256::digest(&bytes)),
+            &extraction,
+            dir,
+        )
+        .unwrap()
+        .0
+    }
+    #[tokio::test]
+    async fn startup_reconciliation_repairs_interrupted_publications() {
+        let tmp = tempfile::tempdir().unwrap();
+        let a = test_app(tmp.path());
+        // El worker murió después de publicar y antes de registrar el estado.
+        enqueue(
+            &a,
+            "published",
+            "simple.pptx",
+            &example("simple"),
+            "processing",
+            1,
+            now() - 1,
+        )
+        .await;
+        let pubdir = a.root.join("published/published");
+        fs::create_dir_all(&pubdir).unwrap();
+        fs::copy(
+            bundle_of("simple", &tmp.path().join("b1")),
+            pubdir.join("bundle.zip"),
+        )
+        .unwrap();
+        // Publicación a medio hacer, bundle registrado que desapareció e intentos huérfanos.
+        fs::create_dir_all(a.root.join("published/.half.tmp")).unwrap();
+        enqueue(
+            &a,
+            "lost",
+            "simple.pptx",
+            &example("simple"),
+            "complete",
+            1,
+            0,
+        )
+        .await;
+        a.db.lock()
+            .await
+            .execute(
+                "UPDATE jobs SET bundle='published/lost/bundle.zip' WHERE id='lost'",
+                [],
+            )
+            .unwrap();
+        enqueue(
+            &a,
+            "dead",
+            "simple.pptx",
+            &example("simple"),
+            "failed",
+            1,
+            0,
+        )
+        .await;
+        enqueue(
+            &a,
+            "waiting",
+            "simple.pptx",
+            &example("simple"),
+            "queued",
+            1,
+            0,
+        )
+        .await;
+        for id in ["dead", "ghost", "waiting"] {
+            fs::create_dir_all(a.root.join(format!("attempts/{id}/1"))).unwrap();
+        }
+        worker::reconcile(&a).await.unwrap();
+        let (state, attempt, _, bundle) = job(&a, "published").await;
+        assert_eq!((state.as_str(), attempt), ("complete", 1));
+        assert_eq!(bundle.as_deref(), Some("published/published/bundle.zip"));
+        assert!(!a.root.join("published/.half.tmp").exists());
+        let (state, _, error, bundle) = job(&a, "lost").await;
+        assert_eq!((state.as_str(), bundle), ("queued", None));
+        assert!(error.unwrap().contains("bundle publicado no existe"));
+        assert!(!a.root.join("attempts/dead").exists());
+        assert!(!a.root.join("attempts/ghost").exists());
+        assert!(a.root.join("attempts/waiting/1").exists());
+        // Un bundle publicado inválido se descarta y el trabajo vuelve a convertirse.
+        enqueue(
+            &a,
+            "corrupt",
+            "simple.pptx",
+            &example("simple"),
+            "processing",
+            1,
+            now() - 1,
+        )
+        .await;
+        fs::create_dir_all(a.root.join("published/corrupt")).unwrap();
+        fs::write(a.root.join("published/corrupt/bundle.zip"), b"partial").unwrap();
+        worker::reconcile(&a).await.unwrap();
+        assert_eq!(job(&a, "corrupt").await.0, "queued");
+        assert!(!a.root.join("published/corrupt").exists());
+    }
+    /// Copia un bundle aplicando `edit` a cada entrada.
+    fn rewrite(src: &FsPath, dst: &FsPath, edit: impl Fn(&str, String) -> String) {
+        let mut original = ZipArchive::new(fs::File::open(src).unwrap()).unwrap();
+        let mut z = ZipWriter::new(fs::File::create(dst).unwrap());
+        for i in 0..original.len() {
+            let mut entry = original.by_index(i).unwrap();
+            let name = entry.name().to_string();
+            let mut content = Vec::new();
+            entry.read_to_end(&mut content).unwrap();
+            if name.ends_with(".md") {
+                content = edit(&name, String::from_utf8(content).unwrap()).into_bytes();
+            }
+            write_zip_file(&mut z, &name, &content).unwrap();
+        }
+        z.finish().unwrap();
+    }
+    #[test]
+    fn validator_checks_hash_inventory_spans_and_reserved_indexes() {
+        let tmp = tempfile::tempdir().unwrap();
+        let good = bundle_of("multiple", &tmp.path().join("good"));
+        validate_bundle(&good).unwrap();
+        let bad = tmp.path().join("bad.zip");
+        type Edit<'a> = &'a dyn Fn(&str, String) -> String;
+        let cases: [(&str, Edit); 5] = [
+            ("SHA-256 del informe", &|n, md| {
+                if n == "conversion-report.md" {
+                    md.replacen("sha256: ", "sha256: 0", 1)
+                } else {
+                    md
+                }
+            }),
+            ("SHA-256 de documento.md", &|n, md| {
+                if n == "documento.md" {
+                    md.replacen("sha256: ", "sha256: 0", 1)
+                } else {
+                    md
+                }
+            }),
+            ("fuente no declarada", &|n, md| {
+                if n == "contenido/slide-002.md" {
+                    md.replace("source_id: original", "source_id: otra")
+                } else {
+                    md
+                }
+            }),
+            ("no corresponde a la diapositiva 2", &|n, md| {
+                if n == "contenido/slide-002.md" {
+                    md.replace("slide_index: 2", "slide_index: 3")
+                } else {
+                    md
+                }
+            }),
+            ("no admite frontmatter", &|n, md| {
+                if n == "contenido/index.md" {
+                    format!("---\ntype: Index\n---\n{md}")
+                } else {
+                    md
+                }
+            }),
+        ];
+        for (expected, edit) in cases {
+            rewrite(&good, &bad, edit);
+            let error = validate_bundle(&bad).unwrap_err().to_string();
+            assert!(error.contains(expected), "{expected}: {error}");
+        }
     }
     /// Presentaciones reales del curso. Por defecto se usan las copias reducidas de
     /// `examples/pptx/corpus` (XML íntegro, imágenes mínimas); `OKF_CORPUS_DIR` permite
