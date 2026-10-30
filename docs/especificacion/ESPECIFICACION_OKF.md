@@ -15,7 +15,7 @@ Este perfil añade convenciones para convertir documentos a OKF sin perder estru
 | **Perfil: metadatos** | Todo concepto documental lleva `type`, `title`, `description`, `sources` y `generated`. `status: draft` señala contenido ambiguo o incompleto. El informe lleva `type`, `title` y `generated`. |
 | **Perfil: navegación** | Se generan índices en la raíz y en directorios con varios conceptos. Los enlaces internos emitidos resuelven dentro del bundle; se prefieren rutas relativas a la raíz para enlazar conceptos. |
 
-Las fechas de los campos oficiales usan ISO 8601 con zona horaria explícita. Los campos adicionales `source_file`, `source_spans` y `page_labels` definidos abajo **no pertenecen a OKF oficial**. `Attested Computation` tampoco se asigna automáticamente a una fórmula extraída de Excel.
+Las fechas de los campos oficiales usan ISO 8601 con zona horaria explícita. Los campos adicionales `source_file`, `source_spans` y `page_labels`, así como los campos PPTX de la §5, **no pertenecen a OKF oficial**. `Attested Computation` tampoco se asigna automáticamente a una fórmula extraída de Excel.
 
 ## 2. Estructura común del bundle
 
@@ -90,11 +90,25 @@ La fecha y el actor del ejemplo son ilustrativos; cada salida registra los valor
 | **XLSX** | `documento.md` describe el libro; un concepto por hoja, con conceptos adicionales por tabla o región significativa. Incluir hojas ocultas. | Toda región no vacía se representa o se declara. Tabla pequeña: Markdown completo. Tabla grande: concepto con esquema, rango, dimensiones y recurso de datos **completo**; CSV UTF-8 para valores rectangulares sencillos, más registros estructurados por celda cuando hay fórmulas, tipos o posiciones que CSV no conserva. Distinguir fórmula, valor almacenado y eventual valor recalculado; no presumir recálculo. Declarar celdas combinadas, errores, formatos con significado, gráficos, tablas dinámicas y vínculos externos no representados fielmente. No crear un concepto por celda o fila. |
 | **PPTX** | Un concepto `Slide` por diapositiva, en orden, con `slide_index` y `slide_id` cuando esté disponible. | Conservar texto visible, tablas, imágenes, gráficos y notas del presentador en una sección distinta. Adjuntar una vista visual de cada diapositiva para mantener relaciones espaciales. Conservar series y etiquetas de gráficos si se pueden extraer. Animaciones, audio, video y objetos incrustados sin representación fiel se declaran en el informe. |
 
+**PPTX: campos y señales del perfil.** Se emiten en el frontmatter de cada concepto `Slide` solo cuando aplican; son señales objetivas para consumidores posteriores, no decisiones de indexación.
+
+| Campo | Significado |
+| --- | --- |
+| `title_inferred: true` | La diapositiva no tiene marcador de título; el título es el texto de mayor tamaño, único, breve y situado en la parte superior. El concepto lleva `status: draft` y lo indica bajo el título. |
+| `kicker` | Antetítulo inferido: texto breve en mayúsculas situado justo encima del título. El texto permanece también en el contenido. |
+| `section` | Nombre de la sección de PowerPoint que contiene la diapositiva, cuando la presentación las define. |
+| `visual_only: true` | Lo sustantivo está en una imagen sin texto alternativo que cubre al menos el 15 % de la diapositiva y el texto que la acompaña tiene menos de 40 caracteres. La imagen se adjunta sin transcripción; el concepto lleva `status: draft`. |
+| `view_hides_text: true` | La diapositiva tiene animaciones y una imagen grande dibujada sobre texto; la vista estática no muestra ese texto, que sí se conserva en el concepto. |
+
+Un contador visible del tipo `05 / 29`, cuyo total coincide con la presentación, se registra como `display_label` y no se repite como contenido. Las imágenes sin texto alternativo útil que ocupan menos del 1 % del área, y las de fondo, se consideran decorativas: no se adjuntan por separado, se cuentan en el informe y permanecen en la vista. El texto de formas fijas del layout o del patrón, visible en varias diapositivas, se registra una vez en `documento.md` bajo «Texto del diseño», con el número de diapositivas que lo muestran.
+
 En DOCX la paginación que muestra un editor depende de su representación y no sustituye los bloques estructurales. En PPTX un número visible (`display_label`) no se deduce de la posición (`slide_index`). En XLSX una muestra de filas nunca se presenta como tabla completa.
 
 ## 6. Informe y aceptación
 
 `conversion-report.md` es un concepto OKF, por ejemplo `type: Conversion Report`. Registra formato y SHA-256 del original; inventario frente a unidades representadas; cobertura de páginas, bloques, hojas/regiones o diapositivas; transformaciones (OCR, unión de tablas, deduplicación); recursos; y cada omisión o ambigüedad con ubicación. Su estado propio es `complete` o `partial`: `complete` no significa reproducción visual idéntica ni revisión humana; `partial` identifica pérdida o incertidumbre sustantiva sin ocultarla. El problema también se señala junto al contenido afectado.
+
+El informe separa dos listas. **Incidencias** son pérdidas o incertidumbres sustantivas y determinan `partial`: contenido solo visual sin transcripción, una vista que no muestra texto del original, objetos incrustados, audio o video, SmartArt sin texto extraído, recursos que no pudieron adjuntarse o que el renderizador omitió. **Observaciones** informan sin cambiar el estado: diapositivas sin título, títulos inferidos, animaciones que no ocultan contenido, diapositivas sin contenido propio y texto del diseño registrado en `documento.md`.
 
 Un bundle de este perfil se acepta cuando se cumplen **ambos** controles:
 

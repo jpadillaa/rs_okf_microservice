@@ -5,7 +5,7 @@
 
 ## 1. Frontera y contrato
 
-El microservicio convierte **un archivo de entrada en un bundle OKF** que conserva contenido, organización, recursos y referencias verificables al original. La extracción es documental; la indexación para RAG, los embeddings, las respuestas a preguntas y la síntesis de conocimiento quedan fuera de su responsabilidad.
+El microservicio convierte **un archivo de entrada en un bundle OKF** que conserva contenido, organización, recursos y referencias verificables al original. La extracción es documental; la indexación para RAG, los embeddings, las respuestas a preguntas y la síntesis de conocimiento quedan fuera de su responsabilidad. El bundle funciona como capa de fuentes: una capa de conocimiento con conceptos sintetizados para RAG puede construirse después como consumidor independiente, citando los conceptos del bundle mediante `sources` sin modificarlos.
 
 La interacción es **asíncrona**. Tras conservar el original y registrar el trabajo, el servicio entrega un identificador. El solicitante consulta el estado y recupera el bundle al terminar. Un **worker** ejecuta la conversión fuera de la solicitud inicial. El worker forma parte del mismo microservicio; puede comenzar con una sola instancia y no constituye otro servicio.
 

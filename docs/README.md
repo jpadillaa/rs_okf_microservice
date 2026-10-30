@@ -6,13 +6,14 @@ Este directorio es el punto de entrada para implementar el conversor de PDF, DOC
 
 | Orden | Ubicación en el repositorio | Documento actual | Qué resuelve |
 | --- | --- | --- | --- |
-| 1 | `docs/especificacion/ESPECIFICACION_OKF_DOCUMENTOS.md` | [Especificación OKF documental](https://chatgpt.com/library?file_id=libfile_c68ef3f3f8108191b414a8a632263394&account_id=personal) | Contrato del bundle: archivos, frontmatter, recursos, procedencia, reglas por formato y validación. |
-| 2 | `docs/arquitectura/ARQUITECTURA_CONCEPTUAL_MICROSERVICIO_OKF.md` | [Arquitectura conceptual](https://chatgpt.com/library?file_id=libfile_8c981d1e01148191bf2280b1ae1f591d&account_id=personal) | Responsabilidades, etapas de conversión, modelo intermedio y estados. |
-| 3 | `docs/arquitectura/ARQUITECTURA_TECNICA_MICROSERVICIO_OKF.md` | [Arquitectura técnica](https://chatgpt.com/library?file_id=libfile_791496d6b0e88191b9bf16e48563aa7a&account_id=personal) | Dos procesos, almacenamiento local, trabajo durable, reintentos, límites y publicación. |
-| 3a | `docs/arquitectura/DIAGRAMA_MICROSERVICIO_OKF.md` | [Diagrama conceptual](https://chatgpt.com/library?file_id=libfile_42df649bb2d08191864d261b05adaa62&account_id=personal) | Vista del flujo descrito por las dos arquitecturas. |
-| 4 | `docs/decisiones/STACK_TECNOLOGICO_MICROSERVICIO_OKF.md` | [Stack tecnológico](https://chatgpt.com/library?file_id=libfile_861ea24f23108191ac8b630718249fe8&account_id=personal) | Rust, bibliotecas, persistencia, renderizado y pruebas necesarias antes de cerrar los adaptadores. |
+| 1 | `docs/especificacion/ESPECIFICACION_OKF.md` | [Especificación OKF documental](especificacion/ESPECIFICACION_OKF.md) | Contrato del bundle: archivos, frontmatter, recursos, procedencia, reglas por formato y validación. |
+| 2 | `docs/arquitectura/ARQUITECTURA_CONCEPTUAL_MICROSERVICIO_OKF.md` | [Arquitectura conceptual](arquitectura/ARQUITECTURA_CONCEPTUAL_MICROSERVICIO_OKF.md) | Responsabilidades, etapas de conversión, modelo intermedio y estados. |
+| 3 | `docs/arquitectura/ARQUITECTURA_TECNICA_MICROSERVICIO_OKF.md` | [Arquitectura técnica](arquitectura/ARQUITECTURA_TECNICA_MICROSERVICIO_OKF.md) | Dos procesos, almacenamiento local, trabajo durable, reintentos, límites y publicación. |
+| 3a | `docs/arquitectura/DIAGRAMA_MICROSERVICIO_OKF.md` | [Diagrama conceptual](arquitectura/DIAGRAMA_MICROSERVICIO_OKF.md) | Vista del flujo descrito por las dos arquitecturas. |
+| 4 | `docs/decisiones/STACK_TECNOLOGICO_MICROSERVICIO_OKF.md` | [Stack tecnológico](decisiones/STACK_TECNOLOGICO_MICROSERVICIO_OKF.md) | Rust, bibliotecas, persistencia, renderizado y pruebas necesarias antes de cerrar los adaptadores. |
+| 4a | `docs/decisiones/RENDERIZADO_PPTX_MEDICIONES.md` | [Decisión de renderizado PPTX](decisiones/RENDERIZADO_PPTX_MEDICIONES.md) | Renderizador PPTX elegido y mediciones con ejemplos sintéticos y con el corpus real. |
 
-Al preparar el repositorio, copia cada documento actual a la ubicación indicada sin cambiar su nombre. Así este índice y la documentación podrán mantenerse junto al código.
+Los documentos están guardados en las ubicaciones indicadas y se enlazan mediante rutas relativas para que funcionen dentro del repositorio y en Obsidian.
 
 ## Precedencia
 

@@ -2,7 +2,7 @@
 
 **Estado:** decisión de implementación inicial; revisar únicamente las decisiones condicionadas a pruebas indicadas abajo.  
 **Producto:** un archivo `.pdf`, `.docx`, `.xlsx` o `.pptx` produce un bundle OKF v0.2.  
-**Contratos normativos:** [perfil documental OKF](https://chatgpt.com/library?file_id=libfile_c68ef3f3f8108191b414a8a632263394&account_id=personal) y [arquitectura técnica](https://chatgpt.com/library?file_id=libfile_791496d6b0e88191b9bf16e48563aa7a&account_id=personal). Este documento elige herramientas; no modifica esos contratos.
+**Contratos normativos:** [perfil documental OKF](../especificacion/ESPECIFICACION_OKF.md) y [arquitectura técnica](../arquitectura/ARQUITECTURA_TECNICA_MICROSERVICIO_OKF.md). Este documento elige herramientas; no modifica esos contratos.
 
 **Orden de entrega:** implementar primero una conversión PPTX completa, con sus propias pruebas de aceptación. Incorporar los demás formatos uno por uno, preparando los ejemplos y las pruebas de cada formato al comenzar su etapa. Los cuatro siguen formando parte del alcance final.
 
@@ -44,7 +44,7 @@ La estructura de nodos de Xberg tiene página y geometría cuando están disponi
 
 ## 4. Renderizado y OCR: excepciones explícitas
 
-**PPTX:** el perfil OKF exige una vista de cada diapositiva. Antes de cerrar la imagen del worker, comparar dos rutas en el mismo corpus de presentaciones: (A) `betteroffice-pptx` con la función `raster`, que en su versión 0.5 declara soporte para tablas, recortes de imágenes y efectos; (B) **LibreOffice Impress en modo headless**, que convierte la presentación a PDF temporal para luego renderizar sus páginas a PNG con Xberg. Elegir la ruta Rust si conserva contenido y relaciones espaciales con calidad suficiente, procesa diapositivas ocultas y cumple el presupuesto de CPU/memoria; en caso contrario, usar LibreOffice como única herramienta de renderizado externa. La afirmación de soporte de la librería no sustituye la comparación visual con archivos del proyecto.
+**PPTX:** el perfil OKF exige una vista de cada diapositiva. Antes de cerrar la imagen del worker, comparar dos rutas en el mismo corpus de presentaciones: (A) `betteroffice-pptx` con la función `raster`, que en su versión 0.5 declara soporte para tablas, recortes de imágenes y efectos; (B) **LibreOffice Impress en modo headless**, que convierte la presentación a PDF temporal para luego renderizar sus páginas a PNG con Xberg. Elegir la ruta Rust si conserva contenido y relaciones espaciales con calidad suficiente, procesa diapositivas ocultas y cumple el presupuesto de CPU/memoria; en caso contrario, usar LibreOffice como única herramienta de renderizado externa. La afirmación de soporte de la librería no sustituye la comparación visual con archivos del proyecto. Resultado para la primera entrega: se eligió la ruta A; mediciones y revisión en [Decisión de renderizado PPTX](RENDERIZADO_PPTX_MEDICIONES.md).
 
 En la ruta LibreOffice, activar `ExportHiddenSlides`, desactivar páginas de notas y usar un perfil temporal por intento, con límites de tiempo, memoria y salida. En cualquier ruta, verificar cantidad y orden de vistas frente al PPTX; no ejecutar macros ni objetos incrustados. Las vistas son recursos del bundle, nunca la fuente del texto ni de los localizadores. Un fallo que impida adjuntar una vista requerida impide publicar ese bundle como válido. Registrar la ruta elegida y la versión exacta en el entorno reproducible.
 
@@ -60,7 +60,7 @@ En la ruta LibreOffice, activar `ExportHiddenSlides`, desactivar páginas de not
 
 ## 6. Referencias de implementación
 
-- [Contrato OKF documental del proyecto](https://chatgpt.com/library?file_id=libfile_c68ef3f3f8108191b414a8a632263394&account_id=personal) y [arquitectura técnica](https://chatgpt.com/library?file_id=libfile_791496d6b0e88191b9bf16e48563aa7a&account_id=personal).
+- [Contrato OKF documental del proyecto](../especificacion/ESPECIFICACION_OKF.md) y [arquitectura técnica](../arquitectura/ARQUITECTURA_TECNICA_MICROSERVICIO_OKF.md).
 - [Xberg: funciones por formato](https://docs.xberg.io/features/), [estructura y resultados](https://docs.rs/xberg/latest/xberg/types/extraction/struct.ExtractedDocument.html), [renderizado de PDF](https://docs.xberg.io/guides/rust-core-api/).
 - [Calamine: rangos absolutos](https://docs.rs/calamine/latest/calamine/struct.Range.html); [AnyDoc: limitación PDF por páginas](https://github.com/firecrawl/anydoc/issues/62), [XLSX](https://github.com/firecrawl/anydoc/issues/10) y [PPTX](https://github.com/firecrawl/anydoc/issues/31).
 - [SQLite: WAL y procesos en un host](https://www.sqlite.org/wal.html); [redb: escritura multiproceso experimental](https://docs.rs/redb/latest/redb/).

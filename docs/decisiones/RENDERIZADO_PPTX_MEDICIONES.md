@@ -20,3 +20,19 @@ Las dos rutas conservaron el título, el texto y la posición de la imagen. Libr
 La prueba funcional usa ambos ejemplos PPTX. La lectura de valores almacenados de gráficos se prueba por separado con un fragmento OOXML; el ejemplo de comparación no incluye un gráfico completo. Los gráficos cuyos valores estén en partes OOXML relacionadas se incorporan como texto recuperado; la fidelidad visual de tipos de gráfico complejos queda pendiente de un corpus real.
 
 La comparación es orientativa: los ejemplos son pequeños y sintéticos. Revisar esta decisión si presentaciones reales muestran pérdidas importantes en tablas, efectos, gráficos, imágenes SVG o fuentes no disponibles. La fuente TrueType usada para el renderizado se configura con `OKF_FONT_PATH` o se localiza en rutas estándar del sistema.
+
+## Corpus real
+
+Se renderizaron tres presentaciones del curso, guardadas localmente en `datos_de_prueba/` (no versionado), con `okf-microservice bench-render` en compilación *release* sobre macOS. Solo se midió BetterOffice; LibreOffice no se volvió a ejecutar.
+
+| Presentación | Original | Diapositivas / PNG | Tiempo de proceso | CPU usuario / sistema | RSS máximo | Tamaño PNG total |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: |
+| `s1.pptx`: formas y texto sueltos, 103 SVG | 2,2 MB | 29 / 29 | 0,85 s | 0,80 s / 0,04 s | 313,8 MB | 8.270.572 bytes |
+| `s2.pptx`: marcadores de posición, capturas PNG de ~1,5 MB | 22,8 MB | 27 / 27 | 1,24 s | 0,88 s / 0,04 s | 366,5 MB | 12.505.861 bytes |
+| `s3.pptx`: como `s2`, con 5 diapositivas animadas | 18,2 MB | 34 / 34 | 1,02 s | 0,97 s / 0,03 s | 301,0 MB | 14.869.987 bytes |
+
+En ningún caso se omitieron imágenes (`skipped_images=0`). La memoria es unas diez veces la del ejemplo sintético y debe considerarse al fijar el límite del worker. La compilación de depuración es mucho más lenta: la primera conversión de `s1` tardó 33 s; las mediciones de presupuesto deben hacerse en *release*.
+
+**Revisión visual.** Los diagramas de `s1`, construidos con decenas de formas, SVG y flechas, conservan posición, colores y texto. Las presentaciones usan Barlow, Fira Sans y Lexend, que no estaban registradas; el renderizado sustituyó la fuente sin desbordes visibles, aunque con métricas distintas a las originales. Las diapositivas animadas de `s3` (21, 23, 25, 27 y 29) muestran una imagen a pantalla completa sobre el texto, porque la vista dibuja todas las formas a la vez: el conversor lo declara como `view_hides_text` y conserva el texto en el concepto. El corpus no contiene tablas nativas, gráficos ni SmartArt, de modo que esas fidelidades siguen sin medirse con material real.
+
+**Conclusión:** se mantiene BetterOffice Raster como único renderizador. Revisar si aparecen tablas o gráficos reales con pérdidas, o si el límite de memoria del worker no admite unos 400 MB por conversión.
