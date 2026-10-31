@@ -227,3 +227,65 @@ pub(crate) fn resolve_ref(r: &quick_xml::events::BytesRef<'_>) -> anyhow::Result
         }
     })
 }
+
+/// Relación de una parte del paquete.
+pub(crate) struct Rel {
+    pub(crate) id: String,
+    pub(crate) kind: String,
+    pub(crate) target: String,
+    pub(crate) external: bool,
+}
+
+pub(crate) fn rels_path(part: &str) -> String {
+    match part.rsplit_once('/') {
+        Some((dir, file)) => format!("{dir}/_rels/{file}.rels"),
+        None => format!("_rels/{part}.rels"),
+    }
+}
+
+pub(crate) fn parse_entry(
+    z: &mut ZipArchive<Cursor<&[u8]>>,
+    path: &str,
+) -> Option<crate::xml::Node> {
+    let bytes = read_entry(z, path).ok()?;
+    crate::xml::parse(&String::from_utf8_lossy(&bytes)).ok()
+}
+
+pub(crate) fn relationships(z: &mut ZipArchive<Cursor<&[u8]>>, part: &str) -> Vec<Rel> {
+    let Some(root) = parse_entry(z, &rels_path(part)) else {
+        return Vec::new();
+    };
+    root.nodes()
+        .filter(|r| r.is(b"Relationship"))
+        .filter_map(|r| {
+            Some(Rel {
+                id: r.attr(b"Id")?.to_string(),
+                kind: r.attr(b"Type")?.to_string(),
+                target: r.attr(b"Target")?.to_string(),
+                external: r.attr(b"TargetMode") == Some("External"),
+            })
+        })
+        .collect()
+}
+
+pub(crate) fn rel_map(rels: &[Rel]) -> HashMap<String, String> {
+    rels.iter()
+        .map(|r| (r.id.clone(), r.target.clone()))
+        .collect()
+}
+
+/// Partes relacionadas con `part` cuyo tipo termina en `suffix` (p. ej. `/styles`).
+pub(crate) fn related(rels: &[Rel], part: &str, suffix: &str) -> Vec<String> {
+    rels.iter()
+        .filter(|r| !r.external && r.kind.ends_with(suffix))
+        .map(|r| resolve(part, &r.target))
+        .collect()
+}
+
+/// Parte principal del paquete (documento, libro o presentación).
+pub(crate) fn main_part(z: &mut ZipArchive<Cursor<&[u8]>>) -> Option<String> {
+    relationships(z, "")
+        .iter()
+        .find(|r| r.kind.ends_with("/officeDocument"))
+        .map(|r| resolve("", &r.target))
+}

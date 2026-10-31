@@ -13,6 +13,7 @@ clap = { version = "4", features = ["derive"] }
 quick-xml = "0.38"
 rusqlite = { version = "0.37", features = ["bundled"] }
 serde = { version = "1", features = ["derive"] }
+serde_json = "1"
 sha2 = "0.10"
 tokio = { version = "1", features = ["io-util", "macros", "process", "rt-multi-thread", "time"] }
 tracing = "0.1"
@@ -22,7 +23,6 @@ yaml_serde = "0.10.7"
 zip = { version = "4", default-features = false, features = ["deflate"] }
 
 [dev-dependencies]
-serde_json = "1"
 tempfile = "3"
 tower = { version = "0.5", features = ["util"] }
 http-body-util = "0.1"

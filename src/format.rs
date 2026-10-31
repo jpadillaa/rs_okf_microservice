@@ -12,15 +12,17 @@ use zip::ZipArchive;
 pub(crate) enum Format {
     Pptx,
     Docx,
+    Xlsx,
 }
 
 impl Format {
-    pub(crate) const ALL: &[Format] = &[Format::Pptx, Format::Docx];
+    pub(crate) const ALL: &[Format] = &[Format::Pptx, Format::Docx, Format::Xlsx];
 
     pub(crate) fn extension(self) -> &'static str {
         match self {
             Format::Pptx => "pptx",
             Format::Docx => "docx",
+            Format::Xlsx => "xlsx",
         }
     }
     pub(crate) fn from_extension(ext: &str) -> Option<Self> {
@@ -51,6 +53,7 @@ impl Format {
         match self {
             Format::Pptx => crate::pptx::convert(cfg, bytes, filename, hash, dir),
             Format::Docx => crate::docx::convert(cfg, bytes, filename, hash, dir),
+            Format::Xlsx => crate::xlsx::convert(cfg, bytes, filename, hash, dir),
         }
     }
     /// Comprobaciones propias del formato sobre un bundle que ya superó las comunes.
@@ -63,6 +66,7 @@ impl Format {
         match self {
             Format::Pptx => crate::pptx::validate(z, names, original),
             Format::Docx => crate::docx::validate(z, names, original),
+            Format::Xlsx => crate::xlsx::validate(z, names, original),
         }
     }
 }

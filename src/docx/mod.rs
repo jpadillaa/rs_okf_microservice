@@ -58,68 +58,10 @@ pub(crate) struct Extraction {
     alt_chunks: Vec<usize>,
 }
 
-struct Rel {
-    id: String,
-    kind: String,
-    target: String,
-    external: bool,
-}
-
-fn rels_path(part: &str) -> String {
-    match part.rsplit_once('/') {
-        Some((dir, file)) => format!("{dir}/_rels/{file}.rels"),
-        None => format!("_rels/{part}.rels"),
-    }
-}
-
-fn parse_entry(z: &mut ZipArchive<Cursor<&[u8]>>, path: &str) -> Option<xml::Node> {
-    let bytes = read_entry(z, path).ok()?;
-    xml::parse(&String::from_utf8_lossy(&bytes)).ok()
-}
-
-fn relationships(z: &mut ZipArchive<Cursor<&[u8]>>, part: &str) -> Vec<Rel> {
-    let Some(root) = parse_entry(z, &rels_path(part)) else {
-        return Vec::new();
-    };
-    root.nodes()
-        .filter(|r| r.is(b"Relationship"))
-        .filter_map(|r| {
-            Some(Rel {
-                id: r.attr(b"Id")?.to_string(),
-                kind: r.attr(b"Type")?.to_string(),
-                target: r.attr(b"Target")?.to_string(),
-                external: r.attr(b"TargetMode") == Some("External"),
-            })
-        })
-        .collect()
-}
-
-fn rel_map(rels: &[Rel]) -> HashMap<String, String> {
-    rels.iter()
-        .map(|r| (r.id.clone(), r.target.clone()))
-        .collect()
-}
-
-/// Partes relacionadas con `part` cuyo tipo termina en `suffix` (p. ej. `/styles`).
-fn related(rels: &[Rel], part: &str, suffix: &str) -> Vec<String> {
-    rels.iter()
-        .filter(|r| !r.external && r.kind.ends_with(suffix))
-        .map(|r| resolve(part, &r.target))
-        .collect()
-}
-
-fn main_part(z: &mut ZipArchive<Cursor<&[u8]>>) -> String {
-    relationships(z, "")
-        .iter()
-        .find(|r| r.kind.ends_with("/officeDocument"))
-        .map(|r| resolve("", &r.target))
-        .unwrap_or_else(|| "word/document.xml".into())
-}
-
 /// Número de bloques del cuerpo de un DOCX: la base de los localizadores.
 pub(crate) fn block_count(docx: &[u8]) -> Result<usize> {
     let mut z = ZipArchive::new(Cursor::new(docx))?;
-    let main = main_part(&mut z);
+    let main = main_part(&mut z).unwrap_or_else(|| "word/document.xml".into());
     let doc = String::from_utf8(read_entry(&mut z, &main)?)?;
     let mut n = 0;
     xml::body_elements(&doc, |node, _| {
@@ -132,7 +74,7 @@ pub(crate) fn block_count(docx: &[u8]) -> Result<usize> {
 pub(crate) fn extract(bytes: &[u8], max_blocks: usize) -> Result<Extraction> {
     let mut z = ZipArchive::new(Cursor::new(bytes))?;
     enforce_package_limits(&mut z)?;
-    let main = main_part(&mut z);
+    let main = main_part(&mut z).unwrap_or_else(|| "word/document.xml".into());
     let doc_rels = relationships(&mut z, &main);
     let first = |z: &mut ZipArchive<Cursor<&[u8]>>, suffix: &str| {
         related(&doc_rels, &main, suffix)

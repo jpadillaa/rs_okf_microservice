@@ -27,6 +27,8 @@ mod omml;
 mod ooxml;
 mod pptx;
 mod worker;
+mod xlsx;
+mod xml;
 
 const MAX_UPLOAD: usize = 100 * 1024 * 1024;
 
@@ -626,11 +628,11 @@ mod tests {
         assert_eq!((state.as_str(), attempt), ("failed", 1));
         assert!(!error.unwrap().contains("reintent"));
         // Formato sin adaptador: permanente.
-        enqueue(&a, "later", "notes.xlsx", b"PK", "queued", 0, 0).await;
+        enqueue(&a, "later", "notes.odt", b"PK", "queued", 0, 0).await;
         assert!(work_one(&a).await.unwrap());
         let (state, attempt, error, _) = job(&a, "later").await;
         assert_eq!((state.as_str(), attempt), ("failed", 1));
-        assert!(error.unwrap().contains("formato no admitido: notes.xlsx"));
+        assert!(error.unwrap().contains("formato no admitido: notes.odt"));
         // Límite de diapositivas: permanente.
         Arc::make_mut(&mut a.cfg).max_slides = 2;
         enqueue(
@@ -822,7 +824,7 @@ mod tests {
             let name = entry.name().to_string();
             let mut content = Vec::new();
             entry.read_to_end(&mut content).unwrap();
-            if name.ends_with(".md") {
+            if name.ends_with(".md") || name.ends_with(".csv") {
                 content = edit(&name, String::from_utf8(content).unwrap()).into_bytes();
             }
             write_zip_file(&mut z, &name, &content).unwrap();
@@ -947,6 +949,90 @@ mod tests {
                     md
                 }
             }),
+        ];
+        for (expected, edit) in cases {
+            rewrite(&good, &bad, edit);
+            let error = validate_bundle(&bad).unwrap_err().to_string();
+            assert!(error.contains(expected), "{expected}: {error}");
+        }
+    }
+
+    #[tokio::test]
+    async fn xlsx_is_converted_by_the_worker_and_checked_against_its_cells() {
+        let tmp = tempfile::tempdir().unwrap();
+        let a = test_app(tmp.path());
+        let bytes = fs::read("examples/xlsx/muestras/ventas_trimestrales.xlsx").unwrap();
+        enqueue(&a, "book", "ventas.xlsx", &bytes, "queued", 0, 0).await;
+        assert!(work_one(&a).await.unwrap());
+        let (state, _, error, bundle) = job(&a, "book").await;
+        assert_eq!((state.as_str(), error), ("complete", None));
+        let good = a.root.join(bundle.unwrap());
+        validate_bundle(&good).unwrap();
+        let bad = tmp.path().join("bad.zip");
+        let only = |name: &'static str, from: &'static str, to: &'static str| {
+            move |n: &str, md: String| if n == name { md.replace(from, to) } else { md }
+        };
+        type Edit = Box<dyn Fn(&str, String) -> String>;
+        let cases: Vec<(&str, Edit)> = vec![
+            (
+                "la celda Resumen!A8 del original no está en ninguna región",
+                Box::new(only(
+                    "contenido/hoja-001.md",
+                    "range: \"A1:F8\"",
+                    "range: \"A1:F7\"",
+                )),
+            ),
+            (
+                "tiene un rango A10:A13 fuera del rango de la hoja",
+                Box::new(only(
+                    "contenido/hoja-001.md",
+                    "range: \"A10:A12\"",
+                    "range: \"A10:A13\"",
+                )),
+            ),
+            (
+                "no localiza el rango con contenido de la hoja «Resumen» (A1:F12)",
+                Box::new(only(
+                    "contenido/hoja-001.md",
+                    "range: \"A1:F12\"",
+                    "range: \"A1:G12\"",
+                )),
+            ),
+            (
+                "no lleva el nombre exacto de la hoja «Supuestos»",
+                Box::new(only(
+                    "contenido/hoja-003.md",
+                    "title: \"Supuestos\"",
+                    "title: \"Supuestos generales\"",
+                )),
+            ),
+            (
+                "localiza la hoja «Notas» y pertenece a «Supuestos»",
+                Box::new(only(
+                    "contenido/hoja-003.md",
+                    "sheet: \"Supuestos\", range: \"A1:C4\" }\n---",
+                    "sheet: \"Notas\", range: \"A1:C4\" }\n---",
+                )),
+            ),
+            (
+                "el CSV de contenido/hoja-002-region-01.md tiene 300 filas y la región A1:G301 tiene 301",
+                Box::new(|n: &str, data: String| {
+                    if n == "assets/hoja-002-region-01.csv" {
+                        let cut = data.trim_end().rfind("\r\n").unwrap();
+                        format!("{}\r\n", &data[..cut])
+                    } else {
+                        data
+                    }
+                }),
+            ),
+            (
+                "un índice no enumera los conceptos en el orden del libro",
+                Box::new(only(
+                    "contenido/index.md",
+                    "- [Supuestos](hoja-003.md)\n- [Notas](hoja-004.md)",
+                    "- [Notas](hoja-004.md)\n- [Supuestos](hoja-003.md)",
+                )),
+            ),
         ];
         for (expected, edit) in cases {
             rewrite(&good, &bad, edit);

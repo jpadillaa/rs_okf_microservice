@@ -5,3 +5,4 @@
 .DS_Store
 # Bundles generados localmente para revisión manual.
 /output/
+__pycache__/
