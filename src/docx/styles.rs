@@ -164,6 +164,14 @@ impl Styles {
             })
     }
     /// El estilo es (o deriva de) el estilo integrado «Title».
+    /// Estilos de cita («Quote», «Intense Quote», «Cita», «Cita destacada»).
+    pub(crate) fn is_quote(&self, id: Option<&str>) -> bool {
+        id.is_some()
+            && self.chain(id).iter().any(|s| {
+                let name = s.name.trim().to_lowercase();
+                name.contains("quote") || name == "cita" || name.starts_with("cita ")
+            })
+    }
     pub(crate) fn is_title(&self, id: Option<&str>) -> bool {
         id.is_some()
             && self

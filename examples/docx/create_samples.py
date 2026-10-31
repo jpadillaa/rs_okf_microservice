@@ -21,6 +21,11 @@ muestras/anexos_con_perdidas.docx   content the converter cannot represent faith
                                     SmartArt, embedded OLE object with preview, linked
                                     image, altChunk, chart without cached data and an
                                     image whose part is missing. Expected state: partial.
+muestras/formato_directo.docx       document without heading styles, as written by
+                                    converters such as macOS textutil: headings are bold
+                                    runs with a larger size, list markers are literal text
+                                    followed by a tab with a hanging indent, plus a bold
+                                    label, a large non-bold sentence and a Quote paragraph.
 
 Usage: python3 -I examples/docx/create_samples.py
 """
@@ -693,8 +698,67 @@ def anexos():
     ])
 
 
+# --- 4. Formato directo -------------------------------------------------------------
+
+def formato_directo():
+    def r(text, size=24, bold=False):
+        b = "<w:b/>" if bold else ""
+        return (f'<w:r><w:rPr><w:rFonts w:ascii="Times" w:hAnsi="Times"/>{b}<w:sz w:val="{size}"/></w:rPr>'
+                f'<w:t xml:space="preserve">{escape(text)}</w:t></w:r>')
+
+    def head(text, size):
+        return para(r(text, size, bold=True), ppr='<w:spacing w:after="280"/>')
+
+    def item(marker, text, level=0):
+        left = 720 * (level + 1)
+        mark = ('<w:r><w:rPr><w:rFonts w:ascii="Times" w:hAnsi="Times"/><w:sz w:val="24"/></w:rPr>'
+                f'<w:tab/><w:t>{escape(marker)}</w:t><w:tab/></w:r>')
+        return para(mark, r(text), ppr=f'<w:ind w:left="{left}" w:hanging="{left}"/>')
+
+    text = para
+    body = (head("Manual de operación del laboratorio", 48)
+            + text(r("Este manual describe los procedimientos de seguridad, mantenimiento y registro del laboratorio de "
+                     "cómputo. Se aplica a todo el personal y a los estudiantes que usan los equipos en horario extendido."))
+            + head("Acceso y horarios", 36)
+            + text(r("El laboratorio abre de lunes a sábado. El acceso fuera de horario requiere autorización escrita de la "
+                     "coordinación y registro en la bitácora digital."))
+            + item("1", "Solicite la autorización con dos días de anticipación.")
+            + item("2", "Registre su ingreso con el carné.")
+            + item("◦", "Si el lector falla, use la bitácora de papel.", 1)
+            + item("◦", "Informe la falla a soporte.", 1)
+            + item("3", "Cierre la sesión al salir.")
+            + head("Horario extendido", 28)
+            + text(r("Requisitos:", bold=True))
+            + item("a)", "Tener matrícula vigente.")
+            + item("b)", "Haber aprobado la inducción de seguridad.")
+            + text(r("El horario extendido se publica cada semestre en la cartelera del edificio y en el portal de "
+                     "soporte, junto con el calendario de mantenimiento."))
+            + head("Mantenimiento de equipos", 36)
+            + text(r("El equipo de soporte realiza mantenimiento preventivo cada mes. Consulte el calendario antes de "
+                     "reservar una sala."))
+            + item("•", "Limpieza de filtros y ventiladores.")
+            + item("•", "Actualización del sistema operativo y del antivirus.")
+            + item("•", "Verificación de las copias de seguridad.")
+            + text(r("Nadie trabaja solo en el laboratorio", size=36))
+            + head("Normas de seguridad", 36)
+            + text(r("Está prohibido consumir alimentos o bebidas dentro del laboratorio. Los equipos no deben "
+                     "desconectarse de la red eléctrica regulada ni moverse de su puesto sin autorización."))
+            + para(r("En caso de emergencia, siga las rutas de evacuación señalizadas y diríjase al punto de encuentro."),
+                   style="Cita"))
+    parts = ["word/document.xml", "word/styles.xml"]
+    write("formato_directo.docx", [
+        ("[Content_Types].xml", content_types(parts)),
+        ("_rels/.rels", rels([("rId1", "officeDocument", "word/document.xml", False)])),
+        ("word/document.xml", document(body)),
+        ("word/_rels/document.xml.rels", rels([("rId1", "styles", "styles.xml", False)])),
+        ("word/styles.xml", styles().replace(
+            "</w:styles>", style("paragraph", "Cita", "Quote", rpr="<w:i/>") + "</w:styles>")),
+    ])
+
+
 if __name__ == "__main__":
     informe()
     guia()
     anexos()
-    print("informe_revisado.docx, guia_tecnica.docx y anexos_con_perdidas.docx generados en", OUT)
+    formato_directo()
+    print("informe_revisado.docx, guia_tecnica.docx, anexos_con_perdidas.docx y formato_directo.docx generados en", OUT)

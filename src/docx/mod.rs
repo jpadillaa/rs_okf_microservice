@@ -309,6 +309,8 @@ pub(crate) struct Section {
 pub(crate) enum TitleSource {
     Style,
     Heading,
+    /// Primer encabezado, único de su nivel y de rango superior a todos los demás.
+    LoneHeading,
     Metadata,
     Filename,
 }
@@ -318,6 +320,9 @@ pub(crate) struct Outline {
     pub(crate) title: String,
     pub(crate) title_block: Option<usize>,
     pub(crate) title_source: TitleSource,
+    /// El documento no tiene encabezados con estilo: los niveles inferidos salen de los
+    /// tamaños de los párrafos en negrita.
+    pub(crate) inferred_by_size: bool,
     /// Nivel de encabezado que divide el documento en conceptos; `None` si es breve.
     pub(crate) split: Option<u8>,
     /// Desplazamiento para escribir los subencabezados con `##` en adelante.
@@ -396,17 +401,38 @@ pub(crate) fn outline(ex: &Extraction, filename: &str) -> Outline {
         .map(|(s, _)| *s);
     // Un párrafo breve sin estilo de encabezado, con el mismo tamaño que los encabezados
     // de un nivel y mayor que el texto corriente, es un encabezado con formato directo.
+    let candidate = |p: &Para| {
+        let t = p.flat();
+        p.list.is_none()
+            && !p.title_style
+            && !p.body_level
+            && !p.toc
+            && !t.is_empty()
+            && t.chars().count() <= INFERRED_HEADING_MAX_CHARS
+            && !t.ends_with(['.', ':', ';', ','])
+            && p.uniform_size().zip(body).is_some_and(|(s, b)| s > b)
+    };
+    // Sin ningún encabezado con estilo, los niveles salen de los tamaños de los párrafos
+    // candidatos en negrita, de mayor a menor.
+    let by_size = heading_sizes.is_empty();
+    if by_size {
+        let mut sizes: Vec<u32> = (0..n)
+            .filter_map(para)
+            .filter(|p| candidate(p) && p.all_bold())
+            .filter_map(Para::uniform_size)
+            .collect();
+        sizes.sort_unstable_by(|a, b| b.cmp(a));
+        sizes.dedup();
+        for (k, size) in sizes.into_iter().take(6).enumerate() {
+            heading_sizes.insert(size, k as u8 + 1);
+        }
+    }
     for (i, heading) in headings.iter_mut().enumerate() {
         let Some(p) = para(i) else { continue };
-        if heading.is_some() || p.list.is_some() || p.title_style || p.body_level || p.toc {
+        if heading.is_some() || !candidate(p) || (by_size && !p.all_bold()) {
             continue;
         }
-        let t = p.flat();
-        let candidate = !t.is_empty()
-            && t.chars().count() <= INFERRED_HEADING_MAX_CHARS
-            && !t.ends_with(['.', ':', ';', ',']);
-        if let (true, Some(size), Some(body)) = (candidate, p.uniform_size(), body)
-            && size > body
+        if let Some(size) = p.uniform_size()
             && let Some(&level) = heading_sizes.get(&size)
         {
             *heading = Some(Heading {
@@ -423,8 +449,9 @@ pub(crate) fn outline(ex: &Extraction, filename: &str) -> Outline {
         Block::Para(p) => !p.flat().is_empty(),
         Block::Table(_) => true,
     };
-    // Título: el estilo «Title» al comienzo, o un primer encabezado seguido directamente
-    // (sin texto entre ambos) por otro de igual o mayor rango.
+    // Título: el estilo «Title» al comienzo, un primer encabezado seguido directamente
+    // (sin texto entre ambos) por otro de igual o mayor rango, o un primer encabezado
+    // único de su nivel y de rango superior a todos los demás.
     let mut title_block = None;
     let mut title_source = TitleSource::Filename;
     if let Some(f) = (0..n).find(|&i| content(i))
@@ -440,6 +467,15 @@ pub(crate) fn outline(ex: &Extraction, filename: &str) -> Outline {
         {
             title_block = Some(f);
             title_source = TitleSource::Heading;
+        } else if let Some(h) = headings[f]
+            && headings
+                .iter()
+                .enumerate()
+                .all(|(i, x)| i == f || x.is_none_or(|x| x.level > h.level))
+            && headings.iter().flatten().count() > 1
+        {
+            title_block = Some(f);
+            title_source = TitleSource::LoneHeading;
         }
     }
     let title = match title_block {
@@ -514,11 +550,13 @@ pub(crate) fn outline(ex: &Extraction, filename: &str) -> Outline {
         Some(l) => l as i32 - 1,
         None => min_level.map_or(0, |m| m as i32 - 2),
     };
+    let inferred_by_size = by_size && headings.iter().flatten().any(|h| h.inferred);
     Outline {
         headings,
         title,
         title_block,
         title_source,
+        inferred_by_size,
         split,
         base,
         sections,
@@ -570,6 +608,7 @@ struct Tally {
     smartart_text: Vec<usize>,
     objects: Vec<usize>,
     toc: Vec<usize>,
+    literal_lists: Vec<usize>,
     linked: Vec<usize>,
     textboxes: Vec<usize>,
     hidden: Vec<usize>,
@@ -977,6 +1016,9 @@ impl Render<'_> {
                         let item = i + k + 1;
                         let Block::Para(q) = b else { continue };
                         let Some(label) = &q.list else { continue };
+                        if q.literal_list {
+                            mark(&mut self.tally.literal_lists, item);
+                        }
                         self.note_aux(item, &q.aux, &mut refs);
                         while stack.last().is_some_and(|(l, _)| *l >= label.level) {
                             stack.pop();
@@ -1021,7 +1063,11 @@ impl Render<'_> {
                     self.note_aux(ordinal, &p.aux, &mut refs);
                     Self::marker(&mut body, &mut spans, ordinal, ordinal);
                     let md = p.md();
-                    if !md.is_empty() {
+                    if !md.is_empty() && p.quote {
+                        let quoted: Vec<String> =
+                            md.split('\n').map(|l| format!("> {l}")).collect();
+                        body.push_str(&format!("{}\n\n", quoted.join("\n")));
+                    } else if !md.is_empty() {
                         body.push_str(&format!("{md}\n\n"));
                     }
                     body.push_str(&self.aux_md(ordinal, &p.aux, ""));
@@ -1339,7 +1385,16 @@ pub(crate) fn build_bundle(
     grouped(
         &t.inferred,
         Severity::Note,
-        ": encabezado inferido por su formato (mismo tamaño que los encabezados con estilo); el párrafo no tiene estilo de encabezado",
+        if outline.inferred_by_size {
+            ": encabezado inferido por su formato (párrafo breve en negrita y de mayor tamaño que el texto corriente; el documento no tiene encabezados con estilo, y el nivel sale del tamaño)"
+        } else {
+            ": encabezado inferido por su formato (mismo tamaño que los encabezados con estilo); el párrafo no tiene estilo de encabezado"
+        },
+    );
+    grouped(
+        &t.literal_lists,
+        Severity::Note,
+        ": lista con la viñeta o el número escritos como texto, sin numeración del procesador; se representa como lista",
     );
     grouped(
         &t.textboxes,
@@ -1422,6 +1477,8 @@ pub(crate) fn build_bundle(
             TitleSource::Style => "del párrafo con estilo Título",
             TitleSource::Heading =>
                 "del primer encabezado, seguido directamente por otro de igual o mayor rango",
+            TitleSource::LoneHeading =>
+                "del primer encabezado, único de su nivel y de rango superior a los demás",
             TitleSource::Metadata => "de las propiedades del documento",
             TitleSource::Filename => "del nombre del archivo; el documento no lo declara",
         },
@@ -1929,6 +1986,38 @@ mod tests {
         let report = &md["conversion-report.md"];
         assert!(report.contains("1 imagen(es) marcadas como decorativas"));
         assert!(report.contains("Bloques 6 y 7: 2 ecuación(es)"));
+    }
+
+    #[test]
+    fn direct_formatting_yields_headings_by_size_literal_lists_and_quotes() {
+        let (_, state, md) = convert_example("examples/docx/muestras/formato_directo.docx");
+        assert_eq!(state, "complete");
+        let text = &md["contenido/texto.md"];
+        for expected in [
+            "# Manual de operación del laboratorio\n",
+            "## Acceso y horarios\n",
+            "### Horario extendido\n",
+            "1. Solicite la autorización con dos días de anticipación.\n2. Registre su ingreso con el carné.\n   - Si el lector falla, use la bitácora de papel.\n   - Informe la falla a soporte.\n3. Cierre la sesión al salir.\n",
+            "**Requisitos:**\n",
+            "- a) Tener matrícula vigente.\n",
+            "- Limpieza de filtros y ventiladores.\n",
+            "<!-- okf-source-span: b-20 -->\nNadie trabaja solo en el laboratorio\n",
+            "> *En caso de emergencia, siga las rutas de evacuación",
+        ] {
+            assert!(text.contains(expected), "{expected}\n{text}");
+        }
+        let report = &md["conversion-report.md"];
+        assert!(report.contains(
+            "Bloques 3, 10, 15 y 21: encabezado inferido por su formato (párrafo breve en negrita"
+        ));
+        assert!(report.contains(
+            "Bloques 5–9, 12, 13 y 17–19: lista con la viñeta o el número escritos como texto"
+        ));
+        assert!(
+            report.contains(
+                "del primer encabezado, único de su nivel y de rango superior a los demás"
+            )
+        );
     }
 
     #[test]

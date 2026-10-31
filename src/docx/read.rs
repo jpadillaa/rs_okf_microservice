@@ -95,8 +95,12 @@ pub(crate) struct Para {
     pub(crate) toc: bool,
     /// Estilo de código: se escribe como bloque de código literal.
     pub(crate) code: bool,
+    /// Estilo de cita: se escribe como cita Markdown.
+    pub(crate) quote: bool,
     /// Etiqueta de lista, si el párrafo está numerado.
     pub(crate) list: Option<ListLabel>,
+    /// La etiqueta de lista está escrita como texto («•⇥», «1⇥»), sin numeración.
+    pub(crate) literal_list: bool,
     segs: Vec<Seg>,
     /// Tamaño efectivo del texto visible, si es uniforme (medios puntos).
     size: Option<u32>,
@@ -117,6 +121,68 @@ impl Para {
             .split_whitespace()
             .collect::<Vec<_>>()
             .join(" ")
+    }
+    /// Todo el texto visible está en negrita.
+    pub(crate) fn all_bold(&self) -> bool {
+        let mut visible = self.segs.iter().filter(|s| !s.text.trim().is_empty());
+        visible.clone().next().is_some() && visible.all(|s| s.bold)
+    }
+    /// Etiqueta de lista escrita como texto al comienzo del párrafo y separada por una
+    /// tabulación: una viñeta («•», «◦», «–»), un número («1», «2.») o una letra o
+    /// número romano con signo («a)», «iv.»). Se quita del texto; el nivel sale de la
+    /// sangría izquierda (720 twips por nivel, como en Word).
+    fn literal_marker(&mut self, ppr: Option<&Node>) -> Option<ListLabel> {
+        const BULLETS: &[char] = &[
+            '•', '◦', '▪', '▫', '‣', '⁃', '●', '○', '■', '□', '–', '-', '*', '·', '\u{f0b7}',
+            '\u{f0a7}',
+        ];
+        let plain = self.plain();
+        let rest = plain.trim_start_matches([' ', '\t']);
+        let lead = plain.len() - rest.len();
+        let tab = rest.find('\t')?;
+        let token = &rest[..tab];
+        let after = rest[tab..].trim_start_matches([' ', '\t']);
+        if token.is_empty() || token.chars().count() > 6 || after.trim().is_empty() {
+            return None;
+        }
+        let bare = token.trim_end_matches(['.', ')']);
+        let punctuated = bare.len() < token.len();
+        let (ordinal, label) = if token.chars().count() == 1 && token.starts_with(BULLETS) {
+            (None, None)
+        } else if !bare.is_empty() && bare.len() <= 3 && bare.chars().all(|c| c.is_ascii_digit()) {
+            if token.ends_with(')') {
+                (None, Some(token.to_string()))
+            } else {
+                (bare.parse().ok(), None)
+            }
+        } else if punctuated
+            && (bare.chars().count() == 1 && bare.chars().all(char::is_alphabetic)
+                || bare.chars().all(|c| "ivxlcdmIVXLCDM".contains(c)))
+        {
+            (None, Some(token.to_string()))
+        } else {
+            return None;
+        };
+        let left: i64 = ppr
+            .and_then(|p| p.child(b"ind"))
+            .and_then(|i| i.attr(b"left").or_else(|| i.attr(b"start")))
+            .and_then(|v| v.parse().ok())
+            .unwrap_or(0);
+        let mut cut = lead + tab + (rest[tab..].len() - after.len());
+        for seg in self.segs.iter_mut() {
+            let n = cut.min(seg.text.len());
+            seg.text.drain(..n);
+            cut -= n;
+            if cut == 0 {
+                break;
+            }
+        }
+        self.segs.retain(|s| !s.text.is_empty());
+        Some(ListLabel {
+            level: (left / 720 - 1).clamp(0, 8) as u8,
+            ordinal,
+            label,
+        })
     }
     pub(crate) fn uniform_size(&self) -> Option<u32> {
         if self.mixed_size { None } else { self.size }
@@ -148,6 +214,9 @@ impl Para {
                 }
                 _ => groups.push(s.clone()),
             }
+        }
+        for g in groups.iter_mut() {
+            g.text = g.text.replace('\t', " ");
         }
         let mut out = String::new();
         for g in groups {
@@ -207,6 +276,7 @@ impl Para {
             .iter()
             .map(|s| s.text.as_str())
             .collect::<String>()
+            .replace('\t', " ")
             .trim_end()
             .to_string()
     }
@@ -453,6 +523,7 @@ impl<'a> Reader<'a> {
             outline,
             body_level: declared == Some(9),
             code: self.styles.is_code(style),
+            quote: self.styles.is_quote(style),
             title_style: self.styles.is_title(style),
             ..Para::default()
         };
@@ -465,6 +536,14 @@ impl<'a> Reader<'a> {
             && !para.flat().is_empty()
         {
             para.list = Some(self.counters.next(self.numbering, &id, lvl));
+        }
+        if para.list.is_none()
+            && para.outline.is_none()
+            && !para.code
+            && let Some(label) = para.literal_marker(ppr)
+        {
+            para.list = Some(label);
+            para.literal_list = true;
         }
         para
     }
@@ -653,7 +732,9 @@ impl<'a> Reader<'a> {
                 }
                 _ => {}
             },
-            b"tab" | b"ptab" => self.emit(para, " ", props, link, mode),
+            // La tabulación se conserva para reconocer las etiquetas de lista escritas
+            // como texto; al escribir Markdown es un espacio.
+            b"tab" | b"ptab" => self.emit(para, "\t", props, link, mode),
             b"br" if !matches!(c.attr(b"type"), Some("page" | "column")) => {
                 self.emit(para, "\n", props, link, mode)
             }
