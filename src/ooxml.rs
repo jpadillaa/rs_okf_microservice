@@ -52,6 +52,11 @@ pub(crate) fn xml_text(xml: &str) -> String {
     out
 }
 
+/// Texto de un gráfico: títulos, categorías y valores en caché.
+pub(crate) fn chart_text(xml: &str) -> String {
+    xml_text(xml)
+}
+
 pub(crate) fn attr<'a>(e: &'a quick_xml::events::BytesStart<'a>, name: &[u8]) -> Option<String> {
     e.attributes()
         .flatten()
@@ -159,4 +164,17 @@ pub(crate) fn root_attr(xml: &str, name: &[u8]) -> Option<String> {
             _ => {}
         }
     }
+}
+
+/// Texto de una referencia de carácter o entidad XML predefinida.
+pub(crate) fn resolve_ref(r: &quick_xml::events::BytesRef<'_>) -> anyhow::Result<String> {
+    Ok(match r.resolve_char_ref()? {
+        Some(c) => c.to_string(),
+        None => {
+            let name = r.decode()?;
+            quick_xml::escape::resolve_predefined_entity(&name)
+                .map(str::to_string)
+                .unwrap_or_else(|| format!("&{name};"))
+        }
+    })
 }

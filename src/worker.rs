@@ -26,6 +26,9 @@ pub struct Config {
     pub max_memory_mb: u64,
     /// Diapositivas máximas por presentación (`OKF_MAX_SLIDES`).
     pub max_slides: usize,
+    /// Bloques máximos (párrafos y tablas de primer nivel) por documento DOCX
+    /// (`OKF_MAX_BLOCKS`).
+    pub max_blocks: usize,
     /// Duración máxima de una conversión (`OKF_CONVERSION_TIMEOUT_S`).
     pub timeout: Duration,
     /// Vigencia de la reserva en segundos; se renueva cada tercio (`OKF_LEASE_S`).
@@ -41,6 +44,7 @@ impl Default for Config {
         Config {
             max_memory_mb: 500,
             max_slides: 300,
+            max_blocks: 50_000,
             timeout: Duration::from_secs(300),
             lease_s: 60,
             max_attempts: 3,
@@ -63,6 +67,7 @@ impl Config {
         let c = Config {
             max_memory_mb: var("OKF_MAX_MEMORY_MB", d.max_memory_mb)?,
             max_slides: var("OKF_MAX_SLIDES", d.max_slides)?,
+            max_blocks: var("OKF_MAX_BLOCKS", d.max_blocks)?,
             timeout: Duration::from_secs(var("OKF_CONVERSION_TIMEOUT_S", d.timeout.as_secs())?),
             lease_s: var("OKF_LEASE_S", d.lease_s)?,
             max_attempts: var("OKF_MAX_ATTEMPTS", d.max_attempts)?,
@@ -254,6 +259,7 @@ async fn run_child(a: &App, exe: &Path, job: &Job, original: &Path, dir: &Path) 
         .arg(dir)
         .arg(&job.filename)
         .env("OKF_MAX_SLIDES", a.cfg.max_slides.to_string())
+        .env("OKF_MAX_BLOCKS", a.cfg.max_blocks.to_string())
         .stdin(Stdio::null())
         .stdout(Stdio::piped())
         .stderr(Stdio::piped())

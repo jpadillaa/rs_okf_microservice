@@ -26,15 +26,6 @@ pub(crate) enum Item {
     AltText(String),
 }
 
-/// Comentario de revisión (formato clásico o moderno) con sus respuestas.
-#[derive(Clone, Default, Debug)]
-pub(crate) struct Comment {
-    pub(crate) author: Option<String>,
-    pub(crate) date: Option<String>,
-    pub(crate) text: String,
-    pub(crate) replies: Vec<Comment>,
-}
-
 #[derive(Clone, Default)]
 pub(crate) struct Slide {
     pub(crate) idx: usize,
@@ -73,10 +64,6 @@ pub(crate) struct Extraction {
     pub(crate) issues: Vec<Issue>,
     /// Texto de formas fijas del diseño (layout o patrón) y cuántas diapositivas lo muestran.
     pub(crate) design_texts: Vec<(String, usize)>,
-}
-
-pub(crate) fn chart_text(xml: &str) -> String {
-    xml_text(xml)
 }
 
 /// Umbral de área (fracción de la diapositiva) bajo el cual una imagen sin texto
@@ -211,38 +198,15 @@ pub(crate) fn attach_badges(blocks: &mut [Option<slide_xml::Block>]) {
         }
         if let Some(first) = label.paragraphs.first_mut() {
             first.plain = format!("{n}. {}", first.plain);
-            first.md = slide_xml::escape_line_start(&format!("{n}. {}", first.md));
+            first.md = escape_line_start(&format!("{n}. {}", first.md));
             blocks[i] = None;
         }
     }
 }
 
-/// «Diapositiva 4» o «Diapositivas 4–6, 11 y 19»: los tramos de tres o más
-/// diapositivas consecutivas se abrevian.
+/// «Diapositiva 4» o «Diapositivas 4–6, 11 y 19».
 pub(crate) fn slides_phrase(ns: &[usize]) -> String {
-    if let [n] = ns {
-        return format!("Diapositiva {n}");
-    }
-    let mut parts = Vec::new();
-    let mut start = 0;
-    while start < ns.len() {
-        let mut end = start;
-        while end + 1 < ns.len() && ns[end + 1] == ns[end] + 1 {
-            end += 1;
-        }
-        if end - start >= 2 {
-            parts.push(format!("{}–{}", ns[start], ns[end]));
-        } else {
-            parts.extend(ns[start..=end].iter().map(usize::to_string));
-        }
-        start = end + 1;
-    }
-    let last = parts.pop().unwrap_or_default();
-    if parts.is_empty() {
-        format!("Diapositivas {last}")
-    } else {
-        format!("Diapositivas {} y {last}", parts.join(", "))
-    }
+    units_phrase("Diapositiva", "Diapositivas", ns)
 }
 
 /// Texto de las formas que no son marcadores de posición; en un layout o patrón se
@@ -595,7 +559,7 @@ pub(crate) fn extract(bytes: &[u8], attempt: &FsPath) -> Result<Extraction> {
                             if !text.is_empty() {
                                 s.items.push(Item::Chart(format!(
                                     "Datos del gráfico: {}",
-                                    slide_xml::escape_inline(&text)
+                                    escape_inline(&text)
                                 )));
                             }
                         }
@@ -757,7 +721,7 @@ pub(crate) fn slide_description(s: &Slide, deck: &str) -> String {
 
 pub(crate) fn index_entry(s: &Slide, href: &str) -> String {
     let label = match &s.title {
-        Some(t) => format!("Diapositiva {}: {}", s.idx, slide_xml::escape_inline(t)),
+        Some(t) => format!("Diapositiva {}: {}", s.idx, escape_inline(t)),
         None => format!("Diapositiva {}", s.idx),
     };
     let mut flags = Vec::new();
@@ -812,7 +776,7 @@ pub(crate) fn markdown_slide(s: &Slide, deck: &str, instant: &str) -> String {
     }
     out.push_str("---\n\n");
     if let Some(title) = &s.title {
-        out.push_str(&format!("# {}\n\n", slide_xml::escape_inline(title)));
+        out.push_str(&format!("# {}\n\n", escape_inline(title)));
         if s.title_inferred {
             out.push_str("> Título inferido por tamaño y posición del texto; la diapositiva no tiene marcador de título.\n\n");
         }
@@ -856,15 +820,14 @@ pub(crate) fn markdown_slide(s: &Slide, deck: &str, instant: &str) -> String {
                 image_no += 1;
                 let alt = alt
                     .as_deref()
-                    .map(slide_xml::escape_inline)
+                    .map(escape_inline)
                     .unwrap_or_else(|| format!("Imagen {image_no} de la diapositiva {}", s.idx));
                 out.push_str(&format!("![{alt}](../{path})\n\n"));
             }
             Item::Chart(text) => out.push_str(&format!("{text}\n\n")),
-            Item::AltText(text) => out.push_str(&format!(
-                "> Texto alternativo: {}\n\n",
-                slide_xml::escape_inline(text)
-            )),
+            Item::AltText(text) => {
+                out.push_str(&format!("> Texto alternativo: {}\n\n", escape_inline(text)))
+            }
         }
     }
     if s.items.is_empty() {
@@ -879,25 +842,8 @@ pub(crate) fn markdown_slide(s: &Slide, deck: &str, instant: &str) -> String {
         out.push('\n');
     }
     if !s.comments.is_empty() {
-        out.push_str("\n## Comentarios de revisión\n\n> Comentarios del archivo original; no forman parte del contenido presentado.\n\n");
-        fn line(c: &Comment, indent: &str) -> String {
-            let mut head = format!(
-                "{indent}- **{}**",
-                slide_xml::escape_inline(c.author.as_deref().unwrap_or("Autor desconocido"))
-            );
-            if let Some(d) = &c.date {
-                head.push_str(&format!(" · {d}"));
-            }
-            let text = c.text.split_whitespace().collect::<Vec<_>>().join(" ");
-            let mut out = format!("{head}: {}\n", slide_xml::escape_inline(&text));
-            for r in &c.replies {
-                out.push_str(&line(r, &format!("{indent}  ")));
-            }
-            out
-        }
-        for c in &s.comments {
-            out.push_str(&line(c, ""));
-        }
+        out.push('\n');
+        out.push_str(&comments_markdown(&s.comments));
     }
     out
 }
@@ -1091,7 +1037,7 @@ pub(crate) fn build_bundle(
             .map(|(t, n)| {
                 format!(
                     "- {} ({n} diapositiva(s))\n",
-                    slide_xml::escape_line_start(&slide_xml::escape_inline(t))
+                    escape_line_start(&escape_inline(t))
                 )
             })
             .collect::<String>();
@@ -1109,7 +1055,7 @@ pub(crate) fn build_bundle(
         yaml(&generated),
         yaml(&orig),
         hash,
-        slide_xml::escape_inline(filename),
+        escape_inline(filename),
         slides.len()
     );
     let list = |items: &[&Issue], empty: &str| -> String {
@@ -1118,7 +1064,7 @@ pub(crate) fn build_bundle(
         } else {
             items
                 .iter()
-                .map(|i| format!("- {}\n", slide_xml::escape_inline(&i.text)))
+                .map(|i| format!("- {}\n", escape_inline(&i.text)))
                 .collect()
         }
     };

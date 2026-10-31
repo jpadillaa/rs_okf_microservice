@@ -2,6 +2,8 @@
 //!
 //! El orden de los bloques es el del árbol de formas (orden de autoría). La geometría se
 //! conserva en EMU absolutas para que el ensamblado infiera títulos y filtre recursos.
+use crate::bundle::{escape_inline, escape_line_start};
+use crate::ooxml::resolve_ref;
 use quick_xml::events::{BytesStart, Event};
 
 #[derive(Clone, Copy, Debug, Default, PartialEq)]
@@ -74,120 +76,6 @@ pub struct Part {
 /// Prefijos de `mc:Choice Requires` cuyo contenido se interpreta; para cualquier otro se
 /// usa `mc:Fallback`, que PowerPoint escribe para lectores sin esa extensión.
 const SUPPORTED_CHOICES: &[&str] = &["a14"];
-
-#[derive(Default)]
-struct MathNode {
-    name: Vec<u8>,
-    val: Option<String>,
-    text: String,
-    children: Vec<MathNode>,
-}
-
-impl MathNode {
-    fn child(&self, name: &[u8]) -> Option<&MathNode> {
-        self.children.iter().find(|c| c.name == name)
-    }
-    /// Valor `m:val` de una propiedad, p. ej. `m:begChr` dentro de `m:dPr`.
-    fn prop(&self, pr: &[u8], name: &[u8]) -> Option<String> {
-        self.child(pr)?.child(name)?.val.clone()
-    }
-}
-
-/// Notación lineal aproximada a UnicodeMath: `c^2`, `a/b`, `√(x)`, `∑_(i=1)^n`.
-fn linear(n: &MathNode) -> String {
-    let part = |name: &[u8]| n.child(name).map(linear).unwrap_or_default();
-    let wrap = |name: &[u8]| {
-        let s = part(name);
-        if s.chars().count() <= 1 || s.chars().all(|c| c.is_ascii_digit()) {
-            s
-        } else {
-            format!("({s})")
-        }
-    };
-    match n.name.as_slice() {
-        b"t" => n.text.clone(),
-        b"sSup" => format!("{}^{}", wrap(b"e"), wrap(b"sup")),
-        b"sSub" => format!("{}_{}", wrap(b"e"), wrap(b"sub")),
-        b"sSubSup" => format!("{}_{}^{}", wrap(b"e"), wrap(b"sub"), wrap(b"sup")),
-        b"sPre" => format!("_{}^{}{}", wrap(b"sub"), wrap(b"sup"), wrap(b"e")),
-        b"f" => format!("{}/{}", wrap(b"num"), wrap(b"den")),
-        b"rad" => match part(b"deg") {
-            d if d.is_empty() => format!("√{}", wrap(b"e")),
-            d => format!("√({d}&{})", part(b"e")),
-        },
-        b"d" => {
-            let open = n.prop(b"dPr", b"begChr").unwrap_or_else(|| "(".into());
-            let close = n.prop(b"dPr", b"endChr").unwrap_or_else(|| ")".into());
-            let sep = n.prop(b"dPr", b"sepChr").unwrap_or_else(|| "|".into());
-            let items: Vec<String> = n
-                .children
-                .iter()
-                .filter(|c| c.name == b"e")
-                .map(linear)
-                .collect();
-            format!("{open}{}{close}", items.join(&sep))
-        }
-        b"nary" => {
-            let op = n.prop(b"naryPr", b"chr").unwrap_or_else(|| "∫".into());
-            let mut s = op;
-            if n.child(b"sub").is_some_and(|c| !linear(c).is_empty()) {
-                s.push('_');
-                s.push_str(&wrap(b"sub"));
-            }
-            if n.child(b"sup").is_some_and(|c| !linear(c).is_empty()) {
-                s.push('^');
-                s.push_str(&wrap(b"sup"));
-            }
-            format!("{s} {}", part(b"e"))
-        }
-        b"func" => format!("{} {}", part(b"fName"), part(b"e")),
-        b"limLow" => format!("{}_{}", part(b"e"), wrap(b"lim")),
-        b"limUpp" => format!("{}^{}", part(b"e"), wrap(b"lim")),
-        b"acc" => {
-            let chr = n.prop(b"accPr", b"chr").unwrap_or_else(|| "\u{302}".into());
-            format!("{}{chr}", part(b"e"))
-        }
-        b"m" => {
-            let rows: Vec<String> = n
-                .children
-                .iter()
-                .filter(|c| c.name == b"mr")
-                .map(|r| {
-                    r.children
-                        .iter()
-                        .filter(|c| c.name == b"e")
-                        .map(linear)
-                        .collect::<Vec<_>>()
-                        .join("&")
-                })
-                .collect();
-            format!("■({})", rows.join("@"))
-        }
-        b"eqArr" => {
-            let rows: Vec<String> = n
-                .children
-                .iter()
-                .filter(|c| c.name == b"e")
-                .map(linear)
-                .collect();
-            format!("█({})", rows.join("@"))
-        }
-        name if name.ends_with(b"Pr") => String::new(),
-        _ => n.children.iter().map(linear).collect(),
-    }
-}
-
-fn resolve_ref(r: &quick_xml::events::BytesRef<'_>) -> anyhow::Result<String> {
-    Ok(match r.resolve_char_ref()? {
-        Some(c) => c.to_string(),
-        None => {
-            let name = r.decode()?;
-            quick_xml::escape::resolve_predefined_entity(&name)
-                .map(str::to_string)
-                .unwrap_or_else(|| format!("&{name};"))
-        }
-    })
-}
 
 #[derive(Clone, Copy, Default)]
 struct GroupXf {
@@ -323,7 +211,7 @@ pub fn parse_part(xml: &str, link: &dyn Fn(&str) -> Option<String>) -> anyhow::R
     // Por cada mc:AlternateContent abierto: si ya se eligió una rama.
     let mut alternates: Vec<bool> = Vec::new();
     let mut skip = 0usize;
-    let mut math: Vec<MathNode> = Vec::new();
+    let mut math = crate::omml::Capture::default();
     loop {
         let event = reader.read_event()?;
         // Rama de mc:AlternateContent descartada: se ignora todo su subárbol.
@@ -337,49 +225,16 @@ pub fn parse_part(xml: &str, link: &dyn Fn(&str) -> Option<String>) -> anyhow::R
             continue;
         }
         // Ecuación OMML: se captura el subárbol de m:oMath y se linealiza al cerrarlo.
-        if !math.is_empty()
-            || matches!(&event, Event::Start(e) if e.local_name().as_ref() == b"oMath")
+        if math.active() || matches!(&event, Event::Start(e) if e.local_name().as_ref() == b"oMath")
         {
-            match event {
-                Event::Start(e) => math.push(MathNode {
-                    name: e.local_name().as_ref().to_vec(),
-                    val: attr(&e, b"val"),
-                    ..MathNode::default()
-                }),
-                Event::Empty(e) => {
-                    if let Some(top) = math.last_mut() {
-                        top.children.push(MathNode {
-                            name: e.local_name().as_ref().to_vec(),
-                            val: attr(&e, b"val"),
-                            ..MathNode::default()
-                        });
-                    }
+            if let Some(eq) = math.feed(&event)? {
+                part.equations += 1;
+                if let Some(p) = para.as_mut() {
+                    p.push_math(&eq);
                 }
-                Event::Text(t) => {
-                    if let Some(top) = math.last_mut().filter(|n| n.name == b"t") {
-                        top.text.push_str(&t.decode()?);
-                    }
-                }
-                Event::GeneralRef(r) => {
-                    if let Some(top) = math.last_mut().filter(|n| n.name == b"t") {
-                        top.text.push_str(&resolve_ref(&r)?);
-                    }
-                }
-                Event::End(_) => {
-                    if let Some(node) = math.pop() {
-                        match math.last_mut() {
-                            Some(parent) => parent.children.push(node),
-                            None => {
-                                part.equations += 1;
-                                if let Some(p) = para.as_mut() {
-                                    p.push_math(&linear(&node));
-                                }
-                            }
-                        }
-                    }
-                }
-                Event::Eof => break,
-                _ => {}
+            }
+            if matches!(event, Event::Eof) {
+                break;
             }
             continue;
         }
@@ -697,32 +552,6 @@ fn embed(e: &BytesStart<'_>) -> Option<String> {
 /// PowerPoint guarda saltos suaves como `\r\n`, `\r` o tabulación vertical.
 fn normalize_breaks(s: &str) -> String {
     s.replace("\r\n", "\n").replace(['\r', '\u{b}'], "\n")
-}
-
-/// Escapa los caracteres con significado en línea para Markdown/CommonMark.
-pub fn escape_inline(s: &str) -> String {
-    let mut out = String::with_capacity(s.len());
-    for c in s.chars() {
-        if matches!(c, '\\' | '`' | '*' | '_' | '[' | ']' | '<') {
-            out.push('\\');
-        }
-        out.push(c);
-    }
-    out
-}
-
-/// Evita que una línea literal se interprete como encabezado, cita o lista.
-pub fn escape_line_start(line: &str) -> String {
-    let trimmed = line.trim_start();
-    let indent = &line[..line.len() - trimmed.len()];
-    if trimmed.starts_with(['#', '>', '-', '+', '=']) {
-        return format!("{indent}\\{trimmed}");
-    }
-    let digits = trimmed.chars().take_while(char::is_ascii_digit).count();
-    if digits > 0 && matches!(trimmed[digits..].chars().next(), Some('.') | Some(')')) {
-        return format!("{indent}{}\\{}", &trimmed[..digits], &trimmed[digits..]);
-    }
-    line.to_string()
 }
 
 #[cfg(test)]

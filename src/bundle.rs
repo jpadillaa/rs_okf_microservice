@@ -39,6 +39,67 @@ impl Issue {
     }
 }
 
+/// Comentario de revisión (formato clásico o moderno) con sus respuestas.
+#[derive(Clone, Default, Debug)]
+pub(crate) struct Comment {
+    pub(crate) author: Option<String>,
+    pub(crate) date: Option<String>,
+    pub(crate) text: String,
+    pub(crate) replies: Vec<Comment>,
+}
+
+/// Sección «Comentarios de revisión»: autor, fecha y texto, con las respuestas anidadas.
+pub(crate) fn comments_markdown(comments: &[Comment]) -> String {
+    fn line(c: &Comment, indent: &str) -> String {
+        let mut head = format!(
+            "{indent}- **{}**",
+            escape_inline(c.author.as_deref().unwrap_or("Autor desconocido"))
+        );
+        if let Some(d) = &c.date {
+            head.push_str(&format!(" · {d}"));
+        }
+        let text = c.text.split_whitespace().collect::<Vec<_>>().join(" ");
+        let mut out = format!("{head}: {}\n", escape_inline(&text));
+        for r in &c.replies {
+            out.push_str(&line(r, &format!("{indent}  ")));
+        }
+        out
+    }
+    let mut out = "## Comentarios de revisión\n\n> Comentarios del archivo original; no forman parte del contenido presentado.\n\n".to_string();
+    for c in comments {
+        out.push_str(&line(c, ""));
+    }
+    out
+}
+
+/// «Bloque 4» o «Bloques 4–6, 11 y 19»: los tramos de tres o más unidades consecutivas
+/// se abrevian.
+pub(crate) fn units_phrase(singular: &str, plural: &str, ns: &[usize]) -> String {
+    if let [n] = ns {
+        return format!("{singular} {n}");
+    }
+    let mut parts = Vec::new();
+    let mut start = 0;
+    while start < ns.len() {
+        let mut end = start;
+        while end + 1 < ns.len() && ns[end + 1] == ns[end] + 1 {
+            end += 1;
+        }
+        if end - start >= 2 {
+            parts.push(format!("{}–{}", ns[start], ns[end]));
+        } else {
+            parts.extend(ns[start..=end].iter().map(usize::to_string));
+        }
+        start = end + 1;
+    }
+    let last = parts.pop().unwrap_or_default();
+    if parts.is_empty() {
+        format!("{plural} {last}")
+    } else {
+        format!("{plural} {} y {last}", parts.join(", "))
+    }
+}
+
 pub(crate) fn table_markdown(rows: &[Vec<String>]) -> String {
     let cols = rows.iter().map(Vec::len).max().unwrap_or(0);
     let mut md = String::new();
@@ -71,6 +132,32 @@ pub(crate) fn truncate_chars(s: &str, max: usize) -> String {
     format!("{}…", cut.trim_end())
 }
 
+/// Escapa los caracteres con significado en línea para Markdown/CommonMark.
+pub(crate) fn escape_inline(s: &str) -> String {
+    let mut out = String::with_capacity(s.len());
+    for c in s.chars() {
+        if matches!(c, '\\' | '`' | '*' | '_' | '[' | ']' | '<') {
+            out.push('\\');
+        }
+        out.push(c);
+    }
+    out
+}
+
+/// Evita que una línea literal se interprete como encabezado, cita o lista.
+pub(crate) fn escape_line_start(line: &str) -> String {
+    let trimmed = line.trim_start();
+    let indent = &line[..line.len() - trimmed.len()];
+    if trimmed.starts_with(['#', '>', '-', '+', '=']) {
+        return format!("{indent}\\{trimmed}");
+    }
+    let digits = trimmed.chars().take_while(char::is_ascii_digit).count();
+    if digits > 0 && matches!(trimmed[digits..].chars().next(), Some('.') | Some(')')) {
+        return format!("{indent}{}\\{}", &trimmed[..digits], &trimmed[digits..]);
+    }
+    line.to_string()
+}
+
 pub(crate) fn esc(s: &str) -> String {
     s.replace('\\', "\\\\")
         .replace('"', "\\\"")
@@ -100,21 +187,19 @@ pub(crate) fn frontmatter(md: &str) -> Result<YamlValue> {
     Ok(yaml_serde::from_str(&rest[..end])?)
 }
 
-pub(crate) fn local_link_exists(
-    entry: &str,
-    target: &str,
-    entries: &std::collections::HashSet<String>,
-) -> bool {
+/// Ruta normalizada dentro del bundle de un destino de enlace local; `None` para
+/// enlaces externos o anclas del mismo documento.
+pub(crate) fn local_target(entry: &str, target: &str) -> Option<String> {
     if target.starts_with("http://")
         || target.starts_with("https://")
         || target.starts_with("mailto:")
         || target.is_empty()
     {
-        return true;
+        return None;
     }
     let t = target.split('#').next().unwrap_or("");
     if t.is_empty() {
-        return true;
+        return None;
     }
     let raw = if t.starts_with('/') {
         t.trim_start_matches('/').to_string()
@@ -135,8 +220,11 @@ pub(crate) fn local_link_exists(
             x => p.push(x),
         }
     }
-    entries.contains(&p.join("/"))
+    Some(p.join("/"))
 }
+
+/// Marcador de pasaje del perfil: `<!-- okf-source-span: ID -->`.
+const SPAN_MARKER: &str = "<!-- okf-source-span: ";
 
 pub(crate) fn validate_bundle(path: &FsPath) -> Result<()> {
     let mut z = ZipArchive::new(fs::File::open(path)?)?;
@@ -171,9 +259,11 @@ pub(crate) fn validate_bundle(path: &FsPath) -> Result<()> {
     if rootfm.get("okf_version").and_then(YamlValue::as_str) != Some("0.2") {
         bail!("index.md no declara okf_version 0.2")
     }
+    let mut linked = std::collections::HashSet::new();
     for name in names.iter().filter(|n| n.ends_with(".md")) {
         let mut md = String::new();
         z.by_name(name)?.read_to_string(&mut md)?;
+        let mut span_ids: Vec<String> = Vec::new();
         let reserved = name == "index.md" || name == "contenido/index.md" || name == "log.md";
         if !reserved {
             let fm = frontmatter(&md)?;
@@ -211,6 +301,14 @@ pub(crate) fn validate_bundle(path: &FsPath) -> Result<()> {
                 .iter()
                 .filter_map(|s| s.get("id").and_then(YamlValue::as_str))
                 .collect();
+            span_ids = fm
+                .get("source_spans")
+                .and_then(YamlValue::as_sequence)
+                .map(Vec::as_slice)
+                .unwrap_or_default()
+                .iter()
+                .filter_map(|s| s.get("id").and_then(YamlValue::as_str).map(str::to_string))
+                .collect();
             for span in fm
                 .get("source_spans")
                 .and_then(YamlValue::as_sequence)
@@ -244,14 +342,32 @@ pub(crate) fn validate_bundle(path: &FsPath) -> Result<()> {
                     .trim()
                     .trim_start_matches('<')
                     .trim_end_matches('>');
-                if !local_link_exists(name, target, &names) {
-                    bail!("enlace interno sin resolver en {name}: {target}")
+                if let Some(t) = local_target(name, target) {
+                    if !names.contains(&t) {
+                        bail!("enlace interno sin resolver en {name}: {target}")
+                    }
+                    linked.insert(t);
                 }
                 pos = s + end + 1
             } else {
                 break;
             }
         }
+        // Cada marcador de pasaje resuelve a un localizador del mismo concepto.
+        for (i, _) in md.match_indices(SPAN_MARKER) {
+            let rest = &md[i + SPAN_MARKER.len()..];
+            let id = rest.split(" -->").next().unwrap_or_default().trim();
+            if !span_ids.iter().any(|s| s == id) {
+                bail!("marcador de pasaje sin localizador en {name}: {id}")
+            }
+        }
+    }
+    // Toda imagen o archivo de datos adjunto se enlaza desde algún concepto.
+    if let Some(orphan) = names
+        .iter()
+        .find(|n| n.starts_with("assets/") && !n.ends_with('/') && !linked.contains(*n))
+    {
+        bail!("el recurso {orphan} no está enlazado desde ningún concepto")
     }
     validate_against_original(&mut z, &names, format)
 }

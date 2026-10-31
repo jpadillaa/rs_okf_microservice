@@ -21,7 +21,9 @@ use tracing::info;
 use uuid::Uuid;
 
 mod bundle;
+mod docx;
 mod format;
+mod omml;
 mod ooxml;
 mod pptx;
 mod worker;
@@ -624,11 +626,11 @@ mod tests {
         assert_eq!((state.as_str(), attempt), ("failed", 1));
         assert!(!error.unwrap().contains("reintent"));
         // Formato sin adaptador: permanente.
-        enqueue(&a, "later", "notes.docx", b"PK", "queued", 0, 0).await;
+        enqueue(&a, "later", "notes.xlsx", b"PK", "queued", 0, 0).await;
         assert!(work_one(&a).await.unwrap());
         let (state, attempt, error, _) = job(&a, "later").await;
         assert_eq!((state.as_str(), attempt), ("failed", 1));
-        assert!(error.unwrap().contains("formato no admitido: notes.docx"));
+        assert!(error.unwrap().contains("formato no admitido: notes.xlsx"));
         // Límite de diapositivas: permanente.
         Arc::make_mut(&mut a.cfg).max_slides = 2;
         enqueue(
@@ -866,6 +868,71 @@ mod tests {
             ("no admite frontmatter", &|n, md| {
                 if n == "contenido/index.md" {
                     format!("---\ntype: Index\n---\n{md}")
+                } else {
+                    md
+                }
+            }),
+        ];
+        for (expected, edit) in cases {
+            rewrite(&good, &bad, edit);
+            let error = validate_bundle(&bad).unwrap_err().to_string();
+            assert!(error.contains(expected), "{expected}: {error}");
+        }
+    }
+    #[tokio::test]
+    async fn docx_is_converted_by_the_worker_and_checked_against_its_blocks() {
+        let tmp = tempfile::tempdir().unwrap();
+        let a = test_app(tmp.path());
+        let bytes = fs::read("examples/docx/estructura.docx").unwrap();
+        enqueue(&a, "doc", "estructura.docx", &bytes, "queued", 0, 0).await;
+        assert!(work_one(&a).await.unwrap());
+        let (state, _, error, bundle) = job(&a, "doc").await;
+        assert_eq!((state.as_str(), error), ("complete", None));
+        let good = a.root.join(bundle.unwrap());
+        validate_bundle(&good).unwrap();
+        let bad = tmp.path().join("bad.zip");
+        type Edit<'a> = &'a dyn Fn(&str, String) -> String;
+        let cases: [(&str, Edit); 5] = [
+            (
+                "empieza en el bloque 10 y debía empezar en el 9",
+                &|n, md| {
+                    if n == "contenido/seccion-002.md" {
+                        md.replace(
+                            "id: seccion, source_id: original, kind: docx_blocks, from: 9,",
+                            "id: seccion, source_id: original, kind: docx_blocks, from: 10,",
+                        )
+                    } else {
+                        md
+                    }
+                },
+            ),
+            ("localizador de bloque fuera de su sección", &|n, md| {
+                if n == "contenido/seccion-002.md" {
+                    md.replace("from: 10, to: 10 }", "from: 3, to: 3 }")
+                } else {
+                    md
+                }
+            }),
+            ("marcador de pasaje sin localizador", &|n, md| {
+                if n == "contenido/seccion-001.md" {
+                    md.replace(
+                        "<!-- okf-source-span: b-3 -->",
+                        "<!-- okf-source-span: b-99 -->",
+                    )
+                } else {
+                    md
+                }
+            }),
+            ("no está enlazado desde ningún concepto", &|n, md| {
+                if n == "contenido/seccion-002.md" {
+                    md.replace("![Diagrama del flujo](../assets/imagen-001.png)", "")
+                } else {
+                    md
+                }
+            }),
+            ("documento.md no localiza los 13 bloques", &|n, md| {
+                if n == "documento.md" {
+                    md.replace("from: 1, to: 13 }", "from: 1, to: 12 }")
                 } else {
                     md
                 }

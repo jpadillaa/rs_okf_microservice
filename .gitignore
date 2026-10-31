@@ -1,6 +1,6 @@
 /target/
 /data/
-# Originales del corpus real; las pruebas usan las copias reducidas de examples/pptx/corpus.
+# Originales del corpus real; las pruebas usan las copias reducidas de examples/pptx/corpus y examples/docx/corpus.
 /datos_de_prueba/
 .DS_Store
 # Bundles generados localmente para revisión manual.
