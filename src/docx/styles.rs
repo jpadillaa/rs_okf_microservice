@@ -129,12 +129,12 @@ impl Styles {
             .rev()
             .fold(RunProps::default(), |acc, s| acc.over(&s.run))
     }
-    /// Nivel de esquema (0 = título de nivel 1) declarado o heredado; los estilos
-    /// integrados «heading N» lo tienen aunque no lo declaren.
+    /// Nivel de esquema declarado o heredado (0 = encabezado de nivel 1, 9 = texto
+    /// corriente); los estilos integrados «heading N» lo tienen aunque no lo declaren.
     pub(crate) fn outline(&self, id: Option<&str>) -> Option<u8> {
         for s in self.chain(id) {
             if let Some(l) = s.outline {
-                return (l < 9).then_some(l);
+                return Some(l.min(9));
             }
             let name = s.name.trim().to_lowercase();
             if let Some(n) = name.strip_prefix("heading ")
@@ -145,6 +145,23 @@ impl Styles {
             }
         }
         None
+    }
+    /// Estilo de código o texto preformateado (por nombre, en cualquier punto de la cadena).
+    pub(crate) fn is_code(&self, id: Option<&str>) -> bool {
+        id.is_some()
+            && self.chain(id).iter().any(|s| {
+                let name = s.name.to_lowercase();
+                [
+                    "code",
+                    "código",
+                    "codigo",
+                    "preformat",
+                    "plain text",
+                    "source",
+                ]
+                .iter()
+                .any(|k| name.contains(k))
+            })
     }
     /// El estilo es (o deriva de) el estilo integrado «Title».
     pub(crate) fn is_title(&self, id: Option<&str>) -> bool {

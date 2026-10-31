@@ -80,7 +80,7 @@ La recuperación de asignaciones vencidas aplica las mismas reglas cada vez que 
 **Validación antes de publicar.** Además de la conformidad OKF y de los enlaces internos, el validador comprueba en todos los formatos:
 
 - que cada `source_spans` cite una fuente declarada en `sources`;
-- que cada marcador `<!-- okf-source-span: ID -->` resuelva a un `source_spans[].id` del mismo concepto;
+- que cada marcador `<!-- okf-source-span: ID -->` resuelva a un `source_spans[].id` del mismo concepto y vaya seguido del bloque al que corresponde;
 - que cada archivo de `assets/` esté enlazado desde algún concepto;
 - que el SHA-256 del informe y de `documento.md` coincida con `references/original.<extensión>`;
 - que los índices reservados distintos del raíz no lleven frontmatter.

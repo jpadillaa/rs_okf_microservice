@@ -360,6 +360,14 @@ pub(crate) fn validate_bundle(path: &FsPath) -> Result<()> {
             if !span_ids.iter().any(|s| s == id) {
                 bail!("marcador de pasaje sin localizador en {name}: {id}")
             }
+            // El marcador corresponde al bloque siguiente, que debe existir.
+            let next = rest
+                .split_once(" -->\n")
+                .map(|(_, after)| after.lines().next().unwrap_or_default())
+                .unwrap_or_default();
+            if next.trim().is_empty() || next.starts_with(SPAN_MARKER) {
+                bail!("marcador de pasaje sin bloque a continuación en {name}: {id}")
+            }
         }
     }
     // Toda imagen o archivo de datos adjunto se enlaza desde algún concepto.

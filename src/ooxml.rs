@@ -13,48 +13,97 @@ pub(crate) const MAX_ZIP_TOTAL: u64 = 512 * 1024 * 1024;
 
 pub(crate) const MAX_ZIP_ENTRIES: usize = 4096;
 
-pub(crate) fn xml_text(xml: &str) -> String {
+/// Texto de un gráfico a partir de su caché: el título y, por serie, su nombre y los
+/// pares «categoría = valor». Las fórmulas (`c:f`) y los códigos de formato no son
+/// contenido. Vacío si la caché no tiene valores.
+pub(crate) fn chart_text(xml: &str) -> String {
+    #[derive(Default)]
+    struct Series {
+        name: String,
+        cats: Vec<String>,
+        vals: Vec<String>,
+    }
     let mut reader = quick_xml::Reader::from_str(xml);
-    reader.config_mut().trim_text(true);
-    let mut out = String::new();
+    let mut stack: Vec<Vec<u8>> = Vec::new();
+    let mut title = String::new();
+    let mut series: Vec<Series> = Vec::new();
+    let mut loose = Vec::new();
+    let mut text = String::new();
     loop {
         match reader.read_event() {
+            Ok(quick_xml::events::Event::Start(e)) => {
+                let name = e.local_name().as_ref().to_vec();
+                if name == b"ser" {
+                    series.push(Series::default());
+                }
+                text.clear();
+                stack.push(name);
+            }
             Ok(quick_xml::events::Event::Text(t)) => {
-                if let Ok(s) = t.decode()
-                    && !s.trim().is_empty()
-                {
-                    if !out.is_empty() {
-                        out.push(' ')
-                    }
-                    out.push_str(&s);
+                if let Ok(s) = t.decode() {
+                    text.push_str(&s);
                 }
             }
             Ok(quick_xml::events::Event::GeneralRef(r)) => {
-                let resolved = r
-                    .resolve_char_ref()
-                    .ok()
-                    .flatten()
-                    .map(String::from)
-                    .or_else(|| {
-                        r.decode().ok().and_then(|name| {
-                            quick_xml::escape::resolve_predefined_entity(&name).map(str::to_string)
-                        })
-                    });
-                if let Some(s) = resolved {
-                    out.push_str(&s);
+                if let Ok(s) = resolve_ref(&r) {
+                    text.push_str(&s);
                 }
             }
-            Ok(quick_xml::events::Event::Eof) => break,
-            Err(_) => break,
+            Ok(quick_xml::events::Event::End(_)) => {
+                let name = stack.pop().unwrap_or_default();
+                let value = text.trim().to_string();
+                text.clear();
+                let inside = |n: &[u8]| stack.iter().any(|s| s == n);
+                if name == b"t" && inside(b"title") && !inside(b"ser") {
+                    if !title.is_empty() && !value.is_empty() {
+                        title.push(' ');
+                    }
+                    title.push_str(&value);
+                } else if name == b"v" && !value.is_empty() {
+                    match series.last_mut().filter(|_| inside(b"ser")) {
+                        Some(s) if inside(b"tx") => s.name = value,
+                        Some(s) if inside(b"cat") || inside(b"xVal") => s.cats.push(value),
+                        Some(s) if inside(b"val") || inside(b"yVal") => s.vals.push(value),
+                        _ => loose.push(value),
+                    }
+                }
+            }
+            Ok(quick_xml::events::Event::Eof) | Err(_) => break,
             _ => {}
         }
     }
-    out
-}
-
-/// Texto de un gráfico: títulos, categorías y valores en caché.
-pub(crate) fn chart_text(xml: &str) -> String {
-    xml_text(xml)
+    let mut parts = Vec::new();
+    for (i, s) in series
+        .iter()
+        .enumerate()
+        .filter(|(_, s)| !s.vals.is_empty())
+    {
+        let label = if s.name.is_empty() {
+            format!("Serie {}", i + 1)
+        } else {
+            s.name.clone()
+        };
+        let pairs: Vec<String> = if s.cats.len() == s.vals.len() {
+            s.cats
+                .iter()
+                .zip(&s.vals)
+                .map(|(c, v)| format!("{c} = {v}"))
+                .collect()
+        } else {
+            s.vals.clone()
+        };
+        parts.push(format!("{label}: {}", pairs.join("; ")));
+    }
+    if parts.is_empty() && series.iter().all(|s| s.vals.is_empty()) {
+        parts.extend(loose);
+        if parts.is_empty() {
+            return String::new();
+        }
+    }
+    if !title.is_empty() {
+        parts.insert(0, title);
+    }
+    parts.join(". ")
 }
 
 pub(crate) fn attr<'a>(e: &'a quick_xml::events::BytesStart<'a>, name: &[u8]) -> Option<String> {

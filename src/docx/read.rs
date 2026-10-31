@@ -34,11 +34,13 @@ pub(crate) struct Aux {
     pub(crate) endnotes: Vec<String>,
     pub(crate) comments: Vec<String>,
     pub(crate) hidden: Vec<String>,
-    pub(crate) inserted: Vec<String>,
-    pub(crate) deleted: Vec<String>,
+    /// Revisiones pendientes: tipo («inserción», «eliminación», «traslado (origen)»…) y texto.
+    pub(crate) revisions: Vec<(&'static str, String)>,
     pub(crate) equations: usize,
-    pub(crate) smartart: usize,
-    pub(crate) objects: usize,
+    /// Parte de datos de cada SmartArt (vacía si no se pudo resolver).
+    pub(crate) smartart: Vec<String>,
+    /// Programa de cada objeto incrustado (`ProgID`).
+    pub(crate) objects: Vec<String>,
     pub(crate) linked_images: usize,
     pub(crate) links: usize,
 }
@@ -52,11 +54,10 @@ impl Aux {
         self.endnotes.extend(o.endnotes);
         self.comments.extend(o.comments);
         self.hidden.extend(o.hidden);
-        self.inserted.extend(o.inserted);
-        self.deleted.extend(o.deleted);
+        self.revisions.extend(o.revisions);
         self.equations += o.equations;
-        self.smartart += o.smartart;
-        self.objects += o.objects;
+        self.smartart.extend(o.smartart);
+        self.objects.extend(o.objects);
         self.linked_images += o.linked_images;
         self.links += o.links;
     }
@@ -79,8 +80,7 @@ enum Last {
     #[default]
     Visible,
     Hidden,
-    Inserted,
-    Deleted,
+    Revision(&'static str),
 }
 
 #[derive(Clone, Debug, Default)]
@@ -89,6 +89,12 @@ pub(crate) struct Para {
     pub(crate) outline: Option<u8>,
     /// El estilo del párrafo es «Title».
     pub(crate) title_style: bool,
+    /// Nivel de esquema 9 declarado: texto corriente, nunca un encabezado inferido.
+    pub(crate) body_level: bool,
+    /// Pertenece a una tabla de contenido generada (campo `TOC` o bloque de galería).
+    pub(crate) toc: bool,
+    /// Estilo de código: se escribe como bloque de código literal.
+    pub(crate) code: bool,
     /// Etiqueta de lista, si el párrafo está numerado.
     pub(crate) list: Option<ListLabel>,
     segs: Vec<Seg>,
@@ -118,11 +124,11 @@ impl Para {
     /// Sin texto visible ni contenido no textual.
     pub(crate) fn is_empty(&self) -> bool {
         self.flat().is_empty()
-            && self.aux.images.is_empty()
+            && self.aux.images.iter().all(|i| i.decorative)
             && self.aux.charts.is_empty()
             && self.aux.textboxes.is_empty()
-            && self.aux.smartart == 0
-            && self.aux.objects == 0
+            && self.aux.smartart.is_empty()
+            && self.aux.objects.is_empty()
             && self.aux.linked_images == 0
     }
     /// Markdown en línea: negrita, cursiva, enlaces y ecuaciones; los saltos de línea
@@ -181,17 +187,28 @@ impl Para {
     }
     /// Agrega texto oculto o revisado, uniendo fragmentos contiguos del mismo tipo.
     fn piece(&mut self, kind: Last, text: &str) {
-        let list = match kind {
-            Last::Hidden => &mut self.aux.hidden,
-            Last::Inserted => &mut self.aux.inserted,
-            Last::Deleted => &mut self.aux.deleted,
-            Last::Visible => return,
-        };
-        match list.last_mut() {
-            Some(last) if self.last == kind => last.push_str(text),
-            _ => list.push(text.to_string()),
+        let same = self.last == kind;
+        match kind {
+            Last::Hidden => match self.aux.hidden.last_mut() {
+                Some(last) if same => last.push_str(text),
+                _ => self.aux.hidden.push(text.to_string()),
+            },
+            Last::Revision(k) => match self.aux.revisions.last_mut() {
+                Some((_, last)) if same => last.push_str(text),
+                _ => self.aux.revisions.push((k, text.to_string())),
+            },
+            Last::Visible => {}
         }
         self.last = kind;
+    }
+    /// Texto literal, sin formato Markdown, para un bloque de código.
+    pub(crate) fn code_text(&self) -> String {
+        self.segs
+            .iter()
+            .map(|s| s.text.as_str())
+            .collect::<String>()
+            .trim_end()
+            .to_string()
     }
 }
 
@@ -262,8 +279,12 @@ struct Field {
     /// Ya pasó el separador: lo que sigue es el resultado visible.
     result: bool,
     link: Option<String>,
-    /// Resultado dependiente de la paginación (`PAGE`, `NUMPAGES`), que no es canónica.
+    /// Resultado dependiente de la paginación (`PAGE`, `NUMPAGES`, `PAGEREF`), que no es
+    /// canónica: se sustituye por `placeholder`.
     hide: bool,
+    placeholder: Option<&'static str>,
+    /// Tabla de contenido generada.
+    toc: bool,
 }
 
 impl Field {
@@ -273,6 +294,8 @@ impl Field {
             result,
             link: None,
             hide: false,
+            placeholder: None,
+            toc: false,
         };
         if result {
             f.classify();
@@ -294,7 +317,15 @@ impl Field {
                     .map(str::to_string)
                     .filter(|l| !l.is_empty())
             }
-            "PAGE" | "NUMPAGES" | "SECTIONPAGES" => self.hide = true,
+            "PAGE" | "SECTIONPAGES" | "PAGEREF" => {
+                self.hide = true;
+                self.placeholder = Some("[página]");
+            }
+            "NUMPAGES" => {
+                self.hide = true;
+                self.placeholder = Some("[total de páginas]");
+            }
+            "TOC" => self.toc = true,
             _ => {}
         }
     }
@@ -303,8 +334,11 @@ impl Field {
 #[derive(Clone, Copy, PartialEq)]
 enum Mode {
     Normal,
-    Inserted,
-    Deleted,
+    /// Revisión visible en la vista final (inserción, destino de un traslado, cambio de
+    /// formato).
+    Added(&'static str),
+    /// Revisión ausente de la vista final (eliminación, origen de un traslado).
+    Removed(&'static str),
 }
 
 /// Rama elegida de un `mc:AlternateContent`.
@@ -388,6 +422,18 @@ impl<'a> Reader<'a> {
     fn suppressed(&self) -> bool {
         self.fields.iter().any(|f| !f.result || f.hide)
     }
+    /// Al empezar el resultado de un campo de paginación se escribe su marcador, salvo
+    /// que un campo exterior lo oculte.
+    fn field_placeholder(&mut self, para: &mut Para, props: &RunProps, mode: Mode) {
+        let Some((last, outer)) = self.fields.split_last() else {
+            return;
+        };
+        if let Some(text) = last.placeholder
+            && !outer.iter().any(|f| !f.result || f.hide)
+        {
+            self.visible(para, text, props, None, mode);
+        }
+    }
 
     pub(crate) fn paragraph(&mut self, p: &Node) -> Para {
         let ppr = p.child(b"pPr");
@@ -396,10 +442,8 @@ impl<'a> Reader<'a> {
         let direct_outline = ppr
             .and_then(|x| x.val(b"outlineLvl"))
             .and_then(|v| v.parse::<u8>().ok());
-        let outline = match direct_outline {
-            Some(l) => (l < 9).then_some(l),
-            None => self.styles.outline(style),
-        };
+        let declared = direct_outline.or_else(|| self.styles.outline(style));
+        let outline = declared.filter(|l| *l < 9);
         let num = match num_pr(ppr) {
             Some((id, lvl)) => Some((id, lvl)),
             None => self.styles.numbering(style),
@@ -407,6 +451,8 @@ impl<'a> Reader<'a> {
         .filter(|(id, _)| id != "0");
         let mut para = Para {
             outline,
+            body_level: declared == Some(9),
+            code: self.styles.is_code(style),
             title_style: self.styles.is_title(style),
             ..Para::default()
         };
@@ -491,19 +537,21 @@ impl<'a> Reader<'a> {
                     self.inline(c, para, base, l, mode);
                 }
             }
-            b"ins" | b"moveTo" => {
+            b"ins" | b"moveTo" | b"del" | b"moveFrom" => {
+                let revision = match n.name.as_slice() {
+                    b"ins" => Mode::Added("inserción"),
+                    b"moveTo" => Mode::Added("traslado (destino)"),
+                    b"del" => Mode::Removed("eliminación"),
+                    _ => Mode::Removed("traslado (origen)"),
+                };
                 for c in n.nodes() {
-                    self.inline(c, para, base, link, Mode::Inserted);
-                }
-            }
-            b"del" | b"moveFrom" => {
-                for c in n.nodes() {
-                    self.inline(c, para, base, link, Mode::Deleted);
+                    self.inline(c, para, base, link, revision);
                 }
             }
             b"fldSimple" => {
                 self.fields
                     .push(Field::new(n.attr(b"instr").unwrap_or_default(), true));
+                self.field_placeholder(para, base, mode);
                 for c in n.nodes() {
                     self.inline(c, para, base, link, mode);
                 }
@@ -516,7 +564,7 @@ impl<'a> Reader<'a> {
             }
             b"oMath" => {
                 let eq = linear(&math(n));
-                if mode != Mode::Deleted && !self.suppressed() && !eq.is_empty() {
+                if !matches!(mode, Mode::Removed(_)) && !self.suppressed() && !eq.is_empty() {
                     para.aux.equations += 1;
                     para.last = Last::Visible;
                     para.segs.push(Seg {
@@ -562,6 +610,13 @@ impl<'a> Reader<'a> {
             props = props.over(&self.styles.char_run(rs));
         }
         props = props.over(&RunProps::from_rpr(rpr));
+        // Un cambio de formato registrado deja el texto en la vista final.
+        let mode = match mode {
+            Mode::Normal if rpr.is_some_and(|x| x.child(b"rPrChange").is_some()) => {
+                Mode::Added("cambio de formato")
+            }
+            m => m,
+        };
         for c in r.nodes() {
             self.run_child(c, para, &props, link, mode);
         }
@@ -591,6 +646,7 @@ impl<'a> Reader<'a> {
                         f.result = true;
                         f.classify();
                     }
+                    self.field_placeholder(para, props, mode);
                 }
                 Some("end") => {
                     self.fields.pop();
@@ -603,10 +659,14 @@ impl<'a> Reader<'a> {
             }
             b"cr" => self.emit(para, "\n", props, link, mode),
             b"noBreakHyphen" => self.emit(para, "-", props, link, mode),
-            b"drawing" if mode != Mode::Deleted && !self.suppressed() => self.drawing(c, para),
-            b"pict" | b"object" if mode != Mode::Deleted && !self.suppressed() => self.vml(c, para),
+            b"drawing" if !matches!(mode, Mode::Removed(_)) && !self.suppressed() => {
+                self.drawing(c, para)
+            }
+            b"pict" | b"object" if !matches!(mode, Mode::Removed(_)) && !self.suppressed() => {
+                self.vml(c, para)
+            }
             b"footnoteReference" | b"endnoteReference"
-                if mode != Mode::Deleted && props.vanish != Some(true) =>
+                if !matches!(mode, Mode::Removed(_)) && props.vanish != Some(true) =>
             {
                 let Some(id) = c.attr(b"id").map(str::to_string) else {
                     return;
@@ -662,21 +722,38 @@ impl<'a> Reader<'a> {
         link: Option<&str>,
         mode: Mode,
     ) {
-        if text.is_empty() || self.suppressed() {
+        if self.fields.iter().any(|f| f.toc && f.result) {
+            para.toc = true;
+        }
+        if !self.suppressed() {
+            self.visible(para, text, props, link, mode);
+        }
+    }
+
+    /// Texto que no oculta ningún campo: va a la vista final, al texto oculto o a las
+    /// revisiones según su formato y su modo.
+    fn visible(
+        &mut self,
+        para: &mut Para,
+        text: &str,
+        props: &RunProps,
+        link: Option<&str>,
+        mode: Mode,
+    ) {
+        if text.is_empty() {
             return;
         }
-        if mode == Mode::Deleted {
-            para.piece(Last::Deleted, text);
+        if let Mode::Removed(kind) = mode {
+            para.piece(Last::Revision(kind), text);
             return;
         }
         if props.vanish == Some(true) {
             para.piece(Last::Hidden, text);
             return;
         }
-        if mode == Mode::Inserted {
-            para.piece(Last::Inserted, text);
-        } else {
-            para.last = Last::Visible;
+        match mode {
+            Mode::Added(kind) => para.piece(Last::Revision(kind), text),
+            _ => para.last = Last::Visible,
         }
         for id in &self.open_comments {
             if let Some(a) = self.anchors.get_mut(id) {
@@ -717,7 +794,11 @@ impl<'a> Reader<'a> {
         for gd in found {
             let uri = gd.attr(b"uri").unwrap_or_default();
             if uri.contains("/diagram") {
-                para.aux.smartart += 1;
+                let data = gd
+                    .find(b"relIds")
+                    .and_then(|r| r.rel(b"dm"))
+                    .and_then(|rid| self.target(rid));
+                para.aux.smartart.push(data.unwrap_or_default());
             } else if uri.contains("/chart")
                 && let Some(target) = gd
                     .find(b"chart")
@@ -767,8 +848,10 @@ impl<'a> Reader<'a> {
                 });
             }
         }
-        if v.find(b"OLEObject").is_some() {
-            para.aux.objects += 1;
+        if let Some(ole) = v.find(b"OLEObject") {
+            para.aux
+                .objects
+                .push(ole.attr(b"ProgID").unwrap_or("desconocido").to_string());
         }
         let mut boxes = Vec::new();
         v.find_all(b"txbxContent", b"", &mut boxes);
@@ -789,7 +872,16 @@ impl<'a> Reader<'a> {
         for c in n.nodes() {
             if c.is(b"p") {
                 let mut inner = self.paragraph(c);
-                let md = inner.md();
+                let mut md = inner.md();
+                if let Some(l) = &inner.list
+                    && !md.is_empty()
+                {
+                    md = match (l.ordinal, &l.label) {
+                        (Some(n), _) => format!("{n}. {md}"),
+                        (None, Some(label)) => format!("- {} {md}", escape_inline(label)),
+                        _ => format!("- {md}"),
+                    };
+                }
                 para.aux.absorb(std::mem::take(&mut inner.aux));
                 if !md.is_empty() {
                     lines.push(md);

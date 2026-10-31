@@ -183,26 +183,43 @@ fn transparent(n: &Node) -> bool {
     n.is(b"sdt") || n.is(b"sdtContent") || n.is(b"customXml")
 }
 
-fn expand(n: Node, f: &mut dyn FnMut(Node) -> Result<()>) -> Result<()> {
+/// Galería de un control de contenido de bloque (`docPartGallery`), p. ej. «Table of
+/// Contents».
+fn gallery(sdt: &Node) -> Option<String> {
+    sdt.child(b"sdtPr")?
+        .child(b"docPartObj")?
+        .val(b"docPartGallery")
+        .map(str::to_string)
+}
+
+type BodyFn<'a> = dyn FnMut(Node, Option<&str>) -> Result<()> + 'a;
+
+fn expand(n: Node, inherited: Option<&str>, f: &mut BodyFn) -> Result<()> {
     if transparent(&n) {
+        let own = if n.is(b"sdt") { gallery(&n) } else { None };
+        let current = own.as_deref().or(inherited);
         for c in n.children {
             if let Child::Node(c) = c
                 && !c.is(b"sdtPr")
                 && !c.is(b"sdtEndPr")
                 && !c.is(b"customXmlPr")
             {
-                expand(c, f)?;
+                expand(c, current, f)?;
             }
         }
         Ok(())
     } else {
-        f(n)
+        f(n, inherited)
     }
 }
 
 /// Recorre los elementos de primer nivel de `w:body` en orden, abriendo los
-/// contenedores transparentes (controles de contenido, XML personalizado).
-pub(crate) fn body_elements(xml: &str, mut f: impl FnMut(Node) -> Result<()>) -> Result<()> {
+/// contenedores transparentes (controles de contenido, XML personalizado); cada
+/// elemento llega con la galería del control que lo contiene, si la hay.
+pub(crate) fn body_elements(
+    xml: &str,
+    mut f: impl FnMut(Node, Option<&str>) -> Result<()>,
+) -> Result<()> {
     let mut reader = NsReader::from_str(xml);
     let mut in_body = false;
     loop {
@@ -211,9 +228,9 @@ pub(crate) fn body_elements(xml: &str, mut f: impl FnMut(Node) -> Result<()>) ->
             Event::Start(e) => {
                 let root = element(&reader, &e);
                 let node = subtree(&mut reader, root)?;
-                expand(node, &mut f)?;
+                expand(node, None, &mut f)?;
             }
-            Event::Empty(e) if in_body => expand(element(&reader, &e), &mut f)?,
+            Event::Empty(e) if in_body => expand(element(&reader, &e), None, &mut f)?,
             Event::End(e) if in_body && e.local_name().as_ref() == b"body" => return Ok(()),
             Event::Eof => bail!("document.xml no contiene w:body"),
             _ => {}

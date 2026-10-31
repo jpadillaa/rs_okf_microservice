@@ -100,7 +100,22 @@ pub(crate) fn linear(n: &MathNode) -> String {
             format!("█({})", rows.join("@"))
         }
         name if name.ends_with(b"Pr") => String::new(),
-        _ => n.children.iter().map(linear).collect(),
+        // Tras un subíndice o superíndice, un espacio separa lo que sigue («q_i d_i»).
+        _ => {
+            let mut out = String::new();
+            let mut scripted = false;
+            for c in &n.children {
+                let s = linear(c);
+                if scripted && s.starts_with(char::is_alphanumeric) {
+                    out.push(' ');
+                }
+                if !s.is_empty() {
+                    scripted = matches!(c.name.as_slice(), b"sSub" | b"sSup" | b"sSubSup");
+                }
+                out.push_str(&s);
+            }
+            out
+        }
     }
 }
 

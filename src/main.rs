@@ -892,7 +892,7 @@ mod tests {
         validate_bundle(&good).unwrap();
         let bad = tmp.path().join("bad.zip");
         type Edit<'a> = &'a dyn Fn(&str, String) -> String;
-        let cases: [(&str, Edit); 5] = [
+        let cases: [(&str, Edit); 6] = [
             (
                 "empieza en el bloque 10 y debía empezar en el 9",
                 &|n, md| {
@@ -924,6 +924,16 @@ mod tests {
                 }
             }),
             ("no está enlazado desde ningún concepto", &|n, md| {
+                if n == "contenido/seccion-002.md" {
+                    md.replace(
+                        "![Diagrama del flujo](../assets/imagen-001.png)",
+                        "Figura retirada.",
+                    )
+                } else {
+                    md
+                }
+            }),
+            ("marcador de pasaje sin bloque a continuación", &|n, md| {
                 if n == "contenido/seccion-002.md" {
                     md.replace("![Diagrama del flujo](../assets/imagen-001.png)", "")
                 } else {

@@ -26,7 +26,7 @@ Si encuentras una contradicción real entre documentos, registra el caso concret
 ## Para comenzar la implementación
 
 - **Primera entrega: PPTX de extremo a extremo.** Prepara solo sus archivos de ejemplo y expectativas. Implementa recepción, worker, extracción de diapositivas, notas, recursos y vistas; genera y valida el bundle OKF. Define únicamente el modelo intermedio común que esta entrega necesite.
-- **Segunda entrega: DOCX.** Reutiliza la cola, el worker, el validador y el lector OOXML; añade el adaptador DOCX con bloques numerados, división por encabezados y contenido auxiliar (§5 de la especificación). Sus ejemplos están en `examples/docx/`.
+- **Segunda entrega: DOCX.** Reutiliza la cola, el worker, el validador y el lector OOXML; añade el adaptador DOCX con bloques numerados, división por encabezados y contenido auxiliar (§5 de la especificación). Sus ejemplos están en `examples/docx/`: dos fixtures mínimos, el corpus real reducido y tres documentos artificiales (`muestras/`) con tablas complejas, notas, comentarios, control de cambios, ecuaciones, gráficos y contenido no representable.
 - Conserva `slide_index`, `slide_id` cuando exista y los demás localizadores antes de generar Markdown. Comprueba también diapositivas ocultas y sin título, vínculos, cobertura e informe.
 - Cierra la entrega cuando pasen sus pruebas de aceptación y funcionen los estados `complete`, `partial` y `failed` según corresponda. Después prepara ejemplos, pruebas y adaptador de **un solo formato adicional**. Repite hasta completar PDF, DOCX y XLSX.
 - Activa las dependencias por etapa según el stack. Las alternativas de bibliotecas se eligen con mediciones del formato en curso, no se instalan todas desde el inicio.

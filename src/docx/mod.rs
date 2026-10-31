@@ -51,8 +51,11 @@ pub(crate) struct Extraction {
     furniture: Vec<Furniture>,
     /// Texto en caché de cada gráfico, por parte.
     chart_texts: HashMap<String, String>,
+    /// Texto de los nodos de cada SmartArt, por parte de datos.
+    smartart_texts: HashMap<String, String>,
     core_title: Option<String>,
-    alt_chunks: usize,
+    /// Fragmentos importados (`altChunk`): número de bloques que los preceden.
+    alt_chunks: Vec<usize>,
 }
 
 struct Rel {
@@ -119,7 +122,7 @@ pub(crate) fn block_count(docx: &[u8]) -> Result<usize> {
     let main = main_part(&mut z);
     let doc = String::from_utf8(read_entry(&mut z, &main)?)?;
     let mut n = 0;
-    xml::body_elements(&doc, |node| {
+    xml::body_elements(&doc, |node, _| {
         n += usize::from(xml::is_block(&node));
         Ok(())
     })?;
@@ -147,14 +150,16 @@ pub(crate) fn extract(bytes: &[u8], max_blocks: usize) -> Result<Extraction> {
     let doc = String::from_utf8(read_entry(&mut z, &main)?)
         .context("document.xml no está codificado en UTF-8")?;
     let mut blocks = Vec::new();
-    let mut alt_chunks = 0;
-    xml::body_elements(&doc, |n| {
+    let mut alt_chunks = Vec::new();
+    xml::body_elements(&doc, |n, gallery| {
         if n.is(b"p") {
-            blocks.push(Block::Para(Box::new(reader.paragraph(&n))));
+            let mut p = reader.paragraph(&n);
+            p.toc |= gallery == Some("Table of Contents");
+            blocks.push(Block::Para(Box::new(p)));
         } else if n.is(b"tbl") {
             blocks.push(Block::Table(reader.table(&n)));
         } else if n.is(b"altChunk") {
-            alt_chunks += 1;
+            alt_chunks.push(blocks.len());
         }
         if blocks.len() > max_blocks {
             return Err(Rejected(format!(
@@ -195,21 +200,23 @@ pub(crate) fn extract(bytes: &[u8], max_blocks: usize) -> Result<Extraction> {
             }
         }
     }
-    let mut chart_texts = HashMap::new();
-    let charts: Vec<String> = blocks
+    let all_aux: Vec<&Aux> = blocks
         .iter()
         .flat_map(|b| match b {
-            Block::Para(p) => p.aux.charts.clone(),
-            Block::Table(t) => t
-                .paras()
-                .iter()
-                .flat_map(|p| p.aux.charts.clone())
-                .collect(),
+            Block::Para(p) => vec![&p.aux],
+            Block::Table(t) => t.paras().into_iter().map(|p| &p.aux).collect(),
         })
         .collect();
-    for c in charts {
-        if let Ok(b) = read_entry(&mut z, &c) {
-            chart_texts.insert(c, chart_text(&String::from_utf8_lossy(&b)));
+    let mut chart_texts = HashMap::new();
+    for c in all_aux.iter().flat_map(|a| a.charts.iter()) {
+        if let Ok(b) = read_entry(&mut z, c) {
+            chart_texts.insert(c.clone(), chart_text(&String::from_utf8_lossy(&b)));
+        }
+    }
+    let mut smartart_texts = HashMap::new();
+    for d in all_aux.iter().flat_map(|a| a.smartart.iter()) {
+        if let Some(root) = parse_entry(&mut z, d) {
+            smartart_texts.insert(d.clone(), smartart_text(&root));
         }
     }
     let core_title = parse_entry(&mut z, "docProps/core.xml")
@@ -226,9 +233,23 @@ pub(crate) fn extract(bytes: &[u8], max_blocks: usize) -> Result<Extraction> {
         comment_thread,
         furniture,
         chart_texts,
+        smartart_texts,
         core_title,
         alt_chunks,
     })
+}
+
+/// Texto de los nodos de un SmartArt (`dgm:pt` sin tipo o de tipo `node`), en orden.
+fn smartart_text(root: &xml::Node) -> String {
+    let mut pts = Vec::new();
+    root.find_all(b"pt", b"", &mut pts);
+    pts.iter()
+        .filter(|pt| pt.attr(b"type").is_none_or(|t| t == "node"))
+        .map(|pt| pt.child(b"t").map(read::node_text).unwrap_or_default())
+        .map(|t| t.split_whitespace().collect::<Vec<_>>().join(" "))
+        .filter(|t| !t.is_empty())
+        .collect::<Vec<_>>()
+        .join(" · ")
 }
 
 /// Comentarios con sus respuestas (`commentsExtended`) y el texto que anclan.
@@ -403,7 +424,7 @@ pub(crate) fn outline(ex: &Extraction, filename: &str) -> Outline {
     let mut headings: Vec<Option<Heading>> = (0..n)
         .map(|i| {
             para(i)
-                .filter(|p| !p.flat().is_empty())
+                .filter(|p| !p.flat().is_empty() && !p.toc)
                 .and_then(|p| p.outline)
                 .map(|l| Heading {
                     level: l + 1,
@@ -435,7 +456,7 @@ pub(crate) fn outline(ex: &Extraction, filename: &str) -> Outline {
     // de un nivel y mayor que el texto corriente, es un encabezado con formato directo.
     for (i, heading) in headings.iter_mut().enumerate() {
         let Some(p) = para(i) else { continue };
-        if heading.is_some() || p.list.is_some() || p.title_style {
+        if heading.is_some() || p.list.is_some() || p.title_style || p.body_level || p.toc {
             continue;
         }
         let t = p.flat();
@@ -604,7 +625,9 @@ struct Tally {
     charts: Vec<usize>,
     empty_charts: Vec<usize>,
     smartart: Vec<usize>,
+    smartart_text: Vec<usize>,
     objects: Vec<usize>,
+    toc: Vec<usize>,
     linked: Vec<usize>,
     textboxes: Vec<usize>,
     hidden: Vec<usize>,
@@ -654,12 +677,20 @@ struct Render<'a> {
 }
 
 impl Render<'_> {
+    fn is_toc(&self, i: usize) -> bool {
+        matches!(&self.ex.blocks[i], Block::Para(p) if p.toc)
+    }
+
     fn note_aux(&mut self, ordinal: usize, aux: &Aux, refs: &mut Refs) {
         let t = &mut self.tally;
-        if aux.smartart > 0 {
-            mark(&mut t.smartart, ordinal);
+        for d in &aux.smartart {
+            if self.ex.smartart_texts.get(d).is_some_and(|t| !t.is_empty()) {
+                mark(&mut t.smartart_text, ordinal);
+            } else {
+                mark(&mut t.smartart, ordinal);
+            }
         }
-        if aux.objects > 0 {
+        if !aux.objects.is_empty() {
             mark(&mut t.objects, ordinal);
         }
         if aux.linked_images > 0 {
@@ -678,18 +709,10 @@ impl Render<'_> {
             refs.hidden
                 .extend(aux.hidden.iter().map(|h| (ordinal, h.clone())));
         }
-        if !aux.inserted.is_empty() || !aux.deleted.is_empty() {
+        if !aux.revisions.is_empty() {
             mark(&mut t.revisions, ordinal);
-            refs.revisions.extend(
-                aux.inserted
-                    .iter()
-                    .map(|h| (ordinal, "inserción", h.clone())),
-            );
-            refs.revisions.extend(
-                aux.deleted
-                    .iter()
-                    .map(|h| (ordinal, "eliminación", h.clone())),
-            );
+            refs.revisions
+                .extend(aux.revisions.iter().map(|(k, h)| (ordinal, *k, h.clone())));
         }
         for id in &aux.comments {
             if let Some(&i) = self.ex.comment_thread.get(id) {
@@ -746,6 +769,27 @@ impl Render<'_> {
     /// Imágenes, gráficos y cuadros de texto de un bloque, debajo de su texto.
     fn aux_md(&mut self, ordinal: usize, aux: &Aux, indent: &str) -> String {
         let mut out = String::new();
+        // Lo que no puede representarse se señala en su posición, además del informe.
+        for d in &aux.smartart {
+            match self.ex.smartart_texts.get(d).filter(|t| !t.is_empty()) {
+                Some(t) => out.push_str(&format!(
+                    "{indent}> Diagrama SmartArt: {}\n\n",
+                    escape_inline(t)
+                )),
+                None => out.push_str(&format!("{indent}_SmartArt sin texto extraído._\n\n")),
+            }
+        }
+        for prog in &aux.objects {
+            out.push_str(&format!(
+                "{indent}_Objeto incrustado ({}) sin representación fiel; se muestra su vista previa si existe._\n\n",
+                escape_inline(prog)
+            ));
+        }
+        for _ in 0..aux.linked_images {
+            out.push_str(&format!(
+                "{indent}_Imagen vinculada a un archivo externo; no está incluida en el paquete._\n\n"
+            ));
+        }
         for img in &aux.images {
             if let Some(md) = self.image_md(ordinal, img, "imagen", "../") {
                 out.push_str(&format!("{indent}{md}\n\n"));
@@ -760,7 +804,10 @@ impl Render<'_> {
                         escape_inline(t)
                     ));
                 }
-                None => mark(&mut self.tally.empty_charts, ordinal),
+                None => {
+                    mark(&mut self.tally.empty_charts, ordinal);
+                    out.push_str(&format!("{indent}_Gráfico sin datos extraíbles._\n\n"));
+                }
             }
         }
         for tb in &aux.textboxes {
@@ -932,6 +979,46 @@ impl Render<'_> {
                     body.push_str(&self.aux_md(ordinal, &p.aux, ""));
                     i += 1;
                 }
+                Block::Para(_) if self.is_toc(i) => {
+                    let mut j = i;
+                    while j < sec.to && self.is_toc(j + 1) {
+                        j += 1;
+                    }
+                    Self::marker(&mut body, &mut spans, i + 1, j + 1);
+                    let mut entries = 0;
+                    for (k, b) in ex.blocks[i..=j].iter().enumerate() {
+                        if let Block::Para(q) = b {
+                            entries += usize::from(!q.flat().is_empty());
+                            self.note_aux(i + k + 1, &q.aux, &mut refs);
+                        }
+                        mark(&mut self.tally.toc, i + k + 1);
+                    }
+                    body.push_str(&format!(
+                        "_Tabla de contenido generada por el procesador de texto ({entries} párrafos); no se repite aquí: la estructura del documento está en [documento.md](../documento.md)._\n\n"
+                    ));
+                    i = j + 1;
+                }
+                Block::Para(p) if p.code && !p.is_empty() => {
+                    let mut j = i;
+                    while j < sec.to
+                        && outline.headings[j + 1].is_none()
+                        && matches!(&ex.blocks[j + 1], Block::Para(q) if q.code)
+                    {
+                        j += 1;
+                    }
+                    Self::marker(&mut body, &mut spans, i + 1, j + 1);
+                    let mut lines = Vec::new();
+                    for (k, b) in ex.blocks[i..=j].iter().enumerate() {
+                        if let Block::Para(q) = b {
+                            self.note_aux(i + k + 1, &q.aux, &mut refs);
+                            lines.push(q.code_text());
+                        }
+                    }
+                    let code = lines.join("\n");
+                    let fence = if code.contains("```") { "~~~~" } else { "```" };
+                    body.push_str(&format!("{fence}\n{code}\n{fence}\n\n"));
+                    i = j + 1;
+                }
                 Block::Para(p) if p.list.is_some() => {
                     let mut j = i;
                     while j < sec.to
@@ -944,10 +1031,11 @@ impl Render<'_> {
                     self.tally.lists += 1;
                     // Columna de contenido de cada nivel abierto, para anidar sublistas.
                     let mut stack: Vec<(u8, usize)> = Vec::new();
-                    for b in &ex.blocks[i..=j] {
+                    for (k, b) in ex.blocks[i..=j].iter().enumerate() {
+                        let item = i + k + 1;
                         let Block::Para(q) = b else { continue };
                         let Some(label) = &q.list else { continue };
-                        self.note_aux(i + 1, &q.aux, &mut refs);
+                        self.note_aux(item, &q.aux, &mut refs);
                         while stack.last().is_some_and(|(l, _)| *l >= label.level) {
                             stack.pop();
                         }
@@ -969,7 +1057,7 @@ impl Render<'_> {
                         for line in lines {
                             body.push_str(&format!("{inner}{line}\n"));
                         }
-                        let extra = self.aux_md(i + 1, &q.aux, &inner);
+                        let extra = self.aux_md(item, &q.aux, &inner);
                         if !extra.is_empty() {
                             body.push('\n');
                             body.push_str(&extra);
@@ -983,6 +1071,7 @@ impl Render<'_> {
                     // Sin contenido visible, pero puede tener texto oculto, eliminado o
                     // comentarios que se declaran en el concepto.
                     self.tally.empty += 1;
+                    self.tally.decorative += p.aux.images.iter().filter(|i| i.decorative).count();
                     self.note_aux(ordinal, &p.aux, &mut refs);
                     i += 1;
                 }
@@ -1276,6 +1365,16 @@ pub(crate) fn build_bundle(
     };
     grouped(&t.smartart, Severity::Loss, ": SmartArt sin texto extraído");
     grouped(
+        &t.smartart_text,
+        Severity::Note,
+        ": SmartArt representado por el texto de sus nodos; la disposición gráfica no se conserva",
+    );
+    grouped(
+        &t.toc,
+        Severity::Note,
+        ": tabla de contenido generada, resumida en una línea; repite los encabezados y sus números de página no son canónicos",
+    );
+    grouped(
         &t.objects,
         Severity::Loss,
         ": objeto incrustado (OLE) sin representación fiel; se adjunta su vista previa si existe",
@@ -1308,7 +1407,7 @@ pub(crate) fn build_bundle(
     grouped(
         &t.revisions,
         Severity::Note,
-        ": revisiones pendientes; el texto principal muestra la vista final y los cambios se listan en «Revisiones pendientes»",
+        ": revisiones pendientes (inserciones, eliminaciones, traslados o cambios de formato); el texto principal muestra la vista final y los cambios se listan en «Revisiones pendientes»",
     );
     grouped(
         &t.hidden,
@@ -1356,11 +1455,12 @@ pub(crate) fn build_bundle(
             t.missing_furniture
         )));
     }
-    if ex.alt_chunks > 0 {
-        issues.push(Issue::loss(format!(
-            "{} fragmento(s) importados (altChunk) no representados",
-            ex.alt_chunks
-        )));
+    for after in &ex.alt_chunks {
+        issues.push(Issue::loss(match after {
+            0 => "Fragmento importado (altChunk) al comienzo del documento, no representado"
+                .to_string(),
+            n => format!("Fragmento importado (altChunk) tras el bloque {n}, no representado"),
+        }));
     }
     if t.decorative > 0 {
         issues.push(Issue::note(format!(
@@ -1773,7 +1873,8 @@ mod tests {
         assert!(s2.contains("- Bloque 12: «Nota interna para el equipo.»"));
         assert!(s2.contains("## Texto oculto\n\n> Texto con formato oculto"));
         assert!(!all.contains("PAGE"));
-        assert!(s2.contains("<!-- okf-source-span: b-13 -->\nPágina\n"));
+        // Un campo de paginación deja un marcador, no un número de página concreto.
+        assert!(s2.contains("<!-- okf-source-span: b-13 -->\nPágina \\[página\\]\n"));
         let report = &md["conversion-report.md"];
         assert!(report.contains("Bloque 3: 1 ecuación(es)"), "{report}");
         assert!(report.contains("Bloque 10: tabla con celdas combinadas"));
@@ -1790,5 +1891,126 @@ mod tests {
         let t = &md["contenido/texto.md"];
         assert!(t.contains("type: Source Text"));
         assert!(t.contains("- Primera idea\n- Segunda idea"), "{t}");
+    }
+
+    #[test]
+    fn reviewed_report_keeps_revisions_comments_notes_and_collapses_the_toc() {
+        let (ex, state, md) = convert_example("examples/docx/muestras/informe_revisado.docx");
+        assert_eq!(state, "complete");
+        assert_eq!(
+            outline(&ex, "informe_revisado.docx").title,
+            "Informe de evaluación del asistente RAG"
+        );
+        assert_eq!(
+            titles(&md),
+            [
+                "Informe de evaluación del asistente RAG",
+                "1. Introducción",
+                "2. Resultados",
+                "3. Conclusiones"
+            ]
+        );
+        // La tabla de contenido se resume y sus entradas no se repiten.
+        let inicio = &md["contenido/seccion-001.md"];
+        assert!(inicio.contains("<!-- okf-source-span: b-3-7 -->\n_Tabla de contenido generada"));
+        assert!(!inicio.contains("Alcance"));
+        let intro = &md["contenido/seccion-002.md"];
+        assert!(intro.contains("## 1.1. Alcance de la evaluación"));
+        assert!(intro.contains("con cuarenta y cinco documentos"));
+        assert!(intro.contains("- Bloque 12 · eliminación: «cuarenta y dos»"));
+        assert!(intro.contains(
+            "- \\[nota 1\\] Las preguntas se anonimizaron antes del análisis. El protocolo"
+        ));
+        assert!(intro.contains("- \\[nota final 1\\] Foro del curso MISW4411"));
+        assert!(intro.contains("- Bloque 14: «Nota interna: repetir el muestreo"));
+        assert!(intro.contains("(sobre «La muestra excluye preguntas en inglés»)"));
+        let res = &md["contenido/seccion-003.md"];
+        assert!(res.contains("|  |  | **Normativo** | **Técnico** |"));
+        assert!(res.contains("Exhaustividad del contexto\\[nota 2\\]"));
+        assert!(res.contains("Verificación por fragmentos:<br>**Paso** · **Responsable**"));
+        assert!(res.contains("  - **Laura Gómez** · 2026-10-28: Añadida en la nota del anexo"));
+        assert!(res.contains("- Bloque 21 · traslado (origen): «La latencia media"));
+        assert!(res.contains("- Bloque 22 · traslado (destino): «La latencia media"));
+        assert!(res.contains("- Bloque 23 · cambio de formato: «Hallazgo principal:»"));
+        // El texto trasladado aparece una vez en el cuerpo y dos en las revisiones.
+        assert_eq!(
+            res.matches("La latencia media fue de 2,4 segundos.")
+                .count(),
+            3
+        );
+        let doc = &md["documento.md"];
+        assert!(doc.contains("- Pie de página: Página \\[página\\] de \\[total de páginas\\]"));
+        assert!(doc.contains("![Logotipo del programa de maestría](assets/encabezado-001.png)"));
+        let report = &md["conversion-report.md"];
+        assert!(report.contains("Bloques 3–7: tabla de contenido generada"));
+        assert!(report.contains("Notas al pie: 2; notas finales: 2"));
+        assert!(report.contains("Comentarios de revisión: 3"));
+        assert!(report.contains("(inferidos por formato: 0)"));
+    }
+
+    #[test]
+    fn technical_guide_keeps_equations_figures_chart_lists_code_and_links() {
+        let (_, state, md) = convert_example("examples/docx/muestras/guia_tecnica.docx");
+        assert_eq!(state, "complete");
+        let f = &md["contenido/seccion-002.md"];
+        assert!(
+            f.contains("`cos(q,d)=(∑_(i=1)^n q_i d_i)/(√(∑_(i=1)^n (q_i)^2)√(∑_(i=1)^n (d_i)^2))`")
+        );
+        assert!(f.contains("`F_1=(2PR)/(P+R)`"));
+        assert!(f.contains("> - Use el mismo modelo para la consulta y los documentos."));
+        assert!(f.contains("![Flujo de indexación: documentos, fragmentación, embeddings e índice vectorial](../assets/imagen-001.png)"));
+        assert!(f.contains("*Figura 1. Flujo de indexación.*"));
+        // La imagen decorativa no se adjunta ni deja un marcador vacío.
+        assert!(!md.values().any(|m| m.contains("imagen-002")));
+        assert!(!f.contains("b-11 -->"));
+        let c = &md["contenido/seccion-003.md"];
+        assert!(c.contains("1. Prepare el corpus.\n   - a) Elimine duplicados.\n   - b) Normalice la codificación a UTF-8.\n     - i. Verifique los metadatos obligatorios.\n2. Fragmente los documentos."), "{c}");
+        assert!(c.contains("3. Calcule los embeddings.\n4. Cree el índice"));
+        assert!(c.contains("1. Ejecute las consultas de prueba.\n2. Compare"));
+        assert!(c.contains("> Datos del gráfico: Precisión por tamaño de fragmento. Precisión: 256 tokens = 0.71; 512 tokens = 0.82; 1024 tokens = 0.76"));
+        assert!(c.contains(
+            "```\ncoleccion = cliente.create_collection(\n    name=\"laboratorio3\", metric=\"cosine\")\n```"
+        ));
+        assert!(c.contains("> **Importante:** los índices"));
+        let r = &md["contenido/seccion-004.md"];
+        assert!(
+            r.contains("[el sitio del proveedor](https://example.org/docs/indices-vectoriales)")
+        );
+        assert!(r.contains("[enunciado del laboratorio](https://example.org/okf/laboratorio3)"));
+        // Un enlace a un marcador interno queda como texto.
+        assert!(r.contains("Véase también la Figura 1 y"));
+        assert!(r.contains("Responsable del laboratorio: Carolina Pérez"));
+        assert!(
+            !md.values()
+                .any(|m| m.contains("SEQ") || m.contains("_Ref1"))
+        );
+        let report = &md["conversion-report.md"];
+        assert!(report.contains("1 imagen(es) marcadas como decorativas"));
+        assert!(report.contains("Bloques 6 y 7: 2 ecuación(es)"));
+    }
+
+    #[test]
+    fn unrepresentable_content_is_declared_in_place_and_in_the_report() {
+        let (_, state, md) = convert_example("examples/docx/muestras/anexos_con_perdidas.docx");
+        assert_eq!(state, "partial");
+        let a = &md["contenido/seccion-001.md"];
+        assert!(a.contains("> Diagrama SmartArt: Preguntas · Recuperación · Generación · Juicio"));
+        assert!(a.contains("_Objeto incrustado (Excel.Sheet.12) sin representación fiel"));
+        let b = &md["contenido/seccion-002.md"];
+        assert!(b.contains("_Imagen vinculada a un archivo externo"));
+        assert!(b.contains("_Gráfico sin datos extraíbles._"));
+        assert!(b.contains("_Imagen ausente del paquete original._"));
+        let report = &md["conversion-report.md"];
+        let (losses, notes) = report.split_once("## Observaciones").unwrap();
+        for loss in [
+            "Bloque 7: objeto incrustado (OLE)",
+            "Bloque 11: imagen vinculada",
+            "Bloque 13: gráfico sin datos",
+            "Bloque 15: imagen ausente",
+            "Fragmento importado (altChunk) tras el bloque 11",
+        ] {
+            assert!(losses.contains(loss), "{loss}: {losses}");
+        }
+        assert!(notes.contains("Bloque 5: SmartArt representado por el texto de sus nodos"));
     }
 }
