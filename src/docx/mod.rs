@@ -742,7 +742,18 @@ impl Render<'_> {
                 } else {
                     mark(&mut self.tally.missing, ordinal);
                 }
-                Some("_Imagen ausente del paquete original._".into())
+                // El texto alternativo es contenido del original aunque falte la imagen.
+                match img
+                    .alt
+                    .as_deref()
+                    .map(escape_inline)
+                    .filter(|a| !a.is_empty())
+                {
+                    Some(alt) => Some(format!(
+                        "_Imagen ausente del paquete original._ Texto alternativo: {alt}"
+                    )),
+                    None => Some("_Imagen ausente del paquete original._".into()),
+                }
             }
         }
     }
@@ -2030,7 +2041,9 @@ mod tests {
         let b = &md["contenido/seccion-002.md"];
         assert!(b.contains("_Imagen vinculada a un archivo externo"));
         assert!(b.contains("_Gráfico sin datos extraíbles._"));
-        assert!(b.contains("_Imagen ausente del paquete original._"));
+        assert!(b.contains(
+            "_Imagen ausente del paquete original._ Texto alternativo: Consola de observabilidad"
+        ));
         let report = &md["conversion-report.md"];
         let (losses, notes) = report.split_once("## Observaciones").unwrap();
         for loss in [
