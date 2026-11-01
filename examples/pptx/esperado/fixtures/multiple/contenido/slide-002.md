@@ -1,0 +1,28 @@
+---
+type: Slide
+title: "Diapositiva sin título"
+description: "Diapositiva 2 de multiple.pptx. This slide has no title placeholder"
+sources:
+  - id: original
+    resource: /references/original.pptx
+generated:
+  by: process:document-conversion
+  at: "<generado>"
+source_spans:
+  - id: slide-2
+    source_id: original
+    kind: pptx_slide
+    slide_index: 2
+    slide_id: 257
+status: draft
+---
+
+# Diapositiva 2 (sin título explícito)
+
+## Contenido
+
+- This slide has no title placeholder
+
+## Vista visual
+
+![Vista de la diapositiva 2](../assets/slide-002.png)

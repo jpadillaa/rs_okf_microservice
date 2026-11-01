@@ -1,0 +1,18 @@
+---
+type: Source Document
+title: "multiple.pptx"
+description: Presentación fuente convertida a conceptos OKF por diapositiva.
+sources:
+  - id: original
+    resource: /references/original.pptx
+generated:
+  by: process:document-conversion
+  at: "<generado>"
+source_file:
+  path: "references/original.pptx"
+  sha256: 17dcfaf661641dddd80df418387a2a4ac68b02e56c1236a3dee2a5b203ea7985
+---
+
+# multiple.pptx
+
+Presentación de 3 diapositivas.

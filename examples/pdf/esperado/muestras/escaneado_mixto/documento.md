@@ -1,0 +1,47 @@
+---
+type: Source Document
+title: "Expediente digitalizado"
+description: "Documento fuente escaneado_mixto.pdf convertido a conceptos OKF por secciones."
+sources:
+  - id: original
+    resource: /references/original.pdf
+generated:
+  by: process:document-conversion
+  at: "<generado>"
+source_file:
+  path: references/original.pdf
+  sha256: eb53d8bd714184e9e2feb227d834eec03633bf7b54ab36799b43174d23376bcd
+source_spans:
+  - { id: documento, source_id: original, kind: pdf_pages, from: 1, to: 5 }
+  - { id: titulo, source_id: original, kind: pdf_pages, from: 1, to: 1 }
+page_labels:
+  "1": "1"
+  "3": "3"
+  "4": "4"
+  "5": "5"
+---
+
+<!-- okf-source-span: titulo -->
+# Expediente digitalizado
+
+Documento de 5 páginas, representado en un solo concepto.
+
+## Estructura
+
+- [Texto completo](contenido/texto.md)
+    - Registro fotográfico · página 5 (inferido por formato)
+
+## Propiedades
+
+- Productor del PDF: create\_samples.py
+- Título en las propiedades: Expediente digitalizado
+
+## Números de página impresos
+
+Páginas 1 y 3–5 con número visible; `page_labels` relaciona cada página física con su número impreso.
+
+## Etiquetas internas del PDF
+
+Etiquetas declaradas en `/PageLabels`; no son necesariamente las impresas.
+
+1 → «Exp-1», 2 → «Exp-2», 3 → «Exp-3», 4 → «Exp-4», 5 → «Exp-5»

@@ -23,6 +23,8 @@ use uuid::Uuid;
 mod bundle;
 mod docx;
 mod format;
+#[cfg(test)]
+mod golden;
 mod omml;
 mod ooxml;
 mod pdf;

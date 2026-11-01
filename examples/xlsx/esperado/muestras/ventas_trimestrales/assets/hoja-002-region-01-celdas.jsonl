@@ -1,0 +1,2107 @@
+{"almacenado":"Fecha","celda":"A1","mostrado":"Fecha","tipo":"texto"}
+{"almacenado":"Región","celda":"B1","mostrado":"Región","tipo":"texto"}
+{"almacenado":"Producto","celda":"C1","mostrado":"Producto","tipo":"texto"}
+{"almacenado":"Unidades","celda":"D1","mostrado":"Unidades","tipo":"texto"}
+{"almacenado":"Precio unitario","celda":"E1","mostrado":"Precio unitario","tipo":"texto"}
+{"almacenado":"Importe","celda":"F1","mostrado":"Importe","tipo":"texto"}
+{"almacenado":"Entregado","celda":"G1","mostrado":"Entregado","tipo":"texto"}
+{"almacenado":"46024","celda":"A2","formato":"formato integrado 14","mostrado":"2026-01-02","tipo":"número"}
+{"almacenado":"Andina","celda":"B2","mostrado":"Andina","tipo":"texto"}
+{"almacenado":"Café especial","celda":"C2","mostrado":"Café especial","tipo":"texto"}
+{"almacenado":"5","celda":"D2","mostrado":"5","tipo":"número"}
+{"almacenado":"18.5","celda":"E2","formato":"#,##0.00\\ \"€\"","mostrado":"18.5","tipo":"número"}
+{"almacenado":"92.5","celda":"F2","formato":"#,##0.00\\ \"€\"","formula":"=D2*E2","mostrado":"92.5","tipo":"número"}
+{"almacenado":"1","celda":"G2","mostrado":"TRUE","tipo":"booleano"}
+{"almacenado":"46307","celda":"A3","formato":"formato integrado 14","mostrado":"2026-10-12","tipo":"número"}
+{"almacenado":"Orinoquía","celda":"B3","mostrado":"Orinoquía","tipo":"texto"}
+{"almacenado":"Panela orgánica","celda":"C3","mostrado":"Panela orgánica","tipo":"texto"}
+{"almacenado":"42","celda":"D3","mostrado":"42","tipo":"número"}
+{"almacenado":"4.2","celda":"E3","formato":"#,##0.00\\ \"€\"","mostrado":"4.2","tipo":"número"}
+{"almacenado":"176.4","celda":"F3","formato":"#,##0.00\\ \"€\"","formula":"=D3*E3","mostrado":"176.4","tipo":"número"}
+{"almacenado":"1","celda":"G3","mostrado":"TRUE","tipo":"booleano"}
+{"almacenado":"46303","celda":"A4","formato":"formato integrado 14","mostrado":"2026-10-08","tipo":"número"}
+{"almacenado":"Pacífico","celda":"B4","mostrado":"Pacífico","tipo":"texto"}
+{"almacenado":"Flores de corte","celda":"C4","mostrado":"Flores de corte","tipo":"texto"}
+{"almacenado":"79","celda":"D4","mostrado":"79","tipo":"número"}
+{"almacenado":"22.0","celda":"E4","formato":"#,##0.00\\ \"€\"","mostrado":"22","tipo":"número"}
+{"almacenado":"1738.0","celda":"F4","formato":"#,##0.00\\ \"€\"","formula":"=D4*E4","mostrado":"1738","tipo":"número"}
+{"almacenado":"1","celda":"G4","mostrado":"TRUE","tipo":"booleano"}
+{"almacenado":"46299","celda":"A5","formato":"formato integrado 14","mostrado":"2026-10-04","tipo":"número"}
+{"almacenado":"Caribe","celda":"B5","mostrado":"Caribe","tipo":"texto"}
+{"almacenado":"Cacao en grano","celda":"C5","mostrado":"Cacao en grano","tipo":"texto"}
+{"almacenado":"116","celda":"D5","mostrado":"116","tipo":"número"}
+{"almacenado":"12.75","celda":"E5","formato":"#,##0.00\\ \"€\"","mostrado":"12.75","tipo":"número"}
+{"almacenado":"1479.0","celda":"F5","formato":"#,##0.00\\ \"€\"","formula":"=D5*E5","mostrado":"1479","tipo":"número"}
+{"almacenado":"1","celda":"G5","mostrado":"TRUE","tipo":"booleano"}
+{"almacenado":"46295","celda":"A6","formato":"formato integrado 14","mostrado":"2026-09-30","tipo":"número"}
+{"almacenado":"Andina","celda":"B6","mostrado":"Andina","tipo":"texto"}
+{"almacenado":"Aguacate Hass","celda":"C6","mostrado":"Aguacate Hass","tipo":"texto"}
+{"almacenado":"33","celda":"D6","mostrado":"33","tipo":"número"}
+{"almacenado":"6.9","celda":"E6","formato":"#,##0.00\\ \"€\"","mostrado":"6.9","tipo":"número"}
+{"almacenado":"227.7","celda":"F6","formato":"#,##0.00\\ \"€\"","formula":"=D6*E6","mostrado":"227.7","tipo":"número"}
+{"almacenado":"0","celda":"G6","mostrado":"FALSE","tipo":"booleano"}
+{"almacenado":"46291","celda":"A7","formato":"formato integrado 14","mostrado":"2026-09-26","tipo":"número"}
+{"almacenado":"Orinoquía","celda":"B7","mostrado":"Orinoquía","tipo":"texto"}
+{"almacenado":"Café especial","celda":"C7","mostrado":"Café especial","tipo":"texto"}
+{"almacenado":"70","celda":"D7","mostrado":"70","tipo":"número"}
+{"almacenado":"18.5","celda":"E7","formato":"#,##0.00\\ \"€\"","mostrado":"18.5","tipo":"número"}
+{"almacenado":"1295.0","celda":"F7","formato":"#,##0.00\\ \"€\"","formula":"=D7*E7","mostrado":"1295","tipo":"número"}
+{"almacenado":"1","celda":"G7","mostrado":"TRUE","tipo":"booleano"}
+{"almacenado":"46287","celda":"A8","formato":"formato integrado 14","mostrado":"2026-09-22","tipo":"número"}
+{"almacenado":"Pacífico","celda":"B8","mostrado":"Pacífico","tipo":"texto"}
+{"almacenado":"Panela orgánica","celda":"C8","mostrado":"Panela orgánica","tipo":"texto"}
+{"almacenado":"107","celda":"D8","mostrado":"107","tipo":"número"}
+{"almacenado":"4.2","celda":"E8","formato":"#,##0.00\\ \"€\"","mostrado":"4.2","tipo":"número"}
+{"almacenado":"449.4","celda":"F8","formato":"#,##0.00\\ \"€\"","formula":"=D8*E8","mostrado":"449.4","tipo":"número"}
+{"almacenado":"1","celda":"G8","mostrado":"TRUE","tipo":"booleano"}
+{"almacenado":"46283","celda":"A9","formato":"formato integrado 14","mostrado":"2026-09-18","tipo":"número"}
+{"almacenado":"Caribe","celda":"B9","mostrado":"Caribe","tipo":"texto"}
+{"almacenado":"Flores de corte","celda":"C9","mostrado":"Flores de corte","tipo":"texto"}
+{"almacenado":"24","celda":"D9","mostrado":"24","tipo":"número"}
+{"almacenado":"22.0","celda":"E9","formato":"#,##0.00\\ \"€\"","mostrado":"22","tipo":"número"}
+{"almacenado":"528.0","celda":"F9","formato":"#,##0.00\\ \"€\"","formula":"=D9*E9","mostrado":"528","tipo":"número"}
+{"almacenado":"1","celda":"G9","mostrado":"TRUE","tipo":"booleano"}
+{"almacenado":"46279","celda":"A10","formato":"formato integrado 14","mostrado":"2026-09-14","tipo":"número"}
+{"almacenado":"Andina","celda":"B10","mostrado":"Andina","tipo":"texto"}
+{"almacenado":"Cacao en grano","celda":"C10","mostrado":"Cacao en grano","tipo":"texto"}
+{"almacenado":"61","celda":"D10","mostrado":"61","tipo":"número"}
+{"almacenado":"12.75","celda":"E10","formato":"#,##0.00\\ \"€\"","mostrado":"12.75","tipo":"número"}
+{"almacenado":"777.75","celda":"F10","formato":"#,##0.00\\ \"€\"","formula":"=D10*E10","mostrado":"777.75","tipo":"número"}
+{"almacenado":"1","celda":"G10","mostrado":"TRUE","tipo":"booleano"}
+{"almacenado":"46275","celda":"A11","formato":"formato integrado 14","mostrado":"2026-09-10","tipo":"número"}
+{"almacenado":"Orinoquía","celda":"B11","mostrado":"Orinoquía","tipo":"texto"}
+{"almacenado":"Aguacate Hass","celda":"C11","mostrado":"Aguacate Hass","tipo":"texto"}
+{"almacenado":"98","celda":"D11","mostrado":"98","tipo":"número"}
+{"almacenado":"6.9","celda":"E11","formato":"#,##0.00\\ \"€\"","mostrado":"6.9","tipo":"número"}
+{"almacenado":"676.2","celda":"F11","formato":"#,##0.00\\ \"€\"","formula":"=D11*E11","mostrado":"676.2","tipo":"número"}
+{"almacenado":"1","celda":"G11","mostrado":"TRUE","tipo":"booleano"}
+{"almacenado":"46271","celda":"A12","formato":"formato integrado 14","mostrado":"2026-09-06","tipo":"número"}
+{"almacenado":"Pacífico","celda":"B12","mostrado":"Pacífico","tipo":"texto"}
+{"almacenado":"Café especial","celda":"C12","mostrado":"Café especial","tipo":"texto"}
+{"almacenado":"15","celda":"D12","mostrado":"15","tipo":"número"}
+{"almacenado":"18.5","celda":"E12","formato":"#,##0.00\\ \"€\"","mostrado":"18.5","tipo":"número"}
+{"almacenado":"277.5","celda":"F12","formato":"#,##0.00\\ \"€\"","formula":"=D12*E12","mostrado":"277.5","tipo":"número"}
+{"almacenado":"1","celda":"G12","mostrado":"TRUE","tipo":"booleano"}
+{"almacenado":"46267","celda":"A13","formato":"formato integrado 14","mostrado":"2026-09-02","tipo":"número"}
+{"almacenado":"Caribe","celda":"B13","mostrado":"Caribe","tipo":"texto"}
+{"almacenado":"Panela orgánica","celda":"C13","mostrado":"Panela orgánica","tipo":"texto"}
+{"almacenado":"52","celda":"D13","mostrado":"52","tipo":"número"}
+{"almacenado":"4.2","celda":"E13","formato":"#,##0.00\\ \"€\"","mostrado":"4.2","tipo":"número"}
+{"almacenado":"218.4","celda":"F13","formato":"#,##0.00\\ \"€\"","formula":"=D13*E13","mostrado":"218.4","tipo":"número"}
+{"almacenado":"1","celda":"G13","mostrado":"TRUE","tipo":"booleano"}
+{"almacenado":"46263","celda":"A14","formato":"formato integrado 14","mostrado":"2026-08-29","tipo":"número"}
+{"almacenado":"Andina","celda":"B14","mostrado":"Andina","tipo":"texto"}
+{"almacenado":"Flores de corte","celda":"C14","mostrado":"Flores de corte","tipo":"texto"}
+{"almacenado":"89","celda":"D14","mostrado":"89","tipo":"número"}
+{"almacenado":"22.0","celda":"E14","formato":"#,##0.00\\ \"€\"","mostrado":"22","tipo":"número"}
+{"almacenado":"1958.0","celda":"F14","formato":"#,##0.00\\ \"€\"","formula":"=D14*E14","mostrado":"1958","tipo":"número"}
+{"almacenado":"1","celda":"G14","mostrado":"TRUE","tipo":"booleano"}
+{"almacenado":"46259","celda":"A15","formato":"formato integrado 14","mostrado":"2026-08-25","tipo":"número"}
+{"almacenado":"Orinoquía","celda":"B15","mostrado":"Orinoquía","tipo":"texto"}
+{"almacenado":"Cacao en grano","celda":"C15","mostrado":"Cacao en grano","tipo":"texto"}
+{"almacenado":"6","celda":"D15","mostrado":"6","tipo":"número"}
+{"almacenado":"12.75","celda":"E15","formato":"#,##0.00\\ \"€\"","mostrado":"12.75","tipo":"número"}
+{"almacenado":"76.5","celda":"F15","formato":"#,##0.00\\ \"€\"","formula":"=D15*E15","mostrado":"76.5","tipo":"número"}
+{"almacenado":"0","celda":"G15","mostrado":"FALSE","tipo":"booleano"}
+{"almacenado":"46255","celda":"A16","formato":"formato integrado 14","mostrado":"2026-08-21","tipo":"número"}
+{"almacenado":"Pacífico","celda":"B16","mostrado":"Pacífico","tipo":"texto"}
+{"almacenado":"Aguacate Hass","celda":"C16","mostrado":"Aguacate Hass","tipo":"texto"}
+{"almacenado":"43","celda":"D16","mostrado":"43","tipo":"número"}
+{"almacenado":"6.9","celda":"E16","formato":"#,##0.00\\ \"€\"","mostrado":"6.9","tipo":"número"}
+{"almacenado":"296.7","celda":"F16","formato":"#,##0.00\\ \"€\"","formula":"=D16*E16","mostrado":"296.7","tipo":"número"}
+{"almacenado":"1","celda":"G16","mostrado":"TRUE","tipo":"booleano"}
+{"almacenado":"46251","celda":"A17","formato":"formato integrado 14","mostrado":"2026-08-17","tipo":"número"}
+{"almacenado":"Caribe","celda":"B17","mostrado":"Caribe","tipo":"texto"}
+{"almacenado":"Café especial","celda":"C17","mostrado":"Café especial","tipo":"texto"}
+{"almacenado":"80","celda":"D17","mostrado":"80","tipo":"número"}
+{"almacenado":"18.5","celda":"E17","formato":"#,##0.00\\ \"€\"","mostrado":"18.5","tipo":"número"}
+{"almacenado":"1480.0","celda":"F17","formato":"#,##0.00\\ \"€\"","formula":"=D17*E17","mostrado":"1480","tipo":"número"}
+{"almacenado":"1","celda":"G17","mostrado":"TRUE","tipo":"booleano"}
+{"almacenado":"46247","celda":"A18","formato":"formato integrado 14","mostrado":"2026-08-13","tipo":"número"}
+{"almacenado":"Andina","celda":"B18","mostrado":"Andina","tipo":"texto"}
+{"almacenado":"Panela orgánica","celda":"C18","mostrado":"Panela orgánica","tipo":"texto"}
+{"almacenado":"117","celda":"D18","mostrado":"117","tipo":"número"}
+{"almacenado":"4.2","celda":"E18","formato":"#,##0.00\\ \"€\"","mostrado":"4.2","tipo":"número"}
+{"almacenado":"491.4","celda":"F18","formato":"#,##0.00\\ \"€\"","formula":"=D18*E18","mostrado":"491.4","tipo":"número"}
+{"almacenado":"1","celda":"G18","mostrado":"TRUE","tipo":"booleano"}
+{"almacenado":"46243","celda":"A19","formato":"formato integrado 14","mostrado":"2026-08-09","tipo":"número"}
+{"almacenado":"Orinoquía","celda":"B19","mostrado":"Orinoquía","tipo":"texto"}
+{"almacenado":"Flores de corte","celda":"C19","mostrado":"Flores de corte","tipo":"texto"}
+{"almacenado":"34","celda":"D19","mostrado":"34","tipo":"número"}
+{"almacenado":"22.0","celda":"E19","formato":"#,##0.00\\ \"€\"","mostrado":"22","tipo":"número"}
+{"almacenado":"748.0","celda":"F19","formato":"#,##0.00\\ \"€\"","formula":"=D19*E19","mostrado":"748","tipo":"número"}
+{"almacenado":"1","celda":"G19","mostrado":"TRUE","tipo":"booleano"}
+{"almacenado":"46239","celda":"A20","formato":"formato integrado 14","mostrado":"2026-08-05","tipo":"número"}
+{"almacenado":"Pacífico","celda":"B20","mostrado":"Pacífico","tipo":"texto"}
+{"almacenado":"Cacao en grano","celda":"C20","mostrado":"Cacao en grano","tipo":"texto"}
+{"almacenado":"71","celda":"D20","mostrado":"71","tipo":"número"}
+{"almacenado":"12.75","celda":"E20","formato":"#,##0.00\\ \"€\"","mostrado":"12.75","tipo":"número"}
+{"almacenado":"905.25","celda":"F20","formato":"#,##0.00\\ \"€\"","formula":"=D20*E20","mostrado":"905.25","tipo":"número"}
+{"almacenado":"1","celda":"G20","mostrado":"TRUE","tipo":"booleano"}
+{"almacenado":"46235","celda":"A21","formato":"formato integrado 14","mostrado":"2026-08-01","tipo":"número"}
+{"almacenado":"Caribe","celda":"B21","mostrado":"Caribe","tipo":"texto"}
+{"almacenado":"Aguacate Hass","celda":"C21","mostrado":"Aguacate Hass","tipo":"texto"}
+{"almacenado":"108","celda":"D21","mostrado":"108","tipo":"número"}
+{"almacenado":"6.9","celda":"E21","formato":"#,##0.00\\ \"€\"","mostrado":"6.9","tipo":"número"}
+{"almacenado":"745.2","celda":"F21","formato":"#,##0.00\\ \"€\"","formula":"=D21*E21","mostrado":"745.2","tipo":"número"}
+{"almacenado":"1","celda":"G21","mostrado":"TRUE","tipo":"booleano"}
+{"almacenado":"46231","celda":"A22","formato":"formato integrado 14","mostrado":"2026-07-28","tipo":"número"}
+{"almacenado":"Andina","celda":"B22","mostrado":"Andina","tipo":"texto"}
+{"almacenado":"Café especial","celda":"C22","mostrado":"Café especial","tipo":"texto"}
+{"almacenado":"25","celda":"D22","mostrado":"25","tipo":"número"}
+{"almacenado":"18.5","celda":"E22","formato":"#,##0.00\\ \"€\"","mostrado":"18.5","tipo":"número"}
+{"almacenado":"462.5","celda":"F22","formato":"#,##0.00\\ \"€\"","formula":"=D22*E22","mostrado":"462.5","tipo":"número"}
+{"almacenado":"1","celda":"G22","mostrado":"TRUE","tipo":"booleano"}
+{"almacenado":"46227","celda":"A23","formato":"formato integrado 14","mostrado":"2026-07-24","tipo":"número"}
+{"almacenado":"Orinoquía","celda":"B23","mostrado":"Orinoquía","tipo":"texto"}
+{"almacenado":"Panela orgánica","celda":"C23","mostrado":"Panela orgánica","tipo":"texto"}
+{"almacenado":"62","celda":"D23","mostrado":"62","tipo":"número"}
+{"almacenado":"4.2","celda":"E23","formato":"#,##0.00\\ \"€\"","mostrado":"4.2","tipo":"número"}
+{"almacenado":"260.4","celda":"F23","formato":"#,##0.00\\ \"€\"","formula":"=D23*E23","mostrado":"260.4","tipo":"número"}
+{"almacenado":"1","celda":"G23","mostrado":"TRUE","tipo":"booleano"}
+{"almacenado":"46223","celda":"A24","formato":"formato integrado 14","mostrado":"2026-07-20","tipo":"número"}
+{"almacenado":"Pacífico","celda":"B24","mostrado":"Pacífico","tipo":"texto"}
+{"almacenado":"Flores de corte","celda":"C24","mostrado":"Flores de corte","tipo":"texto"}
+{"almacenado":"99","celda":"D24","mostrado":"99","tipo":"número"}
+{"almacenado":"22.0","celda":"E24","formato":"#,##0.00\\ \"€\"","mostrado":"22","tipo":"número"}
+{"almacenado":"2178.0","celda":"F24","formato":"#,##0.00\\ \"€\"","formula":"=D24*E24","mostrado":"2178","tipo":"número"}
+{"almacenado":"0","celda":"G24","mostrado":"FALSE","tipo":"booleano"}
+{"almacenado":"46219","celda":"A25","formato":"formato integrado 14","mostrado":"2026-07-16","tipo":"número"}
+{"almacenado":"Caribe","celda":"B25","mostrado":"Caribe","tipo":"texto"}
+{"almacenado":"Cacao en grano","celda":"C25","mostrado":"Cacao en grano","tipo":"texto"}
+{"almacenado":"16","celda":"D25","mostrado":"16","tipo":"número"}
+{"almacenado":"12.75","celda":"E25","formato":"#,##0.00\\ \"€\"","mostrado":"12.75","tipo":"número"}
+{"almacenado":"204.0","celda":"F25","formato":"#,##0.00\\ \"€\"","formula":"=D25*E25","mostrado":"204","tipo":"número"}
+{"almacenado":"1","celda":"G25","mostrado":"TRUE","tipo":"booleano"}
+{"almacenado":"46215","celda":"A26","formato":"formato integrado 14","mostrado":"2026-07-12","tipo":"número"}
+{"almacenado":"Andina","celda":"B26","mostrado":"Andina","tipo":"texto"}
+{"almacenado":"Aguacate Hass","celda":"C26","mostrado":"Aguacate Hass","tipo":"texto"}
+{"almacenado":"53","celda":"D26","mostrado":"53","tipo":"número"}
+{"almacenado":"6.9","celda":"E26","formato":"#,##0.00\\ \"€\"","mostrado":"6.9","tipo":"número"}
+{"almacenado":"365.7","celda":"F26","formato":"#,##0.00\\ \"€\"","formula":"=D26*E26","mostrado":"365.7","tipo":"número"}
+{"almacenado":"1","celda":"G26","mostrado":"TRUE","tipo":"booleano"}
+{"almacenado":"46211","celda":"A27","formato":"formato integrado 14","mostrado":"2026-07-08","tipo":"número"}
+{"almacenado":"Orinoquía","celda":"B27","mostrado":"Orinoquía","tipo":"texto"}
+{"almacenado":"Café especial","celda":"C27","mostrado":"Café especial","tipo":"texto"}
+{"almacenado":"90","celda":"D27","mostrado":"90","tipo":"número"}
+{"almacenado":"18.5","celda":"E27","formato":"#,##0.00\\ \"€\"","mostrado":"18.5","tipo":"número"}
+{"almacenado":"1665.0","celda":"F27","formato":"#,##0.00\\ \"€\"","formula":"=D27*E27","mostrado":"1665","tipo":"número"}
+{"almacenado":"1","celda":"G27","mostrado":"TRUE","tipo":"booleano"}
+{"almacenado":"46207","celda":"A28","formato":"formato integrado 14","mostrado":"2026-07-04","tipo":"número"}
+{"almacenado":"Pacífico","celda":"B28","mostrado":"Pacífico","tipo":"texto"}
+{"almacenado":"Panela orgánica","celda":"C28","mostrado":"Panela orgánica","tipo":"texto"}
+{"almacenado":"7","celda":"D28","mostrado":"7","tipo":"número"}
+{"almacenado":"4.2","celda":"E28","formato":"#,##0.00\\ \"€\"","mostrado":"4.2","tipo":"número"}
+{"almacenado":"29.4","celda":"F28","formato":"#,##0.00\\ \"€\"","formula":"=D28*E28","mostrado":"29.4","tipo":"número"}
+{"almacenado":"1","celda":"G28","mostrado":"TRUE","tipo":"booleano"}
+{"almacenado":"46203","celda":"A29","formato":"formato integrado 14","mostrado":"2026-06-30","tipo":"número"}
+{"almacenado":"Caribe","celda":"B29","mostrado":"Caribe","tipo":"texto"}
+{"almacenado":"Flores de corte","celda":"C29","mostrado":"Flores de corte","tipo":"texto"}
+{"almacenado":"44","celda":"D29","mostrado":"44","tipo":"número"}
+{"almacenado":"22.0","celda":"E29","formato":"#,##0.00\\ \"€\"","mostrado":"22","tipo":"número"}
+{"almacenado":"968.0","celda":"F29","formato":"#,##0.00\\ \"€\"","formula":"=D29*E29","mostrado":"968","tipo":"número"}
+{"almacenado":"1","celda":"G29","mostrado":"TRUE","tipo":"booleano"}
+{"almacenado":"46199","celda":"A30","formato":"formato integrado 14","mostrado":"2026-06-26","tipo":"número"}
+{"almacenado":"Andina","celda":"B30","mostrado":"Andina","tipo":"texto"}
+{"almacenado":"Cacao en grano","celda":"C30","mostrado":"Cacao en grano","tipo":"texto"}
+{"almacenado":"81","celda":"D30","mostrado":"81","tipo":"número"}
+{"almacenado":"12.75","celda":"E30","formato":"#,##0.00\\ \"€\"","mostrado":"12.75","tipo":"número"}
+{"almacenado":"1032.75","celda":"F30","formato":"#,##0.00\\ \"€\"","formula":"=D30*E30","mostrado":"1032.75","tipo":"número"}
+{"almacenado":"1","celda":"G30","mostrado":"TRUE","tipo":"booleano"}
+{"almacenado":"46195","celda":"A31","formato":"formato integrado 14","mostrado":"2026-06-22","tipo":"número"}
+{"almacenado":"Orinoquía","celda":"B31","mostrado":"Orinoquía","tipo":"texto"}
+{"almacenado":"Aguacate Hass","celda":"C31","mostrado":"Aguacate Hass","tipo":"texto"}
+{"almacenado":"118","celda":"D31","mostrado":"118","tipo":"número"}
+{"almacenado":"6.9","celda":"E31","formato":"#,##0.00\\ \"€\"","mostrado":"6.9","tipo":"número"}
+{"almacenado":"814.2","celda":"F31","formato":"#,##0.00\\ \"€\"","formula":"=D31*E31","mostrado":"814.2","tipo":"número"}
+{"almacenado":"1","celda":"G31","mostrado":"TRUE","tipo":"booleano"}
+{"almacenado":"46191","celda":"A32","formato":"formato integrado 14","mostrado":"2026-06-18","tipo":"número"}
+{"almacenado":"Pacífico","celda":"B32","mostrado":"Pacífico","tipo":"texto"}
+{"almacenado":"Café especial","celda":"C32","mostrado":"Café especial","tipo":"texto"}
+{"almacenado":"35","celda":"D32","mostrado":"35","tipo":"número"}
+{"almacenado":"18.5","celda":"E32","formato":"#,##0.00\\ \"€\"","mostrado":"18.5","tipo":"número"}
+{"almacenado":"647.5","celda":"F32","formato":"#,##0.00\\ \"€\"","formula":"=D32*E32","mostrado":"647.5","tipo":"número"}
+{"almacenado":"1","celda":"G32","mostrado":"TRUE","tipo":"booleano"}
+{"almacenado":"46187","celda":"A33","formato":"formato integrado 14","mostrado":"2026-06-14","tipo":"número"}
+{"almacenado":"Caribe","celda":"B33","mostrado":"Caribe","tipo":"texto"}
+{"almacenado":"Panela orgánica","celda":"C33","mostrado":"Panela orgánica","tipo":"texto"}
+{"almacenado":"72","celda":"D33","mostrado":"72","tipo":"número"}
+{"almacenado":"4.2","celda":"E33","formato":"#,##0.00\\ \"€\"","mostrado":"4.2","tipo":"número"}
+{"almacenado":"302.4","celda":"F33","formato":"#,##0.00\\ \"€\"","formula":"=D33*E33","mostrado":"302.4","tipo":"número"}
+{"almacenado":"0","celda":"G33","mostrado":"FALSE","tipo":"booleano"}
+{"almacenado":"46183","celda":"A34","formato":"formato integrado 14","mostrado":"2026-06-10","tipo":"número"}
+{"almacenado":"Andina","celda":"B34","mostrado":"Andina","tipo":"texto"}
+{"almacenado":"Flores de corte","celda":"C34","mostrado":"Flores de corte","tipo":"texto"}
+{"almacenado":"109","celda":"D34","mostrado":"109","tipo":"número"}
+{"almacenado":"22.0","celda":"E34","formato":"#,##0.00\\ \"€\"","mostrado":"22","tipo":"número"}
+{"almacenado":"2398.0","celda":"F34","formato":"#,##0.00\\ \"€\"","formula":"=D34*E34","mostrado":"2398","tipo":"número"}
+{"almacenado":"1","celda":"G34","mostrado":"TRUE","tipo":"booleano"}
+{"almacenado":"46179","celda":"A35","formato":"formato integrado 14","mostrado":"2026-06-06","tipo":"número"}
+{"almacenado":"Orinoquía","celda":"B35","mostrado":"Orinoquía","tipo":"texto"}
+{"almacenado":"Cacao en grano","celda":"C35","mostrado":"Cacao en grano","tipo":"texto"}
+{"almacenado":"26","celda":"D35","mostrado":"26","tipo":"número"}
+{"almacenado":"12.75","celda":"E35","formato":"#,##0.00\\ \"€\"","mostrado":"12.75","tipo":"número"}
+{"almacenado":"331.5","celda":"F35","formato":"#,##0.00\\ \"€\"","formula":"=D35*E35","mostrado":"331.5","tipo":"número"}
+{"almacenado":"1","celda":"G35","mostrado":"TRUE","tipo":"booleano"}
+{"almacenado":"46175","celda":"A36","formato":"formato integrado 14","mostrado":"2026-06-02","tipo":"número"}
+{"almacenado":"Pacífico","celda":"B36","mostrado":"Pacífico","tipo":"texto"}
+{"almacenado":"Aguacate Hass","celda":"C36","mostrado":"Aguacate Hass","tipo":"texto"}
+{"almacenado":"63","celda":"D36","mostrado":"63","tipo":"número"}
+{"almacenado":"6.9","celda":"E36","formato":"#,##0.00\\ \"€\"","mostrado":"6.9","tipo":"número"}
+{"almacenado":"434.7","celda":"F36","formato":"#,##0.00\\ \"€\"","formula":"=D36*E36","mostrado":"434.7","tipo":"número"}
+{"almacenado":"1","celda":"G36","mostrado":"TRUE","tipo":"booleano"}
+{"almacenado":"46171","celda":"A37","formato":"formato integrado 14","mostrado":"2026-05-29","tipo":"número"}
+{"almacenado":"Caribe","celda":"B37","mostrado":"Caribe","tipo":"texto"}
+{"almacenado":"Café especial","celda":"C37","mostrado":"Café especial","tipo":"texto"}
+{"almacenado":"100","celda":"D37","mostrado":"100","tipo":"número"}
+{"almacenado":"18.5","celda":"E37","formato":"#,##0.00\\ \"€\"","mostrado":"18.5","tipo":"número"}
+{"almacenado":"1850.0","celda":"F37","formato":"#,##0.00\\ \"€\"","formula":"=D37*E37","mostrado":"1850","tipo":"número"}
+{"almacenado":"1","celda":"G37","mostrado":"TRUE","tipo":"booleano"}
+{"almacenado":"46167","celda":"A38","formato":"formato integrado 14","mostrado":"2026-05-25","tipo":"número"}
+{"almacenado":"Andina","celda":"B38","mostrado":"Andina","tipo":"texto"}
+{"almacenado":"Panela orgánica","celda":"C38","mostrado":"Panela orgánica","tipo":"texto"}
+{"almacenado":"17","celda":"D38","mostrado":"17","tipo":"número"}
+{"almacenado":"4.2","celda":"E38","formato":"#,##0.00\\ \"€\"","mostrado":"4.2","tipo":"número"}
+{"almacenado":"71.4","celda":"F38","formato":"#,##0.00\\ \"€\"","formula":"=D38*E38","mostrado":"71.4","tipo":"número"}
+{"almacenado":"1","celda":"G38","mostrado":"TRUE","tipo":"booleano"}
+{"almacenado":"46163","celda":"A39","formato":"formato integrado 14","mostrado":"2026-05-21","tipo":"número"}
+{"almacenado":"Orinoquía","celda":"B39","mostrado":"Orinoquía","tipo":"texto"}
+{"almacenado":"Flores de corte","celda":"C39","mostrado":"Flores de corte","tipo":"texto"}
+{"almacenado":"54","celda":"D39","mostrado":"54","tipo":"número"}
+{"almacenado":"22.0","celda":"E39","formato":"#,##0.00\\ \"€\"","mostrado":"22","tipo":"número"}
+{"almacenado":"1188.0","celda":"F39","formato":"#,##0.00\\ \"€\"","formula":"=D39*E39","mostrado":"1188","tipo":"número"}
+{"almacenado":"1","celda":"G39","mostrado":"TRUE","tipo":"booleano"}
+{"almacenado":"46159","celda":"A40","formato":"formato integrado 14","mostrado":"2026-05-17","tipo":"número"}
+{"almacenado":"Pacífico","celda":"B40","mostrado":"Pacífico","tipo":"texto"}
+{"almacenado":"Cacao en grano","celda":"C40","mostrado":"Cacao en grano","tipo":"texto"}
+{"almacenado":"91","celda":"D40","mostrado":"91","tipo":"número"}
+{"almacenado":"12.75","celda":"E40","formato":"#,##0.00\\ \"€\"","mostrado":"12.75","tipo":"número"}
+{"almacenado":"1160.25","celda":"F40","formato":"#,##0.00\\ \"€\"","formula":"=D40*E40","mostrado":"1160.25","tipo":"número"}
+{"almacenado":"1","celda":"G40","mostrado":"TRUE","tipo":"booleano"}
+{"almacenado":"46155","celda":"A41","formato":"formato integrado 14","mostrado":"2026-05-13","tipo":"número"}
+{"almacenado":"Caribe","celda":"B41","mostrado":"Caribe","tipo":"texto"}
+{"almacenado":"Aguacate Hass","celda":"C41","mostrado":"Aguacate Hass","tipo":"texto"}
+{"almacenado":"8","celda":"D41","mostrado":"8","tipo":"número"}
+{"almacenado":"6.9","celda":"E41","formato":"#,##0.00\\ \"€\"","mostrado":"6.9","tipo":"número"}
+{"almacenado":"55.2","celda":"F41","formato":"#,##0.00\\ \"€\"","formula":"=D41*E41","mostrado":"55.2","tipo":"número"}
+{"almacenado":"1","celda":"G41","mostrado":"TRUE","tipo":"booleano"}
+{"almacenado":"46151","celda":"A42","formato":"formato integrado 14","mostrado":"2026-05-09","tipo":"número"}
+{"almacenado":"Andina","celda":"B42","mostrado":"Andina","tipo":"texto"}
+{"almacenado":"Café especial","celda":"C42","mostrado":"Café especial","tipo":"texto"}
+{"almacenado":"45","celda":"D42","mostrado":"45","tipo":"número"}
+{"almacenado":"18.5","celda":"E42","formato":"#,##0.00\\ \"€\"","mostrado":"18.5","tipo":"número"}
+{"almacenado":"832.5","celda":"F42","formato":"#,##0.00\\ \"€\"","formula":"=D42*E42","mostrado":"832.5","tipo":"número"}
+{"almacenado":"0","celda":"G42","mostrado":"FALSE","tipo":"booleano"}
+{"almacenado":"46147","celda":"A43","formato":"formato integrado 14","mostrado":"2026-05-05","tipo":"número"}
+{"almacenado":"Orinoquía","celda":"B43","mostrado":"Orinoquía","tipo":"texto"}
+{"almacenado":"Panela orgánica","celda":"C43","mostrado":"Panela orgánica","tipo":"texto"}
+{"almacenado":"82","celda":"D43","mostrado":"82","tipo":"número"}
+{"almacenado":"4.2","celda":"E43","formato":"#,##0.00\\ \"€\"","mostrado":"4.2","tipo":"número"}
+{"almacenado":"344.4","celda":"F43","formato":"#,##0.00\\ \"€\"","formula":"=D43*E43","mostrado":"344.4","tipo":"número"}
+{"almacenado":"1","celda":"G43","mostrado":"TRUE","tipo":"booleano"}
+{"almacenado":"46143","celda":"A44","formato":"formato integrado 14","mostrado":"2026-05-01","tipo":"número"}
+{"almacenado":"Pacífico","celda":"B44","mostrado":"Pacífico","tipo":"texto"}
+{"almacenado":"Flores de corte","celda":"C44","mostrado":"Flores de corte","tipo":"texto"}
+{"almacenado":"119","celda":"D44","mostrado":"119","tipo":"número"}
+{"almacenado":"22.0","celda":"E44","formato":"#,##0.00\\ \"€\"","mostrado":"22","tipo":"número"}
+{"almacenado":"2618.0","celda":"F44","formato":"#,##0.00\\ \"€\"","formula":"=D44*E44","mostrado":"2618","tipo":"número"}
+{"almacenado":"1","celda":"G44","mostrado":"TRUE","tipo":"booleano"}
+{"almacenado":"46139","celda":"A45","formato":"formato integrado 14","mostrado":"2026-04-27","tipo":"número"}
+{"almacenado":"Caribe","celda":"B45","mostrado":"Caribe","tipo":"texto"}
+{"almacenado":"Cacao en grano","celda":"C45","mostrado":"Cacao en grano","tipo":"texto"}
+{"almacenado":"36","celda":"D45","mostrado":"36","tipo":"número"}
+{"almacenado":"12.75","celda":"E45","formato":"#,##0.00\\ \"€\"","mostrado":"12.75","tipo":"número"}
+{"almacenado":"459.0","celda":"F45","formato":"#,##0.00\\ \"€\"","formula":"=D45*E45","mostrado":"459","tipo":"número"}
+{"almacenado":"1","celda":"G45","mostrado":"TRUE","tipo":"booleano"}
+{"almacenado":"46135","celda":"A46","formato":"formato integrado 14","mostrado":"2026-04-23","tipo":"número"}
+{"almacenado":"Andina","celda":"B46","mostrado":"Andina","tipo":"texto"}
+{"almacenado":"Aguacate Hass","celda":"C46","mostrado":"Aguacate Hass","tipo":"texto"}
+{"almacenado":"73","celda":"D46","mostrado":"73","tipo":"número"}
+{"almacenado":"6.9","celda":"E46","formato":"#,##0.00\\ \"€\"","mostrado":"6.9","tipo":"número"}
+{"almacenado":"503.7","celda":"F46","formato":"#,##0.00\\ \"€\"","formula":"=D46*E46","mostrado":"503.7","tipo":"número"}
+{"almacenado":"1","celda":"G46","mostrado":"TRUE","tipo":"booleano"}
+{"almacenado":"46131","celda":"A47","formato":"formato integrado 14","mostrado":"2026-04-19","tipo":"número"}
+{"almacenado":"Orinoquía","celda":"B47","mostrado":"Orinoquía","tipo":"texto"}
+{"almacenado":"Café especial","celda":"C47","mostrado":"Café especial","tipo":"texto"}
+{"almacenado":"110","celda":"D47","mostrado":"110","tipo":"número"}
+{"almacenado":"18.5","celda":"E47","formato":"#,##0.00\\ \"€\"","mostrado":"18.5","tipo":"número"}
+{"almacenado":"2035.0","celda":"F47","formato":"#,##0.00\\ \"€\"","formula":"=D47*E47","mostrado":"2035","tipo":"número"}
+{"almacenado":"1","celda":"G47","mostrado":"TRUE","tipo":"booleano"}
+{"almacenado":"46127","celda":"A48","formato":"formato integrado 14","mostrado":"2026-04-15","tipo":"número"}
+{"almacenado":"Pacífico","celda":"B48","mostrado":"Pacífico","tipo":"texto"}
+{"almacenado":"Panela orgánica","celda":"C48","mostrado":"Panela orgánica","tipo":"texto"}
+{"almacenado":"27","celda":"D48","mostrado":"27","tipo":"número"}
+{"almacenado":"4.2","celda":"E48","formato":"#,##0.00\\ \"€\"","mostrado":"4.2","tipo":"número"}
+{"almacenado":"113.4","celda":"F48","formato":"#,##0.00\\ \"€\"","formula":"=D48*E48","mostrado":"113.4","tipo":"número"}
+{"almacenado":"1","celda":"G48","mostrado":"TRUE","tipo":"booleano"}
+{"almacenado":"46123","celda":"A49","formato":"formato integrado 14","mostrado":"2026-04-11","tipo":"número"}
+{"almacenado":"Caribe","celda":"B49","mostrado":"Caribe","tipo":"texto"}
+{"almacenado":"Flores de corte","celda":"C49","mostrado":"Flores de corte","tipo":"texto"}
+{"almacenado":"64","celda":"D49","mostrado":"64","tipo":"número"}
+{"almacenado":"22.0","celda":"E49","formato":"#,##0.00\\ \"€\"","mostrado":"22","tipo":"número"}
+{"almacenado":"1408.0","celda":"F49","formato":"#,##0.00\\ \"€\"","formula":"=D49*E49","mostrado":"1408","tipo":"número"}
+{"almacenado":"1","celda":"G49","mostrado":"TRUE","tipo":"booleano"}
+{"almacenado":"46119","celda":"A50","formato":"formato integrado 14","mostrado":"2026-04-07","tipo":"número"}
+{"almacenado":"Andina","celda":"B50","mostrado":"Andina","tipo":"texto"}
+{"almacenado":"Cacao en grano","celda":"C50","mostrado":"Cacao en grano","tipo":"texto"}
+{"almacenado":"101","celda":"D50","mostrado":"101","tipo":"número"}
+{"almacenado":"12.75","celda":"E50","formato":"#,##0.00\\ \"€\"","mostrado":"12.75","tipo":"número"}
+{"almacenado":"1287.75","celda":"F50","formato":"#,##0.00\\ \"€\"","formula":"=D50*E50","mostrado":"1287.75","tipo":"número"}
+{"almacenado":"1","celda":"G50","mostrado":"TRUE","tipo":"booleano"}
+{"almacenado":"46115","celda":"A51","formato":"formato integrado 14","mostrado":"2026-04-03","tipo":"número"}
+{"almacenado":"Orinoquía","celda":"B51","mostrado":"Orinoquía","tipo":"texto"}
+{"almacenado":"Aguacate Hass","celda":"C51","mostrado":"Aguacate Hass","tipo":"texto"}
+{"almacenado":"18","celda":"D51","mostrado":"18","tipo":"número"}
+{"almacenado":"6.9","celda":"E51","formato":"#,##0.00\\ \"€\"","mostrado":"6.9","tipo":"número"}
+{"almacenado":"124.2","celda":"F51","formato":"#,##0.00\\ \"€\"","formula":"=D51*E51","mostrado":"124.2","tipo":"número"}
+{"almacenado":"0","celda":"G51","mostrado":"FALSE","tipo":"booleano"}
+{"almacenado":"46111","celda":"A52","formato":"formato integrado 14","mostrado":"2026-03-30","tipo":"número"}
+{"almacenado":"Pacífico","celda":"B52","mostrado":"Pacífico","tipo":"texto"}
+{"almacenado":"Café especial","celda":"C52","mostrado":"Café especial","tipo":"texto"}
+{"almacenado":"55","celda":"D52","mostrado":"55","tipo":"número"}
+{"almacenado":"18.5","celda":"E52","formato":"#,##0.00\\ \"€\"","mostrado":"18.5","tipo":"número"}
+{"almacenado":"1017.5","celda":"F52","formato":"#,##0.00\\ \"€\"","formula":"=D52*E52","mostrado":"1017.5","tipo":"número"}
+{"almacenado":"1","celda":"G52","mostrado":"TRUE","tipo":"booleano"}
+{"almacenado":"46107","celda":"A53","formato":"formato integrado 14","mostrado":"2026-03-26","tipo":"número"}
+{"almacenado":"Caribe","celda":"B53","mostrado":"Caribe","tipo":"texto"}
+{"almacenado":"Panela orgánica","celda":"C53","mostrado":"Panela orgánica","tipo":"texto"}
+{"almacenado":"92","celda":"D53","mostrado":"92","tipo":"número"}
+{"almacenado":"4.2","celda":"E53","formato":"#,##0.00\\ \"€\"","mostrado":"4.2","tipo":"número"}
+{"almacenado":"386.4","celda":"F53","formato":"#,##0.00\\ \"€\"","formula":"=D53*E53","mostrado":"386.4","tipo":"número"}
+{"almacenado":"1","celda":"G53","mostrado":"TRUE","tipo":"booleano"}
+{"almacenado":"46103","celda":"A54","formato":"formato integrado 14","mostrado":"2026-03-22","tipo":"número"}
+{"almacenado":"Andina","celda":"B54","mostrado":"Andina","tipo":"texto"}
+{"almacenado":"Flores de corte","celda":"C54","mostrado":"Flores de corte","tipo":"texto"}
+{"almacenado":"9","celda":"D54","mostrado":"9","tipo":"número"}
+{"almacenado":"22.0","celda":"E54","formato":"#,##0.00\\ \"€\"","mostrado":"22","tipo":"número"}
+{"almacenado":"198.0","celda":"F54","formato":"#,##0.00\\ \"€\"","formula":"=D54*E54","mostrado":"198","tipo":"número"}
+{"almacenado":"1","celda":"G54","mostrado":"TRUE","tipo":"booleano"}
+{"almacenado":"46099","celda":"A55","formato":"formato integrado 14","mostrado":"2026-03-18","tipo":"número"}
+{"almacenado":"Orinoquía","celda":"B55","mostrado":"Orinoquía","tipo":"texto"}
+{"almacenado":"Cacao en grano","celda":"C55","mostrado":"Cacao en grano","tipo":"texto"}
+{"almacenado":"46","celda":"D55","mostrado":"46","tipo":"número"}
+{"almacenado":"12.75","celda":"E55","formato":"#,##0.00\\ \"€\"","mostrado":"12.75","tipo":"número"}
+{"almacenado":"586.5","celda":"F55","formato":"#,##0.00\\ \"€\"","formula":"=D55*E55","mostrado":"586.5","tipo":"número"}
+{"almacenado":"1","celda":"G55","mostrado":"TRUE","tipo":"booleano"}
+{"almacenado":"46095","celda":"A56","formato":"formato integrado 14","mostrado":"2026-03-14","tipo":"número"}
+{"almacenado":"Pacífico","celda":"B56","mostrado":"Pacífico","tipo":"texto"}
+{"almacenado":"Aguacate Hass","celda":"C56","mostrado":"Aguacate Hass","tipo":"texto"}
+{"almacenado":"83","celda":"D56","mostrado":"83","tipo":"número"}
+{"almacenado":"6.9","celda":"E56","formato":"#,##0.00\\ \"€\"","mostrado":"6.9","tipo":"número"}
+{"almacenado":"572.7","celda":"F56","formato":"#,##0.00\\ \"€\"","formula":"=D56*E56","mostrado":"572.7","tipo":"número"}
+{"almacenado":"1","celda":"G56","mostrado":"TRUE","tipo":"booleano"}
+{"almacenado":"46091","celda":"A57","formato":"formato integrado 14","mostrado":"2026-03-10","tipo":"número"}
+{"almacenado":"Caribe","celda":"B57","mostrado":"Caribe","tipo":"texto"}
+{"almacenado":"Café especial","celda":"C57","mostrado":"Café especial","tipo":"texto"}
+{"almacenado":"120","celda":"D57","mostrado":"120","tipo":"número"}
+{"almacenado":"18.5","celda":"E57","formato":"#,##0.00\\ \"€\"","mostrado":"18.5","tipo":"número"}
+{"almacenado":"2220.0","celda":"F57","formato":"#,##0.00\\ \"€\"","formula":"=D57*E57","mostrado":"2220","tipo":"número"}
+{"almacenado":"1","celda":"G57","mostrado":"TRUE","tipo":"booleano"}
+{"almacenado":"46087","celda":"A58","formato":"formato integrado 14","mostrado":"2026-03-06","tipo":"número"}
+{"almacenado":"Andina","celda":"B58","mostrado":"Andina","tipo":"texto"}
+{"almacenado":"Panela orgánica","celda":"C58","mostrado":"Panela orgánica","tipo":"texto"}
+{"almacenado":"37","celda":"D58","mostrado":"37","tipo":"número"}
+{"almacenado":"4.2","celda":"E58","formato":"#,##0.00\\ \"€\"","mostrado":"4.2","tipo":"número"}
+{"almacenado":"155.4","celda":"F58","formato":"#,##0.00\\ \"€\"","formula":"=D58*E58","mostrado":"155.4","tipo":"número"}
+{"almacenado":"1","celda":"G58","mostrado":"TRUE","tipo":"booleano"}
+{"almacenado":"46083","celda":"A59","formato":"formato integrado 14","mostrado":"2026-03-02","tipo":"número"}
+{"almacenado":"Orinoquía","celda":"B59","mostrado":"Orinoquía","tipo":"texto"}
+{"almacenado":"Flores de corte","celda":"C59","mostrado":"Flores de corte","tipo":"texto"}
+{"almacenado":"74","celda":"D59","mostrado":"74","tipo":"número"}
+{"almacenado":"22.0","celda":"E59","formato":"#,##0.00\\ \"€\"","mostrado":"22","tipo":"número"}
+{"almacenado":"1628.0","celda":"F59","formato":"#,##0.00\\ \"€\"","formula":"=D59*E59","mostrado":"1628","tipo":"número"}
+{"almacenado":"1","celda":"G59","mostrado":"TRUE","tipo":"booleano"}
+{"almacenado":"46079","celda":"A60","formato":"formato integrado 14","mostrado":"2026-02-26","tipo":"número"}
+{"almacenado":"Pacífico","celda":"B60","mostrado":"Pacífico","tipo":"texto"}
+{"almacenado":"Cacao en grano","celda":"C60","mostrado":"Cacao en grano","tipo":"texto"}
+{"almacenado":"111","celda":"D60","mostrado":"111","tipo":"número"}
+{"almacenado":"12.75","celda":"E60","formato":"#,##0.00\\ \"€\"","mostrado":"12.75","tipo":"número"}
+{"almacenado":"1415.25","celda":"F60","formato":"#,##0.00\\ \"€\"","formula":"=D60*E60","mostrado":"1415.25","tipo":"número"}
+{"almacenado":"0","celda":"G60","mostrado":"FALSE","tipo":"booleano"}
+{"almacenado":"46075","celda":"A61","formato":"formato integrado 14","mostrado":"2026-02-22","tipo":"número"}
+{"almacenado":"Caribe","celda":"B61","mostrado":"Caribe","tipo":"texto"}
+{"almacenado":"Aguacate Hass","celda":"C61","mostrado":"Aguacate Hass","tipo":"texto"}
+{"almacenado":"28","celda":"D61","mostrado":"28","tipo":"número"}
+{"almacenado":"6.9","celda":"E61","formato":"#,##0.00\\ \"€\"","mostrado":"6.9","tipo":"número"}
+{"almacenado":"193.2","celda":"F61","formato":"#,##0.00\\ \"€\"","formula":"=D61*E61","mostrado":"193.2","tipo":"número"}
+{"almacenado":"1","celda":"G61","mostrado":"TRUE","tipo":"booleano"}
+{"almacenado":"46071","celda":"A62","formato":"formato integrado 14","mostrado":"2026-02-18","tipo":"número"}
+{"almacenado":"Andina","celda":"B62","mostrado":"Andina","tipo":"texto"}
+{"almacenado":"Café especial","celda":"C62","mostrado":"Café especial","tipo":"texto"}
+{"almacenado":"65","celda":"D62","mostrado":"65","tipo":"número"}
+{"almacenado":"18.5","celda":"E62","formato":"#,##0.00\\ \"€\"","mostrado":"18.5","tipo":"número"}
+{"almacenado":"1202.5","celda":"F62","formato":"#,##0.00\\ \"€\"","formula":"=D62*E62","mostrado":"1202.5","tipo":"número"}
+{"almacenado":"1","celda":"G62","mostrado":"TRUE","tipo":"booleano"}
+{"almacenado":"46067","celda":"A63","formato":"formato integrado 14","mostrado":"2026-02-14","tipo":"número"}
+{"almacenado":"Orinoquía","celda":"B63","mostrado":"Orinoquía","tipo":"texto"}
+{"almacenado":"Panela orgánica","celda":"C63","mostrado":"Panela orgánica","tipo":"texto"}
+{"almacenado":"102","celda":"D63","mostrado":"102","tipo":"número"}
+{"almacenado":"4.2","celda":"E63","formato":"#,##0.00\\ \"€\"","mostrado":"4.2","tipo":"número"}
+{"almacenado":"428.4","celda":"F63","formato":"#,##0.00\\ \"€\"","formula":"=D63*E63","mostrado":"428.4","tipo":"número"}
+{"almacenado":"1","celda":"G63","mostrado":"TRUE","tipo":"booleano"}
+{"almacenado":"46063","celda":"A64","formato":"formato integrado 14","mostrado":"2026-02-10","tipo":"número"}
+{"almacenado":"Pacífico","celda":"B64","mostrado":"Pacífico","tipo":"texto"}
+{"almacenado":"Flores de corte","celda":"C64","mostrado":"Flores de corte","tipo":"texto"}
+{"almacenado":"19","celda":"D64","mostrado":"19","tipo":"número"}
+{"almacenado":"22.0","celda":"E64","formato":"#,##0.00\\ \"€\"","mostrado":"22","tipo":"número"}
+{"almacenado":"418.0","celda":"F64","formato":"#,##0.00\\ \"€\"","formula":"=D64*E64","mostrado":"418","tipo":"número"}
+{"almacenado":"1","celda":"G64","mostrado":"TRUE","tipo":"booleano"}
+{"almacenado":"46059","celda":"A65","formato":"formato integrado 14","mostrado":"2026-02-06","tipo":"número"}
+{"almacenado":"Caribe","celda":"B65","mostrado":"Caribe","tipo":"texto"}
+{"almacenado":"Cacao en grano","celda":"C65","mostrado":"Cacao en grano","tipo":"texto"}
+{"almacenado":"56","celda":"D65","mostrado":"56","tipo":"número"}
+{"almacenado":"12.75","celda":"E65","formato":"#,##0.00\\ \"€\"","mostrado":"12.75","tipo":"número"}
+{"almacenado":"714.0","celda":"F65","formato":"#,##0.00\\ \"€\"","formula":"=D65*E65","mostrado":"714","tipo":"número"}
+{"almacenado":"1","celda":"G65","mostrado":"TRUE","tipo":"booleano"}
+{"almacenado":"46055","celda":"A66","formato":"formato integrado 14","mostrado":"2026-02-02","tipo":"número"}
+{"almacenado":"Andina","celda":"B66","mostrado":"Andina","tipo":"texto"}
+{"almacenado":"Aguacate Hass","celda":"C66","mostrado":"Aguacate Hass","tipo":"texto"}
+{"almacenado":"93","celda":"D66","mostrado":"93","tipo":"número"}
+{"almacenado":"6.9","celda":"E66","formato":"#,##0.00\\ \"€\"","mostrado":"6.9","tipo":"número"}
+{"almacenado":"641.7","celda":"F66","formato":"#,##0.00\\ \"€\"","formula":"=D66*E66","mostrado":"641.7","tipo":"número"}
+{"almacenado":"1","celda":"G66","mostrado":"TRUE","tipo":"booleano"}
+{"almacenado":"46051","celda":"A67","formato":"formato integrado 14","mostrado":"2026-01-29","tipo":"número"}
+{"almacenado":"Orinoquía","celda":"B67","mostrado":"Orinoquía","tipo":"texto"}
+{"almacenado":"Café especial","celda":"C67","mostrado":"Café especial","tipo":"texto"}
+{"almacenado":"10","celda":"D67","mostrado":"10","tipo":"número"}
+{"almacenado":"18.5","celda":"E67","formato":"#,##0.00\\ \"€\"","mostrado":"18.5","tipo":"número"}
+{"almacenado":"185.0","celda":"F67","formato":"#,##0.00\\ \"€\"","formula":"=D67*E67","mostrado":"185","tipo":"número"}
+{"almacenado":"1","celda":"G67","mostrado":"TRUE","tipo":"booleano"}
+{"almacenado":"46047","celda":"A68","formato":"formato integrado 14","mostrado":"2026-01-25","tipo":"número"}
+{"almacenado":"Pacífico","celda":"B68","mostrado":"Pacífico","tipo":"texto"}
+{"almacenado":"Panela orgánica","celda":"C68","mostrado":"Panela orgánica","tipo":"texto"}
+{"almacenado":"47","celda":"D68","mostrado":"47","tipo":"número"}
+{"almacenado":"4.2","celda":"E68","formato":"#,##0.00\\ \"€\"","mostrado":"4.2","tipo":"número"}
+{"almacenado":"197.4","celda":"F68","formato":"#,##0.00\\ \"€\"","formula":"=D68*E68","mostrado":"197.4","tipo":"número"}
+{"almacenado":"1","celda":"G68","mostrado":"TRUE","tipo":"booleano"}
+{"almacenado":"46043","celda":"A69","formato":"formato integrado 14","mostrado":"2026-01-21","tipo":"número"}
+{"almacenado":"Caribe","celda":"B69","mostrado":"Caribe","tipo":"texto"}
+{"almacenado":"Flores de corte","celda":"C69","mostrado":"Flores de corte","tipo":"texto"}
+{"almacenado":"84","celda":"D69","mostrado":"84","tipo":"número"}
+{"almacenado":"22.0","celda":"E69","formato":"#,##0.00\\ \"€\"","mostrado":"22","tipo":"número"}
+{"almacenado":"1848.0","celda":"F69","formato":"#,##0.00\\ \"€\"","formula":"=D69*E69","mostrado":"1848","tipo":"número"}
+{"almacenado":"0","celda":"G69","mostrado":"FALSE","tipo":"booleano"}
+{"almacenado":"46039","celda":"A70","formato":"formato integrado 14","mostrado":"2026-01-17","tipo":"número"}
+{"almacenado":"Andina","celda":"B70","mostrado":"Andina","tipo":"texto"}
+{"almacenado":"Cacao en grano","celda":"C70","mostrado":"Cacao en grano","tipo":"texto"}
+{"almacenado":"121","celda":"D70","mostrado":"121","tipo":"número"}
+{"almacenado":"12.75","celda":"E70","formato":"#,##0.00\\ \"€\"","mostrado":"12.75","tipo":"número"}
+{"almacenado":"1542.75","celda":"F70","formato":"#,##0.00\\ \"€\"","formula":"=D70*E70","mostrado":"1542.75","tipo":"número"}
+{"almacenado":"1","celda":"G70","mostrado":"TRUE","tipo":"booleano"}
+{"almacenado":"46035","celda":"A71","formato":"formato integrado 14","mostrado":"2026-01-13","tipo":"número"}
+{"almacenado":"Orinoquía","celda":"B71","mostrado":"Orinoquía","tipo":"texto"}
+{"almacenado":"Aguacate Hass","celda":"C71","mostrado":"Aguacate Hass","tipo":"texto"}
+{"almacenado":"38","celda":"D71","mostrado":"38","tipo":"número"}
+{"almacenado":"6.9","celda":"E71","formato":"#,##0.00\\ \"€\"","mostrado":"6.9","tipo":"número"}
+{"almacenado":"262.2","celda":"F71","formato":"#,##0.00\\ \"€\"","formula":"=D71*E71","mostrado":"262.2","tipo":"número"}
+{"almacenado":"1","celda":"G71","mostrado":"TRUE","tipo":"booleano"}
+{"almacenado":"46031","celda":"A72","formato":"formato integrado 14","mostrado":"2026-01-09","tipo":"número"}
+{"almacenado":"Pacífico","celda":"B72","mostrado":"Pacífico","tipo":"texto"}
+{"almacenado":"Café especial","celda":"C72","mostrado":"Café especial","tipo":"texto"}
+{"almacenado":"75","celda":"D72","mostrado":"75","tipo":"número"}
+{"almacenado":"18.5","celda":"E72","formato":"#,##0.00\\ \"€\"","mostrado":"18.5","tipo":"número"}
+{"almacenado":"1387.5","celda":"F72","formato":"#,##0.00\\ \"€\"","formula":"=D72*E72","mostrado":"1387.5","tipo":"número"}
+{"almacenado":"1","celda":"G72","mostrado":"TRUE","tipo":"booleano"}
+{"almacenado":"46027","celda":"A73","formato":"formato integrado 14","mostrado":"2026-01-05","tipo":"número"}
+{"almacenado":"Caribe","celda":"B73","mostrado":"Caribe","tipo":"texto"}
+{"almacenado":"Panela orgánica","celda":"C73","mostrado":"Panela orgánica","tipo":"texto"}
+{"almacenado":"112","celda":"D73","mostrado":"112","tipo":"número"}
+{"almacenado":"4.2","celda":"E73","formato":"#,##0.00\\ \"€\"","mostrado":"4.2","tipo":"número"}
+{"almacenado":"470.4","celda":"F73","formato":"#,##0.00\\ \"€\"","formula":"=D73*E73","mostrado":"470.4","tipo":"número"}
+{"almacenado":"1","celda":"G73","mostrado":"TRUE","tipo":"booleano"}
+{"almacenado":"46310","celda":"A74","formato":"formato integrado 14","mostrado":"2026-10-15","tipo":"número"}
+{"almacenado":"Andina","celda":"B74","mostrado":"Andina","tipo":"texto"}
+{"almacenado":"Flores de corte","celda":"C74","mostrado":"Flores de corte","tipo":"texto"}
+{"almacenado":"29","celda":"D74","mostrado":"29","tipo":"número"}
+{"almacenado":"22.0","celda":"E74","formato":"#,##0.00\\ \"€\"","mostrado":"22","tipo":"número"}
+{"almacenado":"638.0","celda":"F74","formato":"#,##0.00\\ \"€\"","formula":"=D74*E74","mostrado":"638","tipo":"número"}
+{"almacenado":"1","celda":"G74","mostrado":"TRUE","tipo":"booleano"}
+{"almacenado":"46306","celda":"A75","formato":"formato integrado 14","mostrado":"2026-10-11","tipo":"número"}
+{"almacenado":"Orinoquía","celda":"B75","mostrado":"Orinoquía","tipo":"texto"}
+{"almacenado":"Cacao en grano","celda":"C75","mostrado":"Cacao en grano","tipo":"texto"}
+{"almacenado":"66","celda":"D75","mostrado":"66","tipo":"número"}
+{"almacenado":"12.75","celda":"E75","formato":"#,##0.00\\ \"€\"","mostrado":"12.75","tipo":"número"}
+{"almacenado":"841.5","celda":"F75","formato":"#,##0.00\\ \"€\"","formula":"=D75*E75","mostrado":"841.5","tipo":"número"}
+{"almacenado":"1","celda":"G75","mostrado":"TRUE","tipo":"booleano"}
+{"almacenado":"46302","celda":"A76","formato":"formato integrado 14","mostrado":"2026-10-07","tipo":"número"}
+{"almacenado":"Pacífico","celda":"B76","mostrado":"Pacífico","tipo":"texto"}
+{"almacenado":"Aguacate Hass","celda":"C76","mostrado":"Aguacate Hass","tipo":"texto"}
+{"almacenado":"103","celda":"D76","mostrado":"103","tipo":"número"}
+{"almacenado":"6.9","celda":"E76","formato":"#,##0.00\\ \"€\"","mostrado":"6.9","tipo":"número"}
+{"almacenado":"710.7","celda":"F76","formato":"#,##0.00\\ \"€\"","formula":"=D76*E76","mostrado":"710.7","tipo":"número"}
+{"almacenado":"1","celda":"G76","mostrado":"TRUE","tipo":"booleano"}
+{"almacenado":"46298","celda":"A77","formato":"formato integrado 14","mostrado":"2026-10-03","tipo":"número"}
+{"almacenado":"Caribe","celda":"B77","mostrado":"Caribe","tipo":"texto"}
+{"almacenado":"Café especial","celda":"C77","mostrado":"Café especial","tipo":"texto"}
+{"almacenado":"20","celda":"D77","mostrado":"20","tipo":"número"}
+{"almacenado":"18.5","celda":"E77","formato":"#,##0.00\\ \"€\"","mostrado":"18.5","tipo":"número"}
+{"almacenado":"370.0","celda":"F77","formato":"#,##0.00\\ \"€\"","formula":"=D77*E77","mostrado":"370","tipo":"número"}
+{"almacenado":"1","celda":"G77","mostrado":"TRUE","tipo":"booleano"}
+{"almacenado":"46294","celda":"A78","formato":"formato integrado 14","mostrado":"2026-09-29","tipo":"número"}
+{"almacenado":"Andina","celda":"B78","mostrado":"Andina","tipo":"texto"}
+{"almacenado":"Panela orgánica","celda":"C78","mostrado":"Panela orgánica","tipo":"texto"}
+{"almacenado":"57","celda":"D78","mostrado":"57","tipo":"número"}
+{"almacenado":"4.2","celda":"E78","formato":"#,##0.00\\ \"€\"","mostrado":"4.2","tipo":"número"}
+{"almacenado":"239.4","celda":"F78","formato":"#,##0.00\\ \"€\"","formula":"=D78*E78","mostrado":"239.4","tipo":"número"}
+{"almacenado":"0","celda":"G78","mostrado":"FALSE","tipo":"booleano"}
+{"almacenado":"46290","celda":"A79","formato":"formato integrado 14","mostrado":"2026-09-25","tipo":"número"}
+{"almacenado":"Orinoquía","celda":"B79","mostrado":"Orinoquía","tipo":"texto"}
+{"almacenado":"Flores de corte","celda":"C79","mostrado":"Flores de corte","tipo":"texto"}
+{"almacenado":"94","celda":"D79","mostrado":"94","tipo":"número"}
+{"almacenado":"22.0","celda":"E79","formato":"#,##0.00\\ \"€\"","mostrado":"22","tipo":"número"}
+{"almacenado":"2068.0","celda":"F79","formato":"#,##0.00\\ \"€\"","formula":"=D79*E79","mostrado":"2068","tipo":"número"}
+{"almacenado":"1","celda":"G79","mostrado":"TRUE","tipo":"booleano"}
+{"almacenado":"46286","celda":"A80","formato":"formato integrado 14","mostrado":"2026-09-21","tipo":"número"}
+{"almacenado":"Pacífico","celda":"B80","mostrado":"Pacífico","tipo":"texto"}
+{"almacenado":"Cacao en grano","celda":"C80","mostrado":"Cacao en grano","tipo":"texto"}
+{"almacenado":"11","celda":"D80","mostrado":"11","tipo":"número"}
+{"almacenado":"12.75","celda":"E80","formato":"#,##0.00\\ \"€\"","mostrado":"12.75","tipo":"número"}
+{"almacenado":"140.25","celda":"F80","formato":"#,##0.00\\ \"€\"","formula":"=D80*E80","mostrado":"140.25","tipo":"número"}
+{"almacenado":"1","celda":"G80","mostrado":"TRUE","tipo":"booleano"}
+{"almacenado":"46282","celda":"A81","formato":"formato integrado 14","mostrado":"2026-09-17","tipo":"número"}
+{"almacenado":"Caribe","celda":"B81","mostrado":"Caribe","tipo":"texto"}
+{"almacenado":"Aguacate Hass","celda":"C81","mostrado":"Aguacate Hass","tipo":"texto"}
+{"almacenado":"48","celda":"D81","mostrado":"48","tipo":"número"}
+{"almacenado":"6.9","celda":"E81","formato":"#,##0.00\\ \"€\"","mostrado":"6.9","tipo":"número"}
+{"almacenado":"331.2","celda":"F81","formato":"#,##0.00\\ \"€\"","formula":"=D81*E81","mostrado":"331.2","tipo":"número"}
+{"almacenado":"1","celda":"G81","mostrado":"TRUE","tipo":"booleano"}
+{"almacenado":"46278","celda":"A82","formato":"formato integrado 14","mostrado":"2026-09-13","tipo":"número"}
+{"almacenado":"Andina","celda":"B82","mostrado":"Andina","tipo":"texto"}
+{"almacenado":"Café especial","celda":"C82","mostrado":"Café especial","tipo":"texto"}
+{"almacenado":"85","celda":"D82","mostrado":"85","tipo":"número"}
+{"almacenado":"18.5","celda":"E82","formato":"#,##0.00\\ \"€\"","mostrado":"18.5","tipo":"número"}
+{"almacenado":"1572.5","celda":"F82","formato":"#,##0.00\\ \"€\"","formula":"=D82*E82","mostrado":"1572.5","tipo":"número"}
+{"almacenado":"1","celda":"G82","mostrado":"TRUE","tipo":"booleano"}
+{"almacenado":"46274","celda":"A83","formato":"formato integrado 14","mostrado":"2026-09-09","tipo":"número"}
+{"almacenado":"Orinoquía","celda":"B83","mostrado":"Orinoquía","tipo":"texto"}
+{"almacenado":"Panela orgánica","celda":"C83","mostrado":"Panela orgánica","tipo":"texto"}
+{"almacenado":"122","celda":"D83","mostrado":"122","tipo":"número"}
+{"almacenado":"4.2","celda":"E83","formato":"#,##0.00\\ \"€\"","mostrado":"4.2","tipo":"número"}
+{"almacenado":"512.4","celda":"F83","formato":"#,##0.00\\ \"€\"","formula":"=D83*E83","mostrado":"512.4","tipo":"número"}
+{"almacenado":"1","celda":"G83","mostrado":"TRUE","tipo":"booleano"}
+{"almacenado":"46270","celda":"A84","formato":"formato integrado 14","mostrado":"2026-09-05","tipo":"número"}
+{"almacenado":"Pacífico","celda":"B84","mostrado":"Pacífico","tipo":"texto"}
+{"almacenado":"Flores de corte","celda":"C84","mostrado":"Flores de corte","tipo":"texto"}
+{"almacenado":"39","celda":"D84","mostrado":"39","tipo":"número"}
+{"almacenado":"22.0","celda":"E84","formato":"#,##0.00\\ \"€\"","mostrado":"22","tipo":"número"}
+{"almacenado":"858.0","celda":"F84","formato":"#,##0.00\\ \"€\"","formula":"=D84*E84","mostrado":"858","tipo":"número"}
+{"almacenado":"1","celda":"G84","mostrado":"TRUE","tipo":"booleano"}
+{"almacenado":"46266","celda":"A85","formato":"formato integrado 14","mostrado":"2026-09-01","tipo":"número"}
+{"almacenado":"Caribe","celda":"B85","mostrado":"Caribe","tipo":"texto"}
+{"almacenado":"Cacao en grano","celda":"C85","mostrado":"Cacao en grano","tipo":"texto"}
+{"almacenado":"76","celda":"D85","mostrado":"76","tipo":"número"}
+{"almacenado":"12.75","celda":"E85","formato":"#,##0.00\\ \"€\"","mostrado":"12.75","tipo":"número"}
+{"almacenado":"969.0","celda":"F85","formato":"#,##0.00\\ \"€\"","formula":"=D85*E85","mostrado":"969","tipo":"número"}
+{"almacenado":"1","celda":"G85","mostrado":"TRUE","tipo":"booleano"}
+{"almacenado":"46262","celda":"A86","formato":"formato integrado 14","mostrado":"2026-08-28","tipo":"número"}
+{"almacenado":"Andina","celda":"B86","mostrado":"Andina","tipo":"texto"}
+{"almacenado":"Aguacate Hass","celda":"C86","mostrado":"Aguacate Hass","tipo":"texto"}
+{"almacenado":"113","celda":"D86","mostrado":"113","tipo":"número"}
+{"almacenado":"6.9","celda":"E86","formato":"#,##0.00\\ \"€\"","mostrado":"6.9","tipo":"número"}
+{"almacenado":"779.7","celda":"F86","formato":"#,##0.00\\ \"€\"","formula":"=D86*E86","mostrado":"779.7","tipo":"número"}
+{"almacenado":"1","celda":"G86","mostrado":"TRUE","tipo":"booleano"}
+{"almacenado":"46258","celda":"A87","formato":"formato integrado 14","mostrado":"2026-08-24","tipo":"número"}
+{"almacenado":"Orinoquía","celda":"B87","mostrado":"Orinoquía","tipo":"texto"}
+{"almacenado":"Café especial","celda":"C87","mostrado":"Café especial","tipo":"texto"}
+{"almacenado":"30","celda":"D87","mostrado":"30","tipo":"número"}
+{"almacenado":"18.5","celda":"E87","formato":"#,##0.00\\ \"€\"","mostrado":"18.5","tipo":"número"}
+{"almacenado":"555.0","celda":"F87","formato":"#,##0.00\\ \"€\"","formula":"=D87*E87","mostrado":"555","tipo":"número"}
+{"almacenado":"0","celda":"G87","mostrado":"FALSE","tipo":"booleano"}
+{"almacenado":"46254","celda":"A88","formato":"formato integrado 14","mostrado":"2026-08-20","tipo":"número"}
+{"almacenado":"Pacífico","celda":"B88","mostrado":"Pacífico","tipo":"texto"}
+{"almacenado":"Panela orgánica","celda":"C88","mostrado":"Panela orgánica","tipo":"texto"}
+{"almacenado":"67","celda":"D88","mostrado":"67","tipo":"número"}
+{"almacenado":"4.2","celda":"E88","formato":"#,##0.00\\ \"€\"","mostrado":"4.2","tipo":"número"}
+{"almacenado":"281.4","celda":"F88","formato":"#,##0.00\\ \"€\"","formula":"=D88*E88","mostrado":"281.4","tipo":"número"}
+{"almacenado":"1","celda":"G88","mostrado":"TRUE","tipo":"booleano"}
+{"almacenado":"46250","celda":"A89","formato":"formato integrado 14","mostrado":"2026-08-16","tipo":"número"}
+{"almacenado":"Caribe","celda":"B89","mostrado":"Caribe","tipo":"texto"}
+{"almacenado":"Flores de corte","celda":"C89","mostrado":"Flores de corte","tipo":"texto"}
+{"almacenado":"104","celda":"D89","mostrado":"104","tipo":"número"}
+{"almacenado":"22.0","celda":"E89","formato":"#,##0.00\\ \"€\"","mostrado":"22","tipo":"número"}
+{"almacenado":"2288.0","celda":"F89","formato":"#,##0.00\\ \"€\"","formula":"=D89*E89","mostrado":"2288","tipo":"número"}
+{"almacenado":"1","celda":"G89","mostrado":"TRUE","tipo":"booleano"}
+{"almacenado":"46246","celda":"A90","formato":"formato integrado 14","mostrado":"2026-08-12","tipo":"número"}
+{"almacenado":"Andina","celda":"B90","mostrado":"Andina","tipo":"texto"}
+{"almacenado":"Cacao en grano","celda":"C90","mostrado":"Cacao en grano","tipo":"texto"}
+{"almacenado":"21","celda":"D90","mostrado":"21","tipo":"número"}
+{"almacenado":"12.75","celda":"E90","formato":"#,##0.00\\ \"€\"","mostrado":"12.75","tipo":"número"}
+{"almacenado":"267.75","celda":"F90","formato":"#,##0.00\\ \"€\"","formula":"=D90*E90","mostrado":"267.75","tipo":"número"}
+{"almacenado":"1","celda":"G90","mostrado":"TRUE","tipo":"booleano"}
+{"almacenado":"46242","celda":"A91","formato":"formato integrado 14","mostrado":"2026-08-08","tipo":"número"}
+{"almacenado":"Orinoquía","celda":"B91","mostrado":"Orinoquía","tipo":"texto"}
+{"almacenado":"Aguacate Hass","celda":"C91","mostrado":"Aguacate Hass","tipo":"texto"}
+{"almacenado":"58","celda":"D91","mostrado":"58","tipo":"número"}
+{"almacenado":"6.9","celda":"E91","formato":"#,##0.00\\ \"€\"","mostrado":"6.9","tipo":"número"}
+{"almacenado":"400.2","celda":"F91","formato":"#,##0.00\\ \"€\"","formula":"=D91*E91","mostrado":"400.2","tipo":"número"}
+{"almacenado":"1","celda":"G91","mostrado":"TRUE","tipo":"booleano"}
+{"almacenado":"46238","celda":"A92","formato":"formato integrado 14","mostrado":"2026-08-04","tipo":"número"}
+{"almacenado":"Pacífico","celda":"B92","mostrado":"Pacífico","tipo":"texto"}
+{"almacenado":"Café especial","celda":"C92","mostrado":"Café especial","tipo":"texto"}
+{"almacenado":"95","celda":"D92","mostrado":"95","tipo":"número"}
+{"almacenado":"18.5","celda":"E92","formato":"#,##0.00\\ \"€\"","mostrado":"18.5","tipo":"número"}
+{"almacenado":"1757.5","celda":"F92","formato":"#,##0.00\\ \"€\"","formula":"=D92*E92","mostrado":"1757.5","tipo":"número"}
+{"almacenado":"1","celda":"G92","mostrado":"TRUE","tipo":"booleano"}
+{"almacenado":"46234","celda":"A93","formato":"formato integrado 14","mostrado":"2026-07-31","tipo":"número"}
+{"almacenado":"Caribe","celda":"B93","mostrado":"Caribe","tipo":"texto"}
+{"almacenado":"Panela orgánica","celda":"C93","mostrado":"Panela orgánica","tipo":"texto"}
+{"almacenado":"12","celda":"D93","mostrado":"12","tipo":"número"}
+{"almacenado":"4.2","celda":"E93","formato":"#,##0.00\\ \"€\"","mostrado":"4.2","tipo":"número"}
+{"almacenado":"50.4","celda":"F93","formato":"#,##0.00\\ \"€\"","formula":"=D93*E93","mostrado":"50.4","tipo":"número"}
+{"almacenado":"1","celda":"G93","mostrado":"TRUE","tipo":"booleano"}
+{"almacenado":"46230","celda":"A94","formato":"formato integrado 14","mostrado":"2026-07-27","tipo":"número"}
+{"almacenado":"Andina","celda":"B94","mostrado":"Andina","tipo":"texto"}
+{"almacenado":"Flores de corte","celda":"C94","mostrado":"Flores de corte","tipo":"texto"}
+{"almacenado":"49","celda":"D94","mostrado":"49","tipo":"número"}
+{"almacenado":"22.0","celda":"E94","formato":"#,##0.00\\ \"€\"","mostrado":"22","tipo":"número"}
+{"almacenado":"1078.0","celda":"F94","formato":"#,##0.00\\ \"€\"","formula":"=D94*E94","mostrado":"1078","tipo":"número"}
+{"almacenado":"1","celda":"G94","mostrado":"TRUE","tipo":"booleano"}
+{"almacenado":"46226","celda":"A95","formato":"formato integrado 14","mostrado":"2026-07-23","tipo":"número"}
+{"almacenado":"Orinoquía","celda":"B95","mostrado":"Orinoquía","tipo":"texto"}
+{"almacenado":"Cacao en grano","celda":"C95","mostrado":"Cacao en grano","tipo":"texto"}
+{"almacenado":"86","celda":"D95","mostrado":"86","tipo":"número"}
+{"almacenado":"12.75","celda":"E95","formato":"#,##0.00\\ \"€\"","mostrado":"12.75","tipo":"número"}
+{"almacenado":"1096.5","celda":"F95","formato":"#,##0.00\\ \"€\"","formula":"=D95*E95","mostrado":"1096.5","tipo":"número"}
+{"almacenado":"1","celda":"G95","mostrado":"TRUE","tipo":"booleano"}
+{"almacenado":"46222","celda":"A96","formato":"formato integrado 14","mostrado":"2026-07-19","tipo":"número"}
+{"almacenado":"Pacífico","celda":"B96","mostrado":"Pacífico","tipo":"texto"}
+{"almacenado":"Aguacate Hass","celda":"C96","mostrado":"Aguacate Hass","tipo":"texto"}
+{"almacenado":"123","celda":"D96","mostrado":"123","tipo":"número"}
+{"almacenado":"6.9","celda":"E96","formato":"#,##0.00\\ \"€\"","mostrado":"6.9","tipo":"número"}
+{"almacenado":"848.7","celda":"F96","formato":"#,##0.00\\ \"€\"","formula":"=D96*E96","mostrado":"848.7","tipo":"número"}
+{"almacenado":"0","celda":"G96","mostrado":"FALSE","tipo":"booleano"}
+{"almacenado":"46218","celda":"A97","formato":"formato integrado 14","mostrado":"2026-07-15","tipo":"número"}
+{"almacenado":"Caribe","celda":"B97","mostrado":"Caribe","tipo":"texto"}
+{"almacenado":"Café especial","celda":"C97","mostrado":"Café especial","tipo":"texto"}
+{"almacenado":"40","celda":"D97","mostrado":"40","tipo":"número"}
+{"almacenado":"18.5","celda":"E97","formato":"#,##0.00\\ \"€\"","mostrado":"18.5","tipo":"número"}
+{"almacenado":"740.0","celda":"F97","formato":"#,##0.00\\ \"€\"","formula":"=D97*E97","mostrado":"740","tipo":"número"}
+{"almacenado":"1","celda":"G97","mostrado":"TRUE","tipo":"booleano"}
+{"almacenado":"46214","celda":"A98","formato":"formato integrado 14","mostrado":"2026-07-11","tipo":"número"}
+{"almacenado":"Andina","celda":"B98","mostrado":"Andina","tipo":"texto"}
+{"almacenado":"Panela orgánica","celda":"C98","mostrado":"Panela orgánica","tipo":"texto"}
+{"almacenado":"77","celda":"D98","mostrado":"77","tipo":"número"}
+{"almacenado":"4.2","celda":"E98","formato":"#,##0.00\\ \"€\"","mostrado":"4.2","tipo":"número"}
+{"almacenado":"323.4","celda":"F98","formato":"#,##0.00\\ \"€\"","formula":"=D98*E98","mostrado":"323.4","tipo":"número"}
+{"almacenado":"1","celda":"G98","mostrado":"TRUE","tipo":"booleano"}
+{"almacenado":"46210","celda":"A99","formato":"formato integrado 14","mostrado":"2026-07-07","tipo":"número"}
+{"almacenado":"Orinoquía","celda":"B99","mostrado":"Orinoquía","tipo":"texto"}
+{"almacenado":"Flores de corte","celda":"C99","mostrado":"Flores de corte","tipo":"texto"}
+{"almacenado":"114","celda":"D99","mostrado":"114","tipo":"número"}
+{"almacenado":"22.0","celda":"E99","formato":"#,##0.00\\ \"€\"","mostrado":"22","tipo":"número"}
+{"almacenado":"2508.0","celda":"F99","formato":"#,##0.00\\ \"€\"","formula":"=D99*E99","mostrado":"2508","tipo":"número"}
+{"almacenado":"1","celda":"G99","mostrado":"TRUE","tipo":"booleano"}
+{"almacenado":"46206","celda":"A100","formato":"formato integrado 14","mostrado":"2026-07-03","tipo":"número"}
+{"almacenado":"Pacífico","celda":"B100","mostrado":"Pacífico","tipo":"texto"}
+{"almacenado":"Cacao en grano","celda":"C100","mostrado":"Cacao en grano","tipo":"texto"}
+{"almacenado":"31","celda":"D100","mostrado":"31","tipo":"número"}
+{"almacenado":"12.75","celda":"E100","formato":"#,##0.00\\ \"€\"","mostrado":"12.75","tipo":"número"}
+{"almacenado":"395.25","celda":"F100","formato":"#,##0.00\\ \"€\"","formula":"=D100*E100","mostrado":"395.25","tipo":"número"}
+{"almacenado":"1","celda":"G100","mostrado":"TRUE","tipo":"booleano"}
+{"almacenado":"46202","celda":"A101","formato":"formato integrado 14","mostrado":"2026-06-29","tipo":"número"}
+{"almacenado":"Caribe","celda":"B101","mostrado":"Caribe","tipo":"texto"}
+{"almacenado":"Aguacate Hass","celda":"C101","mostrado":"Aguacate Hass","tipo":"texto"}
+{"almacenado":"68","celda":"D101","mostrado":"68","tipo":"número"}
+{"almacenado":"6.9","celda":"E101","formato":"#,##0.00\\ \"€\"","mostrado":"6.9","tipo":"número"}
+{"almacenado":"469.2","celda":"F101","formato":"#,##0.00\\ \"€\"","formula":"=D101*E101","mostrado":"469.2","tipo":"número"}
+{"almacenado":"1","celda":"G101","mostrado":"TRUE","tipo":"booleano"}
+{"almacenado":"46198","celda":"A102","formato":"formato integrado 14","mostrado":"2026-06-25","tipo":"número"}
+{"almacenado":"Andina","celda":"B102","mostrado":"Andina","tipo":"texto"}
+{"almacenado":"Café especial","celda":"C102","mostrado":"Café especial","tipo":"texto"}
+{"almacenado":"105","celda":"D102","mostrado":"105","tipo":"número"}
+{"almacenado":"18.5","celda":"E102","formato":"#,##0.00\\ \"€\"","mostrado":"18.5","tipo":"número"}
+{"almacenado":"1942.5","celda":"F102","formato":"#,##0.00\\ \"€\"","formula":"=D102*E102","mostrado":"1942.5","tipo":"número"}
+{"almacenado":"1","celda":"G102","mostrado":"TRUE","tipo":"booleano"}
+{"almacenado":"46194","celda":"A103","formato":"formato integrado 14","mostrado":"2026-06-21","tipo":"número"}
+{"almacenado":"Orinoquía","celda":"B103","mostrado":"Orinoquía","tipo":"texto"}
+{"almacenado":"Panela orgánica","celda":"C103","mostrado":"Panela orgánica","tipo":"texto"}
+{"almacenado":"22","celda":"D103","mostrado":"22","tipo":"número"}
+{"almacenado":"4.2","celda":"E103","formato":"#,##0.00\\ \"€\"","mostrado":"4.2","tipo":"número"}
+{"almacenado":"92.4","celda":"F103","formato":"#,##0.00\\ \"€\"","formula":"=D103*E103","mostrado":"92.4","tipo":"número"}
+{"almacenado":"1","celda":"G103","mostrado":"TRUE","tipo":"booleano"}
+{"almacenado":"46190","celda":"A104","formato":"formato integrado 14","mostrado":"2026-06-17","tipo":"número"}
+{"almacenado":"Pacífico","celda":"B104","mostrado":"Pacífico","tipo":"texto"}
+{"almacenado":"Flores de corte","celda":"C104","mostrado":"Flores de corte","tipo":"texto"}
+{"almacenado":"59","celda":"D104","mostrado":"59","tipo":"número"}
+{"almacenado":"22.0","celda":"E104","formato":"#,##0.00\\ \"€\"","mostrado":"22","tipo":"número"}
+{"almacenado":"1298.0","celda":"F104","formato":"#,##0.00\\ \"€\"","formula":"=D104*E104","mostrado":"1298","tipo":"número"}
+{"almacenado":"1","celda":"G104","mostrado":"TRUE","tipo":"booleano"}
+{"almacenado":"46186","celda":"A105","formato":"formato integrado 14","mostrado":"2026-06-13","tipo":"número"}
+{"almacenado":"Caribe","celda":"B105","mostrado":"Caribe","tipo":"texto"}
+{"almacenado":"Cacao en grano","celda":"C105","mostrado":"Cacao en grano","tipo":"texto"}
+{"almacenado":"96","celda":"D105","mostrado":"96","tipo":"número"}
+{"almacenado":"12.75","celda":"E105","formato":"#,##0.00\\ \"€\"","mostrado":"12.75","tipo":"número"}
+{"almacenado":"1224.0","celda":"F105","formato":"#,##0.00\\ \"€\"","formula":"=D105*E105","mostrado":"1224","tipo":"número"}
+{"almacenado":"0","celda":"G105","mostrado":"FALSE","tipo":"booleano"}
+{"almacenado":"46182","celda":"A106","formato":"formato integrado 14","mostrado":"2026-06-09","tipo":"número"}
+{"almacenado":"Andina","celda":"B106","mostrado":"Andina","tipo":"texto"}
+{"almacenado":"Aguacate Hass","celda":"C106","mostrado":"Aguacate Hass","tipo":"texto"}
+{"almacenado":"13","celda":"D106","mostrado":"13","tipo":"número"}
+{"almacenado":"6.9","celda":"E106","formato":"#,##0.00\\ \"€\"","mostrado":"6.9","tipo":"número"}
+{"almacenado":"89.7","celda":"F106","formato":"#,##0.00\\ \"€\"","formula":"=D106*E106","mostrado":"89.7","tipo":"número"}
+{"almacenado":"1","celda":"G106","mostrado":"TRUE","tipo":"booleano"}
+{"almacenado":"46178","celda":"A107","formato":"formato integrado 14","mostrado":"2026-06-05","tipo":"número"}
+{"almacenado":"Orinoquía","celda":"B107","mostrado":"Orinoquía","tipo":"texto"}
+{"almacenado":"Café especial","celda":"C107","mostrado":"Café especial","tipo":"texto"}
+{"almacenado":"50","celda":"D107","mostrado":"50","tipo":"número"}
+{"almacenado":"18.5","celda":"E107","formato":"#,##0.00\\ \"€\"","mostrado":"18.5","tipo":"número"}
+{"almacenado":"925.0","celda":"F107","formato":"#,##0.00\\ \"€\"","formula":"=D107*E107","mostrado":"925","tipo":"número"}
+{"almacenado":"1","celda":"G107","mostrado":"TRUE","tipo":"booleano"}
+{"almacenado":"46174","celda":"A108","formato":"formato integrado 14","mostrado":"2026-06-01","tipo":"número"}
+{"almacenado":"Pacífico","celda":"B108","mostrado":"Pacífico","tipo":"texto"}
+{"almacenado":"Panela orgánica","celda":"C108","mostrado":"Panela orgánica","tipo":"texto"}
+{"almacenado":"87","celda":"D108","mostrado":"87","tipo":"número"}
+{"almacenado":"4.2","celda":"E108","formato":"#,##0.00\\ \"€\"","mostrado":"4.2","tipo":"número"}
+{"almacenado":"365.4","celda":"F108","formato":"#,##0.00\\ \"€\"","formula":"=D108*E108","mostrado":"365.4","tipo":"número"}
+{"almacenado":"1","celda":"G108","mostrado":"TRUE","tipo":"booleano"}
+{"almacenado":"46170","celda":"A109","formato":"formato integrado 14","mostrado":"2026-05-28","tipo":"número"}
+{"almacenado":"Caribe","celda":"B109","mostrado":"Caribe","tipo":"texto"}
+{"almacenado":"Flores de corte","celda":"C109","mostrado":"Flores de corte","tipo":"texto"}
+{"almacenado":"124","celda":"D109","mostrado":"124","tipo":"número"}
+{"almacenado":"22.0","celda":"E109","formato":"#,##0.00\\ \"€\"","mostrado":"22","tipo":"número"}
+{"almacenado":"2728.0","celda":"F109","formato":"#,##0.00\\ \"€\"","formula":"=D109*E109","mostrado":"2728","tipo":"número"}
+{"almacenado":"1","celda":"G109","mostrado":"TRUE","tipo":"booleano"}
+{"almacenado":"46166","celda":"A110","formato":"formato integrado 14","mostrado":"2026-05-24","tipo":"número"}
+{"almacenado":"Andina","celda":"B110","mostrado":"Andina","tipo":"texto"}
+{"almacenado":"Cacao en grano","celda":"C110","mostrado":"Cacao en grano","tipo":"texto"}
+{"almacenado":"41","celda":"D110","mostrado":"41","tipo":"número"}
+{"almacenado":"12.75","celda":"E110","formato":"#,##0.00\\ \"€\"","mostrado":"12.75","tipo":"número"}
+{"almacenado":"522.75","celda":"F110","formato":"#,##0.00\\ \"€\"","formula":"=D110*E110","mostrado":"522.75","tipo":"número"}
+{"almacenado":"1","celda":"G110","mostrado":"TRUE","tipo":"booleano"}
+{"almacenado":"46162","celda":"A111","formato":"formato integrado 14","mostrado":"2026-05-20","tipo":"número"}
+{"almacenado":"Orinoquía","celda":"B111","mostrado":"Orinoquía","tipo":"texto"}
+{"almacenado":"Aguacate Hass","celda":"C111","mostrado":"Aguacate Hass","tipo":"texto"}
+{"almacenado":"78","celda":"D111","mostrado":"78","tipo":"número"}
+{"almacenado":"6.9","celda":"E111","formato":"#,##0.00\\ \"€\"","mostrado":"6.9","tipo":"número"}
+{"almacenado":"538.2","celda":"F111","formato":"#,##0.00\\ \"€\"","formula":"=D111*E111","mostrado":"538.2","tipo":"número"}
+{"almacenado":"1","celda":"G111","mostrado":"TRUE","tipo":"booleano"}
+{"almacenado":"46158","celda":"A112","formato":"formato integrado 14","mostrado":"2026-05-16","tipo":"número"}
+{"almacenado":"Pacífico","celda":"B112","mostrado":"Pacífico","tipo":"texto"}
+{"almacenado":"Café especial","celda":"C112","mostrado":"Café especial","tipo":"texto"}
+{"almacenado":"115","celda":"D112","mostrado":"115","tipo":"número"}
+{"almacenado":"18.5","celda":"E112","formato":"#,##0.00\\ \"€\"","mostrado":"18.5","tipo":"número"}
+{"almacenado":"2127.5","celda":"F112","formato":"#,##0.00\\ \"€\"","formula":"=D112*E112","mostrado":"2127.5","tipo":"número"}
+{"almacenado":"1","celda":"G112","mostrado":"TRUE","tipo":"booleano"}
+{"almacenado":"46154","celda":"A113","formato":"formato integrado 14","mostrado":"2026-05-12","tipo":"número"}
+{"almacenado":"Caribe","celda":"B113","mostrado":"Caribe","tipo":"texto"}
+{"almacenado":"Panela orgánica","celda":"C113","mostrado":"Panela orgánica","tipo":"texto"}
+{"almacenado":"32","celda":"D113","mostrado":"32","tipo":"número"}
+{"almacenado":"4.2","celda":"E113","formato":"#,##0.00\\ \"€\"","mostrado":"4.2","tipo":"número"}
+{"almacenado":"134.4","celda":"F113","formato":"#,##0.00\\ \"€\"","formula":"=D113*E113","mostrado":"134.4","tipo":"número"}
+{"almacenado":"1","celda":"G113","mostrado":"TRUE","tipo":"booleano"}
+{"almacenado":"46150","celda":"A114","formato":"formato integrado 14","mostrado":"2026-05-08","tipo":"número"}
+{"almacenado":"Andina","celda":"B114","mostrado":"Andina","tipo":"texto"}
+{"almacenado":"Flores de corte","celda":"C114","mostrado":"Flores de corte","tipo":"texto"}
+{"almacenado":"69","celda":"D114","mostrado":"69","tipo":"número"}
+{"almacenado":"22.0","celda":"E114","formato":"#,##0.00\\ \"€\"","mostrado":"22","tipo":"número"}
+{"almacenado":"1518.0","celda":"F114","formato":"#,##0.00\\ \"€\"","formula":"=D114*E114","mostrado":"1518","tipo":"número"}
+{"almacenado":"0","celda":"G114","mostrado":"FALSE","tipo":"booleano"}
+{"almacenado":"46146","celda":"A115","formato":"formato integrado 14","mostrado":"2026-05-04","tipo":"número"}
+{"almacenado":"Orinoquía","celda":"B115","mostrado":"Orinoquía","tipo":"texto"}
+{"almacenado":"Cacao en grano","celda":"C115","mostrado":"Cacao en grano","tipo":"texto"}
+{"almacenado":"106","celda":"D115","mostrado":"106","tipo":"número"}
+{"almacenado":"12.75","celda":"E115","formato":"#,##0.00\\ \"€\"","mostrado":"12.75","tipo":"número"}
+{"almacenado":"1351.5","celda":"F115","formato":"#,##0.00\\ \"€\"","formula":"=D115*E115","mostrado":"1351.5","tipo":"número"}
+{"almacenado":"1","celda":"G115","mostrado":"TRUE","tipo":"booleano"}
+{"almacenado":"46142","celda":"A116","formato":"formato integrado 14","mostrado":"2026-04-30","tipo":"número"}
+{"almacenado":"Pacífico","celda":"B116","mostrado":"Pacífico","tipo":"texto"}
+{"almacenado":"Aguacate Hass","celda":"C116","mostrado":"Aguacate Hass","tipo":"texto"}
+{"almacenado":"23","celda":"D116","mostrado":"23","tipo":"número"}
+{"almacenado":"6.9","celda":"E116","formato":"#,##0.00\\ \"€\"","mostrado":"6.9","tipo":"número"}
+{"almacenado":"158.7","celda":"F116","formato":"#,##0.00\\ \"€\"","formula":"=D116*E116","mostrado":"158.7","tipo":"número"}
+{"almacenado":"1","celda":"G116","mostrado":"TRUE","tipo":"booleano"}
+{"almacenado":"46138","celda":"A117","formato":"formato integrado 14","mostrado":"2026-04-26","tipo":"número"}
+{"almacenado":"Caribe","celda":"B117","mostrado":"Caribe","tipo":"texto"}
+{"almacenado":"Café especial","celda":"C117","mostrado":"Café especial","tipo":"texto"}
+{"almacenado":"60","celda":"D117","mostrado":"60","tipo":"número"}
+{"almacenado":"18.5","celda":"E117","formato":"#,##0.00\\ \"€\"","mostrado":"18.5","tipo":"número"}
+{"almacenado":"1110.0","celda":"F117","formato":"#,##0.00\\ \"€\"","formula":"=D117*E117","mostrado":"1110","tipo":"número"}
+{"almacenado":"1","celda":"G117","mostrado":"TRUE","tipo":"booleano"}
+{"almacenado":"46134","celda":"A118","formato":"formato integrado 14","mostrado":"2026-04-22","tipo":"número"}
+{"almacenado":"Andina","celda":"B118","mostrado":"Andina","tipo":"texto"}
+{"almacenado":"Panela orgánica","celda":"C118","mostrado":"Panela orgánica","tipo":"texto"}
+{"almacenado":"97","celda":"D118","mostrado":"97","tipo":"número"}
+{"almacenado":"4.2","celda":"E118","formato":"#,##0.00\\ \"€\"","mostrado":"4.2","tipo":"número"}
+{"almacenado":"407.4","celda":"F118","formato":"#,##0.00\\ \"€\"","formula":"=D118*E118","mostrado":"407.4","tipo":"número"}
+{"almacenado":"1","celda":"G118","mostrado":"TRUE","tipo":"booleano"}
+{"almacenado":"46130","celda":"A119","formato":"formato integrado 14","mostrado":"2026-04-18","tipo":"número"}
+{"almacenado":"Orinoquía","celda":"B119","mostrado":"Orinoquía","tipo":"texto"}
+{"almacenado":"Flores de corte","celda":"C119","mostrado":"Flores de corte","tipo":"texto"}
+{"almacenado":"14","celda":"D119","mostrado":"14","tipo":"número"}
+{"almacenado":"22.0","celda":"E119","formato":"#,##0.00\\ \"€\"","mostrado":"22","tipo":"número"}
+{"almacenado":"308.0","celda":"F119","formato":"#,##0.00\\ \"€\"","formula":"=D119*E119","mostrado":"308","tipo":"número"}
+{"almacenado":"1","celda":"G119","mostrado":"TRUE","tipo":"booleano"}
+{"almacenado":"46126","celda":"A120","formato":"formato integrado 14","mostrado":"2026-04-14","tipo":"número"}
+{"almacenado":"Pacífico","celda":"B120","mostrado":"Pacífico","tipo":"texto"}
+{"almacenado":"Cacao en grano","celda":"C120","mostrado":"Cacao en grano","tipo":"texto"}
+{"almacenado":"51","celda":"D120","mostrado":"51","tipo":"número"}
+{"almacenado":"12.75","celda":"E120","formato":"#,##0.00\\ \"€\"","mostrado":"12.75","tipo":"número"}
+{"almacenado":"650.25","celda":"F120","formato":"#,##0.00\\ \"€\"","formula":"=D120*E120","mostrado":"650.25","tipo":"número"}
+{"almacenado":"1","celda":"G120","mostrado":"TRUE","tipo":"booleano"}
+{"almacenado":"46122","celda":"A121","formato":"formato integrado 14","mostrado":"2026-04-10","tipo":"número"}
+{"almacenado":"Caribe","celda":"B121","mostrado":"Caribe","tipo":"texto"}
+{"almacenado":"Aguacate Hass","celda":"C121","mostrado":"Aguacate Hass","tipo":"texto"}
+{"almacenado":"88","celda":"D121","mostrado":"88","tipo":"número"}
+{"almacenado":"6.9","celda":"E121","formato":"#,##0.00\\ \"€\"","mostrado":"6.9","tipo":"número"}
+{"almacenado":"607.2","celda":"F121","formato":"#,##0.00\\ \"€\"","formula":"=D121*E121","mostrado":"607.2","tipo":"número"}
+{"almacenado":"1","celda":"G121","mostrado":"TRUE","tipo":"booleano"}
+{"almacenado":"46118","celda":"A122","formato":"formato integrado 14","mostrado":"2026-04-06","tipo":"número"}
+{"almacenado":"Andina","celda":"B122","mostrado":"Andina","tipo":"texto"}
+{"almacenado":"Café especial","celda":"C122","mostrado":"Café especial","tipo":"texto"}
+{"almacenado":"5","celda":"D122","mostrado":"5","tipo":"número"}
+{"almacenado":"18.5","celda":"E122","formato":"#,##0.00\\ \"€\"","mostrado":"18.5","tipo":"número"}
+{"almacenado":"92.5","celda":"F122","formato":"#,##0.00\\ \"€\"","formula":"=D122*E122","mostrado":"92.5","tipo":"número"}
+{"almacenado":"1","celda":"G122","mostrado":"TRUE","tipo":"booleano"}
+{"almacenado":"46114","celda":"A123","formato":"formato integrado 14","mostrado":"2026-04-02","tipo":"número"}
+{"almacenado":"Orinoquía","celda":"B123","mostrado":"Orinoquía","tipo":"texto"}
+{"almacenado":"Panela orgánica","celda":"C123","mostrado":"Panela orgánica","tipo":"texto"}
+{"almacenado":"42","celda":"D123","mostrado":"42","tipo":"número"}
+{"almacenado":"4.2","celda":"E123","formato":"#,##0.00\\ \"€\"","mostrado":"4.2","tipo":"número"}
+{"almacenado":"176.4","celda":"F123","formato":"#,##0.00\\ \"€\"","formula":"=D123*E123","mostrado":"176.4","tipo":"número"}
+{"almacenado":"0","celda":"G123","mostrado":"FALSE","tipo":"booleano"}
+{"almacenado":"46110","celda":"A124","formato":"formato integrado 14","mostrado":"2026-03-29","tipo":"número"}
+{"almacenado":"Pacífico","celda":"B124","mostrado":"Pacífico","tipo":"texto"}
+{"almacenado":"Flores de corte","celda":"C124","mostrado":"Flores de corte","tipo":"texto"}
+{"almacenado":"79","celda":"D124","mostrado":"79","tipo":"número"}
+{"almacenado":"22.0","celda":"E124","formato":"#,##0.00\\ \"€\"","mostrado":"22","tipo":"número"}
+{"almacenado":"1738.0","celda":"F124","formato":"#,##0.00\\ \"€\"","formula":"=D124*E124","mostrado":"1738","tipo":"número"}
+{"almacenado":"1","celda":"G124","mostrado":"TRUE","tipo":"booleano"}
+{"almacenado":"46106","celda":"A125","formato":"formato integrado 14","mostrado":"2026-03-25","tipo":"número"}
+{"almacenado":"Caribe","celda":"B125","mostrado":"Caribe","tipo":"texto"}
+{"almacenado":"Cacao en grano","celda":"C125","mostrado":"Cacao en grano","tipo":"texto"}
+{"almacenado":"116","celda":"D125","mostrado":"116","tipo":"número"}
+{"almacenado":"12.75","celda":"E125","formato":"#,##0.00\\ \"€\"","mostrado":"12.75","tipo":"número"}
+{"almacenado":"1479.0","celda":"F125","formato":"#,##0.00\\ \"€\"","formula":"=D125*E125","mostrado":"1479","tipo":"número"}
+{"almacenado":"1","celda":"G125","mostrado":"TRUE","tipo":"booleano"}
+{"almacenado":"46102","celda":"A126","formato":"formato integrado 14","mostrado":"2026-03-21","tipo":"número"}
+{"almacenado":"Andina","celda":"B126","mostrado":"Andina","tipo":"texto"}
+{"almacenado":"Aguacate Hass","celda":"C126","mostrado":"Aguacate Hass","tipo":"texto"}
+{"almacenado":"33","celda":"D126","mostrado":"33","tipo":"número"}
+{"almacenado":"6.9","celda":"E126","formato":"#,##0.00\\ \"€\"","mostrado":"6.9","tipo":"número"}
+{"almacenado":"227.7","celda":"F126","formato":"#,##0.00\\ \"€\"","formula":"=D126*E126","mostrado":"227.7","tipo":"número"}
+{"almacenado":"1","celda":"G126","mostrado":"TRUE","tipo":"booleano"}
+{"almacenado":"46098","celda":"A127","formato":"formato integrado 14","mostrado":"2026-03-17","tipo":"número"}
+{"almacenado":"Orinoquía","celda":"B127","mostrado":"Orinoquía","tipo":"texto"}
+{"almacenado":"Café especial","celda":"C127","mostrado":"Café especial","tipo":"texto"}
+{"almacenado":"70","celda":"D127","mostrado":"70","tipo":"número"}
+{"almacenado":"18.5","celda":"E127","formato":"#,##0.00\\ \"€\"","mostrado":"18.5","tipo":"número"}
+{"almacenado":"1295.0","celda":"F127","formato":"#,##0.00\\ \"€\"","formula":"=D127*E127","mostrado":"1295","tipo":"número"}
+{"almacenado":"1","celda":"G127","mostrado":"TRUE","tipo":"booleano"}
+{"almacenado":"46094","celda":"A128","formato":"formato integrado 14","mostrado":"2026-03-13","tipo":"número"}
+{"almacenado":"Pacífico","celda":"B128","mostrado":"Pacífico","tipo":"texto"}
+{"almacenado":"Panela orgánica","celda":"C128","mostrado":"Panela orgánica","tipo":"texto"}
+{"almacenado":"107","celda":"D128","mostrado":"107","tipo":"número"}
+{"almacenado":"4.2","celda":"E128","formato":"#,##0.00\\ \"€\"","mostrado":"4.2","tipo":"número"}
+{"almacenado":"449.4","celda":"F128","formato":"#,##0.00\\ \"€\"","formula":"=D128*E128","mostrado":"449.4","tipo":"número"}
+{"almacenado":"1","celda":"G128","mostrado":"TRUE","tipo":"booleano"}
+{"almacenado":"46090","celda":"A129","formato":"formato integrado 14","mostrado":"2026-03-09","tipo":"número"}
+{"almacenado":"Caribe","celda":"B129","mostrado":"Caribe","tipo":"texto"}
+{"almacenado":"Flores de corte","celda":"C129","mostrado":"Flores de corte","tipo":"texto"}
+{"almacenado":"24","celda":"D129","mostrado":"24","tipo":"número"}
+{"almacenado":"22.0","celda":"E129","formato":"#,##0.00\\ \"€\"","mostrado":"22","tipo":"número"}
+{"almacenado":"528.0","celda":"F129","formato":"#,##0.00\\ \"€\"","formula":"=D129*E129","mostrado":"528","tipo":"número"}
+{"almacenado":"1","celda":"G129","mostrado":"TRUE","tipo":"booleano"}
+{"almacenado":"46086","celda":"A130","formato":"formato integrado 14","mostrado":"2026-03-05","tipo":"número"}
+{"almacenado":"Andina","celda":"B130","mostrado":"Andina","tipo":"texto"}
+{"almacenado":"Cacao en grano","celda":"C130","mostrado":"Cacao en grano","tipo":"texto"}
+{"almacenado":"61","celda":"D130","mostrado":"61","tipo":"número"}
+{"almacenado":"12.75","celda":"E130","formato":"#,##0.00\\ \"€\"","mostrado":"12.75","tipo":"número"}
+{"almacenado":"777.75","celda":"F130","formato":"#,##0.00\\ \"€\"","formula":"=D130*E130","mostrado":"777.75","tipo":"número"}
+{"almacenado":"1","celda":"G130","mostrado":"TRUE","tipo":"booleano"}
+{"almacenado":"46082","celda":"A131","formato":"formato integrado 14","mostrado":"2026-03-01","tipo":"número"}
+{"almacenado":"Orinoquía","celda":"B131","mostrado":"Orinoquía","tipo":"texto"}
+{"almacenado":"Aguacate Hass","celda":"C131","mostrado":"Aguacate Hass","tipo":"texto"}
+{"almacenado":"98","celda":"D131","mostrado":"98","tipo":"número"}
+{"almacenado":"6.9","celda":"E131","formato":"#,##0.00\\ \"€\"","mostrado":"6.9","tipo":"número"}
+{"almacenado":"676.2","celda":"F131","formato":"#,##0.00\\ \"€\"","formula":"=D131*E131","mostrado":"676.2","tipo":"número"}
+{"almacenado":"1","celda":"G131","mostrado":"TRUE","tipo":"booleano"}
+{"almacenado":"46078","celda":"A132","formato":"formato integrado 14","mostrado":"2026-02-25","tipo":"número"}
+{"almacenado":"Pacífico","celda":"B132","mostrado":"Pacífico","tipo":"texto"}
+{"almacenado":"Café especial","celda":"C132","mostrado":"Café especial","tipo":"texto"}
+{"almacenado":"15","celda":"D132","mostrado":"15","tipo":"número"}
+{"almacenado":"18.5","celda":"E132","formato":"#,##0.00\\ \"€\"","mostrado":"18.5","tipo":"número"}
+{"almacenado":"277.5","celda":"F132","formato":"#,##0.00\\ \"€\"","formula":"=D132*E132","mostrado":"277.5","tipo":"número"}
+{"almacenado":"0","celda":"G132","mostrado":"FALSE","tipo":"booleano"}
+{"almacenado":"46074","celda":"A133","formato":"formato integrado 14","mostrado":"2026-02-21","tipo":"número"}
+{"almacenado":"Caribe","celda":"B133","mostrado":"Caribe","tipo":"texto"}
+{"almacenado":"Panela orgánica","celda":"C133","mostrado":"Panela orgánica","tipo":"texto"}
+{"almacenado":"52","celda":"D133","mostrado":"52","tipo":"número"}
+{"almacenado":"4.2","celda":"E133","formato":"#,##0.00\\ \"€\"","mostrado":"4.2","tipo":"número"}
+{"almacenado":"218.4","celda":"F133","formato":"#,##0.00\\ \"€\"","formula":"=D133*E133","mostrado":"218.4","tipo":"número"}
+{"almacenado":"1","celda":"G133","mostrado":"TRUE","tipo":"booleano"}
+{"almacenado":"46070","celda":"A134","formato":"formato integrado 14","mostrado":"2026-02-17","tipo":"número"}
+{"almacenado":"Andina","celda":"B134","mostrado":"Andina","tipo":"texto"}
+{"almacenado":"Flores de corte","celda":"C134","mostrado":"Flores de corte","tipo":"texto"}
+{"almacenado":"89","celda":"D134","mostrado":"89","tipo":"número"}
+{"almacenado":"22.0","celda":"E134","formato":"#,##0.00\\ \"€\"","mostrado":"22","tipo":"número"}
+{"almacenado":"1958.0","celda":"F134","formato":"#,##0.00\\ \"€\"","formula":"=D134*E134","mostrado":"1958","tipo":"número"}
+{"almacenado":"1","celda":"G134","mostrado":"TRUE","tipo":"booleano"}
+{"almacenado":"46066","celda":"A135","formato":"formato integrado 14","mostrado":"2026-02-13","tipo":"número"}
+{"almacenado":"Orinoquía","celda":"B135","mostrado":"Orinoquía","tipo":"texto"}
+{"almacenado":"Cacao en grano","celda":"C135","mostrado":"Cacao en grano","tipo":"texto"}
+{"almacenado":"6","celda":"D135","mostrado":"6","tipo":"número"}
+{"almacenado":"12.75","celda":"E135","formato":"#,##0.00\\ \"€\"","mostrado":"12.75","tipo":"número"}
+{"almacenado":"76.5","celda":"F135","formato":"#,##0.00\\ \"€\"","formula":"=D135*E135","mostrado":"76.5","tipo":"número"}
+{"almacenado":"1","celda":"G135","mostrado":"TRUE","tipo":"booleano"}
+{"almacenado":"46062","celda":"A136","formato":"formato integrado 14","mostrado":"2026-02-09","tipo":"número"}
+{"almacenado":"Pacífico","celda":"B136","mostrado":"Pacífico","tipo":"texto"}
+{"almacenado":"Aguacate Hass","celda":"C136","mostrado":"Aguacate Hass","tipo":"texto"}
+{"almacenado":"43","celda":"D136","mostrado":"43","tipo":"número"}
+{"almacenado":"6.9","celda":"E136","formato":"#,##0.00\\ \"€\"","mostrado":"6.9","tipo":"número"}
+{"almacenado":"296.7","celda":"F136","formato":"#,##0.00\\ \"€\"","formula":"=D136*E136","mostrado":"296.7","tipo":"número"}
+{"almacenado":"1","celda":"G136","mostrado":"TRUE","tipo":"booleano"}
+{"almacenado":"46058","celda":"A137","formato":"formato integrado 14","mostrado":"2026-02-05","tipo":"número"}
+{"almacenado":"Caribe","celda":"B137","mostrado":"Caribe","tipo":"texto"}
+{"almacenado":"Café especial","celda":"C137","mostrado":"Café especial","tipo":"texto"}
+{"almacenado":"80","celda":"D137","mostrado":"80","tipo":"número"}
+{"almacenado":"18.5","celda":"E137","formato":"#,##0.00\\ \"€\"","mostrado":"18.5","tipo":"número"}
+{"almacenado":"1480.0","celda":"F137","formato":"#,##0.00\\ \"€\"","formula":"=D137*E137","mostrado":"1480","tipo":"número"}
+{"almacenado":"1","celda":"G137","mostrado":"TRUE","tipo":"booleano"}
+{"almacenado":"46054","celda":"A138","formato":"formato integrado 14","mostrado":"2026-02-01","tipo":"número"}
+{"almacenado":"Andina","celda":"B138","mostrado":"Andina","tipo":"texto"}
+{"almacenado":"Panela orgánica","celda":"C138","mostrado":"Panela orgánica","tipo":"texto"}
+{"almacenado":"117","celda":"D138","mostrado":"117","tipo":"número"}
+{"almacenado":"4.2","celda":"E138","formato":"#,##0.00\\ \"€\"","mostrado":"4.2","tipo":"número"}
+{"almacenado":"491.4","celda":"F138","formato":"#,##0.00\\ \"€\"","formula":"=D138*E138","mostrado":"491.4","tipo":"número"}
+{"almacenado":"1","celda":"G138","mostrado":"TRUE","tipo":"booleano"}
+{"almacenado":"46050","celda":"A139","formato":"formato integrado 14","mostrado":"2026-01-28","tipo":"número"}
+{"almacenado":"Orinoquía","celda":"B139","mostrado":"Orinoquía","tipo":"texto"}
+{"almacenado":"Flores de corte","celda":"C139","mostrado":"Flores de corte","tipo":"texto"}
+{"almacenado":"34","celda":"D139","mostrado":"34","tipo":"número"}
+{"almacenado":"22.0","celda":"E139","formato":"#,##0.00\\ \"€\"","mostrado":"22","tipo":"número"}
+{"almacenado":"748.0","celda":"F139","formato":"#,##0.00\\ \"€\"","formula":"=D139*E139","mostrado":"748","tipo":"número"}
+{"almacenado":"1","celda":"G139","mostrado":"TRUE","tipo":"booleano"}
+{"almacenado":"46046","celda":"A140","formato":"formato integrado 14","mostrado":"2026-01-24","tipo":"número"}
+{"almacenado":"Pacífico","celda":"B140","mostrado":"Pacífico","tipo":"texto"}
+{"almacenado":"Cacao en grano","celda":"C140","mostrado":"Cacao en grano","tipo":"texto"}
+{"almacenado":"71","celda":"D140","mostrado":"71","tipo":"número"}
+{"almacenado":"12.75","celda":"E140","formato":"#,##0.00\\ \"€\"","mostrado":"12.75","tipo":"número"}
+{"almacenado":"905.25","celda":"F140","formato":"#,##0.00\\ \"€\"","formula":"=D140*E140","mostrado":"905.25","tipo":"número"}
+{"almacenado":"1","celda":"G140","mostrado":"TRUE","tipo":"booleano"}
+{"almacenado":"46042","celda":"A141","formato":"formato integrado 14","mostrado":"2026-01-20","tipo":"número"}
+{"almacenado":"Caribe","celda":"B141","mostrado":"Caribe","tipo":"texto"}
+{"almacenado":"Aguacate Hass","celda":"C141","mostrado":"Aguacate Hass","tipo":"texto"}
+{"almacenado":"108","celda":"D141","mostrado":"108","tipo":"número"}
+{"almacenado":"6.9","celda":"E141","formato":"#,##0.00\\ \"€\"","mostrado":"6.9","tipo":"número"}
+{"almacenado":"745.2","celda":"F141","formato":"#,##0.00\\ \"€\"","formula":"=D141*E141","mostrado":"745.2","tipo":"número"}
+{"almacenado":"0","celda":"G141","mostrado":"FALSE","tipo":"booleano"}
+{"almacenado":"46038","celda":"A142","formato":"formato integrado 14","mostrado":"2026-01-16","tipo":"número"}
+{"almacenado":"Andina","celda":"B142","mostrado":"Andina","tipo":"texto"}
+{"almacenado":"Café especial","celda":"C142","mostrado":"Café especial","tipo":"texto"}
+{"almacenado":"25","celda":"D142","mostrado":"25","tipo":"número"}
+{"almacenado":"18.5","celda":"E142","formato":"#,##0.00\\ \"€\"","mostrado":"18.5","tipo":"número"}
+{"almacenado":"462.5","celda":"F142","formato":"#,##0.00\\ \"€\"","formula":"=D142*E142","mostrado":"462.5","tipo":"número"}
+{"almacenado":"1","celda":"G142","mostrado":"TRUE","tipo":"booleano"}
+{"almacenado":"46034","celda":"A143","formato":"formato integrado 14","mostrado":"2026-01-12","tipo":"número"}
+{"almacenado":"Orinoquía","celda":"B143","mostrado":"Orinoquía","tipo":"texto"}
+{"almacenado":"Panela orgánica","celda":"C143","mostrado":"Panela orgánica","tipo":"texto"}
+{"almacenado":"62","celda":"D143","mostrado":"62","tipo":"número"}
+{"almacenado":"4.2","celda":"E143","formato":"#,##0.00\\ \"€\"","mostrado":"4.2","tipo":"número"}
+{"almacenado":"260.4","celda":"F143","formato":"#,##0.00\\ \"€\"","formula":"=D143*E143","mostrado":"260.4","tipo":"número"}
+{"almacenado":"1","celda":"G143","mostrado":"TRUE","tipo":"booleano"}
+{"almacenado":"46030","celda":"A144","formato":"formato integrado 14","mostrado":"2026-01-08","tipo":"número"}
+{"almacenado":"Pacífico","celda":"B144","mostrado":"Pacífico","tipo":"texto"}
+{"almacenado":"Flores de corte","celda":"C144","mostrado":"Flores de corte","tipo":"texto"}
+{"almacenado":"99","celda":"D144","mostrado":"99","tipo":"número"}
+{"almacenado":"22.0","celda":"E144","formato":"#,##0.00\\ \"€\"","mostrado":"22","tipo":"número"}
+{"almacenado":"2178.0","celda":"F144","formato":"#,##0.00\\ \"€\"","formula":"=D144*E144","mostrado":"2178","tipo":"número"}
+{"almacenado":"1","celda":"G144","mostrado":"TRUE","tipo":"booleano"}
+{"almacenado":"46026","celda":"A145","formato":"formato integrado 14","mostrado":"2026-01-04","tipo":"número"}
+{"almacenado":"Caribe","celda":"B145","mostrado":"Caribe","tipo":"texto"}
+{"almacenado":"Cacao en grano","celda":"C145","mostrado":"Cacao en grano","tipo":"texto"}
+{"almacenado":"16","celda":"D145","mostrado":"16","tipo":"número"}
+{"almacenado":"12.75","celda":"E145","formato":"#,##0.00\\ \"€\"","mostrado":"12.75","tipo":"número"}
+{"almacenado":"204.0","celda":"F145","formato":"#,##0.00\\ \"€\"","formula":"=D145*E145","mostrado":"204","tipo":"número"}
+{"almacenado":"1","celda":"G145","mostrado":"TRUE","tipo":"booleano"}
+{"almacenado":"46309","celda":"A146","formato":"formato integrado 14","mostrado":"2026-10-14","tipo":"número"}
+{"almacenado":"Andina","celda":"B146","mostrado":"Andina","tipo":"texto"}
+{"almacenado":"Aguacate Hass","celda":"C146","mostrado":"Aguacate Hass","tipo":"texto"}
+{"almacenado":"53","celda":"D146","mostrado":"53","tipo":"número"}
+{"almacenado":"6.9","celda":"E146","formato":"#,##0.00\\ \"€\"","mostrado":"6.9","tipo":"número"}
+{"almacenado":"365.7","celda":"F146","formato":"#,##0.00\\ \"€\"","formula":"=D146*E146","mostrado":"365.7","tipo":"número"}
+{"almacenado":"1","celda":"G146","mostrado":"TRUE","tipo":"booleano"}
+{"almacenado":"46305","celda":"A147","formato":"formato integrado 14","mostrado":"2026-10-10","tipo":"número"}
+{"almacenado":"Orinoquía","celda":"B147","mostrado":"Orinoquía","tipo":"texto"}
+{"almacenado":"Café especial","celda":"C147","mostrado":"Café especial","tipo":"texto"}
+{"almacenado":"90","celda":"D147","mostrado":"90","tipo":"número"}
+{"almacenado":"18.5","celda":"E147","formato":"#,##0.00\\ \"€\"","mostrado":"18.5","tipo":"número"}
+{"almacenado":"1665.0","celda":"F147","formato":"#,##0.00\\ \"€\"","formula":"=D147*E147","mostrado":"1665","tipo":"número"}
+{"almacenado":"1","celda":"G147","mostrado":"TRUE","tipo":"booleano"}
+{"almacenado":"46301","celda":"A148","formato":"formato integrado 14","mostrado":"2026-10-06","tipo":"número"}
+{"almacenado":"Pacífico","celda":"B148","mostrado":"Pacífico","tipo":"texto"}
+{"almacenado":"Panela orgánica","celda":"C148","mostrado":"Panela orgánica","tipo":"texto"}
+{"almacenado":"7","celda":"D148","mostrado":"7","tipo":"número"}
+{"almacenado":"4.2","celda":"E148","formato":"#,##0.00\\ \"€\"","mostrado":"4.2","tipo":"número"}
+{"almacenado":"29.4","celda":"F148","formato":"#,##0.00\\ \"€\"","formula":"=D148*E148","mostrado":"29.4","tipo":"número"}
+{"almacenado":"1","celda":"G148","mostrado":"TRUE","tipo":"booleano"}
+{"almacenado":"46297","celda":"A149","formato":"formato integrado 14","mostrado":"2026-10-02","tipo":"número"}
+{"almacenado":"Caribe","celda":"B149","mostrado":"Caribe","tipo":"texto"}
+{"almacenado":"Flores de corte","celda":"C149","mostrado":"Flores de corte","tipo":"texto"}
+{"almacenado":"44","celda":"D149","mostrado":"44","tipo":"número"}
+{"almacenado":"22.0","celda":"E149","formato":"#,##0.00\\ \"€\"","mostrado":"22","tipo":"número"}
+{"almacenado":"968.0","celda":"F149","formato":"#,##0.00\\ \"€\"","formula":"=D149*E149","mostrado":"968","tipo":"número"}
+{"almacenado":"1","celda":"G149","mostrado":"TRUE","tipo":"booleano"}
+{"almacenado":"46293","celda":"A150","formato":"formato integrado 14","mostrado":"2026-09-28","tipo":"número"}
+{"almacenado":"Andina","celda":"B150","mostrado":"Andina","tipo":"texto"}
+{"almacenado":"Cacao en grano","celda":"C150","mostrado":"Cacao en grano","tipo":"texto"}
+{"almacenado":"81","celda":"D150","mostrado":"81","tipo":"número"}
+{"almacenado":"12.75","celda":"E150","formato":"#,##0.00\\ \"€\"","mostrado":"12.75","tipo":"número"}
+{"almacenado":"1032.75","celda":"F150","formato":"#,##0.00\\ \"€\"","formula":"=D150*E150","mostrado":"1032.75","tipo":"número"}
+{"almacenado":"0","celda":"G150","mostrado":"FALSE","tipo":"booleano"}
+{"almacenado":"46289","celda":"A151","formato":"formato integrado 14","mostrado":"2026-09-24","tipo":"número"}
+{"almacenado":"Orinoquía","celda":"B151","mostrado":"Orinoquía","tipo":"texto"}
+{"almacenado":"Aguacate Hass","celda":"C151","mostrado":"Aguacate Hass","tipo":"texto"}
+{"almacenado":"118","celda":"D151","mostrado":"118","tipo":"número"}
+{"almacenado":"6.9","celda":"E151","formato":"#,##0.00\\ \"€\"","mostrado":"6.9","tipo":"número"}
+{"almacenado":"814.2","celda":"F151","formato":"#,##0.00\\ \"€\"","formula":"=D151*E151","mostrado":"814.2","tipo":"número"}
+{"almacenado":"1","celda":"G151","mostrado":"TRUE","tipo":"booleano"}
+{"almacenado":"46285","celda":"A152","formato":"formato integrado 14","mostrado":"2026-09-20","tipo":"número"}
+{"almacenado":"Pacífico","celda":"B152","mostrado":"Pacífico","tipo":"texto"}
+{"almacenado":"Café especial","celda":"C152","mostrado":"Café especial","tipo":"texto"}
+{"almacenado":"35","celda":"D152","mostrado":"35","tipo":"número"}
+{"almacenado":"18.5","celda":"E152","formato":"#,##0.00\\ \"€\"","mostrado":"18.5","tipo":"número"}
+{"almacenado":"647.5","celda":"F152","formato":"#,##0.00\\ \"€\"","formula":"=D152*E152","mostrado":"647.5","tipo":"número"}
+{"almacenado":"1","celda":"G152","mostrado":"TRUE","tipo":"booleano"}
+{"almacenado":"46281","celda":"A153","formato":"formato integrado 14","mostrado":"2026-09-16","tipo":"número"}
+{"almacenado":"Caribe","celda":"B153","mostrado":"Caribe","tipo":"texto"}
+{"almacenado":"Panela orgánica","celda":"C153","mostrado":"Panela orgánica","tipo":"texto"}
+{"almacenado":"72","celda":"D153","mostrado":"72","tipo":"número"}
+{"almacenado":"4.2","celda":"E153","formato":"#,##0.00\\ \"€\"","mostrado":"4.2","tipo":"número"}
+{"almacenado":"302.4","celda":"F153","formato":"#,##0.00\\ \"€\"","formula":"=D153*E153","mostrado":"302.4","tipo":"número"}
+{"almacenado":"1","celda":"G153","mostrado":"TRUE","tipo":"booleano"}
+{"almacenado":"46277","celda":"A154","formato":"formato integrado 14","mostrado":"2026-09-12","tipo":"número"}
+{"almacenado":"Andina","celda":"B154","mostrado":"Andina","tipo":"texto"}
+{"almacenado":"Flores de corte","celda":"C154","mostrado":"Flores de corte","tipo":"texto"}
+{"almacenado":"109","celda":"D154","mostrado":"109","tipo":"número"}
+{"almacenado":"22.0","celda":"E154","formato":"#,##0.00\\ \"€\"","mostrado":"22","tipo":"número"}
+{"almacenado":"2398.0","celda":"F154","formato":"#,##0.00\\ \"€\"","formula":"=D154*E154","mostrado":"2398","tipo":"número"}
+{"almacenado":"1","celda":"G154","mostrado":"TRUE","tipo":"booleano"}
+{"almacenado":"46273","celda":"A155","formato":"formato integrado 14","mostrado":"2026-09-08","tipo":"número"}
+{"almacenado":"Orinoquía","celda":"B155","mostrado":"Orinoquía","tipo":"texto"}
+{"almacenado":"Cacao en grano","celda":"C155","mostrado":"Cacao en grano","tipo":"texto"}
+{"almacenado":"26","celda":"D155","mostrado":"26","tipo":"número"}
+{"almacenado":"12.75","celda":"E155","formato":"#,##0.00\\ \"€\"","mostrado":"12.75","tipo":"número"}
+{"almacenado":"331.5","celda":"F155","formato":"#,##0.00\\ \"€\"","formula":"=D155*E155","mostrado":"331.5","tipo":"número"}
+{"almacenado":"1","celda":"G155","mostrado":"TRUE","tipo":"booleano"}
+{"almacenado":"46269","celda":"A156","formato":"formato integrado 14","mostrado":"2026-09-04","tipo":"número"}
+{"almacenado":"Pacífico","celda":"B156","mostrado":"Pacífico","tipo":"texto"}
+{"almacenado":"Aguacate Hass","celda":"C156","mostrado":"Aguacate Hass","tipo":"texto"}
+{"almacenado":"63","celda":"D156","mostrado":"63","tipo":"número"}
+{"almacenado":"6.9","celda":"E156","formato":"#,##0.00\\ \"€\"","mostrado":"6.9","tipo":"número"}
+{"almacenado":"434.7","celda":"F156","formato":"#,##0.00\\ \"€\"","formula":"=D156*E156","mostrado":"434.7","tipo":"número"}
+{"almacenado":"1","celda":"G156","mostrado":"TRUE","tipo":"booleano"}
+{"almacenado":"46265","celda":"A157","formato":"formato integrado 14","mostrado":"2026-08-31","tipo":"número"}
+{"almacenado":"Caribe","celda":"B157","mostrado":"Caribe","tipo":"texto"}
+{"almacenado":"Café especial","celda":"C157","mostrado":"Café especial","tipo":"texto"}
+{"almacenado":"100","celda":"D157","mostrado":"100","tipo":"número"}
+{"almacenado":"18.5","celda":"E157","formato":"#,##0.00\\ \"€\"","mostrado":"18.5","tipo":"número"}
+{"almacenado":"1850.0","celda":"F157","formato":"#,##0.00\\ \"€\"","formula":"=D157*E157","mostrado":"1850","tipo":"número"}
+{"almacenado":"1","celda":"G157","mostrado":"TRUE","tipo":"booleano"}
+{"almacenado":"46261","celda":"A158","formato":"formato integrado 14","mostrado":"2026-08-27","tipo":"número"}
+{"almacenado":"Andina","celda":"B158","mostrado":"Andina","tipo":"texto"}
+{"almacenado":"Panela orgánica","celda":"C158","mostrado":"Panela orgánica","tipo":"texto"}
+{"almacenado":"17","celda":"D158","mostrado":"17","tipo":"número"}
+{"almacenado":"4.2","celda":"E158","formato":"#,##0.00\\ \"€\"","mostrado":"4.2","tipo":"número"}
+{"almacenado":"71.4","celda":"F158","formato":"#,##0.00\\ \"€\"","formula":"=D158*E158","mostrado":"71.4","tipo":"número"}
+{"almacenado":"1","celda":"G158","mostrado":"TRUE","tipo":"booleano"}
+{"almacenado":"46257","celda":"A159","formato":"formato integrado 14","mostrado":"2026-08-23","tipo":"número"}
+{"almacenado":"Orinoquía","celda":"B159","mostrado":"Orinoquía","tipo":"texto"}
+{"almacenado":"Flores de corte","celda":"C159","mostrado":"Flores de corte","tipo":"texto"}
+{"almacenado":"54","celda":"D159","mostrado":"54","tipo":"número"}
+{"almacenado":"22.0","celda":"E159","formato":"#,##0.00\\ \"€\"","mostrado":"22","tipo":"número"}
+{"almacenado":"1188.0","celda":"F159","formato":"#,##0.00\\ \"€\"","formula":"=D159*E159","mostrado":"1188","tipo":"número"}
+{"almacenado":"0","celda":"G159","mostrado":"FALSE","tipo":"booleano"}
+{"almacenado":"46253","celda":"A160","formato":"formato integrado 14","mostrado":"2026-08-19","tipo":"número"}
+{"almacenado":"Pacífico","celda":"B160","mostrado":"Pacífico","tipo":"texto"}
+{"almacenado":"Cacao en grano","celda":"C160","mostrado":"Cacao en grano","tipo":"texto"}
+{"almacenado":"91","celda":"D160","mostrado":"91","tipo":"número"}
+{"almacenado":"12.75","celda":"E160","formato":"#,##0.00\\ \"€\"","mostrado":"12.75","tipo":"número"}
+{"almacenado":"1160.25","celda":"F160","formato":"#,##0.00\\ \"€\"","formula":"=D160*E160","mostrado":"1160.25","tipo":"número"}
+{"almacenado":"1","celda":"G160","mostrado":"TRUE","tipo":"booleano"}
+{"almacenado":"46249","celda":"A161","formato":"formato integrado 14","mostrado":"2026-08-15","tipo":"número"}
+{"almacenado":"Caribe","celda":"B161","mostrado":"Caribe","tipo":"texto"}
+{"almacenado":"Aguacate Hass","celda":"C161","mostrado":"Aguacate Hass","tipo":"texto"}
+{"almacenado":"8","celda":"D161","mostrado":"8","tipo":"número"}
+{"almacenado":"6.9","celda":"E161","formato":"#,##0.00\\ \"€\"","mostrado":"6.9","tipo":"número"}
+{"almacenado":"55.2","celda":"F161","formato":"#,##0.00\\ \"€\"","formula":"=D161*E161","mostrado":"55.2","tipo":"número"}
+{"almacenado":"1","celda":"G161","mostrado":"TRUE","tipo":"booleano"}
+{"almacenado":"46245","celda":"A162","formato":"formato integrado 14","mostrado":"2026-08-11","tipo":"número"}
+{"almacenado":"Andina","celda":"B162","mostrado":"Andina","tipo":"texto"}
+{"almacenado":"Café especial","celda":"C162","mostrado":"Café especial","tipo":"texto"}
+{"almacenado":"45","celda":"D162","mostrado":"45","tipo":"número"}
+{"almacenado":"18.5","celda":"E162","formato":"#,##0.00\\ \"€\"","mostrado":"18.5","tipo":"número"}
+{"almacenado":"832.5","celda":"F162","formato":"#,##0.00\\ \"€\"","formula":"=D162*E162","mostrado":"832.5","tipo":"número"}
+{"almacenado":"1","celda":"G162","mostrado":"TRUE","tipo":"booleano"}
+{"almacenado":"46241","celda":"A163","formato":"formato integrado 14","mostrado":"2026-08-07","tipo":"número"}
+{"almacenado":"Orinoquía","celda":"B163","mostrado":"Orinoquía","tipo":"texto"}
+{"almacenado":"Panela orgánica","celda":"C163","mostrado":"Panela orgánica","tipo":"texto"}
+{"almacenado":"82","celda":"D163","mostrado":"82","tipo":"número"}
+{"almacenado":"4.2","celda":"E163","formato":"#,##0.00\\ \"€\"","mostrado":"4.2","tipo":"número"}
+{"almacenado":"344.4","celda":"F163","formato":"#,##0.00\\ \"€\"","formula":"=D163*E163","mostrado":"344.4","tipo":"número"}
+{"almacenado":"1","celda":"G163","mostrado":"TRUE","tipo":"booleano"}
+{"almacenado":"46237","celda":"A164","formato":"formato integrado 14","mostrado":"2026-08-03","tipo":"número"}
+{"almacenado":"Pacífico","celda":"B164","mostrado":"Pacífico","tipo":"texto"}
+{"almacenado":"Flores de corte","celda":"C164","mostrado":"Flores de corte","tipo":"texto"}
+{"almacenado":"119","celda":"D164","mostrado":"119","tipo":"número"}
+{"almacenado":"22.0","celda":"E164","formato":"#,##0.00\\ \"€\"","mostrado":"22","tipo":"número"}
+{"almacenado":"2618.0","celda":"F164","formato":"#,##0.00\\ \"€\"","formula":"=D164*E164","mostrado":"2618","tipo":"número"}
+{"almacenado":"1","celda":"G164","mostrado":"TRUE","tipo":"booleano"}
+{"almacenado":"46233","celda":"A165","formato":"formato integrado 14","mostrado":"2026-07-30","tipo":"número"}
+{"almacenado":"Caribe","celda":"B165","mostrado":"Caribe","tipo":"texto"}
+{"almacenado":"Cacao en grano","celda":"C165","mostrado":"Cacao en grano","tipo":"texto"}
+{"almacenado":"36","celda":"D165","mostrado":"36","tipo":"número"}
+{"almacenado":"12.75","celda":"E165","formato":"#,##0.00\\ \"€\"","mostrado":"12.75","tipo":"número"}
+{"almacenado":"459.0","celda":"F165","formato":"#,##0.00\\ \"€\"","formula":"=D165*E165","mostrado":"459","tipo":"número"}
+{"almacenado":"1","celda":"G165","mostrado":"TRUE","tipo":"booleano"}
+{"almacenado":"46229","celda":"A166","formato":"formato integrado 14","mostrado":"2026-07-26","tipo":"número"}
+{"almacenado":"Andina","celda":"B166","mostrado":"Andina","tipo":"texto"}
+{"almacenado":"Aguacate Hass","celda":"C166","mostrado":"Aguacate Hass","tipo":"texto"}
+{"almacenado":"73","celda":"D166","mostrado":"73","tipo":"número"}
+{"almacenado":"6.9","celda":"E166","formato":"#,##0.00\\ \"€\"","mostrado":"6.9","tipo":"número"}
+{"almacenado":"503.7","celda":"F166","formato":"#,##0.00\\ \"€\"","formula":"=D166*E166","mostrado":"503.7","tipo":"número"}
+{"almacenado":"1","celda":"G166","mostrado":"TRUE","tipo":"booleano"}
+{"almacenado":"46225","celda":"A167","formato":"formato integrado 14","mostrado":"2026-07-22","tipo":"número"}
+{"almacenado":"Orinoquía","celda":"B167","mostrado":"Orinoquía","tipo":"texto"}
+{"almacenado":"Café especial","celda":"C167","mostrado":"Café especial","tipo":"texto"}
+{"almacenado":"110","celda":"D167","mostrado":"110","tipo":"número"}
+{"almacenado":"18.5","celda":"E167","formato":"#,##0.00\\ \"€\"","mostrado":"18.5","tipo":"número"}
+{"almacenado":"2035.0","celda":"F167","formato":"#,##0.00\\ \"€\"","formula":"=D167*E167","mostrado":"2035","tipo":"número"}
+{"almacenado":"1","celda":"G167","mostrado":"TRUE","tipo":"booleano"}
+{"almacenado":"46221","celda":"A168","formato":"formato integrado 14","mostrado":"2026-07-18","tipo":"número"}
+{"almacenado":"Pacífico","celda":"B168","mostrado":"Pacífico","tipo":"texto"}
+{"almacenado":"Panela orgánica","celda":"C168","mostrado":"Panela orgánica","tipo":"texto"}
+{"almacenado":"27","celda":"D168","mostrado":"27","tipo":"número"}
+{"almacenado":"4.2","celda":"E168","formato":"#,##0.00\\ \"€\"","mostrado":"4.2","tipo":"número"}
+{"almacenado":"113.4","celda":"F168","formato":"#,##0.00\\ \"€\"","formula":"=D168*E168","mostrado":"113.4","tipo":"número"}
+{"almacenado":"0","celda":"G168","mostrado":"FALSE","tipo":"booleano"}
+{"almacenado":"46217","celda":"A169","formato":"formato integrado 14","mostrado":"2026-07-14","tipo":"número"}
+{"almacenado":"Caribe","celda":"B169","mostrado":"Caribe","tipo":"texto"}
+{"almacenado":"Flores de corte","celda":"C169","mostrado":"Flores de corte","tipo":"texto"}
+{"almacenado":"64","celda":"D169","mostrado":"64","tipo":"número"}
+{"almacenado":"22.0","celda":"E169","formato":"#,##0.00\\ \"€\"","mostrado":"22","tipo":"número"}
+{"almacenado":"1408.0","celda":"F169","formato":"#,##0.00\\ \"€\"","formula":"=D169*E169","mostrado":"1408","tipo":"número"}
+{"almacenado":"1","celda":"G169","mostrado":"TRUE","tipo":"booleano"}
+{"almacenado":"46213","celda":"A170","formato":"formato integrado 14","mostrado":"2026-07-10","tipo":"número"}
+{"almacenado":"Andina","celda":"B170","mostrado":"Andina","tipo":"texto"}
+{"almacenado":"Cacao en grano","celda":"C170","mostrado":"Cacao en grano","tipo":"texto"}
+{"almacenado":"101","celda":"D170","mostrado":"101","tipo":"número"}
+{"almacenado":"12.75","celda":"E170","formato":"#,##0.00\\ \"€\"","mostrado":"12.75","tipo":"número"}
+{"almacenado":"1287.75","celda":"F170","formato":"#,##0.00\\ \"€\"","formula":"=D170*E170","mostrado":"1287.75","tipo":"número"}
+{"almacenado":"1","celda":"G170","mostrado":"TRUE","tipo":"booleano"}
+{"almacenado":"46209","celda":"A171","formato":"formato integrado 14","mostrado":"2026-07-06","tipo":"número"}
+{"almacenado":"Orinoquía","celda":"B171","mostrado":"Orinoquía","tipo":"texto"}
+{"almacenado":"Aguacate Hass","celda":"C171","mostrado":"Aguacate Hass","tipo":"texto"}
+{"almacenado":"18","celda":"D171","mostrado":"18","tipo":"número"}
+{"almacenado":"6.9","celda":"E171","formato":"#,##0.00\\ \"€\"","mostrado":"6.9","tipo":"número"}
+{"almacenado":"124.2","celda":"F171","formato":"#,##0.00\\ \"€\"","formula":"=D171*E171","mostrado":"124.2","tipo":"número"}
+{"almacenado":"1","celda":"G171","mostrado":"TRUE","tipo":"booleano"}
+{"almacenado":"46205","celda":"A172","formato":"formato integrado 14","mostrado":"2026-07-02","tipo":"número"}
+{"almacenado":"Pacífico","celda":"B172","mostrado":"Pacífico","tipo":"texto"}
+{"almacenado":"Café especial","celda":"C172","mostrado":"Café especial","tipo":"texto"}
+{"almacenado":"55","celda":"D172","mostrado":"55","tipo":"número"}
+{"almacenado":"18.5","celda":"E172","formato":"#,##0.00\\ \"€\"","mostrado":"18.5","tipo":"número"}
+{"almacenado":"1017.5","celda":"F172","formato":"#,##0.00\\ \"€\"","formula":"=D172*E172","mostrado":"1017.5","tipo":"número"}
+{"almacenado":"1","celda":"G172","mostrado":"TRUE","tipo":"booleano"}
+{"almacenado":"46201","celda":"A173","formato":"formato integrado 14","mostrado":"2026-06-28","tipo":"número"}
+{"almacenado":"Caribe","celda":"B173","mostrado":"Caribe","tipo":"texto"}
+{"almacenado":"Panela orgánica","celda":"C173","mostrado":"Panela orgánica","tipo":"texto"}
+{"almacenado":"92","celda":"D173","mostrado":"92","tipo":"número"}
+{"almacenado":"4.2","celda":"E173","formato":"#,##0.00\\ \"€\"","mostrado":"4.2","tipo":"número"}
+{"almacenado":"386.4","celda":"F173","formato":"#,##0.00\\ \"€\"","formula":"=D173*E173","mostrado":"386.4","tipo":"número"}
+{"almacenado":"1","celda":"G173","mostrado":"TRUE","tipo":"booleano"}
+{"almacenado":"46197","celda":"A174","formato":"formato integrado 14","mostrado":"2026-06-24","tipo":"número"}
+{"almacenado":"Andina","celda":"B174","mostrado":"Andina","tipo":"texto"}
+{"almacenado":"Flores de corte","celda":"C174","mostrado":"Flores de corte","tipo":"texto"}
+{"almacenado":"9","celda":"D174","mostrado":"9","tipo":"número"}
+{"almacenado":"22.0","celda":"E174","formato":"#,##0.00\\ \"€\"","mostrado":"22","tipo":"número"}
+{"almacenado":"198.0","celda":"F174","formato":"#,##0.00\\ \"€\"","formula":"=D174*E174","mostrado":"198","tipo":"número"}
+{"almacenado":"1","celda":"G174","mostrado":"TRUE","tipo":"booleano"}
+{"almacenado":"46193","celda":"A175","formato":"formato integrado 14","mostrado":"2026-06-20","tipo":"número"}
+{"almacenado":"Orinoquía","celda":"B175","mostrado":"Orinoquía","tipo":"texto"}
+{"almacenado":"Cacao en grano","celda":"C175","mostrado":"Cacao en grano","tipo":"texto"}
+{"almacenado":"46","celda":"D175","mostrado":"46","tipo":"número"}
+{"almacenado":"12.75","celda":"E175","formato":"#,##0.00\\ \"€\"","mostrado":"12.75","tipo":"número"}
+{"almacenado":"586.5","celda":"F175","formato":"#,##0.00\\ \"€\"","formula":"=D175*E175","mostrado":"586.5","tipo":"número"}
+{"almacenado":"1","celda":"G175","mostrado":"TRUE","tipo":"booleano"}
+{"almacenado":"46189","celda":"A176","formato":"formato integrado 14","mostrado":"2026-06-16","tipo":"número"}
+{"almacenado":"Pacífico","celda":"B176","mostrado":"Pacífico","tipo":"texto"}
+{"almacenado":"Aguacate Hass","celda":"C176","mostrado":"Aguacate Hass","tipo":"texto"}
+{"almacenado":"83","celda":"D176","mostrado":"83","tipo":"número"}
+{"almacenado":"6.9","celda":"E176","formato":"#,##0.00\\ \"€\"","mostrado":"6.9","tipo":"número"}
+{"almacenado":"572.7","celda":"F176","formato":"#,##0.00\\ \"€\"","formula":"=D176*E176","mostrado":"572.7","tipo":"número"}
+{"almacenado":"1","celda":"G176","mostrado":"TRUE","tipo":"booleano"}
+{"almacenado":"46185","celda":"A177","formato":"formato integrado 14","mostrado":"2026-06-12","tipo":"número"}
+{"almacenado":"Caribe","celda":"B177","mostrado":"Caribe","tipo":"texto"}
+{"almacenado":"Café especial","celda":"C177","mostrado":"Café especial","tipo":"texto"}
+{"almacenado":"120","celda":"D177","mostrado":"120","tipo":"número"}
+{"almacenado":"18.5","celda":"E177","formato":"#,##0.00\\ \"€\"","mostrado":"18.5","tipo":"número"}
+{"almacenado":"2220.0","celda":"F177","formato":"#,##0.00\\ \"€\"","formula":"=D177*E177","mostrado":"2220","tipo":"número"}
+{"almacenado":"0","celda":"G177","mostrado":"FALSE","tipo":"booleano"}
+{"almacenado":"46181","celda":"A178","formato":"formato integrado 14","mostrado":"2026-06-08","tipo":"número"}
+{"almacenado":"Andina","celda":"B178","mostrado":"Andina","tipo":"texto"}
+{"almacenado":"Panela orgánica","celda":"C178","mostrado":"Panela orgánica","tipo":"texto"}
+{"almacenado":"37","celda":"D178","mostrado":"37","tipo":"número"}
+{"almacenado":"4.2","celda":"E178","formato":"#,##0.00\\ \"€\"","mostrado":"4.2","tipo":"número"}
+{"almacenado":"155.4","celda":"F178","formato":"#,##0.00\\ \"€\"","formula":"=D178*E178","mostrado":"155.4","tipo":"número"}
+{"almacenado":"1","celda":"G178","mostrado":"TRUE","tipo":"booleano"}
+{"almacenado":"46177","celda":"A179","formato":"formato integrado 14","mostrado":"2026-06-04","tipo":"número"}
+{"almacenado":"Orinoquía","celda":"B179","mostrado":"Orinoquía","tipo":"texto"}
+{"almacenado":"Flores de corte","celda":"C179","mostrado":"Flores de corte","tipo":"texto"}
+{"almacenado":"74","celda":"D179","mostrado":"74","tipo":"número"}
+{"almacenado":"22.0","celda":"E179","formato":"#,##0.00\\ \"€\"","mostrado":"22","tipo":"número"}
+{"almacenado":"1628.0","celda":"F179","formato":"#,##0.00\\ \"€\"","formula":"=D179*E179","mostrado":"1628","tipo":"número"}
+{"almacenado":"1","celda":"G179","mostrado":"TRUE","tipo":"booleano"}
+{"almacenado":"46173","celda":"A180","formato":"formato integrado 14","mostrado":"2026-05-31","tipo":"número"}
+{"almacenado":"Pacífico","celda":"B180","mostrado":"Pacífico","tipo":"texto"}
+{"almacenado":"Cacao en grano","celda":"C180","mostrado":"Cacao en grano","tipo":"texto"}
+{"almacenado":"111","celda":"D180","mostrado":"111","tipo":"número"}
+{"almacenado":"12.75","celda":"E180","formato":"#,##0.00\\ \"€\"","mostrado":"12.75","tipo":"número"}
+{"almacenado":"1415.25","celda":"F180","formato":"#,##0.00\\ \"€\"","formula":"=D180*E180","mostrado":"1415.25","tipo":"número"}
+{"almacenado":"1","celda":"G180","mostrado":"TRUE","tipo":"booleano"}
+{"almacenado":"46169","celda":"A181","formato":"formato integrado 14","mostrado":"2026-05-27","tipo":"número"}
+{"almacenado":"Caribe","celda":"B181","mostrado":"Caribe","tipo":"texto"}
+{"almacenado":"Aguacate Hass","celda":"C181","mostrado":"Aguacate Hass","tipo":"texto"}
+{"almacenado":"28","celda":"D181","mostrado":"28","tipo":"número"}
+{"almacenado":"6.9","celda":"E181","formato":"#,##0.00\\ \"€\"","mostrado":"6.9","tipo":"número"}
+{"almacenado":"193.2","celda":"F181","formato":"#,##0.00\\ \"€\"","formula":"=D181*E181","mostrado":"193.2","tipo":"número"}
+{"almacenado":"1","celda":"G181","mostrado":"TRUE","tipo":"booleano"}
+{"almacenado":"46165","celda":"A182","formato":"formato integrado 14","mostrado":"2026-05-23","tipo":"número"}
+{"almacenado":"Andina","celda":"B182","mostrado":"Andina","tipo":"texto"}
+{"almacenado":"Café especial","celda":"C182","mostrado":"Café especial","tipo":"texto"}
+{"almacenado":"65","celda":"D182","mostrado":"65","tipo":"número"}
+{"almacenado":"18.5","celda":"E182","formato":"#,##0.00\\ \"€\"","mostrado":"18.5","tipo":"número"}
+{"almacenado":"1202.5","celda":"F182","formato":"#,##0.00\\ \"€\"","formula":"=D182*E182","mostrado":"1202.5","tipo":"número"}
+{"almacenado":"1","celda":"G182","mostrado":"TRUE","tipo":"booleano"}
+{"almacenado":"46161","celda":"A183","formato":"formato integrado 14","mostrado":"2026-05-19","tipo":"número"}
+{"almacenado":"Orinoquía","celda":"B183","mostrado":"Orinoquía","tipo":"texto"}
+{"almacenado":"Panela orgánica","celda":"C183","mostrado":"Panela orgánica","tipo":"texto"}
+{"almacenado":"102","celda":"D183","mostrado":"102","tipo":"número"}
+{"almacenado":"4.2","celda":"E183","formato":"#,##0.00\\ \"€\"","mostrado":"4.2","tipo":"número"}
+{"almacenado":"428.4","celda":"F183","formato":"#,##0.00\\ \"€\"","formula":"=D183*E183","mostrado":"428.4","tipo":"número"}
+{"almacenado":"1","celda":"G183","mostrado":"TRUE","tipo":"booleano"}
+{"almacenado":"46157","celda":"A184","formato":"formato integrado 14","mostrado":"2026-05-15","tipo":"número"}
+{"almacenado":"Pacífico","celda":"B184","mostrado":"Pacífico","tipo":"texto"}
+{"almacenado":"Flores de corte","celda":"C184","mostrado":"Flores de corte","tipo":"texto"}
+{"almacenado":"19","celda":"D184","mostrado":"19","tipo":"número"}
+{"almacenado":"22.0","celda":"E184","formato":"#,##0.00\\ \"€\"","mostrado":"22","tipo":"número"}
+{"almacenado":"418.0","celda":"F184","formato":"#,##0.00\\ \"€\"","formula":"=D184*E184","mostrado":"418","tipo":"número"}
+{"almacenado":"1","celda":"G184","mostrado":"TRUE","tipo":"booleano"}
+{"almacenado":"46153","celda":"A185","formato":"formato integrado 14","mostrado":"2026-05-11","tipo":"número"}
+{"almacenado":"Caribe","celda":"B185","mostrado":"Caribe","tipo":"texto"}
+{"almacenado":"Cacao en grano","celda":"C185","mostrado":"Cacao en grano","tipo":"texto"}
+{"almacenado":"56","celda":"D185","mostrado":"56","tipo":"número"}
+{"almacenado":"12.75","celda":"E185","formato":"#,##0.00\\ \"€\"","mostrado":"12.75","tipo":"número"}
+{"almacenado":"714.0","celda":"F185","formato":"#,##0.00\\ \"€\"","formula":"=D185*E185","mostrado":"714","tipo":"número"}
+{"almacenado":"1","celda":"G185","mostrado":"TRUE","tipo":"booleano"}
+{"almacenado":"46149","celda":"A186","formato":"formato integrado 14","mostrado":"2026-05-07","tipo":"número"}
+{"almacenado":"Andina","celda":"B186","mostrado":"Andina","tipo":"texto"}
+{"almacenado":"Aguacate Hass","celda":"C186","mostrado":"Aguacate Hass","tipo":"texto"}
+{"almacenado":"93","celda":"D186","mostrado":"93","tipo":"número"}
+{"almacenado":"6.9","celda":"E186","formato":"#,##0.00\\ \"€\"","mostrado":"6.9","tipo":"número"}
+{"almacenado":"641.7","celda":"F186","formato":"#,##0.00\\ \"€\"","formula":"=D186*E186","mostrado":"641.7","tipo":"número"}
+{"almacenado":"0","celda":"G186","mostrado":"FALSE","tipo":"booleano"}
+{"almacenado":"46145","celda":"A187","formato":"formato integrado 14","mostrado":"2026-05-03","tipo":"número"}
+{"almacenado":"Orinoquía","celda":"B187","mostrado":"Orinoquía","tipo":"texto"}
+{"almacenado":"Café especial","celda":"C187","mostrado":"Café especial","tipo":"texto"}
+{"almacenado":"10","celda":"D187","mostrado":"10","tipo":"número"}
+{"almacenado":"18.5","celda":"E187","formato":"#,##0.00\\ \"€\"","mostrado":"18.5","tipo":"número"}
+{"almacenado":"185.0","celda":"F187","formato":"#,##0.00\\ \"€\"","formula":"=D187*E187","mostrado":"185","tipo":"número"}
+{"almacenado":"1","celda":"G187","mostrado":"TRUE","tipo":"booleano"}
+{"almacenado":"46141","celda":"A188","formato":"formato integrado 14","mostrado":"2026-04-29","tipo":"número"}
+{"almacenado":"Pacífico","celda":"B188","mostrado":"Pacífico","tipo":"texto"}
+{"almacenado":"Panela orgánica","celda":"C188","mostrado":"Panela orgánica","tipo":"texto"}
+{"almacenado":"47","celda":"D188","mostrado":"47","tipo":"número"}
+{"almacenado":"4.2","celda":"E188","formato":"#,##0.00\\ \"€\"","mostrado":"4.2","tipo":"número"}
+{"almacenado":"197.4","celda":"F188","formato":"#,##0.00\\ \"€\"","formula":"=D188*E188","mostrado":"197.4","tipo":"número"}
+{"almacenado":"1","celda":"G188","mostrado":"TRUE","tipo":"booleano"}
+{"almacenado":"46137","celda":"A189","formato":"formato integrado 14","mostrado":"2026-04-25","tipo":"número"}
+{"almacenado":"Caribe","celda":"B189","mostrado":"Caribe","tipo":"texto"}
+{"almacenado":"Flores de corte","celda":"C189","mostrado":"Flores de corte","tipo":"texto"}
+{"almacenado":"84","celda":"D189","mostrado":"84","tipo":"número"}
+{"almacenado":"22.0","celda":"E189","formato":"#,##0.00\\ \"€\"","mostrado":"22","tipo":"número"}
+{"almacenado":"1848.0","celda":"F189","formato":"#,##0.00\\ \"€\"","formula":"=D189*E189","mostrado":"1848","tipo":"número"}
+{"almacenado":"1","celda":"G189","mostrado":"TRUE","tipo":"booleano"}
+{"almacenado":"46133","celda":"A190","formato":"formato integrado 14","mostrado":"2026-04-21","tipo":"número"}
+{"almacenado":"Andina","celda":"B190","mostrado":"Andina","tipo":"texto"}
+{"almacenado":"Cacao en grano","celda":"C190","mostrado":"Cacao en grano","tipo":"texto"}
+{"almacenado":"121","celda":"D190","mostrado":"121","tipo":"número"}
+{"almacenado":"12.75","celda":"E190","formato":"#,##0.00\\ \"€\"","mostrado":"12.75","tipo":"número"}
+{"almacenado":"1542.75","celda":"F190","formato":"#,##0.00\\ \"€\"","formula":"=D190*E190","mostrado":"1542.75","tipo":"número"}
+{"almacenado":"1","celda":"G190","mostrado":"TRUE","tipo":"booleano"}
+{"almacenado":"46129","celda":"A191","formato":"formato integrado 14","mostrado":"2026-04-17","tipo":"número"}
+{"almacenado":"Orinoquía","celda":"B191","mostrado":"Orinoquía","tipo":"texto"}
+{"almacenado":"Aguacate Hass","celda":"C191","mostrado":"Aguacate Hass","tipo":"texto"}
+{"almacenado":"38","celda":"D191","mostrado":"38","tipo":"número"}
+{"almacenado":"6.9","celda":"E191","formato":"#,##0.00\\ \"€\"","mostrado":"6.9","tipo":"número"}
+{"almacenado":"262.2","celda":"F191","formato":"#,##0.00\\ \"€\"","formula":"=D191*E191","mostrado":"262.2","tipo":"número"}
+{"almacenado":"1","celda":"G191","mostrado":"TRUE","tipo":"booleano"}
+{"almacenado":"46125","celda":"A192","formato":"formato integrado 14","mostrado":"2026-04-13","tipo":"número"}
+{"almacenado":"Pacífico","celda":"B192","mostrado":"Pacífico","tipo":"texto"}
+{"almacenado":"Café especial","celda":"C192","mostrado":"Café especial","tipo":"texto"}
+{"almacenado":"75","celda":"D192","mostrado":"75","tipo":"número"}
+{"almacenado":"18.5","celda":"E192","formato":"#,##0.00\\ \"€\"","mostrado":"18.5","tipo":"número"}
+{"almacenado":"1387.5","celda":"F192","formato":"#,##0.00\\ \"€\"","formula":"=D192*E192","mostrado":"1387.5","tipo":"número"}
+{"almacenado":"1","celda":"G192","mostrado":"TRUE","tipo":"booleano"}
+{"almacenado":"46121","celda":"A193","formato":"formato integrado 14","mostrado":"2026-04-09","tipo":"número"}
+{"almacenado":"Caribe","celda":"B193","mostrado":"Caribe","tipo":"texto"}
+{"almacenado":"Panela orgánica","celda":"C193","mostrado":"Panela orgánica","tipo":"texto"}
+{"almacenado":"112","celda":"D193","mostrado":"112","tipo":"número"}
+{"almacenado":"4.2","celda":"E193","formato":"#,##0.00\\ \"€\"","mostrado":"4.2","tipo":"número"}
+{"almacenado":"470.4","celda":"F193","formato":"#,##0.00\\ \"€\"","formula":"=D193*E193","mostrado":"470.4","tipo":"número"}
+{"almacenado":"1","celda":"G193","mostrado":"TRUE","tipo":"booleano"}
+{"almacenado":"46117","celda":"A194","formato":"formato integrado 14","mostrado":"2026-04-05","tipo":"número"}
+{"almacenado":"Andina","celda":"B194","mostrado":"Andina","tipo":"texto"}
+{"almacenado":"Flores de corte","celda":"C194","mostrado":"Flores de corte","tipo":"texto"}
+{"almacenado":"29","celda":"D194","mostrado":"29","tipo":"número"}
+{"almacenado":"22.0","celda":"E194","formato":"#,##0.00\\ \"€\"","mostrado":"22","tipo":"número"}
+{"almacenado":"638.0","celda":"F194","formato":"#,##0.00\\ \"€\"","formula":"=D194*E194","mostrado":"638","tipo":"número"}
+{"almacenado":"1","celda":"G194","mostrado":"TRUE","tipo":"booleano"}
+{"almacenado":"46113","celda":"A195","formato":"formato integrado 14","mostrado":"2026-04-01","tipo":"número"}
+{"almacenado":"Orinoquía","celda":"B195","mostrado":"Orinoquía","tipo":"texto"}
+{"almacenado":"Cacao en grano","celda":"C195","mostrado":"Cacao en grano","tipo":"texto"}
+{"almacenado":"66","celda":"D195","mostrado":"66","tipo":"número"}
+{"almacenado":"12.75","celda":"E195","formato":"#,##0.00\\ \"€\"","mostrado":"12.75","tipo":"número"}
+{"almacenado":"841.5","celda":"F195","formato":"#,##0.00\\ \"€\"","formula":"=D195*E195","mostrado":"841.5","tipo":"número"}
+{"almacenado":"0","celda":"G195","mostrado":"FALSE","tipo":"booleano"}
+{"almacenado":"46109","celda":"A196","formato":"formato integrado 14","mostrado":"2026-03-28","tipo":"número"}
+{"almacenado":"Pacífico","celda":"B196","mostrado":"Pacífico","tipo":"texto"}
+{"almacenado":"Aguacate Hass","celda":"C196","mostrado":"Aguacate Hass","tipo":"texto"}
+{"almacenado":"103","celda":"D196","mostrado":"103","tipo":"número"}
+{"almacenado":"6.9","celda":"E196","formato":"#,##0.00\\ \"€\"","mostrado":"6.9","tipo":"número"}
+{"almacenado":"710.7","celda":"F196","formato":"#,##0.00\\ \"€\"","formula":"=D196*E196","mostrado":"710.7","tipo":"número"}
+{"almacenado":"1","celda":"G196","mostrado":"TRUE","tipo":"booleano"}
+{"almacenado":"46105","celda":"A197","formato":"formato integrado 14","mostrado":"2026-03-24","tipo":"número"}
+{"almacenado":"Caribe","celda":"B197","mostrado":"Caribe","tipo":"texto"}
+{"almacenado":"Café especial","celda":"C197","mostrado":"Café especial","tipo":"texto"}
+{"almacenado":"20","celda":"D197","mostrado":"20","tipo":"número"}
+{"almacenado":"18.5","celda":"E197","formato":"#,##0.00\\ \"€\"","mostrado":"18.5","tipo":"número"}
+{"almacenado":"370.0","celda":"F197","formato":"#,##0.00\\ \"€\"","formula":"=D197*E197","mostrado":"370","tipo":"número"}
+{"almacenado":"1","celda":"G197","mostrado":"TRUE","tipo":"booleano"}
+{"almacenado":"46101","celda":"A198","formato":"formato integrado 14","mostrado":"2026-03-20","tipo":"número"}
+{"almacenado":"Andina","celda":"B198","mostrado":"Andina","tipo":"texto"}
+{"almacenado":"Panela orgánica","celda":"C198","mostrado":"Panela orgánica","tipo":"texto"}
+{"almacenado":"57","celda":"D198","mostrado":"57","tipo":"número"}
+{"almacenado":"4.2","celda":"E198","formato":"#,##0.00\\ \"€\"","mostrado":"4.2","tipo":"número"}
+{"almacenado":"239.4","celda":"F198","formato":"#,##0.00\\ \"€\"","formula":"=D198*E198","mostrado":"239.4","tipo":"número"}
+{"almacenado":"1","celda":"G198","mostrado":"TRUE","tipo":"booleano"}
+{"almacenado":"46097","celda":"A199","formato":"formato integrado 14","mostrado":"2026-03-16","tipo":"número"}
+{"almacenado":"Orinoquía","celda":"B199","mostrado":"Orinoquía","tipo":"texto"}
+{"almacenado":"Flores de corte","celda":"C199","mostrado":"Flores de corte","tipo":"texto"}
+{"almacenado":"94","celda":"D199","mostrado":"94","tipo":"número"}
+{"almacenado":"22.0","celda":"E199","formato":"#,##0.00\\ \"€\"","mostrado":"22","tipo":"número"}
+{"almacenado":"2068.0","celda":"F199","formato":"#,##0.00\\ \"€\"","formula":"=D199*E199","mostrado":"2068","tipo":"número"}
+{"almacenado":"1","celda":"G199","mostrado":"TRUE","tipo":"booleano"}
+{"almacenado":"46093","celda":"A200","formato":"formato integrado 14","mostrado":"2026-03-12","tipo":"número"}
+{"almacenado":"Pacífico","celda":"B200","mostrado":"Pacífico","tipo":"texto"}
+{"almacenado":"Cacao en grano","celda":"C200","mostrado":"Cacao en grano","tipo":"texto"}
+{"almacenado":"11","celda":"D200","mostrado":"11","tipo":"número"}
+{"almacenado":"12.75","celda":"E200","formato":"#,##0.00\\ \"€\"","mostrado":"12.75","tipo":"número"}
+{"almacenado":"140.25","celda":"F200","formato":"#,##0.00\\ \"€\"","formula":"=D200*E200","mostrado":"140.25","tipo":"número"}
+{"almacenado":"1","celda":"G200","mostrado":"TRUE","tipo":"booleano"}
+{"almacenado":"46089","celda":"A201","formato":"formato integrado 14","mostrado":"2026-03-08","tipo":"número"}
+{"almacenado":"Caribe","celda":"B201","mostrado":"Caribe","tipo":"texto"}
+{"almacenado":"Aguacate Hass","celda":"C201","mostrado":"Aguacate Hass","tipo":"texto"}
+{"almacenado":"48","celda":"D201","mostrado":"48","tipo":"número"}
+{"almacenado":"6.9","celda":"E201","formato":"#,##0.00\\ \"€\"","mostrado":"6.9","tipo":"número"}
+{"almacenado":"331.2","celda":"F201","formato":"#,##0.00\\ \"€\"","formula":"=D201*E201","mostrado":"331.2","tipo":"número"}
+{"almacenado":"1","celda":"G201","mostrado":"TRUE","tipo":"booleano"}
+{"almacenado":"46085","celda":"A202","formato":"formato integrado 14","mostrado":"2026-03-04","tipo":"número"}
+{"almacenado":"Andina","celda":"B202","mostrado":"Andina","tipo":"texto"}
+{"almacenado":"Café especial","celda":"C202","mostrado":"Café especial","tipo":"texto"}
+{"almacenado":"85","celda":"D202","mostrado":"85","tipo":"número"}
+{"almacenado":"18.5","celda":"E202","formato":"#,##0.00\\ \"€\"","mostrado":"18.5","tipo":"número"}
+{"almacenado":"1572.5","celda":"F202","formato":"#,##0.00\\ \"€\"","formula":"=D202*E202","mostrado":"1572.5","tipo":"número"}
+{"almacenado":"1","celda":"G202","mostrado":"TRUE","tipo":"booleano"}
+{"almacenado":"46081","celda":"A203","formato":"formato integrado 14","mostrado":"2026-02-28","tipo":"número"}
+{"almacenado":"Orinoquía","celda":"B203","mostrado":"Orinoquía","tipo":"texto"}
+{"almacenado":"Panela orgánica","celda":"C203","mostrado":"Panela orgánica","tipo":"texto"}
+{"almacenado":"122","celda":"D203","mostrado":"122","tipo":"número"}
+{"almacenado":"4.2","celda":"E203","formato":"#,##0.00\\ \"€\"","mostrado":"4.2","tipo":"número"}
+{"almacenado":"512.4","celda":"F203","formato":"#,##0.00\\ \"€\"","formula":"=D203*E203","mostrado":"512.4","tipo":"número"}
+{"almacenado":"1","celda":"G203","mostrado":"TRUE","tipo":"booleano"}
+{"almacenado":"46077","celda":"A204","formato":"formato integrado 14","mostrado":"2026-02-24","tipo":"número"}
+{"almacenado":"Pacífico","celda":"B204","mostrado":"Pacífico","tipo":"texto"}
+{"almacenado":"Flores de corte","celda":"C204","mostrado":"Flores de corte","tipo":"texto"}
+{"almacenado":"39","celda":"D204","mostrado":"39","tipo":"número"}
+{"almacenado":"22.0","celda":"E204","formato":"#,##0.00\\ \"€\"","mostrado":"22","tipo":"número"}
+{"almacenado":"858.0","celda":"F204","formato":"#,##0.00\\ \"€\"","formula":"=D204*E204","mostrado":"858","tipo":"número"}
+{"almacenado":"0","celda":"G204","mostrado":"FALSE","tipo":"booleano"}
+{"almacenado":"46073","celda":"A205","formato":"formato integrado 14","mostrado":"2026-02-20","tipo":"número"}
+{"almacenado":"Caribe","celda":"B205","mostrado":"Caribe","tipo":"texto"}
+{"almacenado":"Cacao en grano","celda":"C205","mostrado":"Cacao en grano","tipo":"texto"}
+{"almacenado":"76","celda":"D205","mostrado":"76","tipo":"número"}
+{"almacenado":"12.75","celda":"E205","formato":"#,##0.00\\ \"€\"","mostrado":"12.75","tipo":"número"}
+{"almacenado":"969.0","celda":"F205","formato":"#,##0.00\\ \"€\"","formula":"=D205*E205","mostrado":"969","tipo":"número"}
+{"almacenado":"1","celda":"G205","mostrado":"TRUE","tipo":"booleano"}
+{"almacenado":"46069","celda":"A206","formato":"formato integrado 14","mostrado":"2026-02-16","tipo":"número"}
+{"almacenado":"Andina","celda":"B206","mostrado":"Andina","tipo":"texto"}
+{"almacenado":"Aguacate Hass","celda":"C206","mostrado":"Aguacate Hass","tipo":"texto"}
+{"almacenado":"113","celda":"D206","mostrado":"113","tipo":"número"}
+{"almacenado":"6.9","celda":"E206","formato":"#,##0.00\\ \"€\"","mostrado":"6.9","tipo":"número"}
+{"almacenado":"779.7","celda":"F206","formato":"#,##0.00\\ \"€\"","formula":"=D206*E206","mostrado":"779.7","tipo":"número"}
+{"almacenado":"1","celda":"G206","mostrado":"TRUE","tipo":"booleano"}
+{"almacenado":"46065","celda":"A207","formato":"formato integrado 14","mostrado":"2026-02-12","tipo":"número"}
+{"almacenado":"Orinoquía","celda":"B207","mostrado":"Orinoquía","tipo":"texto"}
+{"almacenado":"Café especial","celda":"C207","mostrado":"Café especial","tipo":"texto"}
+{"almacenado":"30","celda":"D207","mostrado":"30","tipo":"número"}
+{"almacenado":"18.5","celda":"E207","formato":"#,##0.00\\ \"€\"","mostrado":"18.5","tipo":"número"}
+{"almacenado":"555.0","celda":"F207","formato":"#,##0.00\\ \"€\"","formula":"=D207*E207","mostrado":"555","tipo":"número"}
+{"almacenado":"1","celda":"G207","mostrado":"TRUE","tipo":"booleano"}
+{"almacenado":"46061","celda":"A208","formato":"formato integrado 14","mostrado":"2026-02-08","tipo":"número"}
+{"almacenado":"Pacífico","celda":"B208","mostrado":"Pacífico","tipo":"texto"}
+{"almacenado":"Panela orgánica","celda":"C208","mostrado":"Panela orgánica","tipo":"texto"}
+{"almacenado":"67","celda":"D208","mostrado":"67","tipo":"número"}
+{"almacenado":"4.2","celda":"E208","formato":"#,##0.00\\ \"€\"","mostrado":"4.2","tipo":"número"}
+{"almacenado":"281.4","celda":"F208","formato":"#,##0.00\\ \"€\"","formula":"=D208*E208","mostrado":"281.4","tipo":"número"}
+{"almacenado":"1","celda":"G208","mostrado":"TRUE","tipo":"booleano"}
+{"almacenado":"46057","celda":"A209","formato":"formato integrado 14","mostrado":"2026-02-04","tipo":"número"}
+{"almacenado":"Caribe","celda":"B209","mostrado":"Caribe","tipo":"texto"}
+{"almacenado":"Flores de corte","celda":"C209","mostrado":"Flores de corte","tipo":"texto"}
+{"almacenado":"104","celda":"D209","mostrado":"104","tipo":"número"}
+{"almacenado":"22.0","celda":"E209","formato":"#,##0.00\\ \"€\"","mostrado":"22","tipo":"número"}
+{"almacenado":"2288.0","celda":"F209","formato":"#,##0.00\\ \"€\"","formula":"=D209*E209","mostrado":"2288","tipo":"número"}
+{"almacenado":"1","celda":"G209","mostrado":"TRUE","tipo":"booleano"}
+{"almacenado":"46053","celda":"A210","formato":"formato integrado 14","mostrado":"2026-01-31","tipo":"número"}
+{"almacenado":"Andina","celda":"B210","mostrado":"Andina","tipo":"texto"}
+{"almacenado":"Cacao en grano","celda":"C210","mostrado":"Cacao en grano","tipo":"texto"}
+{"almacenado":"21","celda":"D210","mostrado":"21","tipo":"número"}
+{"almacenado":"12.75","celda":"E210","formato":"#,##0.00\\ \"€\"","mostrado":"12.75","tipo":"número"}
+{"almacenado":"267.75","celda":"F210","formato":"#,##0.00\\ \"€\"","formula":"=D210*E210","mostrado":"267.75","tipo":"número"}
+{"almacenado":"1","celda":"G210","mostrado":"TRUE","tipo":"booleano"}
+{"almacenado":"46049","celda":"A211","formato":"formato integrado 14","mostrado":"2026-01-27","tipo":"número"}
+{"almacenado":"Orinoquía","celda":"B211","mostrado":"Orinoquía","tipo":"texto"}
+{"almacenado":"Aguacate Hass","celda":"C211","mostrado":"Aguacate Hass","tipo":"texto"}
+{"almacenado":"58","celda":"D211","mostrado":"58","tipo":"número"}
+{"almacenado":"6.9","celda":"E211","formato":"#,##0.00\\ \"€\"","mostrado":"6.9","tipo":"número"}
+{"almacenado":"400.2","celda":"F211","formato":"#,##0.00\\ \"€\"","formula":"=D211*E211","mostrado":"400.2","tipo":"número"}
+{"almacenado":"1","celda":"G211","mostrado":"TRUE","tipo":"booleano"}
+{"almacenado":"46045","celda":"A212","formato":"formato integrado 14","mostrado":"2026-01-23","tipo":"número"}
+{"almacenado":"Pacífico","celda":"B212","mostrado":"Pacífico","tipo":"texto"}
+{"almacenado":"Café especial","celda":"C212","mostrado":"Café especial","tipo":"texto"}
+{"almacenado":"95","celda":"D212","mostrado":"95","tipo":"número"}
+{"almacenado":"18.5","celda":"E212","formato":"#,##0.00\\ \"€\"","mostrado":"18.5","tipo":"número"}
+{"almacenado":"1757.5","celda":"F212","formato":"#,##0.00\\ \"€\"","formula":"=D212*E212","mostrado":"1757.5","tipo":"número"}
+{"almacenado":"1","celda":"G212","mostrado":"TRUE","tipo":"booleano"}
+{"almacenado":"46041","celda":"A213","formato":"formato integrado 14","mostrado":"2026-01-19","tipo":"número"}
+{"almacenado":"Caribe","celda":"B213","mostrado":"Caribe","tipo":"texto"}
+{"almacenado":"Panela orgánica","celda":"C213","mostrado":"Panela orgánica","tipo":"texto"}
+{"almacenado":"12","celda":"D213","mostrado":"12","tipo":"número"}
+{"almacenado":"4.2","celda":"E213","formato":"#,##0.00\\ \"€\"","mostrado":"4.2","tipo":"número"}
+{"almacenado":"50.4","celda":"F213","formato":"#,##0.00\\ \"€\"","formula":"=D213*E213","mostrado":"50.4","tipo":"número"}
+{"almacenado":"0","celda":"G213","mostrado":"FALSE","tipo":"booleano"}
+{"almacenado":"46037","celda":"A214","formato":"formato integrado 14","mostrado":"2026-01-15","tipo":"número"}
+{"almacenado":"Andina","celda":"B214","mostrado":"Andina","tipo":"texto"}
+{"almacenado":"Flores de corte","celda":"C214","mostrado":"Flores de corte","tipo":"texto"}
+{"almacenado":"49","celda":"D214","mostrado":"49","tipo":"número"}
+{"almacenado":"22.0","celda":"E214","formato":"#,##0.00\\ \"€\"","mostrado":"22","tipo":"número"}
+{"almacenado":"1078.0","celda":"F214","formato":"#,##0.00\\ \"€\"","formula":"=D214*E214","mostrado":"1078","tipo":"número"}
+{"almacenado":"1","celda":"G214","mostrado":"TRUE","tipo":"booleano"}
+{"almacenado":"46033","celda":"A215","formato":"formato integrado 14","mostrado":"2026-01-11","tipo":"número"}
+{"almacenado":"Orinoquía","celda":"B215","mostrado":"Orinoquía","tipo":"texto"}
+{"almacenado":"Cacao en grano","celda":"C215","mostrado":"Cacao en grano","tipo":"texto"}
+{"almacenado":"86","celda":"D215","mostrado":"86","tipo":"número"}
+{"almacenado":"12.75","celda":"E215","formato":"#,##0.00\\ \"€\"","mostrado":"12.75","tipo":"número"}
+{"almacenado":"1096.5","celda":"F215","formato":"#,##0.00\\ \"€\"","formula":"=D215*E215","mostrado":"1096.5","tipo":"número"}
+{"almacenado":"1","celda":"G215","mostrado":"TRUE","tipo":"booleano"}
+{"almacenado":"46029","celda":"A216","formato":"formato integrado 14","mostrado":"2026-01-07","tipo":"número"}
+{"almacenado":"Pacífico","celda":"B216","mostrado":"Pacífico","tipo":"texto"}
+{"almacenado":"Aguacate Hass","celda":"C216","mostrado":"Aguacate Hass","tipo":"texto"}
+{"almacenado":"123","celda":"D216","mostrado":"123","tipo":"número"}
+{"almacenado":"6.9","celda":"E216","formato":"#,##0.00\\ \"€\"","mostrado":"6.9","tipo":"número"}
+{"almacenado":"848.7","celda":"F216","formato":"#,##0.00\\ \"€\"","formula":"=D216*E216","mostrado":"848.7","tipo":"número"}
+{"almacenado":"1","celda":"G216","mostrado":"TRUE","tipo":"booleano"}
+{"almacenado":"46025","celda":"A217","formato":"formato integrado 14","mostrado":"2026-01-03","tipo":"número"}
+{"almacenado":"Caribe","celda":"B217","mostrado":"Caribe","tipo":"texto"}
+{"almacenado":"Café especial","celda":"C217","mostrado":"Café especial","tipo":"texto"}
+{"almacenado":"40","celda":"D217","mostrado":"40","tipo":"número"}
+{"almacenado":"18.5","celda":"E217","formato":"#,##0.00\\ \"€\"","mostrado":"18.5","tipo":"número"}
+{"almacenado":"740.0","celda":"F217","formato":"#,##0.00\\ \"€\"","formula":"=D217*E217","mostrado":"740","tipo":"número"}
+{"almacenado":"1","celda":"G217","mostrado":"TRUE","tipo":"booleano"}
+{"almacenado":"46308","celda":"A218","formato":"formato integrado 14","mostrado":"2026-10-13","tipo":"número"}
+{"almacenado":"Andina","celda":"B218","mostrado":"Andina","tipo":"texto"}
+{"almacenado":"Panela orgánica","celda":"C218","mostrado":"Panela orgánica","tipo":"texto"}
+{"almacenado":"77","celda":"D218","mostrado":"77","tipo":"número"}
+{"almacenado":"4.2","celda":"E218","formato":"#,##0.00\\ \"€\"","mostrado":"4.2","tipo":"número"}
+{"almacenado":"323.4","celda":"F218","formato":"#,##0.00\\ \"€\"","formula":"=D218*E218","mostrado":"323.4","tipo":"número"}
+{"almacenado":"1","celda":"G218","mostrado":"TRUE","tipo":"booleano"}
+{"almacenado":"46304","celda":"A219","formato":"formato integrado 14","mostrado":"2026-10-09","tipo":"número"}
+{"almacenado":"Orinoquía","celda":"B219","mostrado":"Orinoquía","tipo":"texto"}
+{"almacenado":"Flores de corte","celda":"C219","mostrado":"Flores de corte","tipo":"texto"}
+{"almacenado":"114","celda":"D219","mostrado":"114","tipo":"número"}
+{"almacenado":"22.0","celda":"E219","formato":"#,##0.00\\ \"€\"","mostrado":"22","tipo":"número"}
+{"almacenado":"2508.0","celda":"F219","formato":"#,##0.00\\ \"€\"","formula":"=D219*E219","mostrado":"2508","tipo":"número"}
+{"almacenado":"1","celda":"G219","mostrado":"TRUE","tipo":"booleano"}
+{"almacenado":"46300","celda":"A220","formato":"formato integrado 14","mostrado":"2026-10-05","tipo":"número"}
+{"almacenado":"Pacífico","celda":"B220","mostrado":"Pacífico","tipo":"texto"}
+{"almacenado":"Cacao en grano","celda":"C220","mostrado":"Cacao en grano","tipo":"texto"}
+{"almacenado":"31","celda":"D220","mostrado":"31","tipo":"número"}
+{"almacenado":"12.75","celda":"E220","formato":"#,##0.00\\ \"€\"","mostrado":"12.75","tipo":"número"}
+{"almacenado":"395.25","celda":"F220","formato":"#,##0.00\\ \"€\"","formula":"=D220*E220","mostrado":"395.25","tipo":"número"}
+{"almacenado":"1","celda":"G220","mostrado":"TRUE","tipo":"booleano"}
+{"almacenado":"46296","celda":"A221","formato":"formato integrado 14","mostrado":"2026-10-01","tipo":"número"}
+{"almacenado":"Caribe","celda":"B221","mostrado":"Caribe","tipo":"texto"}
+{"almacenado":"Aguacate Hass","celda":"C221","mostrado":"Aguacate Hass","tipo":"texto"}
+{"almacenado":"68","celda":"D221","mostrado":"68","tipo":"número"}
+{"almacenado":"6.9","celda":"E221","formato":"#,##0.00\\ \"€\"","mostrado":"6.9","tipo":"número"}
+{"almacenado":"469.2","celda":"F221","formato":"#,##0.00\\ \"€\"","formula":"=D221*E221","mostrado":"469.2","tipo":"número"}
+{"almacenado":"1","celda":"G221","mostrado":"TRUE","tipo":"booleano"}
+{"almacenado":"46292","celda":"A222","formato":"formato integrado 14","mostrado":"2026-09-27","tipo":"número"}
+{"almacenado":"Andina","celda":"B222","mostrado":"Andina","tipo":"texto"}
+{"almacenado":"Café especial","celda":"C222","mostrado":"Café especial","tipo":"texto"}
+{"almacenado":"105","celda":"D222","mostrado":"105","tipo":"número"}
+{"almacenado":"18.5","celda":"E222","formato":"#,##0.00\\ \"€\"","mostrado":"18.5","tipo":"número"}
+{"almacenado":"1942.5","celda":"F222","formato":"#,##0.00\\ \"€\"","formula":"=D222*E222","mostrado":"1942.5","tipo":"número"}
+{"almacenado":"0","celda":"G222","mostrado":"FALSE","tipo":"booleano"}
+{"almacenado":"46288","celda":"A223","formato":"formato integrado 14","mostrado":"2026-09-23","tipo":"número"}
+{"almacenado":"Orinoquía","celda":"B223","mostrado":"Orinoquía","tipo":"texto"}
+{"almacenado":"Panela orgánica","celda":"C223","mostrado":"Panela orgánica","tipo":"texto"}
+{"almacenado":"22","celda":"D223","mostrado":"22","tipo":"número"}
+{"almacenado":"4.2","celda":"E223","formato":"#,##0.00\\ \"€\"","mostrado":"4.2","tipo":"número"}
+{"almacenado":"92.4","celda":"F223","formato":"#,##0.00\\ \"€\"","formula":"=D223*E223","mostrado":"92.4","tipo":"número"}
+{"almacenado":"1","celda":"G223","mostrado":"TRUE","tipo":"booleano"}
+{"almacenado":"46284","celda":"A224","formato":"formato integrado 14","mostrado":"2026-09-19","tipo":"número"}
+{"almacenado":"Pacífico","celda":"B224","mostrado":"Pacífico","tipo":"texto"}
+{"almacenado":"Flores de corte","celda":"C224","mostrado":"Flores de corte","tipo":"texto"}
+{"almacenado":"59","celda":"D224","mostrado":"59","tipo":"número"}
+{"almacenado":"22.0","celda":"E224","formato":"#,##0.00\\ \"€\"","mostrado":"22","tipo":"número"}
+{"almacenado":"1298.0","celda":"F224","formato":"#,##0.00\\ \"€\"","formula":"=D224*E224","mostrado":"1298","tipo":"número"}
+{"almacenado":"1","celda":"G224","mostrado":"TRUE","tipo":"booleano"}
+{"almacenado":"46280","celda":"A225","formato":"formato integrado 14","mostrado":"2026-09-15","tipo":"número"}
+{"almacenado":"Caribe","celda":"B225","mostrado":"Caribe","tipo":"texto"}
+{"almacenado":"Cacao en grano","celda":"C225","mostrado":"Cacao en grano","tipo":"texto"}
+{"almacenado":"96","celda":"D225","mostrado":"96","tipo":"número"}
+{"almacenado":"12.75","celda":"E225","formato":"#,##0.00\\ \"€\"","mostrado":"12.75","tipo":"número"}
+{"almacenado":"1224.0","celda":"F225","formato":"#,##0.00\\ \"€\"","formula":"=D225*E225","mostrado":"1224","tipo":"número"}
+{"almacenado":"1","celda":"G225","mostrado":"TRUE","tipo":"booleano"}
+{"almacenado":"46276","celda":"A226","formato":"formato integrado 14","mostrado":"2026-09-11","tipo":"número"}
+{"almacenado":"Andina","celda":"B226","mostrado":"Andina","tipo":"texto"}
+{"almacenado":"Aguacate Hass","celda":"C226","mostrado":"Aguacate Hass","tipo":"texto"}
+{"almacenado":"13","celda":"D226","mostrado":"13","tipo":"número"}
+{"almacenado":"6.9","celda":"E226","formato":"#,##0.00\\ \"€\"","mostrado":"6.9","tipo":"número"}
+{"almacenado":"89.7","celda":"F226","formato":"#,##0.00\\ \"€\"","formula":"=D226*E226","mostrado":"89.7","tipo":"número"}
+{"almacenado":"1","celda":"G226","mostrado":"TRUE","tipo":"booleano"}
+{"almacenado":"46272","celda":"A227","formato":"formato integrado 14","mostrado":"2026-09-07","tipo":"número"}
+{"almacenado":"Orinoquía","celda":"B227","mostrado":"Orinoquía","tipo":"texto"}
+{"almacenado":"Café especial","celda":"C227","mostrado":"Café especial","tipo":"texto"}
+{"almacenado":"50","celda":"D227","mostrado":"50","tipo":"número"}
+{"almacenado":"18.5","celda":"E227","formato":"#,##0.00\\ \"€\"","mostrado":"18.5","tipo":"número"}
+{"almacenado":"925.0","celda":"F227","formato":"#,##0.00\\ \"€\"","formula":"=D227*E227","mostrado":"925","tipo":"número"}
+{"almacenado":"1","celda":"G227","mostrado":"TRUE","tipo":"booleano"}
+{"almacenado":"46268","celda":"A228","formato":"formato integrado 14","mostrado":"2026-09-03","tipo":"número"}
+{"almacenado":"Pacífico","celda":"B228","mostrado":"Pacífico","tipo":"texto"}
+{"almacenado":"Panela orgánica","celda":"C228","mostrado":"Panela orgánica","tipo":"texto"}
+{"almacenado":"87","celda":"D228","mostrado":"87","tipo":"número"}
+{"almacenado":"4.2","celda":"E228","formato":"#,##0.00\\ \"€\"","mostrado":"4.2","tipo":"número"}
+{"almacenado":"365.4","celda":"F228","formato":"#,##0.00\\ \"€\"","formula":"=D228*E228","mostrado":"365.4","tipo":"número"}
+{"almacenado":"1","celda":"G228","mostrado":"TRUE","tipo":"booleano"}
+{"almacenado":"46264","celda":"A229","formato":"formato integrado 14","mostrado":"2026-08-30","tipo":"número"}
+{"almacenado":"Caribe","celda":"B229","mostrado":"Caribe","tipo":"texto"}
+{"almacenado":"Flores de corte","celda":"C229","mostrado":"Flores de corte","tipo":"texto"}
+{"almacenado":"124","celda":"D229","mostrado":"124","tipo":"número"}
+{"almacenado":"22.0","celda":"E229","formato":"#,##0.00\\ \"€\"","mostrado":"22","tipo":"número"}
+{"almacenado":"2728.0","celda":"F229","formato":"#,##0.00\\ \"€\"","formula":"=D229*E229","mostrado":"2728","tipo":"número"}
+{"almacenado":"1","celda":"G229","mostrado":"TRUE","tipo":"booleano"}
+{"almacenado":"46260","celda":"A230","formato":"formato integrado 14","mostrado":"2026-08-26","tipo":"número"}
+{"almacenado":"Andina","celda":"B230","mostrado":"Andina","tipo":"texto"}
+{"almacenado":"Cacao en grano","celda":"C230","mostrado":"Cacao en grano","tipo":"texto"}
+{"almacenado":"41","celda":"D230","mostrado":"41","tipo":"número"}
+{"almacenado":"12.75","celda":"E230","formato":"#,##0.00\\ \"€\"","mostrado":"12.75","tipo":"número"}
+{"almacenado":"522.75","celda":"F230","formato":"#,##0.00\\ \"€\"","formula":"=D230*E230","mostrado":"522.75","tipo":"número"}
+{"almacenado":"1","celda":"G230","mostrado":"TRUE","tipo":"booleano"}
+{"almacenado":"46256","celda":"A231","formato":"formato integrado 14","mostrado":"2026-08-22","tipo":"número"}
+{"almacenado":"Orinoquía","celda":"B231","mostrado":"Orinoquía","tipo":"texto"}
+{"almacenado":"Aguacate Hass","celda":"C231","mostrado":"Aguacate Hass","tipo":"texto"}
+{"almacenado":"78","celda":"D231","mostrado":"78","tipo":"número"}
+{"almacenado":"6.9","celda":"E231","formato":"#,##0.00\\ \"€\"","mostrado":"6.9","tipo":"número"}
+{"almacenado":"538.2","celda":"F231","formato":"#,##0.00\\ \"€\"","formula":"=D231*E231","mostrado":"538.2","tipo":"número"}
+{"almacenado":"0","celda":"G231","mostrado":"FALSE","tipo":"booleano"}
+{"almacenado":"46252","celda":"A232","formato":"formato integrado 14","mostrado":"2026-08-18","tipo":"número"}
+{"almacenado":"Pacífico","celda":"B232","mostrado":"Pacífico","tipo":"texto"}
+{"almacenado":"Café especial","celda":"C232","mostrado":"Café especial","tipo":"texto"}
+{"almacenado":"115","celda":"D232","mostrado":"115","tipo":"número"}
+{"almacenado":"18.5","celda":"E232","formato":"#,##0.00\\ \"€\"","mostrado":"18.5","tipo":"número"}
+{"almacenado":"2127.5","celda":"F232","formato":"#,##0.00\\ \"€\"","formula":"=D232*E232","mostrado":"2127.5","tipo":"número"}
+{"almacenado":"1","celda":"G232","mostrado":"TRUE","tipo":"booleano"}
+{"almacenado":"46248","celda":"A233","formato":"formato integrado 14","mostrado":"2026-08-14","tipo":"número"}
+{"almacenado":"Caribe","celda":"B233","mostrado":"Caribe","tipo":"texto"}
+{"almacenado":"Panela orgánica","celda":"C233","mostrado":"Panela orgánica","tipo":"texto"}
+{"almacenado":"32","celda":"D233","mostrado":"32","tipo":"número"}
+{"almacenado":"4.2","celda":"E233","formato":"#,##0.00\\ \"€\"","mostrado":"4.2","tipo":"número"}
+{"almacenado":"134.4","celda":"F233","formato":"#,##0.00\\ \"€\"","formula":"=D233*E233","mostrado":"134.4","tipo":"número"}
+{"almacenado":"1","celda":"G233","mostrado":"TRUE","tipo":"booleano"}
+{"almacenado":"46244","celda":"A234","formato":"formato integrado 14","mostrado":"2026-08-10","tipo":"número"}
+{"almacenado":"Andina","celda":"B234","mostrado":"Andina","tipo":"texto"}
+{"almacenado":"Flores de corte","celda":"C234","mostrado":"Flores de corte","tipo":"texto"}
+{"almacenado":"69","celda":"D234","mostrado":"69","tipo":"número"}
+{"almacenado":"22.0","celda":"E234","formato":"#,##0.00\\ \"€\"","mostrado":"22","tipo":"número"}
+{"almacenado":"1518.0","celda":"F234","formato":"#,##0.00\\ \"€\"","formula":"=D234*E234","mostrado":"1518","tipo":"número"}
+{"almacenado":"1","celda":"G234","mostrado":"TRUE","tipo":"booleano"}
+{"almacenado":"46240","celda":"A235","formato":"formato integrado 14","mostrado":"2026-08-06","tipo":"número"}
+{"almacenado":"Orinoquía","celda":"B235","mostrado":"Orinoquía","tipo":"texto"}
+{"almacenado":"Cacao en grano","celda":"C235","mostrado":"Cacao en grano","tipo":"texto"}
+{"almacenado":"106","celda":"D235","mostrado":"106","tipo":"número"}
+{"almacenado":"12.75","celda":"E235","formato":"#,##0.00\\ \"€\"","mostrado":"12.75","tipo":"número"}
+{"almacenado":"1351.5","celda":"F235","formato":"#,##0.00\\ \"€\"","formula":"=D235*E235","mostrado":"1351.5","tipo":"número"}
+{"almacenado":"1","celda":"G235","mostrado":"TRUE","tipo":"booleano"}
+{"almacenado":"46236","celda":"A236","formato":"formato integrado 14","mostrado":"2026-08-02","tipo":"número"}
+{"almacenado":"Pacífico","celda":"B236","mostrado":"Pacífico","tipo":"texto"}
+{"almacenado":"Aguacate Hass","celda":"C236","mostrado":"Aguacate Hass","tipo":"texto"}
+{"almacenado":"23","celda":"D236","mostrado":"23","tipo":"número"}
+{"almacenado":"6.9","celda":"E236","formato":"#,##0.00\\ \"€\"","mostrado":"6.9","tipo":"número"}
+{"almacenado":"158.7","celda":"F236","formato":"#,##0.00\\ \"€\"","formula":"=D236*E236","mostrado":"158.7","tipo":"número"}
+{"almacenado":"1","celda":"G236","mostrado":"TRUE","tipo":"booleano"}
+{"almacenado":"46232","celda":"A237","formato":"formato integrado 14","mostrado":"2026-07-29","tipo":"número"}
+{"almacenado":"Caribe","celda":"B237","mostrado":"Caribe","tipo":"texto"}
+{"almacenado":"Café especial","celda":"C237","mostrado":"Café especial","tipo":"texto"}
+{"almacenado":"60","celda":"D237","mostrado":"60","tipo":"número"}
+{"almacenado":"18.5","celda":"E237","formato":"#,##0.00\\ \"€\"","mostrado":"18.5","tipo":"número"}
+{"almacenado":"1110.0","celda":"F237","formato":"#,##0.00\\ \"€\"","formula":"=D237*E237","mostrado":"1110","tipo":"número"}
+{"almacenado":"1","celda":"G237","mostrado":"TRUE","tipo":"booleano"}
+{"almacenado":"46228","celda":"A238","formato":"formato integrado 14","mostrado":"2026-07-25","tipo":"número"}
+{"almacenado":"Andina","celda":"B238","mostrado":"Andina","tipo":"texto"}
+{"almacenado":"Panela orgánica","celda":"C238","mostrado":"Panela orgánica","tipo":"texto"}
+{"almacenado":"97","celda":"D238","mostrado":"97","tipo":"número"}
+{"almacenado":"4.2","celda":"E238","formato":"#,##0.00\\ \"€\"","mostrado":"4.2","tipo":"número"}
+{"almacenado":"407.4","celda":"F238","formato":"#,##0.00\\ \"€\"","formula":"=D238*E238","mostrado":"407.4","tipo":"número"}
+{"almacenado":"1","celda":"G238","mostrado":"TRUE","tipo":"booleano"}
+{"almacenado":"46224","celda":"A239","formato":"formato integrado 14","mostrado":"2026-07-21","tipo":"número"}
+{"almacenado":"Orinoquía","celda":"B239","mostrado":"Orinoquía","tipo":"texto"}
+{"almacenado":"Flores de corte","celda":"C239","mostrado":"Flores de corte","tipo":"texto"}
+{"almacenado":"14","celda":"D239","mostrado":"14","tipo":"número"}
+{"almacenado":"22.0","celda":"E239","formato":"#,##0.00\\ \"€\"","mostrado":"22","tipo":"número"}
+{"almacenado":"308.0","celda":"F239","formato":"#,##0.00\\ \"€\"","formula":"=D239*E239","mostrado":"308","tipo":"número"}
+{"almacenado":"1","celda":"G239","mostrado":"TRUE","tipo":"booleano"}
+{"almacenado":"46220","celda":"A240","formato":"formato integrado 14","mostrado":"2026-07-17","tipo":"número"}
+{"almacenado":"Pacífico","celda":"B240","mostrado":"Pacífico","tipo":"texto"}
+{"almacenado":"Cacao en grano","celda":"C240","mostrado":"Cacao en grano","tipo":"texto"}
+{"almacenado":"51","celda":"D240","mostrado":"51","tipo":"número"}
+{"almacenado":"12.75","celda":"E240","formato":"#,##0.00\\ \"€\"","mostrado":"12.75","tipo":"número"}
+{"almacenado":"650.25","celda":"F240","formato":"#,##0.00\\ \"€\"","formula":"=D240*E240","mostrado":"650.25","tipo":"número"}
+{"almacenado":"0","celda":"G240","mostrado":"FALSE","tipo":"booleano"}
+{"almacenado":"46216","celda":"A241","formato":"formato integrado 14","mostrado":"2026-07-13","tipo":"número"}
+{"almacenado":"Caribe","celda":"B241","mostrado":"Caribe","tipo":"texto"}
+{"almacenado":"Aguacate Hass","celda":"C241","mostrado":"Aguacate Hass","tipo":"texto"}
+{"almacenado":"88","celda":"D241","mostrado":"88","tipo":"número"}
+{"almacenado":"6.9","celda":"E241","formato":"#,##0.00\\ \"€\"","mostrado":"6.9","tipo":"número"}
+{"almacenado":"607.2","celda":"F241","formato":"#,##0.00\\ \"€\"","formula":"=D241*E241","mostrado":"607.2","tipo":"número"}
+{"almacenado":"1","celda":"G241","mostrado":"TRUE","tipo":"booleano"}
+{"almacenado":"46212","celda":"A242","formato":"formato integrado 14","mostrado":"2026-07-09","tipo":"número"}
+{"almacenado":"Andina","celda":"B242","mostrado":"Andina","tipo":"texto"}
+{"almacenado":"Café especial","celda":"C242","mostrado":"Café especial","tipo":"texto"}
+{"almacenado":"5","celda":"D242","mostrado":"5","tipo":"número"}
+{"almacenado":"18.5","celda":"E242","formato":"#,##0.00\\ \"€\"","mostrado":"18.5","tipo":"número"}
+{"almacenado":"92.5","celda":"F242","formato":"#,##0.00\\ \"€\"","formula":"=D242*E242","mostrado":"92.5","tipo":"número"}
+{"almacenado":"1","celda":"G242","mostrado":"TRUE","tipo":"booleano"}
+{"almacenado":"46208","celda":"A243","formato":"formato integrado 14","mostrado":"2026-07-05","tipo":"número"}
+{"almacenado":"Orinoquía","celda":"B243","mostrado":"Orinoquía","tipo":"texto"}
+{"almacenado":"Panela orgánica","celda":"C243","mostrado":"Panela orgánica","tipo":"texto"}
+{"almacenado":"42","celda":"D243","mostrado":"42","tipo":"número"}
+{"almacenado":"4.2","celda":"E243","formato":"#,##0.00\\ \"€\"","mostrado":"4.2","tipo":"número"}
+{"almacenado":"176.4","celda":"F243","formato":"#,##0.00\\ \"€\"","formula":"=D243*E243","mostrado":"176.4","tipo":"número"}
+{"almacenado":"1","celda":"G243","mostrado":"TRUE","tipo":"booleano"}
+{"almacenado":"46204","celda":"A244","formato":"formato integrado 14","mostrado":"2026-07-01","tipo":"número"}
+{"almacenado":"Pacífico","celda":"B244","mostrado":"Pacífico","tipo":"texto"}
+{"almacenado":"Flores de corte","celda":"C244","mostrado":"Flores de corte","tipo":"texto"}
+{"almacenado":"79","celda":"D244","mostrado":"79","tipo":"número"}
+{"almacenado":"22.0","celda":"E244","formato":"#,##0.00\\ \"€\"","mostrado":"22","tipo":"número"}
+{"almacenado":"1738.0","celda":"F244","formato":"#,##0.00\\ \"€\"","formula":"=D244*E244","mostrado":"1738","tipo":"número"}
+{"almacenado":"1","celda":"G244","mostrado":"TRUE","tipo":"booleano"}
+{"almacenado":"46200","celda":"A245","formato":"formato integrado 14","mostrado":"2026-06-27","tipo":"número"}
+{"almacenado":"Caribe","celda":"B245","mostrado":"Caribe","tipo":"texto"}
+{"almacenado":"Cacao en grano","celda":"C245","mostrado":"Cacao en grano","tipo":"texto"}
+{"almacenado":"116","celda":"D245","mostrado":"116","tipo":"número"}
+{"almacenado":"12.75","celda":"E245","formato":"#,##0.00\\ \"€\"","mostrado":"12.75","tipo":"número"}
+{"almacenado":"1479.0","celda":"F245","formato":"#,##0.00\\ \"€\"","formula":"=D245*E245","mostrado":"1479","tipo":"número"}
+{"almacenado":"1","celda":"G245","mostrado":"TRUE","tipo":"booleano"}
+{"almacenado":"46196","celda":"A246","formato":"formato integrado 14","mostrado":"2026-06-23","tipo":"número"}
+{"almacenado":"Andina","celda":"B246","mostrado":"Andina","tipo":"texto"}
+{"almacenado":"Aguacate Hass","celda":"C246","mostrado":"Aguacate Hass","tipo":"texto"}
+{"almacenado":"33","celda":"D246","mostrado":"33","tipo":"número"}
+{"almacenado":"6.9","celda":"E246","formato":"#,##0.00\\ \"€\"","mostrado":"6.9","tipo":"número"}
+{"almacenado":"227.7","celda":"F246","formato":"#,##0.00\\ \"€\"","formula":"=D246*E246","mostrado":"227.7","tipo":"número"}
+{"almacenado":"1","celda":"G246","mostrado":"TRUE","tipo":"booleano"}
+{"almacenado":"46192","celda":"A247","formato":"formato integrado 14","mostrado":"2026-06-19","tipo":"número"}
+{"almacenado":"Orinoquía","celda":"B247","mostrado":"Orinoquía","tipo":"texto"}
+{"almacenado":"Café especial","celda":"C247","mostrado":"Café especial","tipo":"texto"}
+{"almacenado":"70","celda":"D247","mostrado":"70","tipo":"número"}
+{"almacenado":"18.5","celda":"E247","formato":"#,##0.00\\ \"€\"","mostrado":"18.5","tipo":"número"}
+{"almacenado":"1295.0","celda":"F247","formato":"#,##0.00\\ \"€\"","formula":"=D247*E247","mostrado":"1295","tipo":"número"}
+{"almacenado":"1","celda":"G247","mostrado":"TRUE","tipo":"booleano"}
+{"almacenado":"46188","celda":"A248","formato":"formato integrado 14","mostrado":"2026-06-15","tipo":"número"}
+{"almacenado":"Pacífico","celda":"B248","mostrado":"Pacífico","tipo":"texto"}
+{"almacenado":"Panela orgánica","celda":"C248","mostrado":"Panela orgánica","tipo":"texto"}
+{"almacenado":"107","celda":"D248","mostrado":"107","tipo":"número"}
+{"almacenado":"4.2","celda":"E248","formato":"#,##0.00\\ \"€\"","mostrado":"4.2","tipo":"número"}
+{"almacenado":"449.4","celda":"F248","formato":"#,##0.00\\ \"€\"","formula":"=D248*E248","mostrado":"449.4","tipo":"número"}
+{"almacenado":"1","celda":"G248","mostrado":"TRUE","tipo":"booleano"}
+{"almacenado":"46184","celda":"A249","formato":"formato integrado 14","mostrado":"2026-06-11","tipo":"número"}
+{"almacenado":"Caribe","celda":"B249","mostrado":"Caribe","tipo":"texto"}
+{"almacenado":"Flores de corte","celda":"C249","mostrado":"Flores de corte","tipo":"texto"}
+{"almacenado":"24","celda":"D249","mostrado":"24","tipo":"número"}
+{"almacenado":"22.0","celda":"E249","formato":"#,##0.00\\ \"€\"","mostrado":"22","tipo":"número"}
+{"almacenado":"528.0","celda":"F249","formato":"#,##0.00\\ \"€\"","formula":"=D249*E249","mostrado":"528","tipo":"número"}
+{"almacenado":"0","celda":"G249","mostrado":"FALSE","tipo":"booleano"}
+{"almacenado":"46180","celda":"A250","formato":"formato integrado 14","mostrado":"2026-06-07","tipo":"número"}
+{"almacenado":"Andina","celda":"B250","mostrado":"Andina","tipo":"texto"}
+{"almacenado":"Cacao en grano","celda":"C250","mostrado":"Cacao en grano","tipo":"texto"}
+{"almacenado":"61","celda":"D250","mostrado":"61","tipo":"número"}
+{"almacenado":"12.75","celda":"E250","formato":"#,##0.00\\ \"€\"","mostrado":"12.75","tipo":"número"}
+{"almacenado":"777.75","celda":"F250","formato":"#,##0.00\\ \"€\"","formula":"=D250*E250","mostrado":"777.75","tipo":"número"}
+{"almacenado":"1","celda":"G250","mostrado":"TRUE","tipo":"booleano"}
+{"almacenado":"46176","celda":"A251","formato":"formato integrado 14","mostrado":"2026-06-03","tipo":"número"}
+{"almacenado":"Orinoquía","celda":"B251","mostrado":"Orinoquía","tipo":"texto"}
+{"almacenado":"Aguacate Hass","celda":"C251","mostrado":"Aguacate Hass","tipo":"texto"}
+{"almacenado":"98","celda":"D251","mostrado":"98","tipo":"número"}
+{"almacenado":"6.9","celda":"E251","formato":"#,##0.00\\ \"€\"","mostrado":"6.9","tipo":"número"}
+{"almacenado":"676.2","celda":"F251","formato":"#,##0.00\\ \"€\"","formula":"=D251*E251","mostrado":"676.2","tipo":"número"}
+{"almacenado":"1","celda":"G251","mostrado":"TRUE","tipo":"booleano"}
+{"almacenado":"46172","celda":"A252","formato":"formato integrado 14","mostrado":"2026-05-30","tipo":"número"}
+{"almacenado":"Pacífico","celda":"B252","mostrado":"Pacífico","tipo":"texto"}
+{"almacenado":"Café especial","celda":"C252","mostrado":"Café especial","tipo":"texto"}
+{"almacenado":"15","celda":"D252","mostrado":"15","tipo":"número"}
+{"almacenado":"18.5","celda":"E252","formato":"#,##0.00\\ \"€\"","mostrado":"18.5","tipo":"número"}
+{"almacenado":"277.5","celda":"F252","formato":"#,##0.00\\ \"€\"","formula":"=D252*E252","mostrado":"277.5","tipo":"número"}
+{"almacenado":"1","celda":"G252","mostrado":"TRUE","tipo":"booleano"}
+{"almacenado":"46168","celda":"A253","formato":"formato integrado 14","mostrado":"2026-05-26","tipo":"número"}
+{"almacenado":"Caribe","celda":"B253","mostrado":"Caribe","tipo":"texto"}
+{"almacenado":"Panela orgánica","celda":"C253","mostrado":"Panela orgánica","tipo":"texto"}
+{"almacenado":"52","celda":"D253","mostrado":"52","tipo":"número"}
+{"almacenado":"4.2","celda":"E253","formato":"#,##0.00\\ \"€\"","mostrado":"4.2","tipo":"número"}
+{"almacenado":"218.4","celda":"F253","formato":"#,##0.00\\ \"€\"","formula":"=D253*E253","mostrado":"218.4","tipo":"número"}
+{"almacenado":"1","celda":"G253","mostrado":"TRUE","tipo":"booleano"}
+{"almacenado":"46164","celda":"A254","formato":"formato integrado 14","mostrado":"2026-05-22","tipo":"número"}
+{"almacenado":"Andina","celda":"B254","mostrado":"Andina","tipo":"texto"}
+{"almacenado":"Flores de corte","celda":"C254","mostrado":"Flores de corte","tipo":"texto"}
+{"almacenado":"89","celda":"D254","mostrado":"89","tipo":"número"}
+{"almacenado":"22.0","celda":"E254","formato":"#,##0.00\\ \"€\"","mostrado":"22","tipo":"número"}
+{"almacenado":"1958.0","celda":"F254","formato":"#,##0.00\\ \"€\"","formula":"=D254*E254","mostrado":"1958","tipo":"número"}
+{"almacenado":"1","celda":"G254","mostrado":"TRUE","tipo":"booleano"}
+{"almacenado":"46160","celda":"A255","formato":"formato integrado 14","mostrado":"2026-05-18","tipo":"número"}
+{"almacenado":"Orinoquía","celda":"B255","mostrado":"Orinoquía","tipo":"texto"}
+{"almacenado":"Cacao en grano","celda":"C255","mostrado":"Cacao en grano","tipo":"texto"}
+{"almacenado":"6","celda":"D255","mostrado":"6","tipo":"número"}
+{"almacenado":"12.75","celda":"E255","formato":"#,##0.00\\ \"€\"","mostrado":"12.75","tipo":"número"}
+{"almacenado":"76.5","celda":"F255","formato":"#,##0.00\\ \"€\"","formula":"=D255*E255","mostrado":"76.5","tipo":"número"}
+{"almacenado":"1","celda":"G255","mostrado":"TRUE","tipo":"booleano"}
+{"almacenado":"46156","celda":"A256","formato":"formato integrado 14","mostrado":"2026-05-14","tipo":"número"}
+{"almacenado":"Pacífico","celda":"B256","mostrado":"Pacífico","tipo":"texto"}
+{"almacenado":"Aguacate Hass","celda":"C256","mostrado":"Aguacate Hass","tipo":"texto"}
+{"almacenado":"43","celda":"D256","mostrado":"43","tipo":"número"}
+{"almacenado":"6.9","celda":"E256","formato":"#,##0.00\\ \"€\"","mostrado":"6.9","tipo":"número"}
+{"almacenado":"296.7","celda":"F256","formato":"#,##0.00\\ \"€\"","formula":"=D256*E256","mostrado":"296.7","tipo":"número"}
+{"almacenado":"1","celda":"G256","mostrado":"TRUE","tipo":"booleano"}
+{"almacenado":"46152","celda":"A257","formato":"formato integrado 14","mostrado":"2026-05-10","tipo":"número"}
+{"almacenado":"Caribe","celda":"B257","mostrado":"Caribe","tipo":"texto"}
+{"almacenado":"Café especial","celda":"C257","mostrado":"Café especial","tipo":"texto"}
+{"almacenado":"80","celda":"D257","mostrado":"80","tipo":"número"}
+{"almacenado":"18.5","celda":"E257","formato":"#,##0.00\\ \"€\"","mostrado":"18.5","tipo":"número"}
+{"almacenado":"1480.0","celda":"F257","formato":"#,##0.00\\ \"€\"","formula":"=D257*E257","mostrado":"1480","tipo":"número"}
+{"almacenado":"1","celda":"G257","mostrado":"TRUE","tipo":"booleano"}
+{"almacenado":"46148","celda":"A258","formato":"formato integrado 14","mostrado":"2026-05-06","tipo":"número"}
+{"almacenado":"Andina","celda":"B258","mostrado":"Andina","tipo":"texto"}
+{"almacenado":"Panela orgánica","celda":"C258","mostrado":"Panela orgánica","tipo":"texto"}
+{"almacenado":"117","celda":"D258","mostrado":"117","tipo":"número"}
+{"almacenado":"4.2","celda":"E258","formato":"#,##0.00\\ \"€\"","mostrado":"4.2","tipo":"número"}
+{"almacenado":"491.4","celda":"F258","formato":"#,##0.00\\ \"€\"","formula":"=D258*E258","mostrado":"491.4","tipo":"número"}
+{"almacenado":"0","celda":"G258","mostrado":"FALSE","tipo":"booleano"}
+{"almacenado":"46144","celda":"A259","formato":"formato integrado 14","mostrado":"2026-05-02","tipo":"número"}
+{"almacenado":"Orinoquía","celda":"B259","mostrado":"Orinoquía","tipo":"texto"}
+{"almacenado":"Flores de corte","celda":"C259","mostrado":"Flores de corte","tipo":"texto"}
+{"almacenado":"34","celda":"D259","mostrado":"34","tipo":"número"}
+{"almacenado":"22.0","celda":"E259","formato":"#,##0.00\\ \"€\"","mostrado":"22","tipo":"número"}
+{"almacenado":"748.0","celda":"F259","formato":"#,##0.00\\ \"€\"","formula":"=D259*E259","mostrado":"748","tipo":"número"}
+{"almacenado":"1","celda":"G259","mostrado":"TRUE","tipo":"booleano"}
+{"almacenado":"46140","celda":"A260","formato":"formato integrado 14","mostrado":"2026-04-28","tipo":"número"}
+{"almacenado":"Pacífico","celda":"B260","mostrado":"Pacífico","tipo":"texto"}
+{"almacenado":"Cacao en grano","celda":"C260","mostrado":"Cacao en grano","tipo":"texto"}
+{"almacenado":"71","celda":"D260","mostrado":"71","tipo":"número"}
+{"almacenado":"12.75","celda":"E260","formato":"#,##0.00\\ \"€\"","mostrado":"12.75","tipo":"número"}
+{"almacenado":"905.25","celda":"F260","formato":"#,##0.00\\ \"€\"","formula":"=D260*E260","mostrado":"905.25","tipo":"número"}
+{"almacenado":"1","celda":"G260","mostrado":"TRUE","tipo":"booleano"}
+{"almacenado":"46136","celda":"A261","formato":"formato integrado 14","mostrado":"2026-04-24","tipo":"número"}
+{"almacenado":"Caribe","celda":"B261","mostrado":"Caribe","tipo":"texto"}
+{"almacenado":"Aguacate Hass","celda":"C261","mostrado":"Aguacate Hass","tipo":"texto"}
+{"almacenado":"108","celda":"D261","mostrado":"108","tipo":"número"}
+{"almacenado":"6.9","celda":"E261","formato":"#,##0.00\\ \"€\"","mostrado":"6.9","tipo":"número"}
+{"almacenado":"745.2","celda":"F261","formato":"#,##0.00\\ \"€\"","formula":"=D261*E261","mostrado":"745.2","tipo":"número"}
+{"almacenado":"1","celda":"G261","mostrado":"TRUE","tipo":"booleano"}
+{"almacenado":"46132","celda":"A262","formato":"formato integrado 14","mostrado":"2026-04-20","tipo":"número"}
+{"almacenado":"Andina","celda":"B262","mostrado":"Andina","tipo":"texto"}
+{"almacenado":"Café especial","celda":"C262","mostrado":"Café especial","tipo":"texto"}
+{"almacenado":"25","celda":"D262","mostrado":"25","tipo":"número"}
+{"almacenado":"18.5","celda":"E262","formato":"#,##0.00\\ \"€\"","mostrado":"18.5","tipo":"número"}
+{"almacenado":"462.5","celda":"F262","formato":"#,##0.00\\ \"€\"","formula":"=D262*E262","mostrado":"462.5","tipo":"número"}
+{"almacenado":"1","celda":"G262","mostrado":"TRUE","tipo":"booleano"}
+{"almacenado":"46128","celda":"A263","formato":"formato integrado 14","mostrado":"2026-04-16","tipo":"número"}
+{"almacenado":"Orinoquía","celda":"B263","mostrado":"Orinoquía","tipo":"texto"}
+{"almacenado":"Panela orgánica","celda":"C263","mostrado":"Panela orgánica","tipo":"texto"}
+{"almacenado":"62","celda":"D263","mostrado":"62","tipo":"número"}
+{"almacenado":"4.2","celda":"E263","formato":"#,##0.00\\ \"€\"","mostrado":"4.2","tipo":"número"}
+{"almacenado":"260.4","celda":"F263","formato":"#,##0.00\\ \"€\"","formula":"=D263*E263","mostrado":"260.4","tipo":"número"}
+{"almacenado":"1","celda":"G263","mostrado":"TRUE","tipo":"booleano"}
+{"almacenado":"46124","celda":"A264","formato":"formato integrado 14","mostrado":"2026-04-12","tipo":"número"}
+{"almacenado":"Pacífico","celda":"B264","mostrado":"Pacífico","tipo":"texto"}
+{"almacenado":"Flores de corte","celda":"C264","mostrado":"Flores de corte","tipo":"texto"}
+{"almacenado":"99","celda":"D264","mostrado":"99","tipo":"número"}
+{"almacenado":"22.0","celda":"E264","formato":"#,##0.00\\ \"€\"","mostrado":"22","tipo":"número"}
+{"almacenado":"2178.0","celda":"F264","formato":"#,##0.00\\ \"€\"","formula":"=D264*E264","mostrado":"2178","tipo":"número"}
+{"almacenado":"1","celda":"G264","mostrado":"TRUE","tipo":"booleano"}
+{"almacenado":"46120","celda":"A265","formato":"formato integrado 14","mostrado":"2026-04-08","tipo":"número"}
+{"almacenado":"Caribe","celda":"B265","mostrado":"Caribe","tipo":"texto"}
+{"almacenado":"Cacao en grano","celda":"C265","mostrado":"Cacao en grano","tipo":"texto"}
+{"almacenado":"16","celda":"D265","mostrado":"16","tipo":"número"}
+{"almacenado":"12.75","celda":"E265","formato":"#,##0.00\\ \"€\"","mostrado":"12.75","tipo":"número"}
+{"almacenado":"204.0","celda":"F265","formato":"#,##0.00\\ \"€\"","formula":"=D265*E265","mostrado":"204","tipo":"número"}
+{"almacenado":"1","celda":"G265","mostrado":"TRUE","tipo":"booleano"}
+{"almacenado":"46116","celda":"A266","formato":"formato integrado 14","mostrado":"2026-04-04","tipo":"número"}
+{"almacenado":"Andina","celda":"B266","mostrado":"Andina","tipo":"texto"}
+{"almacenado":"Aguacate Hass","celda":"C266","mostrado":"Aguacate Hass","tipo":"texto"}
+{"almacenado":"53","celda":"D266","mostrado":"53","tipo":"número"}
+{"almacenado":"6.9","celda":"E266","formato":"#,##0.00\\ \"€\"","mostrado":"6.9","tipo":"número"}
+{"almacenado":"365.7","celda":"F266","formato":"#,##0.00\\ \"€\"","formula":"=D266*E266","mostrado":"365.7","tipo":"número"}
+{"almacenado":"1","celda":"G266","mostrado":"TRUE","tipo":"booleano"}
+{"almacenado":"46112","celda":"A267","formato":"formato integrado 14","mostrado":"2026-03-31","tipo":"número"}
+{"almacenado":"Orinoquía","celda":"B267","mostrado":"Orinoquía","tipo":"texto"}
+{"almacenado":"Café especial","celda":"C267","mostrado":"Café especial","tipo":"texto"}
+{"almacenado":"90","celda":"D267","mostrado":"90","tipo":"número"}
+{"almacenado":"18.5","celda":"E267","formato":"#,##0.00\\ \"€\"","mostrado":"18.5","tipo":"número"}
+{"almacenado":"1665.0","celda":"F267","formato":"#,##0.00\\ \"€\"","formula":"=D267*E267","mostrado":"1665","tipo":"número"}
+{"almacenado":"0","celda":"G267","mostrado":"FALSE","tipo":"booleano"}
+{"almacenado":"46108","celda":"A268","formato":"formato integrado 14","mostrado":"2026-03-27","tipo":"número"}
+{"almacenado":"Pacífico","celda":"B268","mostrado":"Pacífico","tipo":"texto"}
+{"almacenado":"Panela orgánica","celda":"C268","mostrado":"Panela orgánica","tipo":"texto"}
+{"almacenado":"7","celda":"D268","mostrado":"7","tipo":"número"}
+{"almacenado":"4.2","celda":"E268","formato":"#,##0.00\\ \"€\"","mostrado":"4.2","tipo":"número"}
+{"almacenado":"29.4","celda":"F268","formato":"#,##0.00\\ \"€\"","formula":"=D268*E268","mostrado":"29.4","tipo":"número"}
+{"almacenado":"1","celda":"G268","mostrado":"TRUE","tipo":"booleano"}
+{"almacenado":"46104","celda":"A269","formato":"formato integrado 14","mostrado":"2026-03-23","tipo":"número"}
+{"almacenado":"Caribe","celda":"B269","mostrado":"Caribe","tipo":"texto"}
+{"almacenado":"Flores de corte","celda":"C269","mostrado":"Flores de corte","tipo":"texto"}
+{"almacenado":"44","celda":"D269","mostrado":"44","tipo":"número"}
+{"almacenado":"22.0","celda":"E269","formato":"#,##0.00\\ \"€\"","mostrado":"22","tipo":"número"}
+{"almacenado":"968.0","celda":"F269","formato":"#,##0.00\\ \"€\"","formula":"=D269*E269","mostrado":"968","tipo":"número"}
+{"almacenado":"1","celda":"G269","mostrado":"TRUE","tipo":"booleano"}
+{"almacenado":"46100","celda":"A270","formato":"formato integrado 14","mostrado":"2026-03-19","tipo":"número"}
+{"almacenado":"Andina","celda":"B270","mostrado":"Andina","tipo":"texto"}
+{"almacenado":"Cacao en grano","celda":"C270","mostrado":"Cacao en grano","tipo":"texto"}
+{"almacenado":"81","celda":"D270","mostrado":"81","tipo":"número"}
+{"almacenado":"12.75","celda":"E270","formato":"#,##0.00\\ \"€\"","mostrado":"12.75","tipo":"número"}
+{"almacenado":"1032.75","celda":"F270","formato":"#,##0.00\\ \"€\"","formula":"=D270*E270","mostrado":"1032.75","tipo":"número"}
+{"almacenado":"1","celda":"G270","mostrado":"TRUE","tipo":"booleano"}
+{"almacenado":"46096","celda":"A271","formato":"formato integrado 14","mostrado":"2026-03-15","tipo":"número"}
+{"almacenado":"Orinoquía","celda":"B271","mostrado":"Orinoquía","tipo":"texto"}
+{"almacenado":"Aguacate Hass","celda":"C271","mostrado":"Aguacate Hass","tipo":"texto"}
+{"almacenado":"118","celda":"D271","mostrado":"118","tipo":"número"}
+{"almacenado":"6.9","celda":"E271","formato":"#,##0.00\\ \"€\"","mostrado":"6.9","tipo":"número"}
+{"almacenado":"814.2","celda":"F271","formato":"#,##0.00\\ \"€\"","formula":"=D271*E271","mostrado":"814.2","tipo":"número"}
+{"almacenado":"1","celda":"G271","mostrado":"TRUE","tipo":"booleano"}
+{"almacenado":"46092","celda":"A272","formato":"formato integrado 14","mostrado":"2026-03-11","tipo":"número"}
+{"almacenado":"Pacífico","celda":"B272","mostrado":"Pacífico","tipo":"texto"}
+{"almacenado":"Café especial","celda":"C272","mostrado":"Café especial","tipo":"texto"}
+{"almacenado":"35","celda":"D272","mostrado":"35","tipo":"número"}
+{"almacenado":"18.5","celda":"E272","formato":"#,##0.00\\ \"€\"","mostrado":"18.5","tipo":"número"}
+{"almacenado":"647.5","celda":"F272","formato":"#,##0.00\\ \"€\"","formula":"=D272*E272","mostrado":"647.5","tipo":"número"}
+{"almacenado":"1","celda":"G272","mostrado":"TRUE","tipo":"booleano"}
+{"almacenado":"46088","celda":"A273","formato":"formato integrado 14","mostrado":"2026-03-07","tipo":"número"}
+{"almacenado":"Caribe","celda":"B273","mostrado":"Caribe","tipo":"texto"}
+{"almacenado":"Panela orgánica","celda":"C273","mostrado":"Panela orgánica","tipo":"texto"}
+{"almacenado":"72","celda":"D273","mostrado":"72","tipo":"número"}
+{"almacenado":"4.2","celda":"E273","formato":"#,##0.00\\ \"€\"","mostrado":"4.2","tipo":"número"}
+{"almacenado":"302.4","celda":"F273","formato":"#,##0.00\\ \"€\"","formula":"=D273*E273","mostrado":"302.4","tipo":"número"}
+{"almacenado":"1","celda":"G273","mostrado":"TRUE","tipo":"booleano"}
+{"almacenado":"46084","celda":"A274","formato":"formato integrado 14","mostrado":"2026-03-03","tipo":"número"}
+{"almacenado":"Andina","celda":"B274","mostrado":"Andina","tipo":"texto"}
+{"almacenado":"Flores de corte","celda":"C274","mostrado":"Flores de corte","tipo":"texto"}
+{"almacenado":"109","celda":"D274","mostrado":"109","tipo":"número"}
+{"almacenado":"22.0","celda":"E274","formato":"#,##0.00\\ \"€\"","mostrado":"22","tipo":"número"}
+{"almacenado":"2398.0","celda":"F274","formato":"#,##0.00\\ \"€\"","formula":"=D274*E274","mostrado":"2398","tipo":"número"}
+{"almacenado":"1","celda":"G274","mostrado":"TRUE","tipo":"booleano"}
+{"almacenado":"46080","celda":"A275","formato":"formato integrado 14","mostrado":"2026-02-27","tipo":"número"}
+{"almacenado":"Orinoquía","celda":"B275","mostrado":"Orinoquía","tipo":"texto"}
+{"almacenado":"Cacao en grano","celda":"C275","mostrado":"Cacao en grano","tipo":"texto"}
+{"almacenado":"26","celda":"D275","mostrado":"26","tipo":"número"}
+{"almacenado":"12.75","celda":"E275","formato":"#,##0.00\\ \"€\"","mostrado":"12.75","tipo":"número"}
+{"almacenado":"331.5","celda":"F275","formato":"#,##0.00\\ \"€\"","formula":"=D275*E275","mostrado":"331.5","tipo":"número"}
+{"almacenado":"1","celda":"G275","mostrado":"TRUE","tipo":"booleano"}
+{"almacenado":"46076","celda":"A276","formato":"formato integrado 14","mostrado":"2026-02-23","tipo":"número"}
+{"almacenado":"Pacífico","celda":"B276","mostrado":"Pacífico","tipo":"texto"}
+{"almacenado":"Aguacate Hass","celda":"C276","mostrado":"Aguacate Hass","tipo":"texto"}
+{"almacenado":"63","celda":"D276","mostrado":"63","tipo":"número"}
+{"almacenado":"6.9","celda":"E276","formato":"#,##0.00\\ \"€\"","mostrado":"6.9","tipo":"número"}
+{"almacenado":"434.7","celda":"F276","formato":"#,##0.00\\ \"€\"","formula":"=D276*E276","mostrado":"434.7","tipo":"número"}
+{"almacenado":"0","celda":"G276","mostrado":"FALSE","tipo":"booleano"}
+{"almacenado":"46072","celda":"A277","formato":"formato integrado 14","mostrado":"2026-02-19","tipo":"número"}
+{"almacenado":"Caribe","celda":"B277","mostrado":"Caribe","tipo":"texto"}
+{"almacenado":"Café especial","celda":"C277","mostrado":"Café especial","tipo":"texto"}
+{"almacenado":"100","celda":"D277","mostrado":"100","tipo":"número"}
+{"almacenado":"18.5","celda":"E277","formato":"#,##0.00\\ \"€\"","mostrado":"18.5","tipo":"número"}
+{"almacenado":"1850.0","celda":"F277","formato":"#,##0.00\\ \"€\"","formula":"=D277*E277","mostrado":"1850","tipo":"número"}
+{"almacenado":"1","celda":"G277","mostrado":"TRUE","tipo":"booleano"}
+{"almacenado":"46068","celda":"A278","formato":"formato integrado 14","mostrado":"2026-02-15","tipo":"número"}
+{"almacenado":"Andina","celda":"B278","mostrado":"Andina","tipo":"texto"}
+{"almacenado":"Panela orgánica","celda":"C278","mostrado":"Panela orgánica","tipo":"texto"}
+{"almacenado":"17","celda":"D278","mostrado":"17","tipo":"número"}
+{"almacenado":"4.2","celda":"E278","formato":"#,##0.00\\ \"€\"","mostrado":"4.2","tipo":"número"}
+{"almacenado":"71.4","celda":"F278","formato":"#,##0.00\\ \"€\"","formula":"=D278*E278","mostrado":"71.4","tipo":"número"}
+{"almacenado":"1","celda":"G278","mostrado":"TRUE","tipo":"booleano"}
+{"almacenado":"46064","celda":"A279","formato":"formato integrado 14","mostrado":"2026-02-11","tipo":"número"}
+{"almacenado":"Orinoquía","celda":"B279","mostrado":"Orinoquía","tipo":"texto"}
+{"almacenado":"Flores de corte","celda":"C279","mostrado":"Flores de corte","tipo":"texto"}
+{"almacenado":"54","celda":"D279","mostrado":"54","tipo":"número"}
+{"almacenado":"22.0","celda":"E279","formato":"#,##0.00\\ \"€\"","mostrado":"22","tipo":"número"}
+{"almacenado":"1188.0","celda":"F279","formato":"#,##0.00\\ \"€\"","formula":"=D279*E279","mostrado":"1188","tipo":"número"}
+{"almacenado":"1","celda":"G279","mostrado":"TRUE","tipo":"booleano"}
+{"almacenado":"46060","celda":"A280","formato":"formato integrado 14","mostrado":"2026-02-07","tipo":"número"}
+{"almacenado":"Pacífico","celda":"B280","mostrado":"Pacífico","tipo":"texto"}
+{"almacenado":"Cacao en grano","celda":"C280","mostrado":"Cacao en grano","tipo":"texto"}
+{"almacenado":"91","celda":"D280","mostrado":"91","tipo":"número"}
+{"almacenado":"12.75","celda":"E280","formato":"#,##0.00\\ \"€\"","mostrado":"12.75","tipo":"número"}
+{"almacenado":"1160.25","celda":"F280","formato":"#,##0.00\\ \"€\"","formula":"=D280*E280","mostrado":"1160.25","tipo":"número"}
+{"almacenado":"1","celda":"G280","mostrado":"TRUE","tipo":"booleano"}
+{"almacenado":"46056","celda":"A281","formato":"formato integrado 14","mostrado":"2026-02-03","tipo":"número"}
+{"almacenado":"Caribe","celda":"B281","mostrado":"Caribe","tipo":"texto"}
+{"almacenado":"Aguacate Hass","celda":"C281","mostrado":"Aguacate Hass","tipo":"texto"}
+{"almacenado":"8","celda":"D281","mostrado":"8","tipo":"número"}
+{"almacenado":"6.9","celda":"E281","formato":"#,##0.00\\ \"€\"","mostrado":"6.9","tipo":"número"}
+{"almacenado":"55.2","celda":"F281","formato":"#,##0.00\\ \"€\"","formula":"=D281*E281","mostrado":"55.2","tipo":"número"}
+{"almacenado":"1","celda":"G281","mostrado":"TRUE","tipo":"booleano"}
+{"almacenado":"46052","celda":"A282","formato":"formato integrado 14","mostrado":"2026-01-30","tipo":"número"}
+{"almacenado":"Andina","celda":"B282","mostrado":"Andina","tipo":"texto"}
+{"almacenado":"Café especial","celda":"C282","mostrado":"Café especial","tipo":"texto"}
+{"almacenado":"45","celda":"D282","mostrado":"45","tipo":"número"}
+{"almacenado":"18.5","celda":"E282","formato":"#,##0.00\\ \"€\"","mostrado":"18.5","tipo":"número"}
+{"almacenado":"832.5","celda":"F282","formato":"#,##0.00\\ \"€\"","formula":"=D282*E282","mostrado":"832.5","tipo":"número"}
+{"almacenado":"1","celda":"G282","mostrado":"TRUE","tipo":"booleano"}
+{"almacenado":"46048","celda":"A283","formato":"formato integrado 14","mostrado":"2026-01-26","tipo":"número"}
+{"almacenado":"Orinoquía","celda":"B283","mostrado":"Orinoquía","tipo":"texto"}
+{"almacenado":"Panela orgánica","celda":"C283","mostrado":"Panela orgánica","tipo":"texto"}
+{"almacenado":"82","celda":"D283","mostrado":"82","tipo":"número"}
+{"almacenado":"4.2","celda":"E283","formato":"#,##0.00\\ \"€\"","mostrado":"4.2","tipo":"número"}
+{"almacenado":"344.4","celda":"F283","formato":"#,##0.00\\ \"€\"","formula":"=D283*E283","mostrado":"344.4","tipo":"número"}
+{"almacenado":"1","celda":"G283","mostrado":"TRUE","tipo":"booleano"}
+{"almacenado":"46044","celda":"A284","formato":"formato integrado 14","mostrado":"2026-01-22","tipo":"número"}
+{"almacenado":"Pacífico","celda":"B284","mostrado":"Pacífico","tipo":"texto"}
+{"almacenado":"Flores de corte","celda":"C284","mostrado":"Flores de corte","tipo":"texto"}
+{"almacenado":"119","celda":"D284","mostrado":"119","tipo":"número"}
+{"almacenado":"22.0","celda":"E284","formato":"#,##0.00\\ \"€\"","mostrado":"22","tipo":"número"}
+{"almacenado":"2618.0","celda":"F284","formato":"#,##0.00\\ \"€\"","formula":"=D284*E284","mostrado":"2618","tipo":"número"}
+{"almacenado":"1","celda":"G284","mostrado":"TRUE","tipo":"booleano"}
+{"almacenado":"46040","celda":"A285","formato":"formato integrado 14","mostrado":"2026-01-18","tipo":"número"}
+{"almacenado":"Caribe","celda":"B285","mostrado":"Caribe","tipo":"texto"}
+{"almacenado":"Cacao en grano","celda":"C285","mostrado":"Cacao en grano","tipo":"texto"}
+{"almacenado":"36","celda":"D285","mostrado":"36","tipo":"número"}
+{"almacenado":"12.75","celda":"E285","formato":"#,##0.00\\ \"€\"","mostrado":"12.75","tipo":"número"}
+{"almacenado":"459.0","celda":"F285","formato":"#,##0.00\\ \"€\"","formula":"=D285*E285","mostrado":"459","tipo":"número"}
+{"almacenado":"0","celda":"G285","mostrado":"FALSE","tipo":"booleano"}
+{"almacenado":"46036","celda":"A286","formato":"formato integrado 14","mostrado":"2026-01-14","tipo":"número"}
+{"almacenado":"Andina","celda":"B286","mostrado":"Andina","tipo":"texto"}
+{"almacenado":"Aguacate Hass","celda":"C286","mostrado":"Aguacate Hass","tipo":"texto"}
+{"almacenado":"73","celda":"D286","mostrado":"73","tipo":"número"}
+{"almacenado":"6.9","celda":"E286","formato":"#,##0.00\\ \"€\"","mostrado":"6.9","tipo":"número"}
+{"almacenado":"503.7","celda":"F286","formato":"#,##0.00\\ \"€\"","formula":"=D286*E286","mostrado":"503.7","tipo":"número"}
+{"almacenado":"1","celda":"G286","mostrado":"TRUE","tipo":"booleano"}
+{"almacenado":"46032","celda":"A287","formato":"formato integrado 14","mostrado":"2026-01-10","tipo":"número"}
+{"almacenado":"Orinoquía","celda":"B287","mostrado":"Orinoquía","tipo":"texto"}
+{"almacenado":"Café especial","celda":"C287","mostrado":"Café especial","tipo":"texto"}
+{"almacenado":"110","celda":"D287","mostrado":"110","tipo":"número"}
+{"almacenado":"18.5","celda":"E287","formato":"#,##0.00\\ \"€\"","mostrado":"18.5","tipo":"número"}
+{"almacenado":"2035.0","celda":"F287","formato":"#,##0.00\\ \"€\"","formula":"=D287*E287","mostrado":"2035","tipo":"número"}
+{"almacenado":"1","celda":"G287","mostrado":"TRUE","tipo":"booleano"}
+{"almacenado":"46028","celda":"A288","formato":"formato integrado 14","mostrado":"2026-01-06","tipo":"número"}
+{"almacenado":"Pacífico","celda":"B288","mostrado":"Pacífico","tipo":"texto"}
+{"almacenado":"Panela orgánica","celda":"C288","mostrado":"Panela orgánica","tipo":"texto"}
+{"almacenado":"27","celda":"D288","mostrado":"27","tipo":"número"}
+{"almacenado":"4.2","celda":"E288","formato":"#,##0.00\\ \"€\"","mostrado":"4.2","tipo":"número"}
+{"almacenado":"113.4","celda":"F288","formato":"#,##0.00\\ \"€\"","formula":"=D288*E288","mostrado":"113.4","tipo":"número"}
+{"almacenado":"1","celda":"G288","mostrado":"TRUE","tipo":"booleano"}
+{"almacenado":"46024","celda":"A289","formato":"formato integrado 14","mostrado":"2026-01-02","tipo":"número"}
+{"almacenado":"Caribe","celda":"B289","mostrado":"Caribe","tipo":"texto"}
+{"almacenado":"Flores de corte","celda":"C289","mostrado":"Flores de corte","tipo":"texto"}
+{"almacenado":"64","celda":"D289","mostrado":"64","tipo":"número"}
+{"almacenado":"22.0","celda":"E289","formato":"#,##0.00\\ \"€\"","mostrado":"22","tipo":"número"}
+{"almacenado":"1408.0","celda":"F289","formato":"#,##0.00\\ \"€\"","formula":"=D289*E289","mostrado":"1408","tipo":"número"}
+{"almacenado":"1","celda":"G289","mostrado":"TRUE","tipo":"booleano"}
+{"almacenado":"46307","celda":"A290","formato":"formato integrado 14","mostrado":"2026-10-12","tipo":"número"}
+{"almacenado":"Andina","celda":"B290","mostrado":"Andina","tipo":"texto"}
+{"almacenado":"Cacao en grano","celda":"C290","mostrado":"Cacao en grano","tipo":"texto"}
+{"almacenado":"101","celda":"D290","mostrado":"101","tipo":"número"}
+{"almacenado":"12.75","celda":"E290","formato":"#,##0.00\\ \"€\"","mostrado":"12.75","tipo":"número"}
+{"almacenado":"1287.75","celda":"F290","formato":"#,##0.00\\ \"€\"","formula":"=D290*E290","mostrado":"1287.75","tipo":"número"}
+{"almacenado":"1","celda":"G290","mostrado":"TRUE","tipo":"booleano"}
+{"almacenado":"46303","celda":"A291","formato":"formato integrado 14","mostrado":"2026-10-08","tipo":"número"}
+{"almacenado":"Orinoquía","celda":"B291","mostrado":"Orinoquía","tipo":"texto"}
+{"almacenado":"Aguacate Hass","celda":"C291","mostrado":"Aguacate Hass","tipo":"texto"}
+{"almacenado":"18","celda":"D291","mostrado":"18","tipo":"número"}
+{"almacenado":"6.9","celda":"E291","formato":"#,##0.00\\ \"€\"","mostrado":"6.9","tipo":"número"}
+{"almacenado":"124.2","celda":"F291","formato":"#,##0.00\\ \"€\"","formula":"=D291*E291","mostrado":"124.2","tipo":"número"}
+{"almacenado":"1","celda":"G291","mostrado":"TRUE","tipo":"booleano"}
+{"almacenado":"46299","celda":"A292","formato":"formato integrado 14","mostrado":"2026-10-04","tipo":"número"}
+{"almacenado":"Pacífico","celda":"B292","mostrado":"Pacífico","tipo":"texto"}
+{"almacenado":"Café especial","celda":"C292","mostrado":"Café especial","tipo":"texto"}
+{"almacenado":"55","celda":"D292","mostrado":"55","tipo":"número"}
+{"almacenado":"18.5","celda":"E292","formato":"#,##0.00\\ \"€\"","mostrado":"18.5","tipo":"número"}
+{"almacenado":"1017.5","celda":"F292","formato":"#,##0.00\\ \"€\"","formula":"=D292*E292","mostrado":"1017.5","tipo":"número"}
+{"almacenado":"1","celda":"G292","mostrado":"TRUE","tipo":"booleano"}
+{"almacenado":"46295","celda":"A293","formato":"formato integrado 14","mostrado":"2026-09-30","tipo":"número"}
+{"almacenado":"Caribe","celda":"B293","mostrado":"Caribe","tipo":"texto"}
+{"almacenado":"Panela orgánica","celda":"C293","mostrado":"Panela orgánica","tipo":"texto"}
+{"almacenado":"92","celda":"D293","mostrado":"92","tipo":"número"}
+{"almacenado":"4.2","celda":"E293","formato":"#,##0.00\\ \"€\"","mostrado":"4.2","tipo":"número"}
+{"almacenado":"386.4","celda":"F293","formato":"#,##0.00\\ \"€\"","formula":"=D293*E293","mostrado":"386.4","tipo":"número"}
+{"almacenado":"1","celda":"G293","mostrado":"TRUE","tipo":"booleano"}
+{"almacenado":"46291","celda":"A294","formato":"formato integrado 14","mostrado":"2026-09-26","tipo":"número"}
+{"almacenado":"Andina","celda":"B294","mostrado":"Andina","tipo":"texto"}
+{"almacenado":"Flores de corte","celda":"C294","mostrado":"Flores de corte","tipo":"texto"}
+{"almacenado":"9","celda":"D294","mostrado":"9","tipo":"número"}
+{"almacenado":"22.0","celda":"E294","formato":"#,##0.00\\ \"€\"","mostrado":"22","tipo":"número"}
+{"almacenado":"198.0","celda":"F294","formato":"#,##0.00\\ \"€\"","formula":"=D294*E294","mostrado":"198","tipo":"número"}
+{"almacenado":"0","celda":"G294","mostrado":"FALSE","tipo":"booleano"}
+{"almacenado":"46287","celda":"A295","formato":"formato integrado 14","mostrado":"2026-09-22","tipo":"número"}
+{"almacenado":"Orinoquía","celda":"B295","mostrado":"Orinoquía","tipo":"texto"}
+{"almacenado":"Cacao en grano","celda":"C295","mostrado":"Cacao en grano","tipo":"texto"}
+{"almacenado":"46","celda":"D295","mostrado":"46","tipo":"número"}
+{"almacenado":"12.75","celda":"E295","formato":"#,##0.00\\ \"€\"","mostrado":"12.75","tipo":"número"}
+{"almacenado":"586.5","celda":"F295","formato":"#,##0.00\\ \"€\"","formula":"=D295*E295","mostrado":"586.5","tipo":"número"}
+{"almacenado":"1","celda":"G295","mostrado":"TRUE","tipo":"booleano"}
+{"almacenado":"46283","celda":"A296","formato":"formato integrado 14","mostrado":"2026-09-18","tipo":"número"}
+{"almacenado":"Pacífico","celda":"B296","mostrado":"Pacífico","tipo":"texto"}
+{"almacenado":"Aguacate Hass","celda":"C296","mostrado":"Aguacate Hass","tipo":"texto"}
+{"almacenado":"83","celda":"D296","mostrado":"83","tipo":"número"}
+{"almacenado":"6.9","celda":"E296","formato":"#,##0.00\\ \"€\"","mostrado":"6.9","tipo":"número"}
+{"almacenado":"572.7","celda":"F296","formato":"#,##0.00\\ \"€\"","formula":"=D296*E296","mostrado":"572.7","tipo":"número"}
+{"almacenado":"1","celda":"G296","mostrado":"TRUE","tipo":"booleano"}
+{"almacenado":"46279","celda":"A297","formato":"formato integrado 14","mostrado":"2026-09-14","tipo":"número"}
+{"almacenado":"Caribe","celda":"B297","mostrado":"Caribe","tipo":"texto"}
+{"almacenado":"Café especial","celda":"C297","mostrado":"Café especial","tipo":"texto"}
+{"almacenado":"120","celda":"D297","mostrado":"120","tipo":"número"}
+{"almacenado":"18.5","celda":"E297","formato":"#,##0.00\\ \"€\"","mostrado":"18.5","tipo":"número"}
+{"almacenado":"2220.0","celda":"F297","formato":"#,##0.00\\ \"€\"","formula":"=D297*E297","mostrado":"2220","tipo":"número"}
+{"almacenado":"1","celda":"G297","mostrado":"TRUE","tipo":"booleano"}
+{"almacenado":"46275","celda":"A298","formato":"formato integrado 14","mostrado":"2026-09-10","tipo":"número"}
+{"almacenado":"Andina","celda":"B298","mostrado":"Andina","tipo":"texto"}
+{"almacenado":"Panela orgánica","celda":"C298","mostrado":"Panela orgánica","tipo":"texto"}
+{"almacenado":"37","celda":"D298","mostrado":"37","tipo":"número"}
+{"almacenado":"4.2","celda":"E298","formato":"#,##0.00\\ \"€\"","mostrado":"4.2","tipo":"número"}
+{"almacenado":"155.4","celda":"F298","formato":"#,##0.00\\ \"€\"","formula":"=D298*E298","mostrado":"155.4","tipo":"número"}
+{"almacenado":"1","celda":"G298","mostrado":"TRUE","tipo":"booleano"}
+{"almacenado":"46271","celda":"A299","formato":"formato integrado 14","mostrado":"2026-09-06","tipo":"número"}
+{"almacenado":"Orinoquía","celda":"B299","mostrado":"Orinoquía","tipo":"texto"}
+{"almacenado":"Flores de corte","celda":"C299","mostrado":"Flores de corte","tipo":"texto"}
+{"almacenado":"74","celda":"D299","mostrado":"74","tipo":"número"}
+{"almacenado":"22.0","celda":"E299","formato":"#,##0.00\\ \"€\"","mostrado":"22","tipo":"número"}
+{"almacenado":"1628.0","celda":"F299","formato":"#,##0.00\\ \"€\"","formula":"=D299*E299","mostrado":"1628","tipo":"número"}
+{"almacenado":"1","celda":"G299","mostrado":"TRUE","tipo":"booleano"}
+{"almacenado":"46267","celda":"A300","formato":"formato integrado 14","mostrado":"2026-09-02","tipo":"número"}
+{"almacenado":"Pacífico","celda":"B300","mostrado":"Pacífico","tipo":"texto"}
+{"almacenado":"Cacao en grano","celda":"C300","mostrado":"Cacao en grano","tipo":"texto"}
+{"almacenado":"111","celda":"D300","mostrado":"111","tipo":"número"}
+{"almacenado":"12.75","celda":"E300","formato":"#,##0.00\\ \"€\"","mostrado":"12.75","tipo":"número"}
+{"almacenado":"1415.25","celda":"F300","formato":"#,##0.00\\ \"€\"","formula":"=D300*E300","mostrado":"1415.25","tipo":"número"}
+{"almacenado":"1","celda":"G300","mostrado":"TRUE","tipo":"booleano"}
+{"almacenado":"46263","celda":"A301","formato":"formato integrado 14","mostrado":"2026-08-29","tipo":"número"}
+{"almacenado":"Caribe","celda":"B301","mostrado":"Caribe","tipo":"texto"}
+{"almacenado":"Aguacate Hass","celda":"C301","mostrado":"Aguacate Hass","tipo":"texto"}
+{"almacenado":"28","celda":"D301","mostrado":"28","tipo":"número"}
+{"almacenado":"6.9","celda":"E301","formato":"#,##0.00\\ \"€\"","mostrado":"6.9","tipo":"número"}
+{"almacenado":"193.2","celda":"F301","formato":"#,##0.00\\ \"€\"","formula":"=D301*E301","mostrado":"193.2","tipo":"número"}
+{"almacenado":"1","celda":"G301","mostrado":"TRUE","tipo":"booleano"}

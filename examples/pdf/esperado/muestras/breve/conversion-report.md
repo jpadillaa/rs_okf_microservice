@@ -1,0 +1,40 @@
+---
+type: Conversion Report
+title: Informe de conversión
+generated:
+  by: process:document-conversion
+  at: "<generado>"
+status: complete
+format: pdf
+sha256: 8aa5ea8941f6eb25dad12ab1f51efbc4ce68a6c019035503061354f7c6b104a4
+---
+
+# Informe de conversión PDF
+
+- Estado: `complete`
+- Páginas: 1 (texto digital: 1; mixtas: 0; escaneadas: 0; escaneadas con OCR previo: 0; solo visuales: 0; en blanco: 0)
+- Unidades representadas: 6 (párrafos, listas, tablas, imágenes y notas de página)
+- Conceptos: 1 concepto (documento breve o sin secciones)
+- Encabezados: 1 (inferidos por tamaño de letra: 1)
+- Tablas reconstruidas: 0; imágenes adjuntas: 0; vistas de página: 0
+- Duración: <duración> ms
+
+## Cobertura de páginas
+
+Toda página física figura en algún concepto; las páginas sin texto propio llevan una nota (y su vista, si tienen contenido gráfico).
+
+| Páginas | Clase | Conceptos |
+| --- | --- | --- |
+| 1 | texto digital | texto.md |
+
+## Incidencias
+
+Pérdidas o incertidumbres sustantivas; determinan el estado `partial`.
+
+Sin pérdidas ni incertidumbres sustantivas.
+
+## Observaciones
+
+Información sobre la conversión que no afecta el estado.
+
+- Título del documento tomado del primer encabezado de la primera página, único de su nivel y de rango superior a los demás: «Préstamo de equipos audiovisuales»

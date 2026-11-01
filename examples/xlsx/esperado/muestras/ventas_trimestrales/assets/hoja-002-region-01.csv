@@ -1,0 +1,301 @@
+Fecha,Región,Producto,Unidades,Precio unitario,Importe,Entregado
+2026-01-02,Andina,Café especial,5,18.5,92.5,TRUE
+2026-10-12,Orinoquía,Panela orgánica,42,4.2,176.4,TRUE
+2026-10-08,Pacífico,Flores de corte,79,22,1738,TRUE
+2026-10-04,Caribe,Cacao en grano,116,12.75,1479,TRUE
+2026-09-30,Andina,Aguacate Hass,33,6.9,227.7,FALSE
+2026-09-26,Orinoquía,Café especial,70,18.5,1295,TRUE
+2026-09-22,Pacífico,Panela orgánica,107,4.2,449.4,TRUE
+2026-09-18,Caribe,Flores de corte,24,22,528,TRUE
+2026-09-14,Andina,Cacao en grano,61,12.75,777.75,TRUE
+2026-09-10,Orinoquía,Aguacate Hass,98,6.9,676.2,TRUE
+2026-09-06,Pacífico,Café especial,15,18.5,277.5,TRUE
+2026-09-02,Caribe,Panela orgánica,52,4.2,218.4,TRUE
+2026-08-29,Andina,Flores de corte,89,22,1958,TRUE
+2026-08-25,Orinoquía,Cacao en grano,6,12.75,76.5,FALSE
+2026-08-21,Pacífico,Aguacate Hass,43,6.9,296.7,TRUE
+2026-08-17,Caribe,Café especial,80,18.5,1480,TRUE
+2026-08-13,Andina,Panela orgánica,117,4.2,491.4,TRUE
+2026-08-09,Orinoquía,Flores de corte,34,22,748,TRUE
+2026-08-05,Pacífico,Cacao en grano,71,12.75,905.25,TRUE
+2026-08-01,Caribe,Aguacate Hass,108,6.9,745.2,TRUE
+2026-07-28,Andina,Café especial,25,18.5,462.5,TRUE
+2026-07-24,Orinoquía,Panela orgánica,62,4.2,260.4,TRUE
+2026-07-20,Pacífico,Flores de corte,99,22,2178,FALSE
+2026-07-16,Caribe,Cacao en grano,16,12.75,204,TRUE
+2026-07-12,Andina,Aguacate Hass,53,6.9,365.7,TRUE
+2026-07-08,Orinoquía,Café especial,90,18.5,1665,TRUE
+2026-07-04,Pacífico,Panela orgánica,7,4.2,29.4,TRUE
+2026-06-30,Caribe,Flores de corte,44,22,968,TRUE
+2026-06-26,Andina,Cacao en grano,81,12.75,1032.75,TRUE
+2026-06-22,Orinoquía,Aguacate Hass,118,6.9,814.2,TRUE
+2026-06-18,Pacífico,Café especial,35,18.5,647.5,TRUE
+2026-06-14,Caribe,Panela orgánica,72,4.2,302.4,FALSE
+2026-06-10,Andina,Flores de corte,109,22,2398,TRUE
+2026-06-06,Orinoquía,Cacao en grano,26,12.75,331.5,TRUE
+2026-06-02,Pacífico,Aguacate Hass,63,6.9,434.7,TRUE
+2026-05-29,Caribe,Café especial,100,18.5,1850,TRUE
+2026-05-25,Andina,Panela orgánica,17,4.2,71.4,TRUE
+2026-05-21,Orinoquía,Flores de corte,54,22,1188,TRUE
+2026-05-17,Pacífico,Cacao en grano,91,12.75,1160.25,TRUE
+2026-05-13,Caribe,Aguacate Hass,8,6.9,55.2,TRUE
+2026-05-09,Andina,Café especial,45,18.5,832.5,FALSE
+2026-05-05,Orinoquía,Panela orgánica,82,4.2,344.4,TRUE
+2026-05-01,Pacífico,Flores de corte,119,22,2618,TRUE
+2026-04-27,Caribe,Cacao en grano,36,12.75,459,TRUE
+2026-04-23,Andina,Aguacate Hass,73,6.9,503.7,TRUE
+2026-04-19,Orinoquía,Café especial,110,18.5,2035,TRUE
+2026-04-15,Pacífico,Panela orgánica,27,4.2,113.4,TRUE
+2026-04-11,Caribe,Flores de corte,64,22,1408,TRUE
+2026-04-07,Andina,Cacao en grano,101,12.75,1287.75,TRUE
+2026-04-03,Orinoquía,Aguacate Hass,18,6.9,124.2,FALSE
+2026-03-30,Pacífico,Café especial,55,18.5,1017.5,TRUE
+2026-03-26,Caribe,Panela orgánica,92,4.2,386.4,TRUE
+2026-03-22,Andina,Flores de corte,9,22,198,TRUE
+2026-03-18,Orinoquía,Cacao en grano,46,12.75,586.5,TRUE
+2026-03-14,Pacífico,Aguacate Hass,83,6.9,572.7,TRUE
+2026-03-10,Caribe,Café especial,120,18.5,2220,TRUE
+2026-03-06,Andina,Panela orgánica,37,4.2,155.4,TRUE
+2026-03-02,Orinoquía,Flores de corte,74,22,1628,TRUE
+2026-02-26,Pacífico,Cacao en grano,111,12.75,1415.25,FALSE
+2026-02-22,Caribe,Aguacate Hass,28,6.9,193.2,TRUE
+2026-02-18,Andina,Café especial,65,18.5,1202.5,TRUE
+2026-02-14,Orinoquía,Panela orgánica,102,4.2,428.4,TRUE
+2026-02-10,Pacífico,Flores de corte,19,22,418,TRUE
+2026-02-06,Caribe,Cacao en grano,56,12.75,714,TRUE
+2026-02-02,Andina,Aguacate Hass,93,6.9,641.7,TRUE
+2026-01-29,Orinoquía,Café especial,10,18.5,185,TRUE
+2026-01-25,Pacífico,Panela orgánica,47,4.2,197.4,TRUE
+2026-01-21,Caribe,Flores de corte,84,22,1848,FALSE
+2026-01-17,Andina,Cacao en grano,121,12.75,1542.75,TRUE
+2026-01-13,Orinoquía,Aguacate Hass,38,6.9,262.2,TRUE
+2026-01-09,Pacífico,Café especial,75,18.5,1387.5,TRUE
+2026-01-05,Caribe,Panela orgánica,112,4.2,470.4,TRUE
+2026-10-15,Andina,Flores de corte,29,22,638,TRUE
+2026-10-11,Orinoquía,Cacao en grano,66,12.75,841.5,TRUE
+2026-10-07,Pacífico,Aguacate Hass,103,6.9,710.7,TRUE
+2026-10-03,Caribe,Café especial,20,18.5,370,TRUE
+2026-09-29,Andina,Panela orgánica,57,4.2,239.4,FALSE
+2026-09-25,Orinoquía,Flores de corte,94,22,2068,TRUE
+2026-09-21,Pacífico,Cacao en grano,11,12.75,140.25,TRUE
+2026-09-17,Caribe,Aguacate Hass,48,6.9,331.2,TRUE
+2026-09-13,Andina,Café especial,85,18.5,1572.5,TRUE
+2026-09-09,Orinoquía,Panela orgánica,122,4.2,512.4,TRUE
+2026-09-05,Pacífico,Flores de corte,39,22,858,TRUE
+2026-09-01,Caribe,Cacao en grano,76,12.75,969,TRUE
+2026-08-28,Andina,Aguacate Hass,113,6.9,779.7,TRUE
+2026-08-24,Orinoquía,Café especial,30,18.5,555,FALSE
+2026-08-20,Pacífico,Panela orgánica,67,4.2,281.4,TRUE
+2026-08-16,Caribe,Flores de corte,104,22,2288,TRUE
+2026-08-12,Andina,Cacao en grano,21,12.75,267.75,TRUE
+2026-08-08,Orinoquía,Aguacate Hass,58,6.9,400.2,TRUE
+2026-08-04,Pacífico,Café especial,95,18.5,1757.5,TRUE
+2026-07-31,Caribe,Panela orgánica,12,4.2,50.4,TRUE
+2026-07-27,Andina,Flores de corte,49,22,1078,TRUE
+2026-07-23,Orinoquía,Cacao en grano,86,12.75,1096.5,TRUE
+2026-07-19,Pacífico,Aguacate Hass,123,6.9,848.7,FALSE
+2026-07-15,Caribe,Café especial,40,18.5,740,TRUE
+2026-07-11,Andina,Panela orgánica,77,4.2,323.4,TRUE
+2026-07-07,Orinoquía,Flores de corte,114,22,2508,TRUE
+2026-07-03,Pacífico,Cacao en grano,31,12.75,395.25,TRUE
+2026-06-29,Caribe,Aguacate Hass,68,6.9,469.2,TRUE
+2026-06-25,Andina,Café especial,105,18.5,1942.5,TRUE
+2026-06-21,Orinoquía,Panela orgánica,22,4.2,92.4,TRUE
+2026-06-17,Pacífico,Flores de corte,59,22,1298,TRUE
+2026-06-13,Caribe,Cacao en grano,96,12.75,1224,FALSE
+2026-06-09,Andina,Aguacate Hass,13,6.9,89.7,TRUE
+2026-06-05,Orinoquía,Café especial,50,18.5,925,TRUE
+2026-06-01,Pacífico,Panela orgánica,87,4.2,365.4,TRUE
+2026-05-28,Caribe,Flores de corte,124,22,2728,TRUE
+2026-05-24,Andina,Cacao en grano,41,12.75,522.75,TRUE
+2026-05-20,Orinoquía,Aguacate Hass,78,6.9,538.2,TRUE
+2026-05-16,Pacífico,Café especial,115,18.5,2127.5,TRUE
+2026-05-12,Caribe,Panela orgánica,32,4.2,134.4,TRUE
+2026-05-08,Andina,Flores de corte,69,22,1518,FALSE
+2026-05-04,Orinoquía,Cacao en grano,106,12.75,1351.5,TRUE
+2026-04-30,Pacífico,Aguacate Hass,23,6.9,158.7,TRUE
+2026-04-26,Caribe,Café especial,60,18.5,1110,TRUE
+2026-04-22,Andina,Panela orgánica,97,4.2,407.4,TRUE
+2026-04-18,Orinoquía,Flores de corte,14,22,308,TRUE
+2026-04-14,Pacífico,Cacao en grano,51,12.75,650.25,TRUE
+2026-04-10,Caribe,Aguacate Hass,88,6.9,607.2,TRUE
+2026-04-06,Andina,Café especial,5,18.5,92.5,TRUE
+2026-04-02,Orinoquía,Panela orgánica,42,4.2,176.4,FALSE
+2026-03-29,Pacífico,Flores de corte,79,22,1738,TRUE
+2026-03-25,Caribe,Cacao en grano,116,12.75,1479,TRUE
+2026-03-21,Andina,Aguacate Hass,33,6.9,227.7,TRUE
+2026-03-17,Orinoquía,Café especial,70,18.5,1295,TRUE
+2026-03-13,Pacífico,Panela orgánica,107,4.2,449.4,TRUE
+2026-03-09,Caribe,Flores de corte,24,22,528,TRUE
+2026-03-05,Andina,Cacao en grano,61,12.75,777.75,TRUE
+2026-03-01,Orinoquía,Aguacate Hass,98,6.9,676.2,TRUE
+2026-02-25,Pacífico,Café especial,15,18.5,277.5,FALSE
+2026-02-21,Caribe,Panela orgánica,52,4.2,218.4,TRUE
+2026-02-17,Andina,Flores de corte,89,22,1958,TRUE
+2026-02-13,Orinoquía,Cacao en grano,6,12.75,76.5,TRUE
+2026-02-09,Pacífico,Aguacate Hass,43,6.9,296.7,TRUE
+2026-02-05,Caribe,Café especial,80,18.5,1480,TRUE
+2026-02-01,Andina,Panela orgánica,117,4.2,491.4,TRUE
+2026-01-28,Orinoquía,Flores de corte,34,22,748,TRUE
+2026-01-24,Pacífico,Cacao en grano,71,12.75,905.25,TRUE
+2026-01-20,Caribe,Aguacate Hass,108,6.9,745.2,FALSE
+2026-01-16,Andina,Café especial,25,18.5,462.5,TRUE
+2026-01-12,Orinoquía,Panela orgánica,62,4.2,260.4,TRUE
+2026-01-08,Pacífico,Flores de corte,99,22,2178,TRUE
+2026-01-04,Caribe,Cacao en grano,16,12.75,204,TRUE
+2026-10-14,Andina,Aguacate Hass,53,6.9,365.7,TRUE
+2026-10-10,Orinoquía,Café especial,90,18.5,1665,TRUE
+2026-10-06,Pacífico,Panela orgánica,7,4.2,29.4,TRUE
+2026-10-02,Caribe,Flores de corte,44,22,968,TRUE
+2026-09-28,Andina,Cacao en grano,81,12.75,1032.75,FALSE
+2026-09-24,Orinoquía,Aguacate Hass,118,6.9,814.2,TRUE
+2026-09-20,Pacífico,Café especial,35,18.5,647.5,TRUE
+2026-09-16,Caribe,Panela orgánica,72,4.2,302.4,TRUE
+2026-09-12,Andina,Flores de corte,109,22,2398,TRUE
+2026-09-08,Orinoquía,Cacao en grano,26,12.75,331.5,TRUE
+2026-09-04,Pacífico,Aguacate Hass,63,6.9,434.7,TRUE
+2026-08-31,Caribe,Café especial,100,18.5,1850,TRUE
+2026-08-27,Andina,Panela orgánica,17,4.2,71.4,TRUE
+2026-08-23,Orinoquía,Flores de corte,54,22,1188,FALSE
+2026-08-19,Pacífico,Cacao en grano,91,12.75,1160.25,TRUE
+2026-08-15,Caribe,Aguacate Hass,8,6.9,55.2,TRUE
+2026-08-11,Andina,Café especial,45,18.5,832.5,TRUE
+2026-08-07,Orinoquía,Panela orgánica,82,4.2,344.4,TRUE
+2026-08-03,Pacífico,Flores de corte,119,22,2618,TRUE
+2026-07-30,Caribe,Cacao en grano,36,12.75,459,TRUE
+2026-07-26,Andina,Aguacate Hass,73,6.9,503.7,TRUE
+2026-07-22,Orinoquía,Café especial,110,18.5,2035,TRUE
+2026-07-18,Pacífico,Panela orgánica,27,4.2,113.4,FALSE
+2026-07-14,Caribe,Flores de corte,64,22,1408,TRUE
+2026-07-10,Andina,Cacao en grano,101,12.75,1287.75,TRUE
+2026-07-06,Orinoquía,Aguacate Hass,18,6.9,124.2,TRUE
+2026-07-02,Pacífico,Café especial,55,18.5,1017.5,TRUE
+2026-06-28,Caribe,Panela orgánica,92,4.2,386.4,TRUE
+2026-06-24,Andina,Flores de corte,9,22,198,TRUE
+2026-06-20,Orinoquía,Cacao en grano,46,12.75,586.5,TRUE
+2026-06-16,Pacífico,Aguacate Hass,83,6.9,572.7,TRUE
+2026-06-12,Caribe,Café especial,120,18.5,2220,FALSE
+2026-06-08,Andina,Panela orgánica,37,4.2,155.4,TRUE
+2026-06-04,Orinoquía,Flores de corte,74,22,1628,TRUE
+2026-05-31,Pacífico,Cacao en grano,111,12.75,1415.25,TRUE
+2026-05-27,Caribe,Aguacate Hass,28,6.9,193.2,TRUE
+2026-05-23,Andina,Café especial,65,18.5,1202.5,TRUE
+2026-05-19,Orinoquía,Panela orgánica,102,4.2,428.4,TRUE
+2026-05-15,Pacífico,Flores de corte,19,22,418,TRUE
+2026-05-11,Caribe,Cacao en grano,56,12.75,714,TRUE
+2026-05-07,Andina,Aguacate Hass,93,6.9,641.7,FALSE
+2026-05-03,Orinoquía,Café especial,10,18.5,185,TRUE
+2026-04-29,Pacífico,Panela orgánica,47,4.2,197.4,TRUE
+2026-04-25,Caribe,Flores de corte,84,22,1848,TRUE
+2026-04-21,Andina,Cacao en grano,121,12.75,1542.75,TRUE
+2026-04-17,Orinoquía,Aguacate Hass,38,6.9,262.2,TRUE
+2026-04-13,Pacífico,Café especial,75,18.5,1387.5,TRUE
+2026-04-09,Caribe,Panela orgánica,112,4.2,470.4,TRUE
+2026-04-05,Andina,Flores de corte,29,22,638,TRUE
+2026-04-01,Orinoquía,Cacao en grano,66,12.75,841.5,FALSE
+2026-03-28,Pacífico,Aguacate Hass,103,6.9,710.7,TRUE
+2026-03-24,Caribe,Café especial,20,18.5,370,TRUE
+2026-03-20,Andina,Panela orgánica,57,4.2,239.4,TRUE
+2026-03-16,Orinoquía,Flores de corte,94,22,2068,TRUE
+2026-03-12,Pacífico,Cacao en grano,11,12.75,140.25,TRUE
+2026-03-08,Caribe,Aguacate Hass,48,6.9,331.2,TRUE
+2026-03-04,Andina,Café especial,85,18.5,1572.5,TRUE
+2026-02-28,Orinoquía,Panela orgánica,122,4.2,512.4,TRUE
+2026-02-24,Pacífico,Flores de corte,39,22,858,FALSE
+2026-02-20,Caribe,Cacao en grano,76,12.75,969,TRUE
+2026-02-16,Andina,Aguacate Hass,113,6.9,779.7,TRUE
+2026-02-12,Orinoquía,Café especial,30,18.5,555,TRUE
+2026-02-08,Pacífico,Panela orgánica,67,4.2,281.4,TRUE
+2026-02-04,Caribe,Flores de corte,104,22,2288,TRUE
+2026-01-31,Andina,Cacao en grano,21,12.75,267.75,TRUE
+2026-01-27,Orinoquía,Aguacate Hass,58,6.9,400.2,TRUE
+2026-01-23,Pacífico,Café especial,95,18.5,1757.5,TRUE
+2026-01-19,Caribe,Panela orgánica,12,4.2,50.4,FALSE
+2026-01-15,Andina,Flores de corte,49,22,1078,TRUE
+2026-01-11,Orinoquía,Cacao en grano,86,12.75,1096.5,TRUE
+2026-01-07,Pacífico,Aguacate Hass,123,6.9,848.7,TRUE
+2026-01-03,Caribe,Café especial,40,18.5,740,TRUE
+2026-10-13,Andina,Panela orgánica,77,4.2,323.4,TRUE
+2026-10-09,Orinoquía,Flores de corte,114,22,2508,TRUE
+2026-10-05,Pacífico,Cacao en grano,31,12.75,395.25,TRUE
+2026-10-01,Caribe,Aguacate Hass,68,6.9,469.2,TRUE
+2026-09-27,Andina,Café especial,105,18.5,1942.5,FALSE
+2026-09-23,Orinoquía,Panela orgánica,22,4.2,92.4,TRUE
+2026-09-19,Pacífico,Flores de corte,59,22,1298,TRUE
+2026-09-15,Caribe,Cacao en grano,96,12.75,1224,TRUE
+2026-09-11,Andina,Aguacate Hass,13,6.9,89.7,TRUE
+2026-09-07,Orinoquía,Café especial,50,18.5,925,TRUE
+2026-09-03,Pacífico,Panela orgánica,87,4.2,365.4,TRUE
+2026-08-30,Caribe,Flores de corte,124,22,2728,TRUE
+2026-08-26,Andina,Cacao en grano,41,12.75,522.75,TRUE
+2026-08-22,Orinoquía,Aguacate Hass,78,6.9,538.2,FALSE
+2026-08-18,Pacífico,Café especial,115,18.5,2127.5,TRUE
+2026-08-14,Caribe,Panela orgánica,32,4.2,134.4,TRUE
+2026-08-10,Andina,Flores de corte,69,22,1518,TRUE
+2026-08-06,Orinoquía,Cacao en grano,106,12.75,1351.5,TRUE
+2026-08-02,Pacífico,Aguacate Hass,23,6.9,158.7,TRUE
+2026-07-29,Caribe,Café especial,60,18.5,1110,TRUE
+2026-07-25,Andina,Panela orgánica,97,4.2,407.4,TRUE
+2026-07-21,Orinoquía,Flores de corte,14,22,308,TRUE
+2026-07-17,Pacífico,Cacao en grano,51,12.75,650.25,FALSE
+2026-07-13,Caribe,Aguacate Hass,88,6.9,607.2,TRUE
+2026-07-09,Andina,Café especial,5,18.5,92.5,TRUE
+2026-07-05,Orinoquía,Panela orgánica,42,4.2,176.4,TRUE
+2026-07-01,Pacífico,Flores de corte,79,22,1738,TRUE
+2026-06-27,Caribe,Cacao en grano,116,12.75,1479,TRUE
+2026-06-23,Andina,Aguacate Hass,33,6.9,227.7,TRUE
+2026-06-19,Orinoquía,Café especial,70,18.5,1295,TRUE
+2026-06-15,Pacífico,Panela orgánica,107,4.2,449.4,TRUE
+2026-06-11,Caribe,Flores de corte,24,22,528,FALSE
+2026-06-07,Andina,Cacao en grano,61,12.75,777.75,TRUE
+2026-06-03,Orinoquía,Aguacate Hass,98,6.9,676.2,TRUE
+2026-05-30,Pacífico,Café especial,15,18.5,277.5,TRUE
+2026-05-26,Caribe,Panela orgánica,52,4.2,218.4,TRUE
+2026-05-22,Andina,Flores de corte,89,22,1958,TRUE
+2026-05-18,Orinoquía,Cacao en grano,6,12.75,76.5,TRUE
+2026-05-14,Pacífico,Aguacate Hass,43,6.9,296.7,TRUE
+2026-05-10,Caribe,Café especial,80,18.5,1480,TRUE
+2026-05-06,Andina,Panela orgánica,117,4.2,491.4,FALSE
+2026-05-02,Orinoquía,Flores de corte,34,22,748,TRUE
+2026-04-28,Pacífico,Cacao en grano,71,12.75,905.25,TRUE
+2026-04-24,Caribe,Aguacate Hass,108,6.9,745.2,TRUE
+2026-04-20,Andina,Café especial,25,18.5,462.5,TRUE
+2026-04-16,Orinoquía,Panela orgánica,62,4.2,260.4,TRUE
+2026-04-12,Pacífico,Flores de corte,99,22,2178,TRUE
+2026-04-08,Caribe,Cacao en grano,16,12.75,204,TRUE
+2026-04-04,Andina,Aguacate Hass,53,6.9,365.7,TRUE
+2026-03-31,Orinoquía,Café especial,90,18.5,1665,FALSE
+2026-03-27,Pacífico,Panela orgánica,7,4.2,29.4,TRUE
+2026-03-23,Caribe,Flores de corte,44,22,968,TRUE
+2026-03-19,Andina,Cacao en grano,81,12.75,1032.75,TRUE
+2026-03-15,Orinoquía,Aguacate Hass,118,6.9,814.2,TRUE
+2026-03-11,Pacífico,Café especial,35,18.5,647.5,TRUE
+2026-03-07,Caribe,Panela orgánica,72,4.2,302.4,TRUE
+2026-03-03,Andina,Flores de corte,109,22,2398,TRUE
+2026-02-27,Orinoquía,Cacao en grano,26,12.75,331.5,TRUE
+2026-02-23,Pacífico,Aguacate Hass,63,6.9,434.7,FALSE
+2026-02-19,Caribe,Café especial,100,18.5,1850,TRUE
+2026-02-15,Andina,Panela orgánica,17,4.2,71.4,TRUE
+2026-02-11,Orinoquía,Flores de corte,54,22,1188,TRUE
+2026-02-07,Pacífico,Cacao en grano,91,12.75,1160.25,TRUE
+2026-02-03,Caribe,Aguacate Hass,8,6.9,55.2,TRUE
+2026-01-30,Andina,Café especial,45,18.5,832.5,TRUE
+2026-01-26,Orinoquía,Panela orgánica,82,4.2,344.4,TRUE
+2026-01-22,Pacífico,Flores de corte,119,22,2618,TRUE
+2026-01-18,Caribe,Cacao en grano,36,12.75,459,FALSE
+2026-01-14,Andina,Aguacate Hass,73,6.9,503.7,TRUE
+2026-01-10,Orinoquía,Café especial,110,18.5,2035,TRUE
+2026-01-06,Pacífico,Panela orgánica,27,4.2,113.4,TRUE
+2026-01-02,Caribe,Flores de corte,64,22,1408,TRUE
+2026-10-12,Andina,Cacao en grano,101,12.75,1287.75,TRUE
+2026-10-08,Orinoquía,Aguacate Hass,18,6.9,124.2,TRUE
+2026-10-04,Pacífico,Café especial,55,18.5,1017.5,TRUE
+2026-09-30,Caribe,Panela orgánica,92,4.2,386.4,TRUE
+2026-09-26,Andina,Flores de corte,9,22,198,FALSE
+2026-09-22,Orinoquía,Cacao en grano,46,12.75,586.5,TRUE
+2026-09-18,Pacífico,Aguacate Hass,83,6.9,572.7,TRUE
+2026-09-14,Caribe,Café especial,120,18.5,2220,TRUE
+2026-09-10,Andina,Panela orgánica,37,4.2,155.4,TRUE
+2026-09-06,Orinoquía,Flores de corte,74,22,1628,TRUE
+2026-09-02,Pacífico,Cacao en grano,111,12.75,1415.25,TRUE
+2026-08-29,Caribe,Aguacate Hass,28,6.9,193.2,TRUE
