@@ -530,7 +530,7 @@ fn attr(e: &BytesStart<'_>, name: &[u8]) -> Option<String> {
     e.attributes()
         .flatten()
         .find(|a| a.key.local_name().as_ref() == name)
-        .and_then(|a| a.unescape_value().ok().map(|v| v.into_owned()))
+        .and_then(|a| crate::xml::attr_value(&a, e))
 }
 fn num(e: &BytesStart<'_>, name: &[u8]) -> i64 {
     attr(e, name).and_then(|v| v.parse().ok()).unwrap_or(0)
@@ -540,13 +540,13 @@ fn rel_id(e: &BytesStart<'_>) -> Option<String> {
     e.attributes()
         .flatten()
         .find(|a| a.key.as_ref().ends_with(b":id"))
-        .and_then(|a| a.unescape_value().ok().map(|v| v.into_owned()))
+        .and_then(|a| crate::xml::attr_value(&a, e))
 }
 fn embed(e: &BytesStart<'_>) -> Option<String> {
     e.attributes()
         .flatten()
         .find(|a| a.key.as_ref().ends_with(b":embed"))
-        .and_then(|a| a.unescape_value().ok().map(|v| v.into_owned()))
+        .and_then(|a| crate::xml::attr_value(&a, e))
         .filter(|v| !v.is_empty())
 }
 /// PowerPoint guarda saltos suaves como `\r\n`, `\r` o tabulación vertical.

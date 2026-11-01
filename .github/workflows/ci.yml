@@ -25,3 +25,12 @@ jobs:
         run: cargo clippy --all-targets --locked -- -D warnings
       - name: Pruebas
         run: cargo test --locked
+
+  dependencies:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      # Licencias y orígenes según deny.toml; los avisos de seguridad van en scheduled.yml.
+      - uses: EmbarkStudios/cargo-deny-action@v2
+        with:
+          command: check licenses sources

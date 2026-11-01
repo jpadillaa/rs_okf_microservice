@@ -4,10 +4,18 @@
 use crate::ooxml::resolve_ref;
 use anyhow::{Result, bail};
 use quick_xml::{
-    NsReader,
-    events::{BytesStart, Event},
+    NsReader, XmlVersion,
+    events::{BytesStart, Event, attributes::Attribute},
     name::{Namespace, ResolveResult},
 };
+
+/// Valor de un atributo con las entidades resueltas y los espacios normalizados como
+/// exige XML 1.0; `None` si no puede decodificarse.
+pub(crate) fn attr_value(a: &Attribute<'_>, e: &BytesStart<'_>) -> Option<String> {
+    a.decoded_and_normalized_value(XmlVersion::Implicit1_0, e.decoder())
+        .ok()
+        .map(|v| v.into_owned())
+}
 
 /// Espacios de nombres de las relaciones del paquete (transicional y estricto).
 const RELATIONSHIPS: &[&[u8]] = &[
@@ -103,16 +111,13 @@ pub(crate) fn element(reader: &NsReader<&[u8]>, e: &BytesStart<'_>) -> Node {
         .with_checks(false)
         .flatten()
         .map(|a| {
-            let (ns, local) = reader.resolve_attribute(a.key);
+            let (ns, local) = reader.resolver().resolve_attribute(a.key);
             let rel =
                 matches!(ns, ResolveResult::Bound(Namespace(n)) if RELATIONSHIPS.contains(&n));
             Attr {
                 local: local.as_ref().to_vec(),
                 rel,
-                value: a
-                    .unescape_value()
-                    .map(|v| v.into_owned())
-                    .unwrap_or_default(),
+                value: attr_value(&a, e).unwrap_or_default(),
             }
         })
         .collect();

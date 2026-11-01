@@ -1,0 +1,16 @@
+name: Programado
+
+on:
+  schedule:
+    - cron: "0 5 * * *"
+  workflow_dispatch:
+
+jobs:
+  advisories:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      # Avisos de seguridad de las dependencias; las excepciones justificadas están en deny.toml.
+      - uses: EmbarkStudios/cargo-deny-action@v2
+        with:
+          command: check advisories
