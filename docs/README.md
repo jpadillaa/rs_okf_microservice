@@ -13,6 +13,8 @@ Este directorio es el punto de entrada para implementar el conversor de PDF, DOC
 | 4 | `docs/decisiones/STACK_TECNOLOGICO_MICROSERVICIO_OKF.md` | [Stack tecnológico](decisiones/STACK_TECNOLOGICO_MICROSERVICIO_OKF.md) | Rust, bibliotecas, persistencia, renderizado y pruebas necesarias antes de cerrar los adaptadores. |
 | 4a | `docs/decisiones/RENDERIZADO_PPTX_MEDICIONES.md` | [Decisión de renderizado PPTX](decisiones/RENDERIZADO_PPTX_MEDICIONES.md) | Renderizador PPTX elegido y mediciones con ejemplos sintéticos y con el corpus real. |
 | 5 | `docs/estado/ESTADO_DEL_PROYECTO.md` | [Estado del proyecto](estado/ESTADO_DEL_PROYECTO.md) | Qué está implementado, con qué evidencia de calidad, brechas frente a la arquitectura, comparación con el plan inicial y roadmap pendiente. |
+| 5a | `docs/planes/PLAN_1_RECUPERACION_DEL_PLAN_ORIGINAL.md` | [Plan 1: recuperar del plan original](planes/PLAN_1_RECUPERACION_DEL_PLAN_ORIGINAL.md) | Decisiones del plan inicial que se recuperan (modelo de salida común, referencia de cobertura, imagen reproducible, límites y admisión, registro, corpus, división en capítulos, auditoría de dependencias) y las que se cierran en la documentación. |
+| 5b | `docs/planes/PLAN_2_CALIDAD_Y_ROBUSTEZ.md` | [Plan 2: calidad y robustez](planes/PLAN_2_CALIDAD_Y_ROBUSTEZ.md) | Regresión, entradas hostiles, operación y contrato: bundles de referencia, aislamiento, fuzzing, salud, retención y versiones. |
 
 Los documentos están guardados en las ubicaciones indicadas y se enlazan mediante rutas relativas para que funcionen dentro del repositorio y en Obsidian.
 

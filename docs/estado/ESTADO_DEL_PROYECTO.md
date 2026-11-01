@@ -141,6 +141,8 @@ La especificación pasó de 112 a 172 líneas. Las reglas detalladas de cada for
 
 ## 6. Roadmap pendiente
 
+Los puntos 2 a 8 se desarrollan en el [plan 1](../planes/PLAN_1_RECUPERACION_DEL_PLAN_ORIGINAL.md), salvo la política de retención, que está en el plan 2; las garantías de regresión, aislamiento, operación y versionado, que este roadmap no recogía, en el [plan 2](../planes/PLAN_2_CALIDAD_Y_ROBUSTEZ.md).
+
 En orden de prioridad:
 
 1. **Revisar la CI del commit `d3a765e`.**
