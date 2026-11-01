@@ -1,17 +1,17 @@
 ---
-type: Slide
+type: "Slide"
 title: "Comparar una variante con una línea base"
 description: "Diapositiva 22 de s1.pptx: Comparar una variante con una línea base. Mismos casos y criterios"
 sources:
-  - id: original
-    resource: /references/original.pptx
+  - id: "original"
+    resource: "/references/original.pptx"
 generated:
-  by: process:document-conversion
+  by: "process:document-conversion"
   at: "<generado>"
 source_spans:
-  - id: slide-22
-    source_id: original
-    kind: pptx_slide
+  - id: "slide-22"
+    source_id: "original"
+    kind: "pptx_slide"
     slide_index: 22
     slide_id: 277
     display_label: "22"

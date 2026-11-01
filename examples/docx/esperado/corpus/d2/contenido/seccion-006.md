@@ -1,20 +1,44 @@
 ---
-type: Source Section
+type: "Source Section"
 title: "Paso No. 4 - Diseño de una estrategia híbrida de adopvisionamiento institucional de IA generativa"
 description: "Sección 6 de d2.docx: Paso No. 4 - Diseño de una estrategia híbrida de adopvisionamiento institucional de IA generativa. A partir de las estimaciones técnicas y económicas desarrolladas en los pasos anteriores, el equipo debe proponer una arquitectura híbrida para la Universidad…"
 sources:
-  - id: original
-    resource: /references/original.docx
+  - id: "original"
+    resource: "/references/original.docx"
 generated:
-  by: process:document-conversion
+  by: "process:document-conversion"
   at: "<generado>"
 source_spans:
-  - { id: seccion, source_id: original, kind: docx_blocks, from: 34, to: 39 }
-  - { id: b-35, source_id: original, kind: docx_blocks, from: 35, to: 35 }
-  - { id: b-36, source_id: original, kind: docx_blocks, from: 36, to: 36 }
-  - { id: b-37, source_id: original, kind: docx_blocks, from: 37, to: 37 }
-  - { id: b-38, source_id: original, kind: docx_blocks, from: 38, to: 38 }
-  - { id: b-39, source_id: original, kind: docx_blocks, from: 39, to: 39 }
+  - id: "seccion"
+    source_id: "original"
+    kind: "docx_blocks"
+    from: 34
+    to: 39
+  - id: "b-35"
+    source_id: "original"
+    kind: "docx_blocks"
+    from: 35
+    to: 35
+  - id: "b-36"
+    source_id: "original"
+    kind: "docx_blocks"
+    from: 36
+    to: 36
+  - id: "b-37"
+    source_id: "original"
+    kind: "docx_blocks"
+    from: 37
+    to: 37
+  - id: "b-38"
+    source_id: "original"
+    kind: "docx_blocks"
+    from: 38
+    to: 38
+  - id: "b-39"
+    source_id: "original"
+    kind: "docx_blocks"
+    from: 39
+    to: 39
 ---
 
 # Paso No. 4 - Diseño de una estrategia híbrida de adopvisionamiento institucional de IA generativa

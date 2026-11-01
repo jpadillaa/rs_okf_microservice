@@ -1,17 +1,17 @@
 ---
-type: Slide
+type: "Slide"
 title: "Cómo se manifiestan los errores"
 description: "Diapositiva 33 de s3.pptx: Cómo se manifiestan los errores. Colapso de entidades legales"
 sources:
-  - id: original
-    resource: /references/original.pptx
+  - id: "original"
+    resource: "/references/original.pptx"
 generated:
-  by: process:document-conversion
+  by: "process:document-conversion"
   at: "<generado>"
 source_spans:
-  - id: slide-33
-    source_id: original
-    kind: pptx_slide
+  - id: "slide-33"
+    source_id: "original"
+    kind: "pptx_slide"
     slide_index: 33
     slide_id: 288
 ---

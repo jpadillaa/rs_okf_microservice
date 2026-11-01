@@ -1,18 +1,34 @@
 ---
-type: Source Section
+type: "Source Section"
 title: "Introduction"
 description: "Sección 3 de p2.pdf: Introduction. Generative artificial intelligence (AI) tools emerged into the consumer sector—and into the hands of healthcare professionals, educators, academics and…"
 sources:
-  - id: original
-    resource: /references/original.pdf
+  - id: "original"
+    resource: "/references/original.pdf"
 generated:
-  by: process:document-conversion
+  by: "process:document-conversion"
   at: "<generado>"
 source_spans:
-  - { id: seccion, source_id: original, kind: pdf_pages, from: 1, to: 2 }
-  - { id: p-1, source_id: original, kind: pdf_pages, from: 1, to: 1 }
-  - { id: p-1-2, source_id: original, kind: pdf_pages, from: 1, to: 2 }
-  - { id: p-2, source_id: original, kind: pdf_pages, from: 2, to: 2 }
+  - id: "seccion"
+    source_id: "original"
+    kind: "pdf_pages"
+    from: 1
+    to: 2
+  - id: "p-1"
+    source_id: "original"
+    kind: "pdf_pages"
+    from: 1
+    to: 1
+  - id: "p-1-2"
+    source_id: "original"
+    kind: "pdf_pages"
+    from: 1
+    to: 2
+  - id: "p-2"
+    source_id: "original"
+    kind: "pdf_pages"
+    from: 2
+    to: 2
 ---
 
 # Introduction

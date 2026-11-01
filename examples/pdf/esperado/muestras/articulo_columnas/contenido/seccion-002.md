@@ -1,15 +1,19 @@
 ---
-type: Source Section
+type: "Source Section"
 title: "Resumen"
 description: "Sección 2 de articulo_columnas.pdf: Resumen. Este artículo describe un experimento ficticio sobre la conversión de documentos maquetados en dos columnas. Se compararon dos procedimientos de extracción con…"
 sources:
-  - id: original
-    resource: /references/original.pdf
+  - id: "original"
+    resource: "/references/original.pdf"
 generated:
-  by: process:document-conversion
+  by: "process:document-conversion"
   at: "<generado>"
 source_spans:
-  - { id: seccion, source_id: original, kind: pdf_pages, from: 1, to: 1 }
+  - id: "seccion"
+    source_id: "original"
+    kind: "pdf_pages"
+    from: 1
+    to: 1
 ---
 
 # Resumen

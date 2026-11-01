@@ -1,15 +1,19 @@
 ---
-type: Source Section
+type: "Source Section"
 title: "2. Arquitectura"
 description: "Sección 3 de informe_tecnico.pdf: 2. Arquitectura. La nueva plataforma separa la aplicación en tres servicios: catálogo, existencias y reportes. Cada servicio tiene su propia base de datos y se comunica con los…"
 sources:
-  - id: original
-    resource: /references/original.pdf
+  - id: "original"
+    resource: "/references/original.pdf"
 generated:
-  by: process:document-conversion
+  by: "process:document-conversion"
   at: "<generado>"
 source_spans:
-  - { id: seccion, source_id: original, kind: pdf_pages, from: 1, to: 1 }
+  - id: "seccion"
+    source_id: "original"
+    kind: "pdf_pages"
+    from: 1
+    to: 1
 title_inferred: true
 ---
 

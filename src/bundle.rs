@@ -158,16 +158,6 @@ pub(crate) fn escape_line_start(line: &str) -> String {
     line.to_string()
 }
 
-pub(crate) fn esc(s: &str) -> String {
-    s.replace('\\', "\\\\")
-        .replace('"', "\\\"")
-        .replace('\n', " ")
-}
-
-pub(crate) fn yaml(s: &str) -> String {
-    format!("\"{}\"", esc(s))
-}
-
 pub(crate) fn hex(b: &[u8]) -> String {
     b.iter().map(|v| format!("{v:02x}")).collect()
 }

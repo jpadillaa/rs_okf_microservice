@@ -1,17 +1,29 @@
 ---
-type: Source Section
+type: "Source Section"
 title: "Guía técnica de indexación vectorial"
 description: "Inicio de guia_tecnica.docx, antes de la primera sección. Laboratorio 3 · Recuperación densa"
 sources:
-  - id: original
-    resource: /references/original.docx
+  - id: "original"
+    resource: "/references/original.docx"
 generated:
-  by: process:document-conversion
+  by: "process:document-conversion"
   at: "<generado>"
 source_spans:
-  - { id: seccion, source_id: original, kind: docx_blocks, from: 1, to: 3 }
-  - { id: b-2, source_id: original, kind: docx_blocks, from: 2, to: 2 }
-  - { id: b-3, source_id: original, kind: docx_blocks, from: 3, to: 3 }
+  - id: "seccion"
+    source_id: "original"
+    kind: "docx_blocks"
+    from: 1
+    to: 3
+  - id: "b-2"
+    source_id: "original"
+    kind: "docx_blocks"
+    from: 2
+    to: 2
+  - id: "b-3"
+    source_id: "original"
+    kind: "docx_blocks"
+    from: 3
+    to: 3
 ---
 
 # Guía técnica de indexación vectorial

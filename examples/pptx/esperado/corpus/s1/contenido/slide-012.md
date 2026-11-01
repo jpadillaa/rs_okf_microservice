@@ -1,17 +1,17 @@
 ---
-type: Slide
+type: "Slide"
 title: "El recorrido de la clase"
 description: "Diapositiva 12 de s1.pptx: El recorrido de la clase. 1. Tarea"
 sources:
-  - id: original
-    resource: /references/original.pptx
+  - id: "original"
+    resource: "/references/original.pptx"
 generated:
-  by: process:document-conversion
+  by: "process:document-conversion"
   at: "<generado>"
 source_spans:
-  - id: slide-12
-    source_id: original
-    kind: pptx_slide
+  - id: "slide-12"
+    source_id: "original"
+    kind: "pptx_slide"
     slide_index: 12
     slide_id: 267
     display_label: "12"

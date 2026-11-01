@@ -1,17 +1,29 @@
 ---
-type: Source Section
+type: "Source Section"
 title: "Semana 4: Observabilidad"
 description: "Sección 4 de d1.docx: Semana 4: Observabilidad. Observabilidad:"
 sources:
-  - id: original
-    resource: /references/original.docx
+  - id: "original"
+    resource: "/references/original.docx"
 generated:
-  by: process:document-conversion
+  by: "process:document-conversion"
   at: "<generado>"
 source_spans:
-  - { id: seccion, source_id: original, kind: docx_blocks, from: 39, to: 42 }
-  - { id: b-40, source_id: original, kind: docx_blocks, from: 40, to: 40 }
-  - { id: b-41-42, source_id: original, kind: docx_blocks, from: 41, to: 42 }
+  - id: "seccion"
+    source_id: "original"
+    kind: "docx_blocks"
+    from: 39
+    to: 42
+  - id: "b-40"
+    source_id: "original"
+    kind: "docx_blocks"
+    from: 40
+    to: 40
+  - id: "b-41-42"
+    source_id: "original"
+    kind: "docx_blocks"
+    from: 41
+    to: 42
 ---
 
 # Semana 4: Observabilidad

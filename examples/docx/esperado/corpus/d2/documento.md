@@ -1,19 +1,27 @@
 ---
-type: Source Document
+type: "Source Document"
 title: "Tarea No. 2 - Evaluación estratégica de alternativas de aprovisionamiento de GenAI"
 description: "Documento fuente d2.docx convertido a conceptos OKF por secciones."
 sources:
-  - id: original
-    resource: /references/original.docx
+  - id: "original"
+    resource: "/references/original.docx"
 generated:
-  by: process:document-conversion
+  by: "process:document-conversion"
   at: "<generado>"
 source_file:
-  path: references/original.docx
-  sha256: e7f8806c591ab9b085feb2606bd46ae24d8a260ff2fae50eee09f82542a4f0f0
+  path: "references/original.docx"
+  sha256: "e7f8806c591ab9b085feb2606bd46ae24d8a260ff2fae50eee09f82542a4f0f0"
 source_spans:
-  - { id: documento, source_id: original, kind: docx_blocks, from: 1, to: 70 }
-  - { id: titulo, source_id: original, kind: docx_blocks, from: 1, to: 1 }
+  - id: "documento"
+    source_id: "original"
+    kind: "docx_blocks"
+    from: 1
+    to: 70
+  - id: "titulo"
+    source_id: "original"
+    kind: "docx_blocks"
+    from: 1
+    to: 1
 ---
 
 <!-- okf-source-span: titulo -->

@@ -1,17 +1,17 @@
 ---
-type: Slide
+type: "Slide"
 title: "Retrieval Augmented Generation"
 description: "Diapositiva 3 de s2.pptx: Retrieval Augmented Generation. Una arquitectura que combina modelos generativos con mecanismos de recuperación de información."
 sources:
-  - id: original
-    resource: /references/original.pptx
+  - id: "original"
+    resource: "/references/original.pptx"
 generated:
-  by: process:document-conversion
+  by: "process:document-conversion"
   at: "<generado>"
 source_spans:
-  - id: slide-3
-    source_id: original
-    kind: pptx_slide
+  - id: "slide-3"
+    source_id: "original"
+    kind: "pptx_slide"
     slide_index: 3
     slide_id: 258
 ---

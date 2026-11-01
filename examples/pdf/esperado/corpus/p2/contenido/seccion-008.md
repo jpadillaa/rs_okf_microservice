@@ -1,15 +1,19 @@
 ---
-type: Source Section
+type: "Source Section"
 title: "Acknowledgements"
 description: "Sección 8 de p2.pdf: Acknowledgements. In the writing of this paper, ChatGPT was used to answer the following questions: (1) “What recommendations exist for ethical use of ChatGPT in academic…"
 sources:
-  - id: original
-    resource: /references/original.pdf
+  - id: "original"
+    resource: "/references/original.pdf"
 generated:
-  by: process:document-conversion
+  by: "process:document-conversion"
   at: "<generado>"
 source_spans:
-  - { id: seccion, source_id: original, kind: pdf_pages, from: 8, to: 8 }
+  - id: "seccion"
+    source_id: "original"
+    kind: "pdf_pages"
+    from: 8
+    to: 8
 ---
 
 # Acknowledgements

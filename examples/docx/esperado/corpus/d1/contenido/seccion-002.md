@@ -1,23 +1,59 @@
 ---
-type: Source Section
+type: "Source Section"
 title: "Semana 2: Fundamentos de RAG (Pipeline de ingesta)"
 description: "Sección 2 de d1.docx: Semana 2: Fundamentos de RAG (Pipeline de ingesta). RAG (Generación Aumentada por Recuperación)"
 sources:
-  - id: original
-    resource: /references/original.docx
+  - id: "original"
+    resource: "/references/original.docx"
 generated:
-  by: process:document-conversion
+  by: "process:document-conversion"
   at: "<generado>"
 source_spans:
-  - { id: seccion, source_id: original, kind: docx_blocks, from: 12, to: 24 }
-  - { id: b-13, source_id: original, kind: docx_blocks, from: 13, to: 13 }
-  - { id: b-14-15, source_id: original, kind: docx_blocks, from: 14, to: 15 }
-  - { id: b-16, source_id: original, kind: docx_blocks, from: 16, to: 16 }
-  - { id: b-17-18, source_id: original, kind: docx_blocks, from: 17, to: 18 }
-  - { id: b-19, source_id: original, kind: docx_blocks, from: 19, to: 19 }
-  - { id: b-20-22, source_id: original, kind: docx_blocks, from: 20, to: 22 }
-  - { id: b-23, source_id: original, kind: docx_blocks, from: 23, to: 23 }
-  - { id: b-24, source_id: original, kind: docx_blocks, from: 24, to: 24 }
+  - id: "seccion"
+    source_id: "original"
+    kind: "docx_blocks"
+    from: 12
+    to: 24
+  - id: "b-13"
+    source_id: "original"
+    kind: "docx_blocks"
+    from: 13
+    to: 13
+  - id: "b-14-15"
+    source_id: "original"
+    kind: "docx_blocks"
+    from: 14
+    to: 15
+  - id: "b-16"
+    source_id: "original"
+    kind: "docx_blocks"
+    from: 16
+    to: 16
+  - id: "b-17-18"
+    source_id: "original"
+    kind: "docx_blocks"
+    from: 17
+    to: 18
+  - id: "b-19"
+    source_id: "original"
+    kind: "docx_blocks"
+    from: 19
+    to: 19
+  - id: "b-20-22"
+    source_id: "original"
+    kind: "docx_blocks"
+    from: 20
+    to: 22
+  - id: "b-23"
+    source_id: "original"
+    kind: "docx_blocks"
+    from: 23
+    to: 23
+  - id: "b-24"
+    source_id: "original"
+    kind: "docx_blocks"
+    from: 24
+    to: 24
 ---
 
 # Semana 2: Fundamentos de RAG (Pipeline de ingesta)

@@ -1,20 +1,36 @@
 ---
-type: Sheet
+type: "Sheet"
 title: "Precios"
 description: "Hoja 1 del libro libro_con_perdidas.xlsx: rango A1:D8 con 3 regiones."
 sources:
-  - id: original
-    resource: /references/original.xlsx
+  - id: "original"
+    resource: "/references/original.xlsx"
 generated:
-  by: process:document-conversion
+  by: "process:document-conversion"
   at: "<generado>"
-status: draft
+status: "draft"
 sheet_index: 1
 source_spans:
-  - { id: hoja, source_id: original, kind: xlsx_range, sheet: "Precios", range: "A1:D8" }
-  - { id: r-1, source_id: original, kind: xlsx_range, sheet: "Precios", range: "A1:D4" }
-  - { id: r-2, source_id: original, kind: xlsx_range, sheet: "Precios", range: "A6:B6" }
-  - { id: r-3, source_id: original, kind: xlsx_range, sheet: "Precios", range: "A8" }
+  - id: "hoja"
+    source_id: "original"
+    kind: "xlsx_range"
+    sheet: "Precios"
+    range: "A1:D8"
+  - id: "r-1"
+    source_id: "original"
+    kind: "xlsx_range"
+    sheet: "Precios"
+    range: "A1:D4"
+  - id: "r-2"
+    source_id: "original"
+    kind: "xlsx_range"
+    sheet: "Precios"
+    range: "A6:B6"
+  - id: "r-3"
+    source_id: "original"
+    kind: "xlsx_range"
+    sheet: "Precios"
+    range: "A8"
 ---
 
 # Precios

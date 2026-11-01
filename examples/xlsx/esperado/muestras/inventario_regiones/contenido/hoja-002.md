@@ -1,17 +1,25 @@
 ---
-type: Sheet
+type: "Sheet"
 title: "Dinámica"
 description: "Hoja 2 del libro inventario_regiones.xlsx: rango A1:B6 con 1 región."
 sources:
-  - id: original
-    resource: /references/original.xlsx
+  - id: "original"
+    resource: "/references/original.xlsx"
 generated:
-  by: process:document-conversion
+  by: "process:document-conversion"
   at: "<generado>"
 sheet_index: 2
 source_spans:
-  - { id: hoja, source_id: original, kind: xlsx_range, sheet: "Dinámica", range: "A1:B6" }
-  - { id: r-1, source_id: original, kind: xlsx_range, sheet: "Dinámica", range: "A1:B6" }
+  - id: "hoja"
+    source_id: "original"
+    kind: "xlsx_range"
+    sheet: "Dinámica"
+    range: "A1:B6"
+  - id: "r-1"
+    source_id: "original"
+    kind: "xlsx_range"
+    sheet: "Dinámica"
+    range: "A1:B6"
 ---
 
 # Dinámica

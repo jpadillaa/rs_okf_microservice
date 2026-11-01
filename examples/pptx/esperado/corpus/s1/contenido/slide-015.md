@@ -1,17 +1,17 @@
 ---
-type: Slide
+type: "Slide"
 title: "Delimitar un contrato de evidencia"
 description: "Diapositiva 15 de s1.pptx: Delimitar un contrato de evidencia. CAMPO"
 sources:
-  - id: original
-    resource: /references/original.pptx
+  - id: "original"
+    resource: "/references/original.pptx"
 generated:
-  by: process:document-conversion
+  by: "process:document-conversion"
   at: "<generado>"
 source_spans:
-  - id: slide-15
-    source_id: original
-    kind: pptx_slide
+  - id: "slide-15"
+    source_id: "original"
+    kind: "pptx_slide"
     slide_index: 15
     slide_id: 270
     display_label: "15"

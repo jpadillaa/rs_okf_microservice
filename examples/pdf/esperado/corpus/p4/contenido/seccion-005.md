@@ -1,21 +1,49 @@
 ---
-type: Source Section
+type: "Source Section"
 title: "La arquitectura mínima de un sistema agéntico"
 description: "Sección 5 de p4.pdf: La arquitectura mínima de un sistema agéntico. Un modelo de lenguaje puede interpretar objetivos, razonar sobre información y proponer acciones, pero esas capacidades probabilísticas no constituyen por sí…"
 sources:
-  - id: original
-    resource: /references/original.pdf
+  - id: "original"
+    resource: "/references/original.pdf"
 generated:
-  by: process:document-conversion
+  by: "process:document-conversion"
   at: "<generado>"
 source_spans:
-  - { id: seccion, source_id: original, kind: pdf_pages, from: 6, to: 9 }
-  - { id: p-6, source_id: original, kind: pdf_pages, from: 6, to: 6 }
-  - { id: p-6-7, source_id: original, kind: pdf_pages, from: 6, to: 7 }
-  - { id: p-7, source_id: original, kind: pdf_pages, from: 7, to: 7 }
-  - { id: p-7-8, source_id: original, kind: pdf_pages, from: 7, to: 8 }
-  - { id: p-8, source_id: original, kind: pdf_pages, from: 8, to: 8 }
-  - { id: p-9, source_id: original, kind: pdf_pages, from: 9, to: 9 }
+  - id: "seccion"
+    source_id: "original"
+    kind: "pdf_pages"
+    from: 6
+    to: 9
+  - id: "p-6"
+    source_id: "original"
+    kind: "pdf_pages"
+    from: 6
+    to: 6
+  - id: "p-6-7"
+    source_id: "original"
+    kind: "pdf_pages"
+    from: 6
+    to: 7
+  - id: "p-7"
+    source_id: "original"
+    kind: "pdf_pages"
+    from: 7
+    to: 7
+  - id: "p-7-8"
+    source_id: "original"
+    kind: "pdf_pages"
+    from: 7
+    to: 8
+  - id: "p-8"
+    source_id: "original"
+    kind: "pdf_pages"
+    from: 8
+    to: 8
+  - id: "p-9"
+    source_id: "original"
+    kind: "pdf_pages"
+    from: 9
+    to: 9
 ---
 
 # La arquitectura mínima de un sistema agéntico

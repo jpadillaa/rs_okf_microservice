@@ -6,6 +6,9 @@ mod layout;
 mod read;
 
 use crate::bundle::*;
+use crate::format::Format;
+use crate::output::*;
+use crate::sections::*;
 use crate::worker::{Config, Rejected};
 use anyhow::{Context, Result, bail};
 use layout::{Block, Item, Line, Para, Region, Run};
@@ -20,11 +23,6 @@ use std::{
 use yaml_serde::Value as YamlValue;
 use zip::{ZipArchive, ZipWriter};
 
-/// Por debajo de este número de caracteres el documento es breve y forma un solo
-/// concepto aunque tenga encabezados (como en DOCX).
-const BRIEF_MAX_CHARS: usize = 1500;
-/// Longitud máxima de un párrafo que puede inferirse como encabezado.
-const INFERRED_HEADING_MAX_CHARS: usize = 150;
 /// Franja superior e inferior de la página donde se buscan encabezados y pies.
 const FURNITURE_BAND: f32 = 0.12;
 /// Cobertura a partir de la cual una imagen domina la página (escaneo o página mixta).
@@ -95,29 +93,6 @@ pub(crate) enum Kind {
     /// Página sin texto propio: en blanco, escaneada o solo visual.
     PageNote(usize),
     Rotated(String),
-}
-
-#[derive(Clone, Copy, Debug, PartialEq)]
-pub(crate) struct Heading {
-    pub(crate) level: u8,
-    pub(crate) inferred: bool,
-}
-
-#[derive(Clone, Copy, Debug, PartialEq)]
-pub(crate) enum TitleSource {
-    Heading,
-    LoneHeading,
-    Metadata,
-    Filename,
-}
-
-pub(crate) struct Section {
-    pub(crate) title: String,
-    pub(crate) heading: Option<usize>,
-    pub(crate) from: usize,
-    pub(crate) to: usize,
-    pub(crate) preamble: bool,
-    pub(crate) inferred: bool,
 }
 
 /// Texto repetido en encabezados o pies de página, con las páginas donde aparece.
@@ -875,11 +850,7 @@ impl Outline {
         "#".repeat((level.saturating_sub(base) as usize + 1).clamp(2, 6))
     }
     pub(crate) fn file(&self, k: usize) -> String {
-        if self.split.is_none() {
-            "texto.md".into()
-        } else {
-            format!("seccion-{:03}.md", k + 1)
-        }
+        section_file(self.split, k)
     }
 }
 
@@ -1210,7 +1181,8 @@ impl Render<'_> {
         format!("{view}{note}\n")
     }
 
-    fn concept(&mut self, k: usize, filename: &str, generated: &str) -> String {
+    /// Frontmatter y cuerpo del concepto de la sección `k`.
+    fn concept(&mut self, k: usize, filename: &str, generated: &str) -> (Fields, String) {
         let ex = self.ex;
         let outline = self.outline;
         let sec = &outline.sections[k];
@@ -1357,29 +1329,18 @@ impl Render<'_> {
         let draft = range.iter().any(|&i| {
             matches!(units[i].kind, Kind::PageNote(p) if matches!(ex.pages[p - 1].class, Class::Scanned | Class::ScannedOcr))
         });
-        let mut out = format!(
-            "---\ntype: {}\ntitle: {}\ndescription: {}\nsources:\n  - id: original\n    resource: /references/original.pdf\ngenerated:\n  by: process:document-conversion\n  at: {}\nsource_spans:\n  - {{ id: seccion, source_id: original, kind: pdf_pages, from: {pages_from}, to: {pages_to} }}\n",
-            if outline.split.is_some() {
-                "Source Section"
-            } else {
-                "Source Text"
-            },
-            yaml(&sec.title),
-            yaml(&description),
-            yaml(generated),
-        );
-        for (id, a, b) in &spans {
-            out.push_str(&format!(
-                "  - {{ id: {id}, source_id: original, kind: pdf_pages, from: {a}, to: {b} }}\n"
-            ));
-        }
-        if sec.inferred {
-            out.push_str("title_inferred: true\n");
-        }
-        if draft {
-            out.push_str("status: draft\n");
-        }
-        out.push_str("---\n\n");
+        let mut source_spans = vec![pages_span("seccion", pages_from, pages_to)];
+        source_spans.extend(spans.iter().map(|(id, a, b)| pages_span(id, *a, *b)));
+        let kind = if outline.split.is_some() {
+            "Source Section"
+        } else {
+            "Source Text"
+        };
+        let fields = concept_fields(Format::Pdf, kind, &sec.title, &description, generated)
+            .with("source_spans", source_spans)
+            .flag("title_inferred", sec.inferred)
+            .with_opt("status", draft.then_some("draft"));
+        let mut out = String::new();
         out.push_str(&format!("# {}\n\n", escape_inline(&sec.title)));
         if sec.inferred {
             out.push_str("> Encabezado inferido por su formato tipográfico: el PDF no lo marca como encabezado.\n\n");
@@ -1389,8 +1350,13 @@ impl Render<'_> {
         } else {
             out.push_str(&body);
         }
-        out
+        (fields, out)
     }
+}
+
+/// Tramo de procedencia de unas páginas físicas.
+fn pages_span(id: &str, from: impl Into<Yaml>, to: impl Into<Yaml>) -> Fields {
+    span(id, "pdf_pages").with("from", from).with("to", to)
 }
 
 /// Páginas de un tramo de unidades, para el informe.
@@ -1410,9 +1376,8 @@ pub(crate) fn build_bundle(
 ) -> Result<(PathBuf, String)> {
     let started = Instant::now();
     let generated = chrono_now();
-    let zip_path = attempt.join("bundle.zip");
-    let mut z = ZipWriter::new(fs::File::create(&zip_path)?);
-    let mut ex = extract(bytes, cfg, &mut z)?;
+    let mut out = BundleWriter::create(Format::Pdf, attempt)?;
+    let mut ex = extract(bytes, cfg, out.zip())?;
     let outline = outline(&mut ex, filename);
     let n = ex.pages.len();
     let mut r = Render {
@@ -1423,9 +1388,9 @@ pub(crate) fn build_bundle(
     let mut entries = String::new();
     let mut content_entries = String::new();
     for k in 0..outline.sections.len() {
-        let md = r.concept(k, filename, &generated);
+        let (fields, md) = r.concept(k, filename, &generated);
         let file = outline.file(k);
-        write_zip_file(&mut z, &format!("contenido/{file}"), md.as_bytes())?;
+        out.concept(&format!("contenido/{file}"), &fields, &md)?;
         let sec = &outline.sections[k];
         let mut entry = format!("[{}]", escape_inline(&sec.title));
         if sec.preamble {
@@ -1511,15 +1476,11 @@ pub(crate) fn build_bundle(
         .enumerate()
         .filter_map(|(p, x)| x.label.as_ref().map(|l| (p + 1, l)))
         .collect();
-    let labels_yaml = if labels.is_empty() {
-        String::new()
-    } else {
-        let mut s = "page_labels:\n".to_string();
-        for (p, l) in &labels {
-            s.push_str(&format!("  \"{p}\": {}\n", yaml(l)));
-        }
-        s
-    };
+    let page_labels = (!labels.is_empty()).then(|| {
+        labels
+            .iter()
+            .fold(Fields::new(), |f, (p, l)| f.with(&p.to_string(), *l))
+    });
     let mut doc_extra = String::new();
     if !labels.is_empty() {
         doc_extra.push_str(&format!(
@@ -1585,7 +1546,6 @@ pub(crate) fn build_bundle(
             escape_inline(t)
         ));
     }
-    write_zip_file(&mut z, "references/original.pdf", bytes)?;
     // Informe.
     let t = &ex.tally;
     let by_class = |c: Class| -> Vec<usize> {
@@ -1743,35 +1703,11 @@ pub(crate) fn build_bundle(
             t.decorative
         )));
     }
-    issues.push(Issue::note(format!(
-        "Título del documento tomado {}: «{}»",
-        match outline.title_source {
-            TitleSource::Heading =>
-                "del primer encabezado, seguido directamente por otro de igual o mayor rango",
-            TitleSource::LoneHeading =>
-                "del primer encabezado de la primera página, único de su nivel y de rango superior a los demás",
-            TitleSource::Metadata => "de las propiedades del documento",
-            TitleSource::Filename => "del nombre del archivo; el documento no lo declara",
-        },
-        truncate_chars(&outline.title, 120)
-    )));
-    let (losses, notes): (Vec<&Issue>, Vec<&Issue>) =
-        issues.iter().partition(|i| i.severity == Severity::Loss);
-    let state = if losses.is_empty() {
-        "complete"
-    } else {
-        "partial"
-    };
-    let list = |items: &[&Issue], empty: &str| -> String {
-        if items.is_empty() {
-            format!("{empty}\n")
-        } else {
-            items
-                .iter()
-                .map(|i| format!("- {}\n", escape_inline(&i.text)))
-                .collect()
-        }
-    };
+    issues.push(title_note(
+        outline.title_source,
+        &outline.title,
+        "del primer encabezado de la primera página, único de su nivel y de rango superior a los demás",
+    ));
     // Cobertura: tramos consecutivos de páginas con la misma clase y el mismo concepto.
     let mut concept_of = vec![String::new(); n];
     for (k, sec) in outline.sections.iter().enumerate() {
@@ -1826,45 +1762,55 @@ pub(crate) fn build_bundle(
         None => "1 concepto (documento breve o sin secciones)".into(),
     };
     let headings = outline.headings.iter().flatten().count();
-    let report = format!(
-        "---\ntype: Conversion Report\ntitle: Informe de conversión\ngenerated:\n  by: process:document-conversion\n  at: {}\nstatus: {state}\nformat: pdf\nsha256: {hash}\n---\n\n# Informe de conversión PDF\n\n- Estado: `{state}`\n- Páginas: {n} (texto digital: {}; mixtas: {}; escaneadas: {}; escaneadas con OCR previo: {}; solo visuales: {}; en blanco: {})\n- Unidades representadas: {} (párrafos, listas, tablas, imágenes y notas de página)\n- Conceptos: {division}\n- Encabezados: {headings} ({})\n- Tablas reconstruidas: {}; imágenes adjuntas: {}; vistas de página: {}\n- Duración: {} ms\n\n## Cobertura de páginas\n\nToda página física figura en algún concepto; las páginas sin texto propio llevan una nota (y su vista, si tienen contenido gráfico).\n\n{coverage}\n## Incidencias\n\nPérdidas o incertidumbres sustantivas; determinan el estado `partial`.\n\n{}\n## Observaciones\n\nInformación sobre la conversión que no afecta el estado.\n\n{}",
-        yaml(&generated),
-        count(Class::Digital),
-        count(Class::Mixed),
-        count(Class::Scanned),
-        count(Class::ScannedOcr),
-        count(Class::Visual),
-        count(Class::Blank),
-        ex.units.len(),
-        if outline.from_bookmarks {
-            "de los marcadores del PDF".to_string()
-        } else {
-            format!(
-                "inferidos por tamaño de letra: {}",
-                outline
-                    .headings
-                    .iter()
-                    .flatten()
-                    .filter(|h| h.inferred)
-                    .count()
-            )
-        },
-        t.tables.len(),
-        t.images,
-        ex.pages.iter().filter(|x| x.view.is_some()).count(),
-        started.elapsed().as_millis(),
-        list(&losses, "Sin pérdidas ni incertidumbres sustantivas."),
-        list(&notes, "Sin observaciones.")
+    let summary = [
+        format!(
+            "Páginas: {n} (texto digital: {}; mixtas: {}; escaneadas: {}; escaneadas con OCR previo: {}; solo visuales: {}; en blanco: {})",
+            count(Class::Digital),
+            count(Class::Mixed),
+            count(Class::Scanned),
+            count(Class::ScannedOcr),
+            count(Class::Visual),
+            count(Class::Blank)
+        ),
+        format!(
+            "Unidades representadas: {} (párrafos, listas, tablas, imágenes y notas de página)",
+            ex.units.len()
+        ),
+        format!("Conceptos: {division}"),
+        format!(
+            "Encabezados: {headings} ({})",
+            if outline.from_bookmarks {
+                "de los marcadores del PDF".to_string()
+            } else {
+                format!(
+                    "inferidos por tamaño de letra: {}",
+                    outline
+                        .headings
+                        .iter()
+                        .flatten()
+                        .filter(|h| h.inferred)
+                        .count()
+                )
+            }
+        ),
+        format!(
+            "Tablas reconstruidas: {}; imágenes adjuntas: {}; vistas de página: {}",
+            t.tables.len(),
+            t.images,
+            ex.pages.iter().filter(|x| x.view.is_some()).count()
+        ),
+        format!("Duración: {} ms", started.elapsed().as_millis()),
+    ];
+    let coverage = format!(
+        "## Cobertura de páginas\n\nToda página física figura en algún concepto; las páginas sin texto propio llevan una nota (y su vista, si tienen contenido gráfico).\n\n{coverage}\n"
     );
-    let title_span = outline
-        .title_unit
-        .map(|t| {
-            format!(
-                "  - {{ id: titulo, source_id: original, kind: pdf_pages, from: {}, to: {} }}\n",
-                ex.units[t].from, ex.units[t].to
-            )
-        })
-        .unwrap_or_default();
+    let report = report(Format::Pdf, &generated, hash, &issues, &summary, &coverage);
+    let mut doc_spans = vec![pages_span("documento", 1u32, n)];
+    doc_spans.extend(
+        outline
+            .title_unit
+            .map(|t| pages_span("titulo", ex.units[t].from, ex.units[t].to)),
+    );
     let title_marker = if outline.title_unit.is_some() {
         "<!-- okf-source-span: titulo -->\n"
     } else {
@@ -1882,26 +1828,26 @@ pub(crate) fn build_bundle(
     } else {
         format!("\n## Propiedades\n\n{meta}")
     };
+    let doc_fields = document_fields(
+        Format::Pdf,
+        &outline.title,
+        &format!("Documento fuente {filename} convertido a conceptos OKF por secciones."),
+        &generated,
+        hash,
+    )
+    .with("source_spans", doc_spans)
+    .with_opt("page_labels", page_labels);
     let doc = format!(
-        "---\ntype: Source Document\ntitle: {}\ndescription: {}\nsources:\n  - id: original\n    resource: /references/original.pdf\ngenerated:\n  by: process:document-conversion\n  at: {}\nsource_file:\n  path: references/original.pdf\n  sha256: {hash}\nsource_spans:\n  - {{ id: documento, source_id: original, kind: pdf_pages, from: 1, to: {n} }}\n{title_span}{labels_yaml}---\n\n{title_marker}# {}\n\n{summary}\n\n## Estructura\n\n{structure}{meta_md}{doc_extra}{furniture_md}",
-        yaml(&outline.title),
-        yaml(&format!(
-            "Documento fuente {filename} convertido a conceptos OKF por secciones."
-        )),
-        yaml(&generated),
+        "{title_marker}# {}\n\n{summary}\n\n## Estructura\n\n{structure}{meta_md}{doc_extra}{furniture_md}",
         escape_inline(&outline.title),
     );
-    let index = format!(
-        "---\nokf_version: \"0.2\"\n---\n\n# Bundle OKF\n\n- [Documento fuente](documento.md)\n- [Índice de contenido](contenido/index.md)\n- [Informe de conversión](conversion-report.md)\n\n## Secciones\n\n{entries}"
-    );
-    let contents_index = format!("# Contenido\n\n## Secciones\n\n{content_entries}");
-    write_zip_file(&mut z, "index.md", index.as_bytes())?;
-    write_zip_file(&mut z, "contenido/index.md", contents_index.as_bytes())?;
-    write_zip_file(&mut z, "documento.md", doc.as_bytes())?;
-    write_zip_file(&mut z, "conversion-report.md", report.as_bytes())?;
-    z.finish()?;
-    validate_bundle(&zip_path)?;
-    Ok((zip_path, state.into()))
+    let nav = Navigation {
+        contents_label: "Índice de contenido",
+        heading: "Secciones",
+        root_entries: entries,
+        contents_entries: content_entries,
+    };
+    out.finish(bytes, (&doc_fields, &doc), &nav, &report, &issues)
 }
 
 /// Extrae y ensambla el bundle de un PDF.
@@ -2188,7 +2134,7 @@ mod tests {
         assert_eq!(state, "complete");
         assert_eq!(titles(&md), ["Préstamo de equipos audiovisuales"]);
         let text = &md["contenido/texto.md"];
-        assert!(text.contains("type: Source Text"));
+        assert!(text.contains("type: \"Source Text\""));
         assert!(
             text.contains("- Las reservas se hacen con dos días de anticipación.\n- Los daños")
         );
@@ -2306,7 +2252,7 @@ mod tests {
         let (state, md, names) = sample("escaneado_mixto");
         assert_eq!(state, "partial");
         let text = &md["contenido/texto.md"];
-        assert!(text.contains("status: draft"));
+        assert!(text.contains("status: \"draft\""));
         assert!(text.contains("<!-- okf-source-span: p-2 -->\n![Vista de la página 2](../assets/pagina-002.png)\n> Página escaneada sin capa de texto"));
         assert!(text.contains("<!-- okf-source-span: p-3 -->\n_Página 3 sin contenido propio"));
         assert!(text.contains("<!-- okf-source-span: p-4 -->\n![Vista de la página 4](../assets/pagina-004.png)\n> Página sin texto con contenido gráfico"));

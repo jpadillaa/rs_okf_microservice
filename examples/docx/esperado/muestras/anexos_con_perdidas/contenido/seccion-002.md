@@ -1,22 +1,54 @@
 ---
-type: Source Section
+type: "Source Section"
 title: "Anexo B. Material externo"
 description: "Sección 2 de anexos_con_perdidas.docx: Anexo B. Material externo. El anexo reúne material de apoyo de la evaluación. Algunos elementos se crearon con herramientas externas y se insertaron en el documento sin convertirlos a…"
 sources:
-  - id: original
-    resource: /references/original.docx
+  - id: "original"
+    resource: "/references/original.docx"
 generated:
-  by: process:document-conversion
+  by: "process:document-conversion"
   at: "<generado>"
 source_spans:
-  - { id: seccion, source_id: original, kind: docx_blocks, from: 8, to: 15 }
-  - { id: b-9, source_id: original, kind: docx_blocks, from: 9, to: 9 }
-  - { id: b-10, source_id: original, kind: docx_blocks, from: 10, to: 10 }
-  - { id: b-11, source_id: original, kind: docx_blocks, from: 11, to: 11 }
-  - { id: b-12, source_id: original, kind: docx_blocks, from: 12, to: 12 }
-  - { id: b-13, source_id: original, kind: docx_blocks, from: 13, to: 13 }
-  - { id: b-14, source_id: original, kind: docx_blocks, from: 14, to: 14 }
-  - { id: b-15, source_id: original, kind: docx_blocks, from: 15, to: 15 }
+  - id: "seccion"
+    source_id: "original"
+    kind: "docx_blocks"
+    from: 8
+    to: 15
+  - id: "b-9"
+    source_id: "original"
+    kind: "docx_blocks"
+    from: 9
+    to: 9
+  - id: "b-10"
+    source_id: "original"
+    kind: "docx_blocks"
+    from: 10
+    to: 10
+  - id: "b-11"
+    source_id: "original"
+    kind: "docx_blocks"
+    from: 11
+    to: 11
+  - id: "b-12"
+    source_id: "original"
+    kind: "docx_blocks"
+    from: 12
+    to: 12
+  - id: "b-13"
+    source_id: "original"
+    kind: "docx_blocks"
+    from: 13
+    to: 13
+  - id: "b-14"
+    source_id: "original"
+    kind: "docx_blocks"
+    from: 14
+    to: 14
+  - id: "b-15"
+    source_id: "original"
+    kind: "docx_blocks"
+    from: 15
+    to: 15
 ---
 
 # Anexo B. Material externo

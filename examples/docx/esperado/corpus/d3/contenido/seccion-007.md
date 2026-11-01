@@ -1,21 +1,49 @@
 ---
-type: Source Section
+type: "Source Section"
 title: "El harness frente al resto de la arquitectura"
 description: "Sección 7 de d3.docx: El harness frente al resto de la arquitectura. La arquitectura mínima presentada en la lectura de agentes describe cinco componentes funcionales: orquestador, modelo de lenguaje, herramientas, memoria y…"
 sources:
-  - id: original
-    resource: /references/original.docx
+  - id: "original"
+    resource: "/references/original.docx"
 generated:
-  by: process:document-conversion
+  by: "process:document-conversion"
   at: "<generado>"
 source_spans:
-  - { id: seccion, source_id: original, kind: docx_blocks, from: 48, to: 60 }
-  - { id: b-49, source_id: original, kind: docx_blocks, from: 49, to: 49 }
-  - { id: b-50-54, source_id: original, kind: docx_blocks, from: 50, to: 54 }
-  - { id: b-55, source_id: original, kind: docx_blocks, from: 55, to: 55 }
-  - { id: b-57, source_id: original, kind: docx_blocks, from: 57, to: 57 }
-  - { id: b-58-59, source_id: original, kind: docx_blocks, from: 58, to: 59 }
-  - { id: b-60, source_id: original, kind: docx_blocks, from: 60, to: 60 }
+  - id: "seccion"
+    source_id: "original"
+    kind: "docx_blocks"
+    from: 48
+    to: 60
+  - id: "b-49"
+    source_id: "original"
+    kind: "docx_blocks"
+    from: 49
+    to: 49
+  - id: "b-50-54"
+    source_id: "original"
+    kind: "docx_blocks"
+    from: 50
+    to: 54
+  - id: "b-55"
+    source_id: "original"
+    kind: "docx_blocks"
+    from: 55
+    to: 55
+  - id: "b-57"
+    source_id: "original"
+    kind: "docx_blocks"
+    from: 57
+    to: 57
+  - id: "b-58-59"
+    source_id: "original"
+    kind: "docx_blocks"
+    from: 58
+    to: 59
+  - id: "b-60"
+    source_id: "original"
+    kind: "docx_blocks"
+    from: 60
+    to: 60
 ---
 
 # El harness frente al resto de la arquitectura

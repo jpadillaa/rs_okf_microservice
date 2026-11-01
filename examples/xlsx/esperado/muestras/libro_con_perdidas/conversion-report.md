@@ -1,12 +1,12 @@
 ---
-type: Conversion Report
-title: Informe de conversión
+type: "Conversion Report"
+title: "Informe de conversión"
 generated:
-  by: process:document-conversion
+  by: "process:document-conversion"
   at: "<generado>"
-status: partial
-format: xlsx
-sha256: 782106213febbcffae20d3f21c50c284a0b924d9afae2158ffecce866faf62e8
+status: "partial"
+format: "xlsx"
+sha256: "782106213febbcffae20d3f21c50c284a0b924d9afae2158ffecce866faf62e8"
 ---
 
 # Informe de conversión XLSX

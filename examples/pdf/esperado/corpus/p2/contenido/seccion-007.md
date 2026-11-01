@@ -1,17 +1,29 @@
 ---
-type: Source Section
+type: "Source Section"
 title: "Summary and future directions"
 description: "Sección 7 de p2.pdf: Summary and future directions. As a final note, the concepts discussed in this paper apply solely to ChatGPT and other similar LLM-powered generative AI tools. Artificial intelligence is a…"
 sources:
-  - id: original
-    resource: /references/original.pdf
+  - id: "original"
+    resource: "/references/original.pdf"
 generated:
-  by: process:document-conversion
+  by: "process:document-conversion"
   at: "<generado>"
 source_spans:
-  - { id: seccion, source_id: original, kind: pdf_pages, from: 7, to: 8 }
-  - { id: p-7, source_id: original, kind: pdf_pages, from: 7, to: 7 }
-  - { id: p-8, source_id: original, kind: pdf_pages, from: 8, to: 8 }
+  - id: "seccion"
+    source_id: "original"
+    kind: "pdf_pages"
+    from: 7
+    to: 8
+  - id: "p-7"
+    source_id: "original"
+    kind: "pdf_pages"
+    from: 7
+    to: 7
+  - id: "p-8"
+    source_id: "original"
+    kind: "pdf_pages"
+    from: 8
+    to: 8
 ---
 
 # Summary and future directions

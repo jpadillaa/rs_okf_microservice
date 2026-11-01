@@ -1,20 +1,44 @@
 ---
-type: Source Section
+type: "Source Section"
 title: "De dónde viene el término"
 description: "Sección 4 de d3.docx: De dónde viene el término. En la ingeniería de software clásica, un test harness es el andamiaje utilizado para ejecutar una unidad de código bajo condiciones controladas y repetibles.…"
 sources:
-  - id: original
-    resource: /references/original.docx
+  - id: "original"
+    resource: "/references/original.docx"
 generated:
-  by: process:document-conversion
+  by: "process:document-conversion"
   at: "<generado>"
 source_spans:
-  - { id: seccion, source_id: original, kind: docx_blocks, from: 22, to: 29 }
-  - { id: b-23, source_id: original, kind: docx_blocks, from: 23, to: 23 }
-  - { id: b-24, source_id: original, kind: docx_blocks, from: 24, to: 24 }
-  - { id: b-25, source_id: original, kind: docx_blocks, from: 25, to: 25 }
-  - { id: b-26-28, source_id: original, kind: docx_blocks, from: 26, to: 28 }
-  - { id: b-29, source_id: original, kind: docx_blocks, from: 29, to: 29 }
+  - id: "seccion"
+    source_id: "original"
+    kind: "docx_blocks"
+    from: 22
+    to: 29
+  - id: "b-23"
+    source_id: "original"
+    kind: "docx_blocks"
+    from: 23
+    to: 23
+  - id: "b-24"
+    source_id: "original"
+    kind: "docx_blocks"
+    from: 24
+    to: 24
+  - id: "b-25"
+    source_id: "original"
+    kind: "docx_blocks"
+    from: 25
+    to: 25
+  - id: "b-26-28"
+    source_id: "original"
+    kind: "docx_blocks"
+    from: 26
+    to: 28
+  - id: "b-29"
+    source_id: "original"
+    kind: "docx_blocks"
+    from: 29
+    to: 29
 ---
 
 # De dónde viene el término

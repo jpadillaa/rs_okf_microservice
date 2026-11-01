@@ -1,35 +1,119 @@
 ---
-type: Source Section
+type: "Source Section"
 title: "COMUNICACIÓN EFECTIVA EN ENTORNOS LABORALES"
 description: "Sección 3 de p1.pdf: COMUNICACIÓN EFECTIVA EN ENTORNOS LABORALES. Aplicar los mínimos gramaticales, ortográficos y de puntuación en la revisión y composición de textos breves de uso laboral, de modo que los productos escritos…"
 sources:
-  - id: original
-    resource: /references/original.pdf
+  - id: "original"
+    resource: "/references/original.pdf"
 generated:
-  by: process:document-conversion
+  by: "process:document-conversion"
   at: "<generado>"
 source_spans:
-  - { id: seccion, source_id: original, kind: pdf_pages, from: 34, to: 53 }
-  - { id: p-34, source_id: original, kind: pdf_pages, from: 34, to: 34 }
-  - { id: p-35, source_id: original, kind: pdf_pages, from: 35, to: 35 }
-  - { id: p-36, source_id: original, kind: pdf_pages, from: 36, to: 36 }
-  - { id: p-37, source_id: original, kind: pdf_pages, from: 37, to: 37 }
-  - { id: p-38, source_id: original, kind: pdf_pages, from: 38, to: 38 }
-  - { id: p-39, source_id: original, kind: pdf_pages, from: 39, to: 39 }
-  - { id: p-40, source_id: original, kind: pdf_pages, from: 40, to: 40 }
-  - { id: p-41, source_id: original, kind: pdf_pages, from: 41, to: 41 }
-  - { id: p-42, source_id: original, kind: pdf_pages, from: 42, to: 42 }
-  - { id: p-43, source_id: original, kind: pdf_pages, from: 43, to: 43 }
-  - { id: p-44, source_id: original, kind: pdf_pages, from: 44, to: 44 }
-  - { id: p-45, source_id: original, kind: pdf_pages, from: 45, to: 45 }
-  - { id: p-46, source_id: original, kind: pdf_pages, from: 46, to: 46 }
-  - { id: p-47, source_id: original, kind: pdf_pages, from: 47, to: 47 }
-  - { id: p-48, source_id: original, kind: pdf_pages, from: 48, to: 48 }
-  - { id: p-49, source_id: original, kind: pdf_pages, from: 49, to: 49 }
-  - { id: p-50, source_id: original, kind: pdf_pages, from: 50, to: 50 }
-  - { id: p-51, source_id: original, kind: pdf_pages, from: 51, to: 51 }
-  - { id: p-52, source_id: original, kind: pdf_pages, from: 52, to: 52 }
-  - { id: p-53, source_id: original, kind: pdf_pages, from: 53, to: 53 }
+  - id: "seccion"
+    source_id: "original"
+    kind: "pdf_pages"
+    from: 34
+    to: 53
+  - id: "p-34"
+    source_id: "original"
+    kind: "pdf_pages"
+    from: 34
+    to: 34
+  - id: "p-35"
+    source_id: "original"
+    kind: "pdf_pages"
+    from: 35
+    to: 35
+  - id: "p-36"
+    source_id: "original"
+    kind: "pdf_pages"
+    from: 36
+    to: 36
+  - id: "p-37"
+    source_id: "original"
+    kind: "pdf_pages"
+    from: 37
+    to: 37
+  - id: "p-38"
+    source_id: "original"
+    kind: "pdf_pages"
+    from: 38
+    to: 38
+  - id: "p-39"
+    source_id: "original"
+    kind: "pdf_pages"
+    from: 39
+    to: 39
+  - id: "p-40"
+    source_id: "original"
+    kind: "pdf_pages"
+    from: 40
+    to: 40
+  - id: "p-41"
+    source_id: "original"
+    kind: "pdf_pages"
+    from: 41
+    to: 41
+  - id: "p-42"
+    source_id: "original"
+    kind: "pdf_pages"
+    from: 42
+    to: 42
+  - id: "p-43"
+    source_id: "original"
+    kind: "pdf_pages"
+    from: 43
+    to: 43
+  - id: "p-44"
+    source_id: "original"
+    kind: "pdf_pages"
+    from: 44
+    to: 44
+  - id: "p-45"
+    source_id: "original"
+    kind: "pdf_pages"
+    from: 45
+    to: 45
+  - id: "p-46"
+    source_id: "original"
+    kind: "pdf_pages"
+    from: 46
+    to: 46
+  - id: "p-47"
+    source_id: "original"
+    kind: "pdf_pages"
+    from: 47
+    to: 47
+  - id: "p-48"
+    source_id: "original"
+    kind: "pdf_pages"
+    from: 48
+    to: 48
+  - id: "p-49"
+    source_id: "original"
+    kind: "pdf_pages"
+    from: 49
+    to: 49
+  - id: "p-50"
+    source_id: "original"
+    kind: "pdf_pages"
+    from: 50
+    to: 50
+  - id: "p-51"
+    source_id: "original"
+    kind: "pdf_pages"
+    from: 51
+    to: 51
+  - id: "p-52"
+    source_id: "original"
+    kind: "pdf_pages"
+    from: 52
+    to: 52
+  - id: "p-53"
+    source_id: "original"
+    kind: "pdf_pages"
+    from: 53
+    to: 53
 title_inferred: true
 ---
 

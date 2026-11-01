@@ -1,17 +1,17 @@
 ---
-type: Slide
+type: "Slide"
 title: "Exhaustividad del Contexto · Componente: Recuperador"
 description: "Diapositiva 27 de s3.pptx: Exhaustividad del Contexto · Componente: Recuperador. Mide hasta qué punto el contexto recuperado contiene toda la información necesaria para responder completamente a la pregunta."
 sources:
-  - id: original
-    resource: /references/original.pptx
+  - id: "original"
+    resource: "/references/original.pptx"
 generated:
-  by: process:document-conversion
+  by: "process:document-conversion"
   at: "<generado>"
 source_spans:
-  - id: slide-27
-    source_id: original
-    kind: pptx_slide
+  - id: "slide-27"
+    source_id: "original"
+    kind: "pptx_slide"
     slide_index: 27
     slide_id: 282
 view_hides_text: true

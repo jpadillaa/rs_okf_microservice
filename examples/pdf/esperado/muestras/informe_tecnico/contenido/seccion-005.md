@@ -1,15 +1,19 @@
 ---
-type: Source Section
+type: "Source Section"
 title: "4. Riesgos"
 description: "Sección 5 de informe_tecnico.pdf: 4. Riesgos. El principal riesgo es la pérdida de movimientos registrados durante la copia final. Para mitigarlo, el sistema anterior bloqueará los registros nuevos una…"
 sources:
-  - id: original
-    resource: /references/original.pdf
+  - id: "original"
+    resource: "/references/original.pdf"
 generated:
-  by: process:document-conversion
+  by: "process:document-conversion"
   at: "<generado>"
 source_spans:
-  - { id: seccion, source_id: original, kind: pdf_pages, from: 2, to: 2 }
+  - id: "seccion"
+    source_id: "original"
+    kind: "pdf_pages"
+    from: 2
+    to: 2
 title_inferred: true
 ---
 

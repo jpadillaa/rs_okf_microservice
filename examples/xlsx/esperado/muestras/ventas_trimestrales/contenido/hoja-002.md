@@ -1,16 +1,20 @@
 ---
-type: Sheet
+type: "Sheet"
 title: "Detalle"
 description: "Hoja 2 del libro ventas_trimestrales.xlsx: rango A1:G301 con 1 región."
 sources:
-  - id: original
-    resource: /references/original.xlsx
+  - id: "original"
+    resource: "/references/original.xlsx"
 generated:
-  by: process:document-conversion
+  by: "process:document-conversion"
   at: "<generado>"
 sheet_index: 2
 source_spans:
-  - { id: hoja, source_id: original, kind: xlsx_range, sheet: "Detalle", range: "A1:G301" }
+  - id: "hoja"
+    source_id: "original"
+    kind: "xlsx_range"
+    sheet: "Detalle"
+    range: "A1:G301"
 ---
 
 # Detalle

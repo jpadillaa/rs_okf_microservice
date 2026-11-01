@@ -1,17 +1,17 @@
 ---
-type: Slide
+type: "Slide"
 title: "Consecuencias"
 description: "Diapositiva 7 de s3.pptx: Consecuencias. Se recuperan textos que “se parecen” a la pregunta, pero que en realidad no contienen la información correcta, lo que termina afectando la generación."
 sources:
-  - id: original
-    resource: /references/original.pptx
+  - id: "original"
+    resource: "/references/original.pptx"
 generated:
-  by: process:document-conversion
+  by: "process:document-conversion"
   at: "<generado>"
 source_spans:
-  - id: slide-7
-    source_id: original
-    kind: pptx_slide
+  - id: "slide-7"
+    source_id: "original"
+    kind: "pptx_slide"
     slide_index: 7
     slide_id: 262
 ---

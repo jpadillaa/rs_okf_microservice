@@ -1,19 +1,27 @@
 ---
-type: Source Document
+type: "Source Document"
 title: "MISW4411 - Temario 2026"
 description: "Documento fuente d1.docx convertido a conceptos OKF por secciones."
 sources:
-  - id: original
-    resource: /references/original.docx
+  - id: "original"
+    resource: "/references/original.docx"
 generated:
-  by: process:document-conversion
+  by: "process:document-conversion"
   at: "<generado>"
 source_file:
-  path: references/original.docx
-  sha256: e71802d60de17116877a9e9c9a2a8ad4a72ecf8375e4fd2491f7724a033944fb
+  path: "references/original.docx"
+  sha256: "e71802d60de17116877a9e9c9a2a8ad4a72ecf8375e4fd2491f7724a033944fb"
 source_spans:
-  - { id: documento, source_id: original, kind: docx_blocks, from: 1, to: 106 }
-  - { id: titulo, source_id: original, kind: docx_blocks, from: 1, to: 1 }
+  - id: "documento"
+    source_id: "original"
+    kind: "docx_blocks"
+    from: 1
+    to: 106
+  - id: "titulo"
+    source_id: "original"
+    kind: "docx_blocks"
+    from: 1
+    to: 1
 ---
 
 <!-- okf-source-span: titulo -->

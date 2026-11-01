@@ -1,26 +1,74 @@
 ---
-type: Source Section
+type: "Source Section"
 title: "El doble paradigma"
 description: "Sección 9 de d3.docx: El doble paradigma. Los sistemas agénticos operan bajo una tensión fundamental: el modelo de lenguaje es probabilístico, pero los procesos de negocio necesitan límites y garantías…"
 sources:
-  - id: original
-    resource: /references/original.docx
+  - id: "original"
+    resource: "/references/original.docx"
 generated:
-  by: process:document-conversion
+  by: "process:document-conversion"
   at: "<generado>"
 source_spans:
-  - { id: seccion, source_id: original, kind: docx_blocks, from: 97, to: 115 }
-  - { id: b-98, source_id: original, kind: docx_blocks, from: 98, to: 98 }
-  - { id: b-99, source_id: original, kind: docx_blocks, from: 99, to: 99 }
-  - { id: b-100, source_id: original, kind: docx_blocks, from: 100, to: 100 }
-  - { id: b-101, source_id: original, kind: docx_blocks, from: 101, to: 101 }
-  - { id: b-102, source_id: original, kind: docx_blocks, from: 102, to: 102 }
-  - { id: b-104, source_id: original, kind: docx_blocks, from: 104, to: 104 }
-  - { id: b-105-106, source_id: original, kind: docx_blocks, from: 105, to: 106 }
-  - { id: b-107, source_id: original, kind: docx_blocks, from: 107, to: 107 }
-  - { id: b-108, source_id: original, kind: docx_blocks, from: 108, to: 108 }
-  - { id: b-109-114, source_id: original, kind: docx_blocks, from: 109, to: 114 }
-  - { id: b-115, source_id: original, kind: docx_blocks, from: 115, to: 115 }
+  - id: "seccion"
+    source_id: "original"
+    kind: "docx_blocks"
+    from: 97
+    to: 115
+  - id: "b-98"
+    source_id: "original"
+    kind: "docx_blocks"
+    from: 98
+    to: 98
+  - id: "b-99"
+    source_id: "original"
+    kind: "docx_blocks"
+    from: 99
+    to: 99
+  - id: "b-100"
+    source_id: "original"
+    kind: "docx_blocks"
+    from: 100
+    to: 100
+  - id: "b-101"
+    source_id: "original"
+    kind: "docx_blocks"
+    from: 101
+    to: 101
+  - id: "b-102"
+    source_id: "original"
+    kind: "docx_blocks"
+    from: 102
+    to: 102
+  - id: "b-104"
+    source_id: "original"
+    kind: "docx_blocks"
+    from: 104
+    to: 104
+  - id: "b-105-106"
+    source_id: "original"
+    kind: "docx_blocks"
+    from: 105
+    to: 106
+  - id: "b-107"
+    source_id: "original"
+    kind: "docx_blocks"
+    from: 107
+    to: 107
+  - id: "b-108"
+    source_id: "original"
+    kind: "docx_blocks"
+    from: 108
+    to: 108
+  - id: "b-109-114"
+    source_id: "original"
+    kind: "docx_blocks"
+    from: 109
+    to: 114
+  - id: "b-115"
+    source_id: "original"
+    kind: "docx_blocks"
+    from: 115
+    to: 115
 ---
 
 # El doble paradigma

@@ -1,17 +1,17 @@
 ---
-type: Slide
+type: "Slide"
 title: "Tres responsabilidades, tres salidas"
 description: "Diapositiva 17 de s1.pptx: Tres responsabilidades, tres salidas. Recuperar"
 sources:
-  - id: original
-    resource: /references/original.pptx
+  - id: "original"
+    resource: "/references/original.pptx"
 generated:
-  by: process:document-conversion
+  by: "process:document-conversion"
   at: "<generado>"
 source_spans:
-  - id: slide-17
-    source_id: original
-    kind: pptx_slide
+  - id: "slide-17"
+    source_id: "original"
+    kind: "pptx_slide"
     slide_index: 17
     slide_id: 272
     display_label: "17"

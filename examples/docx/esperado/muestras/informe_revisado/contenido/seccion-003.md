@@ -1,24 +1,64 @@
 ---
-type: Source Section
+type: "Source Section"
 title: "2. Resultados"
 description: "Sección 3 de informe_revisado.docx: 2. Resultados. La tabla siguiente presenta las métricas por componente y corpus. Los valores del corpus técnico son menores en todas las métricas, en especial en…"
 sources:
-  - id: original
-    resource: /references/original.docx
+  - id: "original"
+    resource: "/references/original.docx"
 generated:
-  by: process:document-conversion
+  by: "process:document-conversion"
   at: "<generado>"
 source_spans:
-  - { id: seccion, source_id: original, kind: docx_blocks, from: 15, to: 24 }
-  - { id: b-16, source_id: original, kind: docx_blocks, from: 16, to: 16 }
-  - { id: b-17, source_id: original, kind: docx_blocks, from: 17, to: 17 }
-  - { id: b-18, source_id: original, kind: docx_blocks, from: 18, to: 18 }
-  - { id: b-19, source_id: original, kind: docx_blocks, from: 19, to: 19 }
-  - { id: b-20, source_id: original, kind: docx_blocks, from: 20, to: 20 }
-  - { id: b-21, source_id: original, kind: docx_blocks, from: 21, to: 21 }
-  - { id: b-22, source_id: original, kind: docx_blocks, from: 22, to: 22 }
-  - { id: b-23, source_id: original, kind: docx_blocks, from: 23, to: 23 }
-  - { id: b-24, source_id: original, kind: docx_blocks, from: 24, to: 24 }
+  - id: "seccion"
+    source_id: "original"
+    kind: "docx_blocks"
+    from: 15
+    to: 24
+  - id: "b-16"
+    source_id: "original"
+    kind: "docx_blocks"
+    from: 16
+    to: 16
+  - id: "b-17"
+    source_id: "original"
+    kind: "docx_blocks"
+    from: 17
+    to: 17
+  - id: "b-18"
+    source_id: "original"
+    kind: "docx_blocks"
+    from: 18
+    to: 18
+  - id: "b-19"
+    source_id: "original"
+    kind: "docx_blocks"
+    from: 19
+    to: 19
+  - id: "b-20"
+    source_id: "original"
+    kind: "docx_blocks"
+    from: 20
+    to: 20
+  - id: "b-21"
+    source_id: "original"
+    kind: "docx_blocks"
+    from: 21
+    to: 21
+  - id: "b-22"
+    source_id: "original"
+    kind: "docx_blocks"
+    from: 22
+    to: 22
+  - id: "b-23"
+    source_id: "original"
+    kind: "docx_blocks"
+    from: 23
+    to: 23
+  - id: "b-24"
+    source_id: "original"
+    kind: "docx_blocks"
+    from: 24
+    to: 24
 ---
 
 # 2. Resultados

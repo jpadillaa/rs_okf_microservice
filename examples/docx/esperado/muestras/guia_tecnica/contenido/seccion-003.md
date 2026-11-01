@@ -1,26 +1,74 @@
 ---
-type: Source Section
+type: "Source Section"
 title: "Configuración del índice"
 description: "Sección 3 de guia_tecnica.docx: Configuración del índice. Siga estos pasos para crear el índice:"
 sources:
-  - id: original
-    resource: /references/original.docx
+  - id: "original"
+    resource: "/references/original.docx"
 generated:
-  by: process:document-conversion
+  by: "process:document-conversion"
   at: "<generado>"
 source_spans:
-  - { id: seccion, source_id: original, kind: docx_blocks, from: 12, to: 29 }
-  - { id: b-13, source_id: original, kind: docx_blocks, from: 13, to: 13 }
-  - { id: b-14-18, source_id: original, kind: docx_blocks, from: 14, to: 18 }
-  - { id: b-19, source_id: original, kind: docx_blocks, from: 19, to: 19 }
-  - { id: b-20-21, source_id: original, kind: docx_blocks, from: 20, to: 21 }
-  - { id: b-22, source_id: original, kind: docx_blocks, from: 22, to: 22 }
-  - { id: b-23-24, source_id: original, kind: docx_blocks, from: 23, to: 24 }
-  - { id: b-25, source_id: original, kind: docx_blocks, from: 25, to: 25 }
-  - { id: b-26, source_id: original, kind: docx_blocks, from: 26, to: 26 }
-  - { id: b-27, source_id: original, kind: docx_blocks, from: 27, to: 27 }
-  - { id: b-28, source_id: original, kind: docx_blocks, from: 28, to: 28 }
-  - { id: b-29, source_id: original, kind: docx_blocks, from: 29, to: 29 }
+  - id: "seccion"
+    source_id: "original"
+    kind: "docx_blocks"
+    from: 12
+    to: 29
+  - id: "b-13"
+    source_id: "original"
+    kind: "docx_blocks"
+    from: 13
+    to: 13
+  - id: "b-14-18"
+    source_id: "original"
+    kind: "docx_blocks"
+    from: 14
+    to: 18
+  - id: "b-19"
+    source_id: "original"
+    kind: "docx_blocks"
+    from: 19
+    to: 19
+  - id: "b-20-21"
+    source_id: "original"
+    kind: "docx_blocks"
+    from: 20
+    to: 21
+  - id: "b-22"
+    source_id: "original"
+    kind: "docx_blocks"
+    from: 22
+    to: 22
+  - id: "b-23-24"
+    source_id: "original"
+    kind: "docx_blocks"
+    from: 23
+    to: 24
+  - id: "b-25"
+    source_id: "original"
+    kind: "docx_blocks"
+    from: 25
+    to: 25
+  - id: "b-26"
+    source_id: "original"
+    kind: "docx_blocks"
+    from: 26
+    to: 26
+  - id: "b-27"
+    source_id: "original"
+    kind: "docx_blocks"
+    from: 27
+    to: 27
+  - id: "b-28"
+    source_id: "original"
+    kind: "docx_blocks"
+    from: 28
+    to: 28
+  - id: "b-29"
+    source_id: "original"
+    kind: "docx_blocks"
+    from: 29
+    to: 29
 ---
 
 # Configuración del índice

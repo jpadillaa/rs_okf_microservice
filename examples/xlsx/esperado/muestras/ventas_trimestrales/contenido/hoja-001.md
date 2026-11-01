@@ -1,18 +1,30 @@
 ---
-type: Sheet
+type: "Sheet"
 title: "Resumen"
 description: "Hoja 1 del libro ventas_trimestrales.xlsx: rango A1:F12 con 2 regiones."
 sources:
-  - id: original
-    resource: /references/original.xlsx
+  - id: "original"
+    resource: "/references/original.xlsx"
 generated:
-  by: process:document-conversion
+  by: "process:document-conversion"
   at: "<generado>"
 sheet_index: 1
 source_spans:
-  - { id: hoja, source_id: original, kind: xlsx_range, sheet: "Resumen", range: "A1:F12" }
-  - { id: r-1, source_id: original, kind: xlsx_range, sheet: "Resumen", range: "A1:F8" }
-  - { id: r-2, source_id: original, kind: xlsx_range, sheet: "Resumen", range: "A10:A12" }
+  - id: "hoja"
+    source_id: "original"
+    kind: "xlsx_range"
+    sheet: "Resumen"
+    range: "A1:F12"
+  - id: "r-1"
+    source_id: "original"
+    kind: "xlsx_range"
+    sheet: "Resumen"
+    range: "A1:F8"
+  - id: "r-2"
+    source_id: "original"
+    kind: "xlsx_range"
+    sheet: "Resumen"
+    range: "A10:A12"
 ---
 
 # Resumen

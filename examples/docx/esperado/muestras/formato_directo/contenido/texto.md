@@ -1,26 +1,74 @@
 ---
-type: Source Text
+type: "Source Text"
 title: "Manual de operación del laboratorio"
 description: "Texto completo de formato_directo.docx. Este manual describe los procedimientos de seguridad, mantenimiento y registro del laboratorio de cómputo. Se aplica a todo el personal y a los estudiantes que…"
 sources:
-  - id: original
-    resource: /references/original.docx
+  - id: "original"
+    resource: "/references/original.docx"
 generated:
-  by: process:document-conversion
+  by: "process:document-conversion"
   at: "<generado>"
 source_spans:
-  - { id: seccion, source_id: original, kind: docx_blocks, from: 1, to: 23 }
-  - { id: b-2, source_id: original, kind: docx_blocks, from: 2, to: 2 }
-  - { id: b-4, source_id: original, kind: docx_blocks, from: 4, to: 4 }
-  - { id: b-5-9, source_id: original, kind: docx_blocks, from: 5, to: 9 }
-  - { id: b-11, source_id: original, kind: docx_blocks, from: 11, to: 11 }
-  - { id: b-12-13, source_id: original, kind: docx_blocks, from: 12, to: 13 }
-  - { id: b-14, source_id: original, kind: docx_blocks, from: 14, to: 14 }
-  - { id: b-16, source_id: original, kind: docx_blocks, from: 16, to: 16 }
-  - { id: b-17-19, source_id: original, kind: docx_blocks, from: 17, to: 19 }
-  - { id: b-20, source_id: original, kind: docx_blocks, from: 20, to: 20 }
-  - { id: b-22, source_id: original, kind: docx_blocks, from: 22, to: 22 }
-  - { id: b-23, source_id: original, kind: docx_blocks, from: 23, to: 23 }
+  - id: "seccion"
+    source_id: "original"
+    kind: "docx_blocks"
+    from: 1
+    to: 23
+  - id: "b-2"
+    source_id: "original"
+    kind: "docx_blocks"
+    from: 2
+    to: 2
+  - id: "b-4"
+    source_id: "original"
+    kind: "docx_blocks"
+    from: 4
+    to: 4
+  - id: "b-5-9"
+    source_id: "original"
+    kind: "docx_blocks"
+    from: 5
+    to: 9
+  - id: "b-11"
+    source_id: "original"
+    kind: "docx_blocks"
+    from: 11
+    to: 11
+  - id: "b-12-13"
+    source_id: "original"
+    kind: "docx_blocks"
+    from: 12
+    to: 13
+  - id: "b-14"
+    source_id: "original"
+    kind: "docx_blocks"
+    from: 14
+    to: 14
+  - id: "b-16"
+    source_id: "original"
+    kind: "docx_blocks"
+    from: 16
+    to: 16
+  - id: "b-17-19"
+    source_id: "original"
+    kind: "docx_blocks"
+    from: 17
+    to: 19
+  - id: "b-20"
+    source_id: "original"
+    kind: "docx_blocks"
+    from: 20
+    to: 20
+  - id: "b-22"
+    source_id: "original"
+    kind: "docx_blocks"
+    from: 22
+    to: 22
+  - id: "b-23"
+    source_id: "original"
+    kind: "docx_blocks"
+    from: 23
+    to: 23
 ---
 
 # Manual de operación del laboratorio

@@ -1,21 +1,21 @@
 ---
-type: Slide
+type: "Slide"
 title: "Prácticas de ingenieria de software recomendadas"
 description: "Diapositiva 9 de s3.pptx: Prácticas de ingenieria de software recomendadas. Contenido solo visual."
 sources:
-  - id: original
-    resource: /references/original.pptx
+  - id: "original"
+    resource: "/references/original.pptx"
 generated:
-  by: process:document-conversion
+  by: "process:document-conversion"
   at: "<generado>"
 source_spans:
-  - id: slide-9
-    source_id: original
-    kind: pptx_slide
+  - id: "slide-9"
+    source_id: "original"
+    kind: "pptx_slide"
     slide_index: 9
     slide_id: 264
 visual_only: true
-status: draft
+status: "draft"
 ---
 
 # Prácticas de ingenieria de software recomendadas

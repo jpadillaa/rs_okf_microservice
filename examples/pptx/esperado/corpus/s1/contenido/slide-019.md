@@ -1,17 +1,17 @@
 ---
-type: Slide
+type: "Slide"
 title: "Evolucionar según una necesidad observable"
 description: "Diapositiva 19 de s1.pptx: Evolucionar según una necesidad observable. Inicial"
 sources:
-  - id: original
-    resource: /references/original.pptx
+  - id: "original"
+    resource: "/references/original.pptx"
 generated:
-  by: process:document-conversion
+  by: "process:document-conversion"
   at: "<generado>"
 source_spans:
-  - id: slide-19
-    source_id: original
-    kind: pptx_slide
+  - id: "slide-19"
+    source_id: "original"
+    kind: "pptx_slide"
     slide_index: 19
     slide_id: 274
     display_label: "19"

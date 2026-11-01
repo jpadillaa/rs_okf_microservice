@@ -1,18 +1,34 @@
 ---
-type: Source Section
+type: "Source Section"
 title: "Paso No. 3 - Análisis comparativo de costo-beneficio entre APIs de IA generativa y despliegue on-premise"
 description: "Sección 5 de d2.docx: Paso No. 3 - Análisis comparativo de costo-beneficio entre APIs de IA generativa y despliegue on-premise. Con el presupuesto estimado en el paso anterior, se debe proyectar la cantidad de tokens que podrían adquirirse mediante las APIs de OpenAI, Google Gemini y…"
 sources:
-  - id: original
-    resource: /references/original.docx
+  - id: "original"
+    resource: "/references/original.docx"
 generated:
-  by: process:document-conversion
+  by: "process:document-conversion"
   at: "<generado>"
 source_spans:
-  - { id: seccion, source_id: original, kind: docx_blocks, from: 30, to: 33 }
-  - { id: b-31, source_id: original, kind: docx_blocks, from: 31, to: 31 }
-  - { id: b-32, source_id: original, kind: docx_blocks, from: 32, to: 32 }
-  - { id: b-33, source_id: original, kind: docx_blocks, from: 33, to: 33 }
+  - id: "seccion"
+    source_id: "original"
+    kind: "docx_blocks"
+    from: 30
+    to: 33
+  - id: "b-31"
+    source_id: "original"
+    kind: "docx_blocks"
+    from: 31
+    to: 31
+  - id: "b-32"
+    source_id: "original"
+    kind: "docx_blocks"
+    from: 32
+    to: 32
+  - id: "b-33"
+    source_id: "original"
+    kind: "docx_blocks"
+    from: 33
+    to: 33
 ---
 
 # Paso No. 3 - Análisis comparativo de costo-beneficio entre APIs de IA generativa y despliegue on-premise

@@ -1,17 +1,17 @@
 ---
-type: Slide
+type: "Slide"
 title: "¿Qué es RAG?"
 description: "Diapositiva 3 de s1.pptx: ¿Qué es RAG?. Recuperar información externa, incorporarla al contexto y generar una respuesta con esa evidencia"
 sources:
-  - id: original
-    resource: /references/original.pptx
+  - id: "original"
+    resource: "/references/original.pptx"
 generated:
-  by: process:document-conversion
+  by: "process:document-conversion"
   at: "<generado>"
 source_spans:
-  - id: slide-3
-    source_id: original
-    kind: pptx_slide
+  - id: "slide-3"
+    source_id: "original"
+    kind: "pptx_slide"
     slide_index: 3
     slide_id: 258
     display_label: "03"

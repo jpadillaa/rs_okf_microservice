@@ -1,17 +1,17 @@
 ---
-type: Slide
+type: "Slide"
 title: "Recursos del curso"
 description: "Diapositiva 1 de s1.pptx: Recursos del curso. https://misw4411-aplicaciones-basadas-en-llms.github.io/ llm-retrieval-engineering-course/"
 sources:
-  - id: original
-    resource: /references/original.pptx
+  - id: "original"
+    resource: "/references/original.pptx"
 generated:
-  by: process:document-conversion
+  by: "process:document-conversion"
   at: "<generado>"
 source_spans:
-  - id: slide-1
-    source_id: original
-    kind: pptx_slide
+  - id: "slide-1"
+    source_id: "original"
+    kind: "pptx_slide"
     slide_index: 1
     slide_id: 256
     display_label: "01"

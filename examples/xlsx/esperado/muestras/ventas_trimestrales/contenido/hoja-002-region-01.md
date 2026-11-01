@@ -1,17 +1,25 @@
 ---
-type: Sheet Region
+type: "Sheet Region"
 title: "Tabla «TablaDetalle»"
 description: "Región A1:G301 de la hoja «Detalle» del libro ventas_trimestrales.xlsx: 300 filas de datos y 7 columnas, con datos completos en CSV."
 sources:
-  - id: original
-    resource: /references/original.xlsx
+  - id: "original"
+    resource: "/references/original.xlsx"
 generated:
-  by: process:document-conversion
+  by: "process:document-conversion"
   at: "<generado>"
 sheet_index: 2
 source_spans:
-  - { id: region, source_id: original, kind: xlsx_range, sheet: "Detalle", range: "A1:G301" }
-  - { id: muestra, source_id: original, kind: xlsx_range, sheet: "Detalle", range: "A1:G11" }
+  - id: "region"
+    source_id: "original"
+    kind: "xlsx_range"
+    sheet: "Detalle"
+    range: "A1:G301"
+  - id: "muestra"
+    source_id: "original"
+    kind: "xlsx_range"
+    sheet: "Detalle"
+    range: "A1:G11"
 ---
 
 # Tabla «TablaDetalle»

@@ -1,17 +1,29 @@
 ---
-type: Source Section
+type: "Source Section"
 title: "Lo que un harness no es"
 description: "Sección 5 de d3.docx: Lo que un harness no es. El término harness se utiliza de manera ambigua en la industria. Con frecuencia se emplea como sinónimo de framework, runtime, sandbox o conjunto de…"
 sources:
-  - id: original
-    resource: /references/original.docx
+  - id: "original"
+    resource: "/references/original.docx"
 generated:
-  by: process:document-conversion
+  by: "process:document-conversion"
   at: "<generado>"
 source_spans:
-  - { id: seccion, source_id: original, kind: docx_blocks, from: 30, to: 37 }
-  - { id: b-31, source_id: original, kind: docx_blocks, from: 31, to: 31 }
-  - { id: b-32-37, source_id: original, kind: docx_blocks, from: 32, to: 37 }
+  - id: "seccion"
+    source_id: "original"
+    kind: "docx_blocks"
+    from: 30
+    to: 37
+  - id: "b-31"
+    source_id: "original"
+    kind: "docx_blocks"
+    from: 31
+    to: 31
+  - id: "b-32-37"
+    source_id: "original"
+    kind: "docx_blocks"
+    from: 32
+    to: 37
 ---
 
 # Lo que un harness no es

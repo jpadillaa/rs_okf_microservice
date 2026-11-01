@@ -1,19 +1,39 @@
 ---
-type: Source Section
+type: "Source Section"
 title: "Issues with AI‑assisted writing"
 description: "Sección 5 de p2.pdf: Issues with AI‑assisted writing. The potential benefits of incorporating LLM-based generative AI tools into the academic manuscript writing process has led to studies exploring its…"
 sources:
-  - id: original
-    resource: /references/original.pdf
+  - id: "original"
+    resource: "/references/original.pdf"
 generated:
-  by: process:document-conversion
+  by: "process:document-conversion"
   at: "<generado>"
 source_spans:
-  - { id: seccion, source_id: original, kind: pdf_pages, from: 3, to: 6 }
-  - { id: p-3, source_id: original, kind: pdf_pages, from: 3, to: 3 }
-  - { id: p-4, source_id: original, kind: pdf_pages, from: 4, to: 4 }
-  - { id: p-5, source_id: original, kind: pdf_pages, from: 5, to: 5 }
-  - { id: p-6, source_id: original, kind: pdf_pages, from: 6, to: 6 }
+  - id: "seccion"
+    source_id: "original"
+    kind: "pdf_pages"
+    from: 3
+    to: 6
+  - id: "p-3"
+    source_id: "original"
+    kind: "pdf_pages"
+    from: 3
+    to: 3
+  - id: "p-4"
+    source_id: "original"
+    kind: "pdf_pages"
+    from: 4
+    to: 4
+  - id: "p-5"
+    source_id: "original"
+    kind: "pdf_pages"
+    from: 5
+    to: 5
+  - id: "p-6"
+    source_id: "original"
+    kind: "pdf_pages"
+    from: 6
+    to: 6
 ---
 
 # Issues with AI‑assisted writing

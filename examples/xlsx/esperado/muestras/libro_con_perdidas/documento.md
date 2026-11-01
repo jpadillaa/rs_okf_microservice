@@ -1,18 +1,22 @@
 ---
-type: Source Document
+type: "Source Document"
 title: "libro_con_perdidas"
 description: "Libro libro_con_perdidas.xlsx convertido a conceptos OKF por hojas y regiones."
 sources:
-  - id: original
-    resource: /references/original.xlsx
+  - id: "original"
+    resource: "/references/original.xlsx"
 generated:
-  by: process:document-conversion
+  by: "process:document-conversion"
   at: "<generado>"
 source_file:
-  path: references/original.xlsx
-  sha256: 782106213febbcffae20d3f21c50c284a0b924d9afae2158ffecce866faf62e8
+  path: "references/original.xlsx"
+  sha256: "782106213febbcffae20d3f21c50c284a0b924d9afae2158ffecce866faf62e8"
 source_spans:
-  - { id: hoja-1, source_id: original, kind: xlsx_range, sheet: "Precios", range: "A1:D8" }
+  - id: "hoja-1"
+    source_id: "original"
+    kind: "xlsx_range"
+    sheet: "Precios"
+    range: "A1:D8"
 ---
 
 # libro\_con\_perdidas

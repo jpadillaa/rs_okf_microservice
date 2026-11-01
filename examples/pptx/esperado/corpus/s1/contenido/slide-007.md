@@ -1,17 +1,17 @@
 ---
-type: Slide
+type: "Slide"
 title: "2. La posición de la evidencia puede afectar su uso"
 description: "Diapositiva 7 de s1.pptx: 2. La posición de la evidencia puede afectar su uso. LA MISMA EVIDENCIA, EN TRES POSICIONES"
 sources:
-  - id: original
-    resource: /references/original.pptx
+  - id: "original"
+    resource: "/references/original.pptx"
 generated:
-  by: process:document-conversion
+  by: "process:document-conversion"
   at: "<generado>"
 source_spans:
-  - id: slide-7
-    source_id: original
-    kind: pptx_slide
+  - id: "slide-7"
+    source_id: "original"
+    kind: "pptx_slide"
     slide_index: 7
     slide_id: 262
     display_label: "07"

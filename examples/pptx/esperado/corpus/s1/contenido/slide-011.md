@@ -1,17 +1,17 @@
 ---
-type: Slide
+type: "Slide"
 title: "Una pregunta breve, varias decisiones"
 description: "Diapositiva 11 de s1.pptx: Una pregunta breve, varias decisiones. Posgrado"
 sources:
-  - id: original
-    resource: /references/original.pptx
+  - id: "original"
+    resource: "/references/original.pptx"
 generated:
-  by: process:document-conversion
+  by: "process:document-conversion"
   at: "<generado>"
 source_spans:
-  - id: slide-11
-    source_id: original
-    kind: pptx_slide
+  - id: "slide-11"
+    source_id: "original"
+    kind: "pptx_slide"
     slide_index: 11
     slide_id: 266
     display_label: "11"

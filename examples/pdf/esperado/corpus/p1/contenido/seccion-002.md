@@ -1,30 +1,94 @@
 ---
-type: Source Section
+type: "Source Section"
 title: "COMUNICACIÓN EFECTIVA EN ENTORNOS LABORALES"
 description: "Sección 2 de p1.pdf: COMUNICACIÓN EFECTIVA EN ENTORNOS LABORALES. Fortalecer habilidades para comunicar ideas de forma clara y asertiva en situaciones laborales a partir de la escucha activa y empática con colegas y…"
 sources:
-  - id: original
-    resource: /references/original.pdf
+  - id: "original"
+    resource: "/references/original.pdf"
 generated:
-  by: process:document-conversion
+  by: "process:document-conversion"
   at: "<generado>"
 source_spans:
-  - { id: seccion, source_id: original, kind: pdf_pages, from: 19, to: 33 }
-  - { id: p-19, source_id: original, kind: pdf_pages, from: 19, to: 19 }
-  - { id: p-20, source_id: original, kind: pdf_pages, from: 20, to: 20 }
-  - { id: p-21, source_id: original, kind: pdf_pages, from: 21, to: 21 }
-  - { id: p-22, source_id: original, kind: pdf_pages, from: 22, to: 22 }
-  - { id: p-23, source_id: original, kind: pdf_pages, from: 23, to: 23 }
-  - { id: p-24, source_id: original, kind: pdf_pages, from: 24, to: 24 }
-  - { id: p-25, source_id: original, kind: pdf_pages, from: 25, to: 25 }
-  - { id: p-26, source_id: original, kind: pdf_pages, from: 26, to: 26 }
-  - { id: p-27, source_id: original, kind: pdf_pages, from: 27, to: 27 }
-  - { id: p-28, source_id: original, kind: pdf_pages, from: 28, to: 28 }
-  - { id: p-29, source_id: original, kind: pdf_pages, from: 29, to: 29 }
-  - { id: p-30, source_id: original, kind: pdf_pages, from: 30, to: 30 }
-  - { id: p-31, source_id: original, kind: pdf_pages, from: 31, to: 31 }
-  - { id: p-32, source_id: original, kind: pdf_pages, from: 32, to: 32 }
-  - { id: p-33, source_id: original, kind: pdf_pages, from: 33, to: 33 }
+  - id: "seccion"
+    source_id: "original"
+    kind: "pdf_pages"
+    from: 19
+    to: 33
+  - id: "p-19"
+    source_id: "original"
+    kind: "pdf_pages"
+    from: 19
+    to: 19
+  - id: "p-20"
+    source_id: "original"
+    kind: "pdf_pages"
+    from: 20
+    to: 20
+  - id: "p-21"
+    source_id: "original"
+    kind: "pdf_pages"
+    from: 21
+    to: 21
+  - id: "p-22"
+    source_id: "original"
+    kind: "pdf_pages"
+    from: 22
+    to: 22
+  - id: "p-23"
+    source_id: "original"
+    kind: "pdf_pages"
+    from: 23
+    to: 23
+  - id: "p-24"
+    source_id: "original"
+    kind: "pdf_pages"
+    from: 24
+    to: 24
+  - id: "p-25"
+    source_id: "original"
+    kind: "pdf_pages"
+    from: 25
+    to: 25
+  - id: "p-26"
+    source_id: "original"
+    kind: "pdf_pages"
+    from: 26
+    to: 26
+  - id: "p-27"
+    source_id: "original"
+    kind: "pdf_pages"
+    from: 27
+    to: 27
+  - id: "p-28"
+    source_id: "original"
+    kind: "pdf_pages"
+    from: 28
+    to: 28
+  - id: "p-29"
+    source_id: "original"
+    kind: "pdf_pages"
+    from: 29
+    to: 29
+  - id: "p-30"
+    source_id: "original"
+    kind: "pdf_pages"
+    from: 30
+    to: 30
+  - id: "p-31"
+    source_id: "original"
+    kind: "pdf_pages"
+    from: 31
+    to: 31
+  - id: "p-32"
+    source_id: "original"
+    kind: "pdf_pages"
+    from: 32
+    to: 32
+  - id: "p-33"
+    source_id: "original"
+    kind: "pdf_pages"
+    from: 33
+    to: 33
 title_inferred: true
 ---
 

@@ -1,17 +1,25 @@
 ---
-type: Sheet
+type: "Sheet"
 title: "Notas"
 description: "Hoja 4 del libro ventas_trimestrales.xlsx: rango A1:A7 con 1 región."
 sources:
-  - id: original
-    resource: /references/original.xlsx
+  - id: "original"
+    resource: "/references/original.xlsx"
 generated:
-  by: process:document-conversion
+  by: "process:document-conversion"
   at: "<generado>"
 sheet_index: 4
 source_spans:
-  - { id: hoja, source_id: original, kind: xlsx_range, sheet: "Notas", range: "A1:A7" }
-  - { id: r-1, source_id: original, kind: xlsx_range, sheet: "Notas", range: "A1:A7" }
+  - id: "hoja"
+    source_id: "original"
+    kind: "xlsx_range"
+    sheet: "Notas"
+    range: "A1:A7"
+  - id: "r-1"
+    source_id: "original"
+    kind: "xlsx_range"
+    sheet: "Notas"
+    range: "A1:A7"
 ---
 
 # Notas

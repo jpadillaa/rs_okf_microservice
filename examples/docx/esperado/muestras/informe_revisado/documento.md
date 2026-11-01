@@ -1,19 +1,27 @@
 ---
-type: Source Document
+type: "Source Document"
 title: "Informe de evaluación del asistente RAG"
 description: "Documento fuente informe_revisado.docx convertido a conceptos OKF por secciones."
 sources:
-  - id: original
-    resource: /references/original.docx
+  - id: "original"
+    resource: "/references/original.docx"
 generated:
-  by: process:document-conversion
+  by: "process:document-conversion"
   at: "<generado>"
 source_file:
-  path: references/original.docx
-  sha256: db067ec3e6bb0b5c5cf94a315689645f6e52c5e557a1b89570e2856c971a8821
+  path: "references/original.docx"
+  sha256: "db067ec3e6bb0b5c5cf94a315689645f6e52c5e557a1b89570e2856c971a8821"
 source_spans:
-  - { id: documento, source_id: original, kind: docx_blocks, from: 1, to: 30 }
-  - { id: titulo, source_id: original, kind: docx_blocks, from: 1, to: 1 }
+  - id: "documento"
+    source_id: "original"
+    kind: "docx_blocks"
+    from: 1
+    to: 30
+  - id: "titulo"
+    source_id: "original"
+    kind: "docx_blocks"
+    from: 1
+    to: 1
 ---
 
 <!-- okf-source-span: titulo -->

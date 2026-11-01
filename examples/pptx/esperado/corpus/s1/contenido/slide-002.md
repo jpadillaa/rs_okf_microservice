@@ -1,17 +1,17 @@
 ---
-type: Slide
+type: "Slide"
 title: "Determinismo hasta donde sea posible, no-determinismo donde sea indispensable"
 description: "Diapositiva 2 de s1.pptx: Determinismo hasta donde sea posible, no-determinismo donde sea indispensable."
 sources:
-  - id: original
-    resource: /references/original.pptx
+  - id: "original"
+    resource: "/references/original.pptx"
 generated:
-  by: process:document-conversion
+  by: "process:document-conversion"
   at: "<generado>"
 source_spans:
-  - id: slide-2
-    source_id: original
-    kind: pptx_slide
+  - id: "slide-2"
+    source_id: "original"
+    kind: "pptx_slide"
     slide_index: 2
     slide_id: 257
     display_label: "02"

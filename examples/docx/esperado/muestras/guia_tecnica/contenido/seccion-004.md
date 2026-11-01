@@ -1,19 +1,39 @@
 ---
-type: Source Section
+type: "Source Section"
 title: "Referencias y enlaces"
 description: "Sección 4 de guia_tecnica.docx: Referencias y enlaces. La documentación oficial está en el sitio del proveedor. Véase también la Figura 1 y el enunciado del laboratorio, donde se repite el flujo de la Figura 1."
 sources:
-  - id: original
-    resource: /references/original.docx
+  - id: "original"
+    resource: "/references/original.docx"
 generated:
-  by: process:document-conversion
+  by: "process:document-conversion"
   at: "<generado>"
 source_spans:
-  - { id: seccion, source_id: original, kind: docx_blocks, from: 30, to: 34 }
-  - { id: b-31, source_id: original, kind: docx_blocks, from: 31, to: 31 }
-  - { id: b-32, source_id: original, kind: docx_blocks, from: 32, to: 32 }
-  - { id: b-33, source_id: original, kind: docx_blocks, from: 33, to: 33 }
-  - { id: b-34, source_id: original, kind: docx_blocks, from: 34, to: 34 }
+  - id: "seccion"
+    source_id: "original"
+    kind: "docx_blocks"
+    from: 30
+    to: 34
+  - id: "b-31"
+    source_id: "original"
+    kind: "docx_blocks"
+    from: 31
+    to: 31
+  - id: "b-32"
+    source_id: "original"
+    kind: "docx_blocks"
+    from: 32
+    to: 32
+  - id: "b-33"
+    source_id: "original"
+    kind: "docx_blocks"
+    from: 33
+    to: 33
+  - id: "b-34"
+    source_id: "original"
+    kind: "docx_blocks"
+    from: 34
+    to: 34
 ---
 
 # Referencias y enlaces

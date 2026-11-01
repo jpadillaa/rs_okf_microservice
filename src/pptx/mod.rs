@@ -2,7 +2,9 @@
 pub(crate) mod slide_xml;
 
 use crate::bundle::*;
+use crate::format::Format;
 use crate::ooxml::*;
+use crate::output::*;
 use crate::worker::{Config, Rejected};
 use anyhow::{Context, Result, bail};
 use betteroffice_pptx::{Presentation, RenderOptions};
@@ -14,7 +16,7 @@ use std::{
     time::Instant,
 };
 use yaml_serde::Value as YamlValue;
-use zip::{ZipArchive, ZipWriter};
+use zip::ZipArchive;
 
 /// Elemento del flujo de una diapositiva, en orden del árbol de formas.
 #[derive(Clone)]
@@ -739,42 +741,32 @@ pub(crate) fn index_entry(s: &Slide, href: &str) -> String {
     format!("- [{label}]({href}){suffix}\n")
 }
 
-pub(crate) fn markdown_slide(s: &Slide, deck: &str, instant: &str) -> String {
-    let mut out = format!(
-        "---\ntype: Slide\ntitle: {}\ndescription: {}\nsources:\n  - id: original\n    resource: /references/original.pptx\ngenerated:\n  by: process:document-conversion\n  at: {}\nsource_spans:\n  - id: slide-{}\n    source_id: original\n    kind: pptx_slide\n    slide_index: {}\n",
-        yaml(s.title.as_deref().unwrap_or("Diapositiva sin título")),
-        yaml(&slide_description(s, deck)),
-        yaml(instant),
-        s.idx,
-        s.idx
-    );
-    if let Some(id) = s.slide_id {
-        out.push_str(&format!("    slide_id: {}\n", id));
-    }
-    if let Some(label) = &s.visible_label {
-        out.push_str(&format!("    display_label: {}\n", yaml(label)));
-    }
-    if s.title_inferred {
-        out.push_str("title_inferred: true\n");
-    }
-    if let Some(kicker) = &s.kicker {
-        out.push_str(&format!("kicker: {}\n", yaml(kicker)));
-    }
-    if let Some(section) = &s.section {
-        out.push_str(&format!("section: {}\n", yaml(section)));
-    }
-    if s.visual_only {
-        out.push_str("visual_only: true\n");
-    }
-    if s.view_hides_text {
-        out.push_str("view_hides_text: true\n");
-    }
+/// Frontmatter y cuerpo del concepto de una diapositiva.
+pub(crate) fn markdown_slide(s: &Slide, deck: &str, instant: &str) -> (Fields, String) {
+    let span = span(&format!("slide-{}", s.idx), "pptx_slide")
+        .with("slide_index", s.idx)
+        .with_opt("slide_id", s.slide_id)
+        .with_opt("display_label", s.visible_label.as_ref());
+    let fields = concept_fields(
+        Format::Pptx,
+        "Slide",
+        s.title.as_deref().unwrap_or("Diapositiva sin título"),
+        &slide_description(s, deck),
+        instant,
+    )
+    .with("source_spans", vec![span])
+    .flag("title_inferred", s.title_inferred)
+    .with_opt("kicker", s.kicker.as_ref())
+    .with_opt("section", s.section.as_ref())
+    .flag("visual_only", s.visual_only)
+    .flag("view_hides_text", s.view_hides_text)
     // Un título inferido cumple reglas estrictas (único, breve, arriba, destacado) y no
     // vuelve borrador el concepto; queda marcado con `title_inferred`.
-    if s.title.is_none() || s.visual_only {
-        out.push_str("status: draft\n");
-    }
-    out.push_str("---\n\n");
+    .with_opt(
+        "status",
+        (s.title.is_none() || s.visual_only).then_some("draft"),
+    );
+    let mut out = String::new();
     if let Some(title) = &s.title {
         out.push_str(&format!("# {}\n\n", escape_inline(title)));
         if s.title_inferred {
@@ -845,7 +837,7 @@ pub(crate) fn markdown_slide(s: &Slide, deck: &str, instant: &str) -> String {
         out.push('\n');
         out.push_str(&comments_markdown(&s.comments));
     }
-    out
+    (fields, out)
 }
 
 /// Autores de comentarios: `commentAuthors.xml` (clásico) y `authors.xml` (moderno).
@@ -970,9 +962,7 @@ pub(crate) fn build_bundle(
     }
     let generated = chrono_now();
     let mut allissues = extraction.issues.clone();
-    let zip_path = attempt.join("bundle.zip");
-    let f = fs::File::create(&zip_path)?;
-    let mut z = ZipWriter::new(f);
+    let mut out = BundleWriter::create(Format::Pptx, attempt)?;
     fs::create_dir_all(attempt.join("assets"))?;
     for s in slides {
         let rendered = ppt
@@ -982,52 +972,39 @@ pub(crate) fn build_bundle(
             bail!("vista obligatoria ausente en diapositiva {}", s.idx)
         }
         let view = format!("assets/slide-{:03}.png", s.idx);
-        write_zip_file(&mut z, &view, &rendered.bytes)?;
+        out.file(&view, &rendered.bytes)?;
         if rendered.skipped_images > 0 {
             allissues.push(Issue::loss(format!(
                 "Diapositiva {}: renderizador omitió {} imagen(es)",
                 s.idx, rendered.skipped_images
             )));
         }
-        let mut md = markdown_slide(s, filename, &generated);
+        let (fields, mut md) = markdown_slide(s, filename, &generated);
         md.push_str(&format!(
             "\n## Vista visual\n\n![Vista de la diapositiva {}](../assets/slide-{:03}.png)\n",
             s.idx, s.idx
         ));
-        write_zip_file(
-            &mut z,
-            &format!("contenido/slide-{:03}.md", s.idx),
-            md.as_bytes(),
-        )?;
+        out.concept(&format!("contenido/slide-{:03}.md", s.idx), &fields, &md)?;
     }
     for entry in fs::read_dir(attempt.join("assets"))? {
         let e = entry?;
         if e.file_type()?.is_file() {
             let name = format!("assets/{}", e.file_name().to_string_lossy());
-            write_zip_file(&mut z, &name, &fs::read(e.path())?)?;
+            out.file(&name, &fs::read(e.path())?)?;
         }
     }
-    let original_ext = FsPath::new(filename)
-        .extension()
-        .and_then(|x| x.to_str())
-        .unwrap_or("pptx");
-    let orig = format!("references/original.{original_ext}");
-    write_zip_file(&mut z, &orig, bytes)?;
-    let (losses, notes): (Vec<&Issue>, Vec<&Issue>) =
-        allissues.iter().partition(|i| i.severity == Severity::Loss);
-    let state = if losses.is_empty() {
-        "complete"
-    } else {
-        "partial"
+    let nav = Navigation {
+        contents_label: "Índice de diapositivas",
+        heading: "Diapositivas",
+        root_entries: slides
+            .iter()
+            .map(|s| index_entry(s, &format!("contenido/slide-{:03}.md", s.idx)))
+            .collect(),
+        contents_entries: slides
+            .iter()
+            .map(|s| index_entry(s, &format!("slide-{:03}.md", s.idx)))
+            .collect(),
     };
-    let slide_links = slides
-        .iter()
-        .map(|s| index_entry(s, &format!("contenido/slide-{:03}.md", s.idx)))
-        .collect::<String>();
-    let content_slide_links = slides
-        .iter()
-        .map(|s| index_entry(s, &format!("slide-{:03}.md", s.idx)))
-        .collect::<String>();
     let design_md = if extraction.design_texts.is_empty() {
         String::new()
     } else {
@@ -1045,55 +1022,51 @@ pub(crate) fn build_bundle(
             "\n## Texto del diseño\n\nFormas fijas del layout o del patrón, visibles en las diapositivas que los usan y no repetidas en sus conceptos.\n\n{lines}"
         )
     };
-    let index = format!(
-        "---\nokf_version: \"0.2\"\n---\n\n# Bundle OKF\n\n- [Documento fuente](documento.md)\n- [Índice de diapositivas](contenido/index.md)\n- [Informe de conversión](conversion-report.md)\n\n## Diapositivas\n\n{slide_links}"
-    );
-    let contents_index = format!("# Contenido\n\n## Diapositivas\n\n{content_slide_links}");
-    let doc = format!(
-        "---\ntype: Source Document\ntitle: {}\ndescription: Presentación fuente convertida a conceptos OKF por diapositiva.\nsources:\n  - id: original\n    resource: /{orig}\ngenerated:\n  by: process:document-conversion\n  at: {}\nsource_file:\n  path: {}\n  sha256: {}\n---\n\n# {}\n\nPresentación de {} diapositivas.\n{design_md}",
-        yaml(filename),
-        yaml(&generated),
-        yaml(&orig),
+    let doc_fields = document_fields(
+        Format::Pptx,
+        filename,
+        "Presentación fuente convertida a conceptos OKF por diapositiva.",
+        &generated,
         hash,
+    );
+    let doc = format!(
+        "# {}\n\nPresentación de {} diapositivas.\n{design_md}",
         escape_inline(filename),
         slides.len()
     );
-    let list = |items: &[&Issue], empty: &str| -> String {
-        if items.is_empty() {
-            format!("{empty}\n")
-        } else {
-            items
-                .iter()
-                .map(|i| format!("- {}\n", escape_inline(&i.text)))
-                .collect()
-        }
-    };
     let count = |f: fn(&Slide) -> bool| slides.iter().filter(|s| f(s)).count();
-    let report = format!(
-        "---\ntype: Conversion Report\ntitle: Informe de conversión\ngenerated:\n  by: process:document-conversion\n  at: {}\nstatus: {}\nformat: pptx\nsha256: {}\n---\n\n# Informe de conversión PPTX\n\n- Estado: `{}`\n- Diapositivas inventariadas: {}\n- Diapositivas representadas con concepto y vista: {}\n- Vistas adjuntas: {}\n- Diapositivas con contenido solo visual: {}\n- Títulos inferidos: {}; diapositivas sin título: {}\n- Imágenes adjuntas: {}\n- Imágenes decorativas visibles solo en las vistas (iconos sin texto alternativo útil, menos del 1 % del área, o fondos): {}\n- Vistas: BetterOffice PPTX Raster (Rust)\n- Duración de ensamblado/renderizado: {} ms\n\n## Incidencias\n\nPérdidas o incertidumbres sustantivas; determinan el estado `partial`.\n\n{}\n## Observaciones\n\nInformación sobre la conversión que no afecta el estado.\n\n{}",
-        yaml(&generated),
-        state,
-        hash,
-        state,
-        slides.len(),
-        slides.len(),
-        slides.len(),
-        count(|s| s.visual_only),
-        count(|s| s.title_inferred),
-        count(|s| s.title.is_none()),
-        slides.iter().map(|s| s.image_paths.len()).sum::<usize>(),
-        slides.iter().map(|s| s.decorative_images).sum::<usize>(),
-        started.elapsed().as_millis(),
-        list(&losses, "Sin pérdidas ni incertidumbres sustantivas."),
-        list(&notes, "Sin observaciones.")
-    );
-    write_zip_file(&mut z, "index.md", index.as_bytes())?;
-    write_zip_file(&mut z, "contenido/index.md", contents_index.as_bytes())?;
-    write_zip_file(&mut z, "documento.md", doc.as_bytes())?;
-    write_zip_file(&mut z, "conversion-report.md", report.as_bytes())?;
-    z.finish()?;
-    validate_bundle(&zip_path)?;
-    Ok((zip_path, state.into()))
+    let summary = [
+        format!("Diapositivas inventariadas: {}", slides.len()),
+        format!(
+            "Diapositivas representadas con concepto y vista: {}",
+            slides.len()
+        ),
+        format!("Vistas adjuntas: {}", slides.len()),
+        format!(
+            "Diapositivas con contenido solo visual: {}",
+            count(|s| s.visual_only)
+        ),
+        format!(
+            "Títulos inferidos: {}; diapositivas sin título: {}",
+            count(|s| s.title_inferred),
+            count(|s| s.title.is_none())
+        ),
+        format!(
+            "Imágenes adjuntas: {}",
+            slides.iter().map(|s| s.image_paths.len()).sum::<usize>()
+        ),
+        format!(
+            "Imágenes decorativas visibles solo en las vistas (iconos sin texto alternativo útil, menos del 1 % del área, o fondos): {}",
+            slides.iter().map(|s| s.decorative_images).sum::<usize>()
+        ),
+        "Vistas: BetterOffice PPTX Raster (Rust)".to_string(),
+        format!(
+            "Duración de ensamblado/renderizado: {} ms",
+            started.elapsed().as_millis()
+        ),
+    ];
+    let report = report(Format::Pptx, &generated, hash, &allissues, &summary, "");
+    out.finish(bytes, (&doc_fields, &doc), &nav, &report, &allissues)
 }
 
 /// Identificadores de las diapositivas en el orden de la presentación. Las entradas
@@ -1260,7 +1233,10 @@ mod tests {
         let Extraction { slides, issues, .. } = extract(&bytes, tmp.path()).unwrap();
         let md = slides
             .iter()
-            .map(|s| markdown_slide(s, name, "2026-01-01T00:00:00Z"))
+            .map(|s| {
+                let (fields, body) = markdown_slide(s, name, "2026-01-01T00:00:00Z");
+                fields.frontmatter() + &body
+            })
             .collect();
         (slides, issues, md)
     }
@@ -1364,7 +1340,7 @@ mod tests {
         let tmp = tempfile::tempdir().unwrap();
         let extraction = extract(&bytes, tmp.path()).unwrap();
         let s = &extraction.slides[0];
-        let md = markdown_slide(s, "rich.pptx", "2026-01-01T00:00:00Z");
+        let (_, md) = markdown_slide(s, "rich.pptx", "2026-01-01T00:00:00Z");
         assert!(md.contains("- `E=mc^2+a/b`"), "{md}");
         // La imagen de mc:Fallback representa la misma ecuación: no se adjunta.
         assert!(s.image_paths.is_empty());

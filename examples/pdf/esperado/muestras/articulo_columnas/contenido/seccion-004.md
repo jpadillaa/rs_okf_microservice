@@ -1,17 +1,29 @@
 ---
-type: Source Section
+type: "Source Section"
 title: "2. Método"
 description: "Sección 4 de articulo_columnas.pdf: 2. Método. Se prepararon veinte documentos artificiales con columnas, tablas, figuras y notas al pie. Cada documento se convirtió con los dos procedimientos y un revisor…"
 sources:
-  - id: original
-    resource: /references/original.pdf
+  - id: "original"
+    resource: "/references/original.pdf"
 generated:
-  by: process:document-conversion
+  by: "process:document-conversion"
   at: "<generado>"
 source_spans:
-  - { id: seccion, source_id: original, kind: pdf_pages, from: 1, to: 2 }
-  - { id: p-1-2, source_id: original, kind: pdf_pages, from: 1, to: 2 }
-  - { id: p-1, source_id: original, kind: pdf_pages, from: 1, to: 1 }
+  - id: "seccion"
+    source_id: "original"
+    kind: "pdf_pages"
+    from: 1
+    to: 2
+  - id: "p-1-2"
+    source_id: "original"
+    kind: "pdf_pages"
+    from: 1
+    to: 2
+  - id: "p-1"
+    source_id: "original"
+    kind: "pdf_pages"
+    from: 1
+    to: 1
 ---
 
 # 2. Método

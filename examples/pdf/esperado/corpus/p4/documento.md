@@ -1,19 +1,27 @@
 ---
-type: Source Document
+type: "Source Document"
 title: "¿Qué es un agente de inteligencia artificial?"
 description: "Documento fuente p4.pdf convertido a conceptos OKF por secciones."
 sources:
-  - id: original
-    resource: /references/original.pdf
+  - id: "original"
+    resource: "/references/original.pdf"
 generated:
-  by: process:document-conversion
+  by: "process:document-conversion"
   at: "<generado>"
 source_file:
-  path: references/original.pdf
-  sha256: 3cd38594602071f10cbe102350bb16a6919625cff1305fd54b0b4d3617f438ff
+  path: "references/original.pdf"
+  sha256: "3cd38594602071f10cbe102350bb16a6919625cff1305fd54b0b4d3617f438ff"
 source_spans:
-  - { id: documento, source_id: original, kind: pdf_pages, from: 1, to: 13 }
-  - { id: titulo, source_id: original, kind: pdf_pages, from: 1, to: 1 }
+  - id: "documento"
+    source_id: "original"
+    kind: "pdf_pages"
+    from: 1
+    to: 13
+  - id: "titulo"
+    source_id: "original"
+    kind: "pdf_pages"
+    from: 1
+    to: 1
 ---
 
 <!-- okf-source-span: titulo -->

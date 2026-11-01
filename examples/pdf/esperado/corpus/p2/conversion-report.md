@@ -1,12 +1,12 @@
 ---
-type: Conversion Report
-title: Informe de conversión
+type: "Conversion Report"
+title: "Informe de conversión"
 generated:
-  by: process:document-conversion
+  by: "process:document-conversion"
   at: "<generado>"
-status: complete
-format: pdf
-sha256: 49ec606d9b25c9775c58749a7246c0451ba962124c8d34890815a011603ff015
+status: "complete"
+format: "pdf"
+sha256: "49ec606d9b25c9775c58749a7246c0451ba962124c8d34890815a011603ff015"
 ---
 
 # Informe de conversión PDF

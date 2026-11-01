@@ -1,23 +1,59 @@
 ---
-type: Source Section
+type: "Source Section"
 title: "¿Qué es un harness?"
 description: "Sección 3 de d3.docx: ¿Qué es un harness?. Un harness es la capa integral de software en tiempo de ejecución que rodea al modelo de lenguaje y gobierna su interacción con el estado, las herramientas y…"
 sources:
-  - id: original
-    resource: /references/original.docx
+  - id: "original"
+    resource: "/references/original.docx"
 generated:
-  by: process:document-conversion
+  by: "process:document-conversion"
   at: "<generado>"
 source_spans:
-  - { id: seccion, source_id: original, kind: docx_blocks, from: 12, to: 21 }
-  - { id: b-13, source_id: original, kind: docx_blocks, from: 13, to: 13 }
-  - { id: b-14, source_id: original, kind: docx_blocks, from: 14, to: 14 }
-  - { id: b-15-16, source_id: original, kind: docx_blocks, from: 15, to: 16 }
-  - { id: b-17, source_id: original, kind: docx_blocks, from: 17, to: 17 }
-  - { id: b-18, source_id: original, kind: docx_blocks, from: 18, to: 18 }
-  - { id: b-19, source_id: original, kind: docx_blocks, from: 19, to: 19 }
-  - { id: b-20, source_id: original, kind: docx_blocks, from: 20, to: 20 }
-  - { id: b-21, source_id: original, kind: docx_blocks, from: 21, to: 21 }
+  - id: "seccion"
+    source_id: "original"
+    kind: "docx_blocks"
+    from: 12
+    to: 21
+  - id: "b-13"
+    source_id: "original"
+    kind: "docx_blocks"
+    from: 13
+    to: 13
+  - id: "b-14"
+    source_id: "original"
+    kind: "docx_blocks"
+    from: 14
+    to: 14
+  - id: "b-15-16"
+    source_id: "original"
+    kind: "docx_blocks"
+    from: 15
+    to: 16
+  - id: "b-17"
+    source_id: "original"
+    kind: "docx_blocks"
+    from: 17
+    to: 17
+  - id: "b-18"
+    source_id: "original"
+    kind: "docx_blocks"
+    from: 18
+    to: 18
+  - id: "b-19"
+    source_id: "original"
+    kind: "docx_blocks"
+    from: 19
+    to: 19
+  - id: "b-20"
+    source_id: "original"
+    kind: "docx_blocks"
+    from: 20
+    to: 20
+  - id: "b-21"
+    source_id: "original"
+    kind: "docx_blocks"
+    from: 21
+    to: 21
 ---
 
 # ¿Qué es un harness?

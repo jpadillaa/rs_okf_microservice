@@ -1,17 +1,17 @@
 ---
-type: Slide
+type: "Slide"
 title: "4. La información vigente puede llegar desde fuentes externas"
 description: "Diapositiva 9 de s1.pptx: 4. La información vigente puede llegar desde fuentes externas. GPT-6.1 Sol"
 sources:
-  - id: original
-    resource: /references/original.pptx
+  - id: "original"
+    resource: "/references/original.pptx"
 generated:
-  by: process:document-conversion
+  by: "process:document-conversion"
   at: "<generado>"
 source_spans:
-  - id: slide-9
-    source_id: original
-    kind: pptx_slide
+  - id: "slide-9"
+    source_id: "original"
+    kind: "pptx_slide"
     slide_index: 9
     slide_id: 264
     display_label: "09"

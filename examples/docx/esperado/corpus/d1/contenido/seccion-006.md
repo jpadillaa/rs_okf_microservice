@@ -1,21 +1,49 @@
 ---
-type: Source Section
+type: "Source Section"
 title: "Semana 6: RAG Multimodal"
 description: "Sección 6 de d1.docx: Semana 6: RAG Multimodal. Fundamentos de Multimodalidad"
 sources:
-  - id: original
-    resource: /references/original.docx
+  - id: "original"
+    resource: "/references/original.docx"
 generated:
-  by: process:document-conversion
+  by: "process:document-conversion"
   at: "<generado>"
 source_spans:
-  - { id: seccion, source_id: original, kind: docx_blocks, from: 65, to: 79 }
-  - { id: b-66, source_id: original, kind: docx_blocks, from: 66, to: 66 }
-  - { id: b-67-69, source_id: original, kind: docx_blocks, from: 67, to: 69 }
-  - { id: b-70, source_id: original, kind: docx_blocks, from: 70, to: 70 }
-  - { id: b-71-75, source_id: original, kind: docx_blocks, from: 71, to: 75 }
-  - { id: b-76, source_id: original, kind: docx_blocks, from: 76, to: 76 }
-  - { id: b-77-79, source_id: original, kind: docx_blocks, from: 77, to: 79 }
+  - id: "seccion"
+    source_id: "original"
+    kind: "docx_blocks"
+    from: 65
+    to: 79
+  - id: "b-66"
+    source_id: "original"
+    kind: "docx_blocks"
+    from: 66
+    to: 66
+  - id: "b-67-69"
+    source_id: "original"
+    kind: "docx_blocks"
+    from: 67
+    to: 69
+  - id: "b-70"
+    source_id: "original"
+    kind: "docx_blocks"
+    from: 70
+    to: 70
+  - id: "b-71-75"
+    source_id: "original"
+    kind: "docx_blocks"
+    from: 71
+    to: 75
+  - id: "b-76"
+    source_id: "original"
+    kind: "docx_blocks"
+    from: 76
+    to: 76
+  - id: "b-77-79"
+    source_id: "original"
+    kind: "docx_blocks"
+    from: 77
+    to: 79
 ---
 
 # Semana 6: RAG Multimodal

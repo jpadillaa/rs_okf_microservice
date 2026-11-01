@@ -6,7 +6,10 @@ mod styles;
 mod xml;
 
 use crate::bundle::*;
+use crate::format::Format;
 use crate::ooxml::*;
+use crate::output::*;
+use crate::sections::*;
 use crate::worker::{Config, Rejected};
 use anyhow::{Context, Result, bail};
 use read::{Aux, Para, Reader, Table};
@@ -19,13 +22,7 @@ use std::{
 };
 use styles::{Numbering, Styles};
 use yaml_serde::Value as YamlValue;
-use zip::{ZipArchive, ZipWriter};
-
-/// Por debajo de este número de caracteres el documento es breve y forma un solo
-/// concepto aunque tenga encabezados.
-pub(crate) const BRIEF_MAX_CHARS: usize = 1500;
-/// Longitud máxima de un párrafo sin estilo de encabezado que puede inferirse como tal.
-const INFERRED_HEADING_MAX_CHARS: usize = 150;
+use zip::ZipArchive;
 
 pub(crate) enum Block {
     Para(Box<Para>),
@@ -284,37 +281,6 @@ fn comments(
     (top, thread)
 }
 
-#[derive(Clone, Copy, Debug, PartialEq)]
-pub(crate) struct Heading {
-    /// Nivel desde 1.
-    pub(crate) level: u8,
-    /// Sin estilo ni nivel de esquema: inferido por tener el formato de un encabezado.
-    pub(crate) inferred: bool,
-}
-
-#[derive(Clone, Debug)]
-pub(crate) struct Section {
-    pub(crate) title: String,
-    /// Bloque del encabezado que abre la sección.
-    pub(crate) heading: Option<usize>,
-    /// Primer y último bloque (índices desde 0, inclusivos).
-    pub(crate) from: usize,
-    pub(crate) to: usize,
-    /// Contenido anterior al primer encabezado de división.
-    pub(crate) preamble: bool,
-    pub(crate) inferred: bool,
-}
-
-#[derive(Clone, Copy, Debug, PartialEq)]
-pub(crate) enum TitleSource {
-    Style,
-    Heading,
-    /// Primer encabezado, único de su nivel y de rango superior a todos los demás.
-    LoneHeading,
-    Metadata,
-    Filename,
-}
-
 pub(crate) struct Outline {
     pub(crate) headings: Vec<Option<Heading>>,
     pub(crate) title: String,
@@ -335,10 +301,7 @@ impl Outline {
         "#".repeat((level as i32 - self.base).clamp(2, 6) as usize)
     }
     pub(crate) fn file(&self, k: usize) -> String {
-        match self.split {
-            None => "texto.md".into(),
-            Some(_) => format!("seccion-{:03}.md", k + 1),
-        }
+        section_file(self.split, k)
     }
 }
 
@@ -925,7 +888,8 @@ impl Render<'_> {
     }
 
     /// Markdown del concepto `k` y la lista de sus localizadores de bloque.
-    fn concept(&mut self, k: usize, filename: &str, generated: &str) -> String {
+    /// Frontmatter y cuerpo del concepto de la sección `k`.
+    fn concept(&mut self, k: usize, filename: &str, generated: &str) -> (Fields, String) {
         let outline = self.outline;
         let ex = self.ex;
         let sec = &outline.sections[k];
@@ -1184,28 +1148,20 @@ impl Render<'_> {
             description.push(' ');
             description.push_str(&truncate_chars(&line, 160));
         }
-        let mut out = format!(
-            "---\ntype: {}\ntitle: {}\ndescription: {}\nsources:\n  - id: original\n    resource: /references/original.docx\ngenerated:\n  by: process:document-conversion\n  at: {}\nsource_spans:\n  - {{ id: seccion, source_id: original, kind: docx_blocks, from: {}, to: {} }}\n",
-            if outline.split.is_some() {
-                "Source Section"
-            } else {
-                "Source Text"
-            },
-            yaml(&sec.title),
-            yaml(&description),
-            yaml(generated),
-            sec.from + 1,
-            sec.to + 1
-        );
-        for (id, a, b) in &spans {
-            out.push_str(&format!(
-                "  - {{ id: {id}, source_id: original, kind: docx_blocks, from: {a}, to: {b} }}\n"
-            ));
-        }
-        if sec.inferred {
-            out.push_str("title_inferred: true\n");
-        }
-        out.push_str("---\n\n");
+        let blocks = |id: &str, from: usize, to: usize| {
+            span(id, "docx_blocks").with("from", from).with("to", to)
+        };
+        let mut source_spans = vec![blocks("seccion", sec.from + 1, sec.to + 1)];
+        source_spans.extend(spans.iter().map(|(id, a, b)| blocks(id, *a, *b)));
+        let kind = if outline.split.is_some() {
+            "Source Section"
+        } else {
+            "Source Text"
+        };
+        let fields = concept_fields(Format::Docx, kind, &sec.title, &description, generated)
+            .with("source_spans", source_spans)
+            .flag("title_inferred", sec.inferred);
+        let mut out = String::new();
         out.push_str(&format!("# {}\n\n", escape_inline(&sec.title)));
         if sec.inferred {
             out.push_str("> Encabezado inferido por su formato: el párrafo no tiene estilo de encabezado.\n\n");
@@ -1216,7 +1172,7 @@ impl Render<'_> {
             out.push_str(&body);
         }
         out.push_str(&aux);
-        out
+        (fields, out)
     }
 }
 
@@ -1243,14 +1199,13 @@ pub(crate) fn build_bundle(
         },
         tally: Tally::default(),
     };
-    let zip_path = attempt.join("bundle.zip");
-    let mut z = ZipWriter::new(fs::File::create(&zip_path)?);
+    let mut out = BundleWriter::create(Format::Docx, attempt)?;
     let mut entries = String::new();
     let mut content_entries = String::new();
     for k in 0..outline.sections.len() {
-        let md = r.concept(k, filename, &generated);
+        let (fields, md) = r.concept(k, filename, &generated);
         let file = outline.file(k);
-        write_zip_file(&mut z, &format!("contenido/{file}"), md.as_bytes())?;
+        out.concept(&format!("contenido/{file}"), &fields, &md)?;
         let sec = &outline.sections[k];
         let mut entry = format!("[{}]", escape_inline(&sec.title));
         if sec.preamble {
@@ -1343,9 +1298,8 @@ pub(crate) fn build_bundle(
     };
     for (target, path) in &r.assets.files {
         let data = read_entry(&mut z_in, target)?;
-        write_zip_file(&mut z, path, &data)?;
+        out.file(path, &data)?;
     }
-    write_zip_file(&mut z, "references/original.docx", bytes)?;
     let n = ex.blocks.len();
     let tables = ex
         .blocks
@@ -1482,36 +1436,11 @@ pub(crate) fn build_bundle(
             t.furniture_texts, t.furniture_images
         )));
     }
-    issues.push(Issue::note(format!(
-        "Título del documento tomado {}: «{}»",
-        match outline.title_source {
-            TitleSource::Style => "del párrafo con estilo Título",
-            TitleSource::Heading =>
-                "del primer encabezado, seguido directamente por otro de igual o mayor rango",
-            TitleSource::LoneHeading =>
-                "del primer encabezado, único de su nivel y de rango superior a los demás",
-            TitleSource::Metadata => "de las propiedades del documento",
-            TitleSource::Filename => "del nombre del archivo; el documento no lo declara",
-        },
-        truncate_chars(&outline.title, 120)
-    )));
-    let (losses, notes): (Vec<&Issue>, Vec<&Issue>) =
-        issues.iter().partition(|i| i.severity == Severity::Loss);
-    let state = if losses.is_empty() {
-        "complete"
-    } else {
-        "partial"
-    };
-    let list = |items: &[&Issue], empty: &str| -> String {
-        if items.is_empty() {
-            format!("{empty}\n")
-        } else {
-            items
-                .iter()
-                .map(|i| format!("- {}\n", escape_inline(&i.text)))
-                .collect()
-        }
-    };
+    issues.push(title_note(
+        outline.title_source,
+        &outline.title,
+        "del primer encabezado, único de su nivel y de rango superior a los demás",
+    ));
     let division = match outline.split {
         Some(l) => format!(
             "{} concepto(s), divididos por los encabezados de nivel {l}",
@@ -1520,37 +1449,58 @@ pub(crate) fn build_bundle(
         None => "1 concepto (documento breve o sin secciones)".into(),
     };
     let headings = outline.headings.iter().flatten().count();
-    let report = format!(
-        "---\ntype: Conversion Report\ntitle: Informe de conversión\ngenerated:\n  by: process:document-conversion\n  at: {}\nstatus: {state}\nformat: docx\nsha256: {hash}\n---\n\n# Informe de conversión DOCX\n\n- Estado: `{state}`\n- Bloques inventariados: {n} ({} párrafos y {tables} tablas)\n- Bloques representados: {} (el título en documento.md, cada encabezado de división como título de su concepto); párrafos vacíos o tablas sin contenido: {}\n- Conceptos: {division}\n- Encabezados: {headings} (inferidos por formato: {})\n- Listas: {}; tablas: {}\n- Imágenes adjuntas: {}; decorativas no adjuntas: {}\n- Notas al pie: {}; notas finales: {}\n- Comentarios de revisión: {}\n- Enlaces: {}\n- Duración de ensamblado: {} ms\n\n## Incidencias\n\nPérdidas o incertidumbres sustantivas; determinan el estado `partial`.\n\n{}\n## Observaciones\n\nInformación sobre la conversión que no afecta el estado.\n\n{}",
-        yaml(&generated),
-        n - tables,
-        n - t.empty,
-        t.empty,
-        t.inferred.len(),
-        t.lists,
-        t.tables,
-        t.images,
-        t.decorative,
-        ex.footnote_order.len(),
-        ex.endnote_order.len(),
-        ex.comments
-            .iter()
-            .map(|c| 1 + c.replies.len())
-            .sum::<usize>(),
-        t.links,
-        started.elapsed().as_millis(),
-        list(&losses, "Sin pérdidas ni incertidumbres sustantivas."),
-        list(&notes, "Sin observaciones.")
-    );
-    let title_span = outline
-        .title_block
-        .map(|b| {
-            format!(
-                "  - {{ id: titulo, source_id: original, kind: docx_blocks, from: {0}, to: {0} }}\n",
-                b + 1
-            )
-        })
-        .unwrap_or_default();
+    let summary = [
+        format!(
+            "Bloques inventariados: {n} ({} párrafos y {tables} tablas)",
+            n - tables
+        ),
+        format!(
+            "Bloques representados: {} (el título en documento.md, cada encabezado de división como título de su concepto); párrafos vacíos o tablas sin contenido: {}",
+            n - t.empty,
+            t.empty
+        ),
+        format!("Conceptos: {division}"),
+        format!(
+            "Encabezados: {headings} (inferidos por formato: {})",
+            t.inferred.len()
+        ),
+        format!("Listas: {}; tablas: {}", t.lists, t.tables),
+        format!(
+            "Imágenes adjuntas: {}; decorativas no adjuntas: {}",
+            t.images, t.decorative
+        ),
+        format!(
+            "Notas al pie: {}; notas finales: {}",
+            ex.footnote_order.len(),
+            ex.endnote_order.len()
+        ),
+        format!(
+            "Comentarios de revisión: {}",
+            ex.comments
+                .iter()
+                .map(|c| 1 + c.replies.len())
+                .sum::<usize>()
+        ),
+        format!("Enlaces: {}", t.links),
+        format!(
+            "Duración de ensamblado: {} ms",
+            started.elapsed().as_millis()
+        ),
+    ];
+    let report = report(Format::Docx, &generated, hash, &issues, &summary, "");
+    let blocks = |id: &str, from: usize, to: usize| {
+        span(id, "docx_blocks").with("from", from).with("to", to)
+    };
+    let mut doc_spans = vec![blocks("documento", 1, n)];
+    doc_spans.extend(outline.title_block.map(|b| blocks("titulo", b + 1, b + 1)));
+    let doc_fields = document_fields(
+        Format::Docx,
+        &outline.title,
+        &format!("Documento fuente {filename} convertido a conceptos OKF por secciones."),
+        &generated,
+        hash,
+    )
+    .with("source_spans", doc_spans);
     let title_marker = if outline.title_block.is_some() {
         "<!-- okf-source-span: titulo -->\n"
     } else {
@@ -1568,25 +1518,16 @@ pub(crate) fn build_bundle(
         ),
     };
     let doc = format!(
-        "---\ntype: Source Document\ntitle: {}\ndescription: {}\nsources:\n  - id: original\n    resource: /references/original.docx\ngenerated:\n  by: process:document-conversion\n  at: {}\nsource_file:\n  path: references/original.docx\n  sha256: {hash}\nsource_spans:\n  - {{ id: documento, source_id: original, kind: docx_blocks, from: 1, to: {n} }}\n{title_span}---\n\n{title_marker}# {}\n\n{summary}\n\n## Estructura\n\n{structure}{furniture_md}",
-        yaml(&outline.title),
-        yaml(&format!(
-            "Documento fuente {filename} convertido a conceptos OKF por secciones."
-        )),
-        yaml(&generated),
+        "{title_marker}# {}\n\n{summary}\n\n## Estructura\n\n{structure}{furniture_md}",
         escape_inline(&outline.title),
     );
-    let index = format!(
-        "---\nokf_version: \"0.2\"\n---\n\n# Bundle OKF\n\n- [Documento fuente](documento.md)\n- [Índice de contenido](contenido/index.md)\n- [Informe de conversión](conversion-report.md)\n\n## Secciones\n\n{entries}"
-    );
-    let contents_index = format!("# Contenido\n\n## Secciones\n\n{content_entries}");
-    write_zip_file(&mut z, "index.md", index.as_bytes())?;
-    write_zip_file(&mut z, "contenido/index.md", contents_index.as_bytes())?;
-    write_zip_file(&mut z, "documento.md", doc.as_bytes())?;
-    write_zip_file(&mut z, "conversion-report.md", report.as_bytes())?;
-    z.finish()?;
-    validate_bundle(&zip_path)?;
-    Ok((zip_path, state.into()))
+    let nav = Navigation {
+        contents_label: "Índice de contenido",
+        heading: "Secciones",
+        root_entries: entries,
+        contents_entries: content_entries,
+    };
+    out.finish(bytes, (&doc_fields, &doc), &nav, &report, &issues)
 }
 
 /// Extrae y ensambla el bundle de un documento.
@@ -1783,7 +1724,7 @@ mod tests {
         let doc = &md["documento.md"];
         assert!(doc.contains("<!-- okf-source-span: titulo -->\n# MISW4411 - Temario 2026"));
         assert!(
-            doc.contains("{ id: titulo, source_id: original, kind: docx_blocks, from: 1, to: 1 }")
+            doc.contains("id: \"titulo\"\n    source_id: \"original\"\n    kind: \"docx_blocks\"\n    from: 1\n    to: 1\n")
         );
     }
 
@@ -1899,7 +1840,7 @@ mod tests {
         assert!(md.contains_key("contenido/texto.md"));
         assert!(!md.keys().any(|k| k.starts_with("contenido/seccion-")));
         let t = &md["contenido/texto.md"];
-        assert!(t.contains("type: Source Text"));
+        assert!(t.contains("type: \"Source Text\""));
         assert!(t.contains("- Primera idea\n- Segunda idea"), "{t}");
     }
 

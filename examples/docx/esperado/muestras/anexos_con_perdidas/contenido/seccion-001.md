@@ -1,20 +1,44 @@
 ---
-type: Source Section
+type: "Source Section"
 title: "Anexo A. Proceso de evaluación"
 description: "Sección 1 de anexos_con_perdidas.docx: Anexo A. Proceso de evaluación. El anexo reúne material de apoyo de la evaluación. Algunos elementos se crearon con herramientas externas y se insertaron en el documento sin convertirlos a…"
 sources:
-  - id: original
-    resource: /references/original.docx
+  - id: "original"
+    resource: "/references/original.docx"
 generated:
-  by: process:document-conversion
+  by: "process:document-conversion"
   at: "<generado>"
 source_spans:
-  - { id: seccion, source_id: original, kind: docx_blocks, from: 1, to: 7 }
-  - { id: b-3, source_id: original, kind: docx_blocks, from: 3, to: 3 }
-  - { id: b-4, source_id: original, kind: docx_blocks, from: 4, to: 4 }
-  - { id: b-5, source_id: original, kind: docx_blocks, from: 5, to: 5 }
-  - { id: b-6, source_id: original, kind: docx_blocks, from: 6, to: 6 }
-  - { id: b-7, source_id: original, kind: docx_blocks, from: 7, to: 7 }
+  - id: "seccion"
+    source_id: "original"
+    kind: "docx_blocks"
+    from: 1
+    to: 7
+  - id: "b-3"
+    source_id: "original"
+    kind: "docx_blocks"
+    from: 3
+    to: 3
+  - id: "b-4"
+    source_id: "original"
+    kind: "docx_blocks"
+    from: 4
+    to: 4
+  - id: "b-5"
+    source_id: "original"
+    kind: "docx_blocks"
+    from: 5
+    to: 5
+  - id: "b-6"
+    source_id: "original"
+    kind: "docx_blocks"
+    from: 6
+    to: 6
+  - id: "b-7"
+    source_id: "original"
+    kind: "docx_blocks"
+    from: 7
+    to: 7
 ---
 
 # Anexo A. Proceso de evaluación

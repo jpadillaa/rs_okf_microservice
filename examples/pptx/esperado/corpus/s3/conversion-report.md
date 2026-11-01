@@ -1,12 +1,12 @@
 ---
-type: Conversion Report
-title: Informe de conversión
+type: "Conversion Report"
+title: "Informe de conversión"
 generated:
-  by: process:document-conversion
+  by: "process:document-conversion"
   at: "<generado>"
-status: partial
-format: pptx
-sha256: 9f6a83313e4d37377c3e3f9f362bda7741d531991ac1a3ce610e9b054ea0af26
+status: "partial"
+format: "pptx"
+sha256: "9f6a83313e4d37377c3e3f9f362bda7741d531991ac1a3ce610e9b054ea0af26"
 ---
 
 # Informe de conversión PPTX

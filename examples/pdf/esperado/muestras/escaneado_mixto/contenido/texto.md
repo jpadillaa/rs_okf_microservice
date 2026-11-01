@@ -1,21 +1,45 @@
 ---
-type: Source Text
+type: "Source Text"
 title: "Expediente digitalizado"
 description: "Texto completo de escaneado_mixto.pdf. Este expediente reúne una página escrita directamente en el computador, una página escaneada sin reconocimiento de texto, una página en blanco, un diagrama sin…"
 sources:
-  - id: original
-    resource: /references/original.pdf
+  - id: "original"
+    resource: "/references/original.pdf"
 generated:
-  by: process:document-conversion
+  by: "process:document-conversion"
   at: "<generado>"
 source_spans:
-  - { id: seccion, source_id: original, kind: pdf_pages, from: 1, to: 5 }
-  - { id: p-1, source_id: original, kind: pdf_pages, from: 1, to: 1 }
-  - { id: p-2, source_id: original, kind: pdf_pages, from: 2, to: 2 }
-  - { id: p-3, source_id: original, kind: pdf_pages, from: 3, to: 3 }
-  - { id: p-4, source_id: original, kind: pdf_pages, from: 4, to: 4 }
-  - { id: p-5, source_id: original, kind: pdf_pages, from: 5, to: 5 }
-status: draft
+  - id: "seccion"
+    source_id: "original"
+    kind: "pdf_pages"
+    from: 1
+    to: 5
+  - id: "p-1"
+    source_id: "original"
+    kind: "pdf_pages"
+    from: 1
+    to: 1
+  - id: "p-2"
+    source_id: "original"
+    kind: "pdf_pages"
+    from: 2
+    to: 2
+  - id: "p-3"
+    source_id: "original"
+    kind: "pdf_pages"
+    from: 3
+    to: 3
+  - id: "p-4"
+    source_id: "original"
+    kind: "pdf_pages"
+    from: 4
+    to: 4
+  - id: "p-5"
+    source_id: "original"
+    kind: "pdf_pages"
+    from: 5
+    to: 5
+status: "draft"
 ---
 
 # Expediente digitalizado

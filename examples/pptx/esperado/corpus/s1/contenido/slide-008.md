@@ -1,17 +1,17 @@
 ---
-type: Slide
+type: "Slide"
 title: "3. El costo depende de qué se procesa"
 description: "Diapositiva 8 de s1.pptx: 3. El costo depende de qué se procesa. USD por 1 millón de tokens · API estándar"
 sources:
-  - id: original
-    resource: /references/original.pptx
+  - id: "original"
+    resource: "/references/original.pptx"
 generated:
-  by: process:document-conversion
+  by: "process:document-conversion"
   at: "<generado>"
 source_spans:
-  - id: slide-8
-    source_id: original
-    kind: pptx_slide
+  - id: "slide-8"
+    source_id: "original"
+    kind: "pptx_slide"
     slide_index: 8
     slide_id: 263
     display_label: "08"

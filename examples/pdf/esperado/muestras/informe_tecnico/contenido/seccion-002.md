@@ -1,15 +1,19 @@
 ---
-type: Source Section
+type: "Source Section"
 title: "1. Contexto"
 description: "Sección 2 de informe_tecnico.pdf: 1. Contexto. El sistema actual funciona desde hace ocho años en un servidor propio. Su base de datos crece un veinte por ciento cada año y las copias de seguridad tardan…"
 sources:
-  - id: original
-    resource: /references/original.pdf
+  - id: "original"
+    resource: "/references/original.pdf"
 generated:
-  by: process:document-conversion
+  by: "process:document-conversion"
   at: "<generado>"
 source_spans:
-  - { id: seccion, source_id: original, kind: pdf_pages, from: 1, to: 1 }
+  - id: "seccion"
+    source_id: "original"
+    kind: "pdf_pages"
+    from: 1
+    to: 1
 title_inferred: true
 ---
 

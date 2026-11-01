@@ -1,17 +1,17 @@
 ---
-type: Slide
+type: "Slide"
 title: "Relevancia de la Respuesta · Componente: Generador"
 description: "Diapositiva 23 de s3.pptx: Relevancia de la Respuesta · Componente: Generador. Esta métrica evalúa cuán pertinente es la respuesta generada para la pregunta original,"
 sources:
-  - id: original
-    resource: /references/original.pptx
+  - id: "original"
+    resource: "/references/original.pptx"
 generated:
-  by: process:document-conversion
+  by: "process:document-conversion"
   at: "<generado>"
 source_spans:
-  - id: slide-23
-    source_id: original
-    kind: pptx_slide
+  - id: "slide-23"
+    source_id: "original"
+    kind: "pptx_slide"
     slide_index: 23
     slide_id: 278
 view_hides_text: true

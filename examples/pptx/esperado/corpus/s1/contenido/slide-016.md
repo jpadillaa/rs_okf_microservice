@@ -1,17 +1,17 @@
 ---
-type: Slide
+type: "Slide"
 title: "Preparar las fuentes y atender una consulta"
 description: "Diapositiva 16 de s1.pptx: Preparar las fuentes y atender una consulta. OFFLINE"
 sources:
-  - id: original
-    resource: /references/original.pptx
+  - id: "original"
+    resource: "/references/original.pptx"
 generated:
-  by: process:document-conversion
+  by: "process:document-conversion"
   at: "<generado>"
 source_spans:
-  - id: slide-16
-    source_id: original
-    kind: pptx_slide
+  - id: "slide-16"
+    source_id: "original"
+    kind: "pptx_slide"
     slide_index: 16
     slide_id: 271
     display_label: "16"

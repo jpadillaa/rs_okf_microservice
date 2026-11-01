@@ -1,20 +1,32 @@
 ---
-type: Source Document
+type: "Source Document"
 title: "Inventario por almacén"
 description: "Libro inventario_regiones.xlsx convertido a conceptos OKF por hojas y regiones."
 sources:
-  - id: original
-    resource: /references/original.xlsx
+  - id: "original"
+    resource: "/references/original.xlsx"
 generated:
-  by: process:document-conversion
+  by: "process:document-conversion"
   at: "<generado>"
 source_file:
-  path: references/original.xlsx
-  sha256: 9c522156b40fd3386cf9fdf9c237f544387ffa0e46d973d806c7398a34b2715d
+  path: "references/original.xlsx"
+  sha256: "9c522156b40fd3386cf9fdf9c237f544387ffa0e46d973d806c7398a34b2715d"
 source_spans:
-  - { id: hoja-1, source_id: original, kind: xlsx_range, sheet: "Almacenes", range: "A1:J20" }
-  - { id: hoja-2, source_id: original, kind: xlsx_range, sheet: "Dinámica", range: "A1:B6" }
-  - { id: hoja-3, source_id: original, kind: xlsx_range, sheet: "Formatos", range: "A1:C15" }
+  - id: "hoja-1"
+    source_id: "original"
+    kind: "xlsx_range"
+    sheet: "Almacenes"
+    range: "A1:J20"
+  - id: "hoja-2"
+    source_id: "original"
+    kind: "xlsx_range"
+    sheet: "Dinámica"
+    range: "A1:B6"
+  - id: "hoja-3"
+    source_id: "original"
+    kind: "xlsx_range"
+    sheet: "Formatos"
+    range: "A1:C15"
 ---
 
 # Inventario por almacén

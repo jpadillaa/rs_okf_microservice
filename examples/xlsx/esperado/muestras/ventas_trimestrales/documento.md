@@ -1,21 +1,37 @@
 ---
-type: Source Document
+type: "Source Document"
 title: "Ventas trimestrales 2026"
 description: "Libro ventas_trimestrales.xlsx convertido a conceptos OKF por hojas y regiones."
 sources:
-  - id: original
-    resource: /references/original.xlsx
+  - id: "original"
+    resource: "/references/original.xlsx"
 generated:
-  by: process:document-conversion
+  by: "process:document-conversion"
   at: "<generado>"
 source_file:
-  path: references/original.xlsx
-  sha256: 6a739abe69a60b49b35e16d992c01e57d8b2e1f00f36c9c71c76baf0e4f7b91c
+  path: "references/original.xlsx"
+  sha256: "6a739abe69a60b49b35e16d992c01e57d8b2e1f00f36c9c71c76baf0e4f7b91c"
 source_spans:
-  - { id: hoja-1, source_id: original, kind: xlsx_range, sheet: "Resumen", range: "A1:F12" }
-  - { id: hoja-2, source_id: original, kind: xlsx_range, sheet: "Detalle", range: "A1:G301" }
-  - { id: hoja-3, source_id: original, kind: xlsx_range, sheet: "Supuestos", range: "A1:C4" }
-  - { id: hoja-4, source_id: original, kind: xlsx_range, sheet: "Notas", range: "A1:A7" }
+  - id: "hoja-1"
+    source_id: "original"
+    kind: "xlsx_range"
+    sheet: "Resumen"
+    range: "A1:F12"
+  - id: "hoja-2"
+    source_id: "original"
+    kind: "xlsx_range"
+    sheet: "Detalle"
+    range: "A1:G301"
+  - id: "hoja-3"
+    source_id: "original"
+    kind: "xlsx_range"
+    sheet: "Supuestos"
+    range: "A1:C4"
+  - id: "hoja-4"
+    source_id: "original"
+    kind: "xlsx_range"
+    sheet: "Notas"
+    range: "A1:A7"
 ---
 
 # Ventas trimestrales 2026

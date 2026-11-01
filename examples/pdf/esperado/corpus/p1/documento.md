@@ -1,18 +1,22 @@
 ---
-type: Source Document
+type: "Source Document"
 title: "Taller formación en comunicación para colaboradores - completo"
 description: "Documento fuente p1.pdf convertido a conceptos OKF por secciones."
 sources:
-  - id: original
-    resource: /references/original.pdf
+  - id: "original"
+    resource: "/references/original.pdf"
 generated:
-  by: process:document-conversion
+  by: "process:document-conversion"
   at: "<generado>"
 source_file:
-  path: references/original.pdf
-  sha256: d899d9a5395ad0e75fa655b7327936a23bbffbfd9407239809cce77671f76324
+  path: "references/original.pdf"
+  sha256: "d899d9a5395ad0e75fa655b7327936a23bbffbfd9407239809cce77671f76324"
 source_spans:
-  - { id: documento, source_id: original, kind: pdf_pages, from: 1, to: 53 }
+  - id: "documento"
+    source_id: "original"
+    kind: "pdf_pages"
+    from: 1
+    to: 53
 page_labels:
   "1": "1"
   "2": "2"

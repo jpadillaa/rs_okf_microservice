@@ -1,33 +1,109 @@
 ---
-type: Source Section
+type: "Source Section"
 title: "COMUNICACIÓN EFECTIVA EN ENTORNOS LABORALES"
 description: "Sección 1 de p1.pdf: COMUNICACIÓN EFECTIVA EN ENTORNOS LABORALES. Se aprende a hablar y a escribir, hablando y escribiendo"
 sources:
-  - id: original
-    resource: /references/original.pdf
+  - id: "original"
+    resource: "/references/original.pdf"
 generated:
-  by: process:document-conversion
+  by: "process:document-conversion"
   at: "<generado>"
 source_spans:
-  - { id: seccion, source_id: original, kind: pdf_pages, from: 1, to: 18 }
-  - { id: p-1, source_id: original, kind: pdf_pages, from: 1, to: 1 }
-  - { id: p-2, source_id: original, kind: pdf_pages, from: 2, to: 2 }
-  - { id: p-3, source_id: original, kind: pdf_pages, from: 3, to: 3 }
-  - { id: p-4, source_id: original, kind: pdf_pages, from: 4, to: 4 }
-  - { id: p-5, source_id: original, kind: pdf_pages, from: 5, to: 5 }
-  - { id: p-6, source_id: original, kind: pdf_pages, from: 6, to: 6 }
-  - { id: p-7, source_id: original, kind: pdf_pages, from: 7, to: 7 }
-  - { id: p-8, source_id: original, kind: pdf_pages, from: 8, to: 8 }
-  - { id: p-9, source_id: original, kind: pdf_pages, from: 9, to: 9 }
-  - { id: p-10, source_id: original, kind: pdf_pages, from: 10, to: 10 }
-  - { id: p-11, source_id: original, kind: pdf_pages, from: 11, to: 11 }
-  - { id: p-12, source_id: original, kind: pdf_pages, from: 12, to: 12 }
-  - { id: p-13, source_id: original, kind: pdf_pages, from: 13, to: 13 }
-  - { id: p-14, source_id: original, kind: pdf_pages, from: 14, to: 14 }
-  - { id: p-15, source_id: original, kind: pdf_pages, from: 15, to: 15 }
-  - { id: p-16, source_id: original, kind: pdf_pages, from: 16, to: 16 }
-  - { id: p-17, source_id: original, kind: pdf_pages, from: 17, to: 17 }
-  - { id: p-18, source_id: original, kind: pdf_pages, from: 18, to: 18 }
+  - id: "seccion"
+    source_id: "original"
+    kind: "pdf_pages"
+    from: 1
+    to: 18
+  - id: "p-1"
+    source_id: "original"
+    kind: "pdf_pages"
+    from: 1
+    to: 1
+  - id: "p-2"
+    source_id: "original"
+    kind: "pdf_pages"
+    from: 2
+    to: 2
+  - id: "p-3"
+    source_id: "original"
+    kind: "pdf_pages"
+    from: 3
+    to: 3
+  - id: "p-4"
+    source_id: "original"
+    kind: "pdf_pages"
+    from: 4
+    to: 4
+  - id: "p-5"
+    source_id: "original"
+    kind: "pdf_pages"
+    from: 5
+    to: 5
+  - id: "p-6"
+    source_id: "original"
+    kind: "pdf_pages"
+    from: 6
+    to: 6
+  - id: "p-7"
+    source_id: "original"
+    kind: "pdf_pages"
+    from: 7
+    to: 7
+  - id: "p-8"
+    source_id: "original"
+    kind: "pdf_pages"
+    from: 8
+    to: 8
+  - id: "p-9"
+    source_id: "original"
+    kind: "pdf_pages"
+    from: 9
+    to: 9
+  - id: "p-10"
+    source_id: "original"
+    kind: "pdf_pages"
+    from: 10
+    to: 10
+  - id: "p-11"
+    source_id: "original"
+    kind: "pdf_pages"
+    from: 11
+    to: 11
+  - id: "p-12"
+    source_id: "original"
+    kind: "pdf_pages"
+    from: 12
+    to: 12
+  - id: "p-13"
+    source_id: "original"
+    kind: "pdf_pages"
+    from: 13
+    to: 13
+  - id: "p-14"
+    source_id: "original"
+    kind: "pdf_pages"
+    from: 14
+    to: 14
+  - id: "p-15"
+    source_id: "original"
+    kind: "pdf_pages"
+    from: 15
+    to: 15
+  - id: "p-16"
+    source_id: "original"
+    kind: "pdf_pages"
+    from: 16
+    to: 16
+  - id: "p-17"
+    source_id: "original"
+    kind: "pdf_pages"
+    from: 17
+    to: 17
+  - id: "p-18"
+    source_id: "original"
+    kind: "pdf_pages"
+    from: 18
+    to: 18
 title_inferred: true
 ---
 

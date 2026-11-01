@@ -1,20 +1,44 @@
 ---
-type: Source Section
+type: "Source Section"
 title: "El harness como plano de control"
 description: "Sección 11 de d3.docx: El harness como plano de control. La confiabilidad de un sistema agéntico no reside exclusivamente en el modelo. Surge de la interacción entre el motor de razonamiento semántico y la…"
 sources:
-  - id: original
-    resource: /references/original.docx
+  - id: "original"
+    resource: "/references/original.docx"
 generated:
-  by: process:document-conversion
+  by: "process:document-conversion"
   at: "<generado>"
 source_spans:
-  - { id: seccion, source_id: original, kind: docx_blocks, from: 131, to: 136 }
-  - { id: b-132, source_id: original, kind: docx_blocks, from: 132, to: 132 }
-  - { id: b-133, source_id: original, kind: docx_blocks, from: 133, to: 133 }
-  - { id: b-134, source_id: original, kind: docx_blocks, from: 134, to: 134 }
-  - { id: b-135, source_id: original, kind: docx_blocks, from: 135, to: 135 }
-  - { id: b-136, source_id: original, kind: docx_blocks, from: 136, to: 136 }
+  - id: "seccion"
+    source_id: "original"
+    kind: "docx_blocks"
+    from: 131
+    to: 136
+  - id: "b-132"
+    source_id: "original"
+    kind: "docx_blocks"
+    from: 132
+    to: 132
+  - id: "b-133"
+    source_id: "original"
+    kind: "docx_blocks"
+    from: 133
+    to: 133
+  - id: "b-134"
+    source_id: "original"
+    kind: "docx_blocks"
+    from: 134
+    to: 134
+  - id: "b-135"
+    source_id: "original"
+    kind: "docx_blocks"
+    from: 135
+    to: 135
+  - id: "b-136"
+    source_id: "original"
+    kind: "docx_blocks"
+    from: 136
+    to: 136
 ---
 
 # El harness como plano de control

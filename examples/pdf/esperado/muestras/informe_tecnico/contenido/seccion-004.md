@@ -1,17 +1,29 @@
 ---
-type: Source Section
+type: "Source Section"
 title: "3. Plan de migración"
 description: "Sección 4 de informe_tecnico.pdf: 3. Plan de migración. La migración se hará en dos fases para limitar el riesgo. Durante todo el proceso el sistema actual seguirá disponible en modo de solo lectura, de modo que las…"
 sources:
-  - id: original
-    resource: /references/original.pdf
+  - id: "original"
+    resource: "/references/original.pdf"
 generated:
-  by: process:document-conversion
+  by: "process:document-conversion"
   at: "<generado>"
 source_spans:
-  - { id: seccion, source_id: original, kind: pdf_pages, from: 1, to: 2 }
-  - { id: p-1-2, source_id: original, kind: pdf_pages, from: 1, to: 2 }
-  - { id: p-2, source_id: original, kind: pdf_pages, from: 2, to: 2 }
+  - id: "seccion"
+    source_id: "original"
+    kind: "pdf_pages"
+    from: 1
+    to: 2
+  - id: "p-1-2"
+    source_id: "original"
+    kind: "pdf_pages"
+    from: 1
+    to: 2
+  - id: "p-2"
+    source_id: "original"
+    kind: "pdf_pages"
+    from: 2
+    to: 2
 title_inferred: true
 ---
 

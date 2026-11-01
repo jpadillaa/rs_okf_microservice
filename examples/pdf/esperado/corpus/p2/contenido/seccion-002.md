@@ -1,15 +1,19 @@
 ---
-type: Source Section
+type: "Source Section"
 title: "Abstract"
 description: "Sección 2 de p2.pdf: Abstract. Generative artificial intelligence (AI) tools have been selectively adopted across the academic community to help researchers complete tasks in a more…"
 sources:
-  - id: original
-    resource: /references/original.pdf
+  - id: "original"
+    resource: "/references/original.pdf"
 generated:
-  by: process:document-conversion
+  by: "process:document-conversion"
   at: "<generado>"
 source_spans:
-  - { id: seccion, source_id: original, kind: pdf_pages, from: 1, to: 1 }
+  - id: "seccion"
+    source_id: "original"
+    kind: "pdf_pages"
+    from: 1
+    to: 1
 ---
 
 # Abstract

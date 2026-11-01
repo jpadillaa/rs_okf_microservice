@@ -1,20 +1,40 @@
 ---
-type: Sheet
+type: "Sheet"
 title: "Almacenes"
 description: "Hoja 1 del libro inventario_regiones.xlsx: rango A1:J20 con 4 regiones."
 sources:
-  - id: original
-    resource: /references/original.xlsx
+  - id: "original"
+    resource: "/references/original.xlsx"
 generated:
-  by: process:document-conversion
+  by: "process:document-conversion"
   at: "<generado>"
 sheet_index: 1
 source_spans:
-  - { id: hoja, source_id: original, kind: xlsx_range, sheet: "Almacenes", range: "A1:J20" }
-  - { id: r-1, source_id: original, kind: xlsx_range, sheet: "Almacenes", range: "A1:C7" }
-  - { id: r-2, source_id: original, kind: xlsx_range, sheet: "Almacenes", range: "E1:G4" }
-  - { id: r-3, source_id: original, kind: xlsx_range, sheet: "Almacenes", range: "A10:D15" }
-  - { id: r-4, source_id: original, kind: xlsx_range, sheet: "Almacenes", range: "J20" }
+  - id: "hoja"
+    source_id: "original"
+    kind: "xlsx_range"
+    sheet: "Almacenes"
+    range: "A1:J20"
+  - id: "r-1"
+    source_id: "original"
+    kind: "xlsx_range"
+    sheet: "Almacenes"
+    range: "A1:C7"
+  - id: "r-2"
+    source_id: "original"
+    kind: "xlsx_range"
+    sheet: "Almacenes"
+    range: "E1:G4"
+  - id: "r-3"
+    source_id: "original"
+    kind: "xlsx_range"
+    sheet: "Almacenes"
+    range: "A10:D15"
+  - id: "r-4"
+    source_id: "original"
+    kind: "xlsx_range"
+    sheet: "Almacenes"
+    range: "J20"
 ---
 
 # Almacenes

@@ -1,17 +1,17 @@
 ---
-type: Slide
+type: "Slide"
 title: "Comprobar el diagnóstico y continuar"
 description: "Diapositiva 29 de s1.pptx: Comprobar el diagnóstico y continuar. CASO"
 sources:
-  - id: original
-    resource: /references/original.pptx
+  - id: "original"
+    resource: "/references/original.pptx"
 generated:
-  by: process:document-conversion
+  by: "process:document-conversion"
   at: "<generado>"
 source_spans:
-  - id: slide-29
-    source_id: original
-    kind: pptx_slide
+  - id: "slide-29"
+    source_id: "original"
+    kind: "pptx_slide"
     slide_index: 29
     slide_id: 284
     display_label: "29"

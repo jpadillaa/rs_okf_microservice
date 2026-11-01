@@ -1,23 +1,59 @@
 ---
-type: Source Section
+type: "Source Section"
 title: "Principios para construir un harness"
 description: "Sección 10 de d3.docx: Principios para construir un harness. Diseñar un harness implica desplazar la atención desde la calidad aislada del prompt hacia la confiabilidad del sistema completo. El objetivo no consiste en…"
 sources:
-  - id: original
-    resource: /references/original.docx
+  - id: "original"
+    resource: "/references/original.docx"
 generated:
-  by: process:document-conversion
+  by: "process:document-conversion"
   at: "<generado>"
 source_spans:
-  - { id: seccion, source_id: original, kind: docx_blocks, from: 116, to: 130 }
-  - { id: b-117, source_id: original, kind: docx_blocks, from: 117, to: 117 }
-  - { id: b-119, source_id: original, kind: docx_blocks, from: 119, to: 119 }
-  - { id: b-120, source_id: original, kind: docx_blocks, from: 120, to: 120 }
-  - { id: b-122, source_id: original, kind: docx_blocks, from: 122, to: 122 }
-  - { id: b-123-126, source_id: original, kind: docx_blocks, from: 123, to: 126 }
-  - { id: b-127, source_id: original, kind: docx_blocks, from: 127, to: 127 }
-  - { id: b-129, source_id: original, kind: docx_blocks, from: 129, to: 129 }
-  - { id: b-130, source_id: original, kind: docx_blocks, from: 130, to: 130 }
+  - id: "seccion"
+    source_id: "original"
+    kind: "docx_blocks"
+    from: 116
+    to: 130
+  - id: "b-117"
+    source_id: "original"
+    kind: "docx_blocks"
+    from: 117
+    to: 117
+  - id: "b-119"
+    source_id: "original"
+    kind: "docx_blocks"
+    from: 119
+    to: 119
+  - id: "b-120"
+    source_id: "original"
+    kind: "docx_blocks"
+    from: 120
+    to: 120
+  - id: "b-122"
+    source_id: "original"
+    kind: "docx_blocks"
+    from: 122
+    to: 122
+  - id: "b-123-126"
+    source_id: "original"
+    kind: "docx_blocks"
+    from: 123
+    to: 126
+  - id: "b-127"
+    source_id: "original"
+    kind: "docx_blocks"
+    from: 127
+    to: 127
+  - id: "b-129"
+    source_id: "original"
+    kind: "docx_blocks"
+    from: 129
+    to: 129
+  - id: "b-130"
+    source_id: "original"
+    kind: "docx_blocks"
+    from: 130
+    to: 130
 ---
 
 # Principios para construir un harness

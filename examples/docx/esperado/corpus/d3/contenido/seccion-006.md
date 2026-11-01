@@ -1,21 +1,49 @@
 ---
-type: Source Section
+type: "Source Section"
 title: "Cuándo un sistema puede considerarse un harness"
 description: "Sección 6 de d3.docx: Cuándo un sistema puede considerarse un harness. Académicamente se plantean cuatro condiciones funcionales para distinguir un harness de componentes más limitados, como un SDK, una biblioteca o un plugin."
 sources:
-  - id: original
-    resource: /references/original.docx
+  - id: "original"
+    resource: "/references/original.docx"
 generated:
-  by: process:document-conversion
+  by: "process:document-conversion"
   at: "<generado>"
 source_spans:
-  - { id: seccion, source_id: original, kind: docx_blocks, from: 38, to: 47 }
-  - { id: b-39, source_id: original, kind: docx_blocks, from: 39, to: 39 }
-  - { id: b-40-43, source_id: original, kind: docx_blocks, from: 40, to: 43 }
-  - { id: b-44, source_id: original, kind: docx_blocks, from: 44, to: 44 }
-  - { id: b-45, source_id: original, kind: docx_blocks, from: 45, to: 45 }
-  - { id: b-46, source_id: original, kind: docx_blocks, from: 46, to: 46 }
-  - { id: b-47, source_id: original, kind: docx_blocks, from: 47, to: 47 }
+  - id: "seccion"
+    source_id: "original"
+    kind: "docx_blocks"
+    from: 38
+    to: 47
+  - id: "b-39"
+    source_id: "original"
+    kind: "docx_blocks"
+    from: 39
+    to: 39
+  - id: "b-40-43"
+    source_id: "original"
+    kind: "docx_blocks"
+    from: 40
+    to: 43
+  - id: "b-44"
+    source_id: "original"
+    kind: "docx_blocks"
+    from: 44
+    to: 44
+  - id: "b-45"
+    source_id: "original"
+    kind: "docx_blocks"
+    from: 45
+    to: 45
+  - id: "b-46"
+    source_id: "original"
+    kind: "docx_blocks"
+    from: 46
+    to: 46
+  - id: "b-47"
+    source_id: "original"
+    kind: "docx_blocks"
+    from: 47
+    to: 47
 ---
 
 # Cuándo un sistema puede considerarse un harness

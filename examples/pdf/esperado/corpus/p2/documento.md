@@ -1,19 +1,27 @@
 ---
-type: Source Document
+type: "Source Document"
 title: "Artificial intelligence‑assisted academic writing: recommendations for ethical use"
 description: "Documento fuente p2.pdf convertido a conceptos OKF por secciones."
 sources:
-  - id: original
-    resource: /references/original.pdf
+  - id: "original"
+    resource: "/references/original.pdf"
 generated:
-  by: process:document-conversion
+  by: "process:document-conversion"
   at: "<generado>"
 source_file:
-  path: references/original.pdf
-  sha256: 49ec606d9b25c9775c58749a7246c0451ba962124c8d34890815a011603ff015
+  path: "references/original.pdf"
+  sha256: "49ec606d9b25c9775c58749a7246c0451ba962124c8d34890815a011603ff015"
 source_spans:
-  - { id: documento, source_id: original, kind: pdf_pages, from: 1, to: 9 }
-  - { id: titulo, source_id: original, kind: pdf_pages, from: 1, to: 1 }
+  - id: "documento"
+    source_id: "original"
+    kind: "pdf_pages"
+    from: 1
+    to: 9
+  - id: "titulo"
+    source_id: "original"
+    kind: "pdf_pages"
+    from: 1
+    to: 1
 page_labels:
   "2": "2"
   "3": "3"

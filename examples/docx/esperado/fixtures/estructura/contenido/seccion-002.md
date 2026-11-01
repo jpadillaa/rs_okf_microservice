@@ -1,19 +1,39 @@
 ---
-type: Source Section
+type: "Source Section"
 title: "Datos"
 description: "Sección 2 de estructura.docx: Datos. Cifra final de 420 unidades."
 sources:
-  - id: original
-    resource: /references/original.docx
+  - id: "original"
+    resource: "/references/original.docx"
 generated:
-  by: process:document-conversion
+  by: "process:document-conversion"
   at: "<generado>"
 source_spans:
-  - { id: seccion, source_id: original, kind: docx_blocks, from: 9, to: 13 }
-  - { id: b-10, source_id: original, kind: docx_blocks, from: 10, to: 10 }
-  - { id: b-11, source_id: original, kind: docx_blocks, from: 11, to: 11 }
-  - { id: b-12, source_id: original, kind: docx_blocks, from: 12, to: 12 }
-  - { id: b-13, source_id: original, kind: docx_blocks, from: 13, to: 13 }
+  - id: "seccion"
+    source_id: "original"
+    kind: "docx_blocks"
+    from: 9
+    to: 13
+  - id: "b-10"
+    source_id: "original"
+    kind: "docx_blocks"
+    from: 10
+    to: 10
+  - id: "b-11"
+    source_id: "original"
+    kind: "docx_blocks"
+    from: 11
+    to: 11
+  - id: "b-12"
+    source_id: "original"
+    kind: "docx_blocks"
+    from: 12
+    to: 12
+  - id: "b-13"
+    source_id: "original"
+    kind: "docx_blocks"
+    from: 13
+    to: 13
 ---
 
 # Datos

@@ -1,16 +1,16 @@
 ---
-type: Source Document
+type: "Source Document"
 title: "s2.pptx"
-description: Presentación fuente convertida a conceptos OKF por diapositiva.
+description: "Presentación fuente convertida a conceptos OKF por diapositiva."
 sources:
-  - id: original
-    resource: /references/original.pptx
+  - id: "original"
+    resource: "/references/original.pptx"
 generated:
-  by: process:document-conversion
+  by: "process:document-conversion"
   at: "<generado>"
 source_file:
   path: "references/original.pptx"
-  sha256: 022cac774a3905328d5ccb1a99142db88560fe9380a7d96354788dcbee59796e
+  sha256: "022cac774a3905328d5ccb1a99142db88560fe9380a7d96354788dcbee59796e"
 ---
 
 # s2.pptx

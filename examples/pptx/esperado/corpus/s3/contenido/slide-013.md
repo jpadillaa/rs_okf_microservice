@@ -1,17 +1,17 @@
 ---
-type: Slide
+type: "Slide"
 title: "Por qué evaluar el RAG?"
 description: "Diapositiva 13 de s3.pptx: Por qué evaluar el RAG?. Ilusión de funcionamiento (el LLM no suele admitir ignorancia)"
 sources:
-  - id: original
-    resource: /references/original.pptx
+  - id: "original"
+    resource: "/references/original.pptx"
 generated:
-  by: process:document-conversion
+  by: "process:document-conversion"
   at: "<generado>"
 source_spans:
-  - id: slide-13
-    source_id: original
-    kind: pptx_slide
+  - id: "slide-13"
+    source_id: "original"
+    kind: "pptx_slide"
     slide_index: 13
     slide_id: 268
 ---

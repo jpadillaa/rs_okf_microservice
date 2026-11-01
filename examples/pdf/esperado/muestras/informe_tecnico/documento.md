@@ -1,19 +1,27 @@
 ---
-type: Source Document
+type: "Source Document"
 title: "Informe técnico de migración"
 description: "Documento fuente informe_tecnico.pdf convertido a conceptos OKF por secciones."
 sources:
-  - id: original
-    resource: /references/original.pdf
+  - id: "original"
+    resource: "/references/original.pdf"
 generated:
-  by: process:document-conversion
+  by: "process:document-conversion"
   at: "<generado>"
 source_file:
-  path: references/original.pdf
-  sha256: b741d4551fe678d52919b803e637eb796420e175113f447ec683dca107d098e3
+  path: "references/original.pdf"
+  sha256: "b741d4551fe678d52919b803e637eb796420e175113f447ec683dca107d098e3"
 source_spans:
-  - { id: documento, source_id: original, kind: pdf_pages, from: 1, to: 2 }
-  - { id: titulo, source_id: original, kind: pdf_pages, from: 1, to: 1 }
+  - id: "documento"
+    source_id: "original"
+    kind: "pdf_pages"
+    from: 1
+    to: 2
+  - id: "titulo"
+    source_id: "original"
+    kind: "pdf_pages"
+    from: 1
+    to: 1
 page_labels:
   "1": "1"
   "2": "2"

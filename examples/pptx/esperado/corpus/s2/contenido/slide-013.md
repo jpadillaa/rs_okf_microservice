@@ -1,21 +1,21 @@
 ---
-type: Slide
+type: "Slide"
 title: "Agentic Chunking"
 description: "Diapositiva 13 de s2.pptx: Agentic Chunking. Contenido solo visual."
 sources:
-  - id: original
-    resource: /references/original.pptx
+  - id: "original"
+    resource: "/references/original.pptx"
 generated:
-  by: process:document-conversion
+  by: "process:document-conversion"
   at: "<generado>"
 source_spans:
-  - id: slide-13
-    source_id: original
-    kind: pptx_slide
+  - id: "slide-13"
+    source_id: "original"
+    kind: "pptx_slide"
     slide_index: 13
     slide_id: 268
 visual_only: true
-status: draft
+status: "draft"
 ---
 
 # Agentic Chunking

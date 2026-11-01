@@ -1,17 +1,17 @@
 ---
-type: Slide
+type: "Slide"
 title: "Cómo se manifiestan los errores"
 description: "Diapositiva 32 de s3.pptx: Cómo se manifiestan los errores. Similitud textual ≠ validez legal"
 sources:
-  - id: original
-    resource: /references/original.pptx
+  - id: "original"
+    resource: "/references/original.pptx"
 generated:
-  by: process:document-conversion
+  by: "process:document-conversion"
   at: "<generado>"
 source_spans:
-  - id: slide-32
-    source_id: original
-    kind: pptx_slide
+  - id: "slide-32"
+    source_id: "original"
+    kind: "pptx_slide"
     slide_index: 32
     slide_id: 287
 ---

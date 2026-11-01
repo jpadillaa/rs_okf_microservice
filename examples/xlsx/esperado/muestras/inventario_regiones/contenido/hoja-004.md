@@ -1,12 +1,12 @@
 ---
-type: Sheet
+type: "Sheet"
 title: "Gráfico existencias"
 description: "Hoja 4 del libro inventario_regiones.xlsx, sin celdas con contenido."
 sources:
-  - id: original
-    resource: /references/original.xlsx
+  - id: "original"
+    resource: "/references/original.xlsx"
 generated:
-  by: process:document-conversion
+  by: "process:document-conversion"
   at: "<generado>"
 sheet_index: 4
 ---

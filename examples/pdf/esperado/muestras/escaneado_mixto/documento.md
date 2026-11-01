@@ -1,19 +1,27 @@
 ---
-type: Source Document
+type: "Source Document"
 title: "Expediente digitalizado"
 description: "Documento fuente escaneado_mixto.pdf convertido a conceptos OKF por secciones."
 sources:
-  - id: original
-    resource: /references/original.pdf
+  - id: "original"
+    resource: "/references/original.pdf"
 generated:
-  by: process:document-conversion
+  by: "process:document-conversion"
   at: "<generado>"
 source_file:
-  path: references/original.pdf
-  sha256: eb53d8bd714184e9e2feb227d834eec03633bf7b54ab36799b43174d23376bcd
+  path: "references/original.pdf"
+  sha256: "eb53d8bd714184e9e2feb227d834eec03633bf7b54ab36799b43174d23376bcd"
 source_spans:
-  - { id: documento, source_id: original, kind: pdf_pages, from: 1, to: 5 }
-  - { id: titulo, source_id: original, kind: pdf_pages, from: 1, to: 1 }
+  - id: "documento"
+    source_id: "original"
+    kind: "pdf_pages"
+    from: 1
+    to: 5
+  - id: "titulo"
+    source_id: "original"
+    kind: "pdf_pages"
+    from: 1
+    to: 1
 page_labels:
   "1": "1"
   "3": "3"

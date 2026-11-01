@@ -1,17 +1,29 @@
 ---
-type: Source Section
+type: "Source Section"
 title: "References"
 description: "Sección 9 de p2.pdf: References. 1. Xu X, Chen Y, Miao J. Opportunities, challenges, and future directions of large language models, including ChatGPT in medical education: a systematic…"
 sources:
-  - id: original
-    resource: /references/original.pdf
+  - id: "original"
+    resource: "/references/original.pdf"
 generated:
-  by: process:document-conversion
+  by: "process:document-conversion"
   at: "<generado>"
 source_spans:
-  - { id: seccion, source_id: original, kind: pdf_pages, from: 8, to: 9 }
-  - { id: p-8, source_id: original, kind: pdf_pages, from: 8, to: 8 }
-  - { id: p-9, source_id: original, kind: pdf_pages, from: 9, to: 9 }
+  - id: "seccion"
+    source_id: "original"
+    kind: "pdf_pages"
+    from: 8
+    to: 9
+  - id: "p-8"
+    source_id: "original"
+    kind: "pdf_pages"
+    from: 8
+    to: 8
+  - id: "p-9"
+    source_id: "original"
+    kind: "pdf_pages"
+    from: 9
+    to: 9
 ---
 
 # References

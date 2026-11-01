@@ -1,21 +1,49 @@
 ---
-type: Source Section
+type: "Source Section"
 title: "Semana 8: Varios"
 description: "Sección 8 de d1.docx: Semana 8: Varios. RAG Agéntico (Agentic RAG):"
 sources:
-  - id: original
-    resource: /references/original.docx
+  - id: "original"
+    resource: "/references/original.docx"
 generated:
-  by: process:document-conversion
+  by: "process:document-conversion"
   at: "<generado>"
 source_spans:
-  - { id: seccion, source_id: original, kind: docx_blocks, from: 94, to: 106 }
-  - { id: b-95, source_id: original, kind: docx_blocks, from: 95, to: 95 }
-  - { id: b-96, source_id: original, kind: docx_blocks, from: 96, to: 96 }
-  - { id: b-97, source_id: original, kind: docx_blocks, from: 97, to: 97 }
-  - { id: b-98-99, source_id: original, kind: docx_blocks, from: 98, to: 99 }
-  - { id: b-100, source_id: original, kind: docx_blocks, from: 100, to: 100 }
-  - { id: b-101-104, source_id: original, kind: docx_blocks, from: 101, to: 104 }
+  - id: "seccion"
+    source_id: "original"
+    kind: "docx_blocks"
+    from: 94
+    to: 106
+  - id: "b-95"
+    source_id: "original"
+    kind: "docx_blocks"
+    from: 95
+    to: 95
+  - id: "b-96"
+    source_id: "original"
+    kind: "docx_blocks"
+    from: 96
+    to: 96
+  - id: "b-97"
+    source_id: "original"
+    kind: "docx_blocks"
+    from: 97
+    to: 97
+  - id: "b-98-99"
+    source_id: "original"
+    kind: "docx_blocks"
+    from: 98
+    to: 99
+  - id: "b-100"
+    source_id: "original"
+    kind: "docx_blocks"
+    from: 100
+    to: 100
+  - id: "b-101-104"
+    source_id: "original"
+    kind: "docx_blocks"
+    from: 101
+    to: 104
 ---
 
 # Semana 8: Varios

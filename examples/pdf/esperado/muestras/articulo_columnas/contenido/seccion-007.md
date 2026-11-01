@@ -1,15 +1,19 @@
 ---
-type: Source Section
+type: "Source Section"
 title: "Referencias"
 description: "Sección 7 de articulo_columnas.pdf: Referencias. 1. Ruiz A. Documentos de prueba para conversores. Rev Pruebas Doc. 2025;2(1):1–10."
 sources:
-  - id: original
-    resource: /references/original.pdf
+  - id: "original"
+    resource: "/references/original.pdf"
 generated:
-  by: process:document-conversion
+  by: "process:document-conversion"
   at: "<generado>"
 source_spans:
-  - { id: seccion, source_id: original, kind: pdf_pages, from: 4, to: 4 }
+  - id: "seccion"
+    source_id: "original"
+    kind: "pdf_pages"
+    from: 4
+    to: 4
 ---
 
 # Referencias

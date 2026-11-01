@@ -1,18 +1,34 @@
 ---
-type: Source Section
+type: "Source Section"
 title: "What do the journals and publishers say?"
 description: "Sección 4 de p2.pdf: What do the journals and publishers say?. To better understand the scope of recommendations provided by journals and publishers about the use of generative AI in academic writing, we conducted a…"
 sources:
-  - id: original
-    resource: /references/original.pdf
+  - id: "original"
+    resource: "/references/original.pdf"
 generated:
-  by: process:document-conversion
+  by: "process:document-conversion"
   at: "<generado>"
 source_spans:
-  - { id: seccion, source_id: original, kind: pdf_pages, from: 2, to: 3 }
-  - { id: p-2, source_id: original, kind: pdf_pages, from: 2, to: 2 }
-  - { id: p-2-3, source_id: original, kind: pdf_pages, from: 2, to: 3 }
-  - { id: p-3, source_id: original, kind: pdf_pages, from: 3, to: 3 }
+  - id: "seccion"
+    source_id: "original"
+    kind: "pdf_pages"
+    from: 2
+    to: 3
+  - id: "p-2"
+    source_id: "original"
+    kind: "pdf_pages"
+    from: 2
+    to: 2
+  - id: "p-2-3"
+    source_id: "original"
+    kind: "pdf_pages"
+    from: 2
+    to: 3
+  - id: "p-3"
+    source_id: "original"
+    kind: "pdf_pages"
+    from: 3
+    to: 3
 ---
 
 # What do the journals and publishers say?

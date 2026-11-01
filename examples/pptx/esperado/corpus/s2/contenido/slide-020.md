@@ -1,21 +1,21 @@
 ---
-type: Slide
+type: "Slide"
 title: "Indexación y embeddings"
 description: "Diapositiva 20 de s2.pptx: Indexación y embeddings. Contenido solo visual."
 sources:
-  - id: original
-    resource: /references/original.pptx
+  - id: "original"
+    resource: "/references/original.pptx"
 generated:
-  by: process:document-conversion
+  by: "process:document-conversion"
   at: "<generado>"
 source_spans:
-  - id: slide-20
-    source_id: original
-    kind: pptx_slide
+  - id: "slide-20"
+    source_id: "original"
+    kind: "pptx_slide"
     slide_index: 20
     slide_id: 275
 visual_only: true
-status: draft
+status: "draft"
 ---
 
 # Indexación y embeddings

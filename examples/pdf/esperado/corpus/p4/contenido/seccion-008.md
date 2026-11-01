@@ -1,16 +1,24 @@
 ---
-type: Source Section
+type: "Source Section"
 title: "Referencias"
 description: "Sección 8 de p4.pdf: Referencias. • Amazon Web Services. \"Amazon Bedrock AgentCore Overview.\" Documentación oficial, 2025."
 sources:
-  - id: original
-    resource: /references/original.pdf
+  - id: "original"
+    resource: "/references/original.pdf"
 generated:
-  by: process:document-conversion
+  by: "process:document-conversion"
   at: "<generado>"
 source_spans:
-  - { id: seccion, source_id: original, kind: pdf_pages, from: 12, to: 13 }
-  - { id: p-12-13, source_id: original, kind: pdf_pages, from: 12, to: 13 }
+  - id: "seccion"
+    source_id: "original"
+    kind: "pdf_pages"
+    from: 12
+    to: 13
+  - id: "p-12-13"
+    source_id: "original"
+    kind: "pdf_pages"
+    from: 12
+    to: 13
 ---
 
 # Referencias

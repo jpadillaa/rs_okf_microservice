@@ -27,8 +27,10 @@ mod format;
 mod golden;
 mod omml;
 mod ooxml;
+mod output;
 mod pdf;
 mod pptx;
+mod sections;
 mod worker;
 mod xlsx;
 mod xml;
@@ -518,7 +520,7 @@ mod tests {
             .unwrap()
             .read_to_string(&mut untitled)
             .unwrap();
-        assert!(untitled.contains("status: draft"));
+        assert!(untitled.contains("status: \"draft\""));
         assert!(untitled.contains("sin título explícito"));
         assert!(slide.contains("../assets/slide-003.png"));
         assert!(
@@ -561,7 +563,7 @@ mod tests {
             .read_to_string(&mut slide)
             .unwrap();
         assert!(slide.contains("visual_only: true"));
-        assert!(slide.contains("status: draft"));
+        assert!(slide.contains("status: \"draft\""));
         assert!(slide.contains("Contenido solo visual"));
         assert!(slide.contains("../assets/slide-001-image-01.png"));
         let mut visual_report = String::new();
@@ -887,21 +889,21 @@ mod tests {
         let cases: [(&str, Edit); 5] = [
             ("SHA-256 del informe", &|n, md| {
                 if n == "conversion-report.md" {
-                    md.replacen("sha256: ", "sha256: 0", 1)
+                    md.replacen("sha256: \"", "sha256: \"0", 1)
                 } else {
                     md
                 }
             }),
             ("SHA-256 de documento.md", &|n, md| {
                 if n == "documento.md" {
-                    md.replacen("sha256: ", "sha256: 0", 1)
+                    md.replacen("sha256: \"", "sha256: \"0", 1)
                 } else {
                     md
                 }
             }),
             ("fuente no declarada", &|n, md| {
                 if n == "contenido/slide-002.md" {
-                    md.replace("source_id: original", "source_id: otra")
+                    md.replace("source_id: \"original\"", "source_id: \"otra\"")
                 } else {
                     md
                 }
@@ -946,8 +948,8 @@ mod tests {
                 &|n, md| {
                     if n == "contenido/seccion-002.md" {
                         md.replace(
-                            "id: seccion, source_id: original, kind: docx_blocks, from: 9,",
-                            "id: seccion, source_id: original, kind: docx_blocks, from: 10,",
+                            "id: \"seccion\"\n    source_id: \"original\"\n    kind: \"docx_blocks\"\n    from: 9\n",
+                            "id: \"seccion\"\n    source_id: \"original\"\n    kind: \"docx_blocks\"\n    from: 10\n",
                         )
                     } else {
                         md
@@ -956,7 +958,7 @@ mod tests {
             ),
             ("localizador de bloque fuera de su sección", &|n, md| {
                 if n == "contenido/seccion-002.md" {
-                    md.replace("from: 10, to: 10 }", "from: 3, to: 3 }")
+                    md.replace("from: 10\n    to: 10\n", "from: 3\n    to: 3\n")
                 } else {
                     md
                 }
@@ -990,7 +992,7 @@ mod tests {
             }),
             ("documento.md no localiza los 13 bloques", &|n, md| {
                 if n == "documento.md" {
-                    md.replace("from: 1, to: 13 }", "from: 1, to: 12 }")
+                    md.replace("from: 1\n    to: 13\n", "from: 1\n    to: 12\n")
                 } else {
                     md
                 }
@@ -1056,8 +1058,8 @@ mod tests {
                 "localiza la hoja «Notas» y pertenece a «Supuestos»",
                 Box::new(only(
                     "contenido/hoja-003.md",
-                    "sheet: \"Supuestos\", range: \"A1:C4\" }\n---",
-                    "sheet: \"Notas\", range: \"A1:C4\" }\n---",
+                    "sheet: \"Supuestos\"\n    range: \"A1:C4\"\n---",
+                    "sheet: \"Notas\"\n    range: \"A1:C4\"\n---",
                 )),
             ),
             (
@@ -1121,24 +1123,24 @@ mod tests {
                 "tiene un localizador de páginas fuera de su sección",
                 Box::new(only(
                     "contenido/seccion-004.md",
-                    "{ id: p-1, source_id: original, kind: pdf_pages, from: 1, to: 1 }",
-                    "{ id: p-1, source_id: original, kind: pdf_pages, from: 3, to: 3 }",
+                    "id: \"p-1\"\n    source_id: \"original\"\n    kind: \"pdf_pages\"\n    from: 1\n    to: 1\n",
+                    "id: \"p-1\"\n    source_id: \"original\"\n    kind: \"pdf_pages\"\n    from: 3\n    to: 3\n",
                 )),
             ),
             (
                 "seccion-006.md empieza en la página 4 y el concepto anterior cubre 2–2",
                 Box::new(only(
                     "contenido/seccion-006.md",
-                    "kind: pdf_pages, from: 3, to: 3 }",
-                    "kind: pdf_pages, from: 4, to: 4 }",
+                    "kind: \"pdf_pages\"\n    from: 3\n    to: 3\n",
+                    "kind: \"pdf_pages\"\n    from: 4\n    to: 4\n",
                 )),
             ),
             (
                 "documento.md no localiza las 4 páginas del original",
                 Box::new(only(
                     "documento.md",
-                    "kind: pdf_pages, from: 1, to: 4 }",
-                    "kind: pdf_pages, from: 1, to: 5 }",
+                    "kind: \"pdf_pages\"\n    from: 1\n    to: 4\n",
+                    "kind: \"pdf_pages\"\n    from: 1\n    to: 5\n",
                 )),
             ),
             (

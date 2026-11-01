@@ -1,21 +1,21 @@
 ---
-type: Slide
+type: "Slide"
 title: "Relevancia de la Respuesta · Componente: Generador"
 description: "Diapositiva 24 de s3.pptx: Relevancia de la Respuesta · Componente: Generador. Contenido solo visual."
 sources:
-  - id: original
-    resource: /references/original.pptx
+  - id: "original"
+    resource: "/references/original.pptx"
 generated:
-  by: process:document-conversion
+  by: "process:document-conversion"
   at: "<generado>"
 source_spans:
-  - id: slide-24
-    source_id: original
-    kind: pptx_slide
+  - id: "slide-24"
+    source_id: "original"
+    kind: "pptx_slide"
     slide_index: 24
     slide_id: 279
 visual_only: true
-status: draft
+status: "draft"
 ---
 
 # Relevancia de la Respuesta · Componente: Generador

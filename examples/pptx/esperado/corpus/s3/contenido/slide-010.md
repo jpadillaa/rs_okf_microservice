@@ -1,17 +1,17 @@
 ---
-type: Slide
+type: "Slide"
 title: "Evaluación del RAG"
 description: "Diapositiva 10 de s3.pptx: Evaluación del RAG. Control de calidad sistemático"
 sources:
-  - id: original
-    resource: /references/original.pptx
+  - id: "original"
+    resource: "/references/original.pptx"
 generated:
-  by: process:document-conversion
+  by: "process:document-conversion"
   at: "<generado>"
 source_spans:
-  - id: slide-10
-    source_id: original
-    kind: pptx_slide
+  - id: "slide-10"
+    source_id: "original"
+    kind: "pptx_slide"
     slide_index: 10
     slide_id: 265
 ---

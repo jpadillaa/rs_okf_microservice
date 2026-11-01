@@ -1,15 +1,19 @@
 ---
-type: Source Section
+type: "Source Section"
 title: "Author checklist for ethical use of AI generative tools"
 description: "Sección 6 de p2.pdf: Author checklist for ethical use of AI generative tools. The importance of the above exercise is not that it provides an exhaustive list of ethically permissible and impermissible actions. Rather, it showcases the…"
 sources:
-  - id: original
-    resource: /references/original.pdf
+  - id: "original"
+    resource: "/references/original.pdf"
 generated:
-  by: process:document-conversion
+  by: "process:document-conversion"
   at: "<generado>"
 source_spans:
-  - { id: seccion, source_id: original, kind: pdf_pages, from: 7, to: 7 }
+  - id: "seccion"
+    source_id: "original"
+    kind: "pdf_pages"
+    from: 7
+    to: 7
 ---
 
 # Author checklist for ethical use of AI generative tools

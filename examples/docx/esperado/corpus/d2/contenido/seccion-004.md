@@ -1,18 +1,34 @@
 ---
-type: Source Section
+type: "Source Section"
 title: "Paso No. 2 – Evaluación comparativa entre licenciamiento SaaS y despliegue local de modelos de IA generativa"
 description: "Sección 4 de d2.docx: Paso No. 2 – Evaluación comparativa entre licenciamiento SaaS y despliegue local de modelos de IA generativa. A partir del presupuesto estimado en el paso anterior, se debe proyectar cuántas licencias de usuario podrían financiarse para un servicio comercial de…"
 sources:
-  - id: original
-    resource: /references/original.docx
+  - id: "original"
+    resource: "/references/original.docx"
 generated:
-  by: process:document-conversion
+  by: "process:document-conversion"
   at: "<generado>"
 source_spans:
-  - { id: seccion, source_id: original, kind: docx_blocks, from: 24, to: 29 }
-  - { id: b-25, source_id: original, kind: docx_blocks, from: 25, to: 25 }
-  - { id: b-27, source_id: original, kind: docx_blocks, from: 27, to: 27 }
-  - { id: b-29, source_id: original, kind: docx_blocks, from: 29, to: 29 }
+  - id: "seccion"
+    source_id: "original"
+    kind: "docx_blocks"
+    from: 24
+    to: 29
+  - id: "b-25"
+    source_id: "original"
+    kind: "docx_blocks"
+    from: 25
+    to: 25
+  - id: "b-27"
+    source_id: "original"
+    kind: "docx_blocks"
+    from: 27
+    to: 27
+  - id: "b-29"
+    source_id: "original"
+    kind: "docx_blocks"
+    from: 29
+    to: 29
 title_inferred: true
 ---
 

@@ -1,17 +1,17 @@
 ---
-type: Slide
+type: "Slide"
 title: "Hallucination- Free? Assessing the Reliability of Leading AI Legal Research Tools"
 description: "Diapositiva 31 de s3.pptx: Hallucination- Free? Assessing the Reliability of Leading AI Legal Research Tools. Paper"
 sources:
-  - id: original
-    resource: /references/original.pptx
+  - id: "original"
+    resource: "/references/original.pptx"
 generated:
-  by: process:document-conversion
+  by: "process:document-conversion"
   at: "<generado>"
 source_spans:
-  - id: slide-31
-    source_id: original
-    kind: pptx_slide
+  - id: "slide-31"
+    source_id: "original"
+    kind: "pptx_slide"
     slide_index: 31
     slide_id: 286
 ---

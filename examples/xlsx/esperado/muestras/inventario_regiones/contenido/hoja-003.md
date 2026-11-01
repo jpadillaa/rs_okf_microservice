@@ -1,17 +1,25 @@
 ---
-type: Sheet
+type: "Sheet"
 title: "Formatos"
 description: "Hoja 3 del libro inventario_regiones.xlsx: rango A1:C15 con 1 región."
 sources:
-  - id: original
-    resource: /references/original.xlsx
+  - id: "original"
+    resource: "/references/original.xlsx"
 generated:
-  by: process:document-conversion
+  by: "process:document-conversion"
   at: "<generado>"
 sheet_index: 3
 source_spans:
-  - { id: hoja, source_id: original, kind: xlsx_range, sheet: "Formatos", range: "A1:C15" }
-  - { id: r-1, source_id: original, kind: xlsx_range, sheet: "Formatos", range: "A1:C15" }
+  - id: "hoja"
+    source_id: "original"
+    kind: "xlsx_range"
+    sheet: "Formatos"
+    range: "A1:C15"
+  - id: "r-1"
+    source_id: "original"
+    kind: "xlsx_range"
+    sheet: "Formatos"
+    range: "A1:C15"
 ---
 
 # Formatos

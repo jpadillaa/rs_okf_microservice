@@ -1,21 +1,49 @@
 ---
-type: Source Section
+type: "Source Section"
 title: "Cinco atributos que definen a un agente"
 description: "Sección 3 de p4.pdf: Cinco atributos que definen a un agente. Los atributos de un agente no residen exclusivamente en el modelo de lenguaje."
 sources:
-  - id: original
-    resource: /references/original.pdf
+  - id: "original"
+    resource: "/references/original.pdf"
 generated:
-  by: process:document-conversion
+  by: "process:document-conversion"
   at: "<generado>"
 source_spans:
-  - { id: seccion, source_id: original, kind: pdf_pages, from: 2, to: 5 }
-  - { id: p-2, source_id: original, kind: pdf_pages, from: 2, to: 2 }
-  - { id: p-2-3, source_id: original, kind: pdf_pages, from: 2, to: 3 }
-  - { id: p-3, source_id: original, kind: pdf_pages, from: 3, to: 3 }
-  - { id: p-4, source_id: original, kind: pdf_pages, from: 4, to: 4 }
-  - { id: p-4-5, source_id: original, kind: pdf_pages, from: 4, to: 5 }
-  - { id: p-5, source_id: original, kind: pdf_pages, from: 5, to: 5 }
+  - id: "seccion"
+    source_id: "original"
+    kind: "pdf_pages"
+    from: 2
+    to: 5
+  - id: "p-2"
+    source_id: "original"
+    kind: "pdf_pages"
+    from: 2
+    to: 2
+  - id: "p-2-3"
+    source_id: "original"
+    kind: "pdf_pages"
+    from: 2
+    to: 3
+  - id: "p-3"
+    source_id: "original"
+    kind: "pdf_pages"
+    from: 3
+    to: 3
+  - id: "p-4"
+    source_id: "original"
+    kind: "pdf_pages"
+    from: 4
+    to: 4
+  - id: "p-4-5"
+    source_id: "original"
+    kind: "pdf_pages"
+    from: 4
+    to: 5
+  - id: "p-5"
+    source_id: "original"
+    kind: "pdf_pages"
+    from: 5
+    to: 5
 ---
 
 # Cinco atributos que definen a un agente

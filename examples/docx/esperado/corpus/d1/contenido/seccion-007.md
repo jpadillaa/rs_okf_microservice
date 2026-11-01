@@ -1,19 +1,39 @@
 ---
-type: Source Section
+type: "Source Section"
 title: "Semana 7: Seguridad"
 description: "Sección 7 de d1.docx: Semana 7: Seguridad. Seguridad en Aplicaciones LLM"
 sources:
-  - id: original
-    resource: /references/original.docx
+  - id: "original"
+    resource: "/references/original.docx"
 generated:
-  by: process:document-conversion
+  by: "process:document-conversion"
   at: "<generado>"
 source_spans:
-  - { id: seccion, source_id: original, kind: docx_blocks, from: 80, to: 93 }
-  - { id: b-81, source_id: original, kind: docx_blocks, from: 81, to: 81 }
-  - { id: b-82-88, source_id: original, kind: docx_blocks, from: 82, to: 88 }
-  - { id: b-89, source_id: original, kind: docx_blocks, from: 89, to: 89 }
-  - { id: b-90-93, source_id: original, kind: docx_blocks, from: 90, to: 93 }
+  - id: "seccion"
+    source_id: "original"
+    kind: "docx_blocks"
+    from: 80
+    to: 93
+  - id: "b-81"
+    source_id: "original"
+    kind: "docx_blocks"
+    from: 81
+    to: 81
+  - id: "b-82-88"
+    source_id: "original"
+    kind: "docx_blocks"
+    from: 82
+    to: 88
+  - id: "b-89"
+    source_id: "original"
+    kind: "docx_blocks"
+    from: 89
+    to: 89
+  - id: "b-90-93"
+    source_id: "original"
+    kind: "docx_blocks"
+    from: 90
+    to: 93
 ---
 
 # Semana 7: Seguridad

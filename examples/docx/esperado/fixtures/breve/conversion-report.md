@@ -1,12 +1,12 @@
 ---
-type: Conversion Report
-title: Informe de conversión
+type: "Conversion Report"
+title: "Informe de conversión"
 generated:
-  by: process:document-conversion
+  by: "process:document-conversion"
   at: "<generado>"
-status: complete
-format: docx
-sha256: b6a1a8e17c2230a69a8c1c5633f52cc2325cb954e4041ce014bcc8861926a1ef
+status: "complete"
+format: "docx"
+sha256: "b6a1a8e17c2230a69a8c1c5633f52cc2325cb954e4041ce014bcc8861926a1ef"
 ---
 
 # Informe de conversión DOCX

@@ -1,17 +1,17 @@
 ---
-type: Slide
+type: "Slide"
 title: "Primero la evidencia, después la respuesta"
 description: "Diapositiva 4 de s1.pptx: Primero la evidencia, después la respuesta. Una consulta concreta exige reglas, plazos y excepciones que están en el reglamento"
 sources:
-  - id: original
-    resource: /references/original.pptx
+  - id: "original"
+    resource: "/references/original.pptx"
 generated:
-  by: process:document-conversion
+  by: "process:document-conversion"
   at: "<generado>"
 source_spans:
-  - id: slide-4
-    source_id: original
-    kind: pptx_slide
+  - id: "slide-4"
+    source_id: "original"
+    kind: "pptx_slide"
     slide_index: 4
     slide_id: 259
     display_label: "04"

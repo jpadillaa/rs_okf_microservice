@@ -1,21 +1,21 @@
 ---
-type: Slide
+type: "Slide"
 title: "Fidelidad (Faithfulness) · Componente: Generador"
 description: "Diapositiva 22 de s3.pptx: Fidelidad (Faithfulness) · Componente: Generador. Contenido solo visual."
 sources:
-  - id: original
-    resource: /references/original.pptx
+  - id: "original"
+    resource: "/references/original.pptx"
 generated:
-  by: process:document-conversion
+  by: "process:document-conversion"
   at: "<generado>"
 source_spans:
-  - id: slide-22
-    source_id: original
-    kind: pptx_slide
+  - id: "slide-22"
+    source_id: "original"
+    kind: "pptx_slide"
     slide_index: 22
     slide_id: 277
 visual_only: true
-status: draft
+status: "draft"
 ---
 
 # Fidelidad (Faithfulness) · Componente: Generador

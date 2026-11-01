@@ -1,19 +1,27 @@
 ---
-type: Source Document
+type: "Source Document"
 title: "Harness en agentes de inteligencia artificial"
 description: "Documento fuente d3.docx convertido a conceptos OKF por secciones."
 sources:
-  - id: original
-    resource: /references/original.docx
+  - id: "original"
+    resource: "/references/original.docx"
 generated:
-  by: process:document-conversion
+  by: "process:document-conversion"
   at: "<generado>"
 source_file:
-  path: references/original.docx
-  sha256: 9a68ae57c666128a9b729096d5c2ba1fd100e5edfc46b5fb9a77d3c4b4911fbe
+  path: "references/original.docx"
+  sha256: "9a68ae57c666128a9b729096d5c2ba1fd100e5edfc46b5fb9a77d3c4b4911fbe"
 source_spans:
-  - { id: documento, source_id: original, kind: docx_blocks, from: 1, to: 144 }
-  - { id: titulo, source_id: original, kind: docx_blocks, from: 1, to: 1 }
+  - id: "documento"
+    source_id: "original"
+    kind: "docx_blocks"
+    from: 1
+    to: 144
+  - id: "titulo"
+    source_id: "original"
+    kind: "docx_blocks"
+    from: 1
+    to: 1
 ---
 
 <!-- okf-source-span: titulo -->

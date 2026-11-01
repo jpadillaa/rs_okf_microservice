@@ -1,16 +1,24 @@
 ---
-type: Source Section
+type: "Source Section"
 title: "Harness en agentes de inteligencia artificial"
 description: "Inicio de d3.docx, antes de la primera sección."
 sources:
-  - id: original
-    resource: /references/original.docx
+  - id: "original"
+    resource: "/references/original.docx"
 generated:
-  by: process:document-conversion
+  by: "process:document-conversion"
   at: "<generado>"
 source_spans:
-  - { id: seccion, source_id: original, kind: docx_blocks, from: 1, to: 2 }
-  - { id: b-2, source_id: original, kind: docx_blocks, from: 2, to: 2 }
+  - id: "seccion"
+    source_id: "original"
+    kind: "docx_blocks"
+    from: 1
+    to: 2
+  - id: "b-2"
+    source_id: "original"
+    kind: "docx_blocks"
+    from: 2
+    to: 2
 ---
 
 # Harness en agentes de inteligencia artificial

@@ -1,17 +1,29 @@
 ---
-type: Source Section
+type: "Source Section"
 title: "Lo que un agente NO es"
 description: "Sección 4 de p4.pdf: Lo que un agente NO es. La industria ha generado confusión significativa al etiquetar como \"agentes\" a sistemas que no lo son. Gartner denomina a esta práctica \"agent-washing\" y…"
 sources:
-  - id: original
-    resource: /references/original.pdf
+  - id: "original"
+    resource: "/references/original.pdf"
 generated:
-  by: process:document-conversion
+  by: "process:document-conversion"
   at: "<generado>"
 source_spans:
-  - { id: seccion, source_id: original, kind: pdf_pages, from: 5, to: 6 }
-  - { id: p-5, source_id: original, kind: pdf_pages, from: 5, to: 5 }
-  - { id: p-6, source_id: original, kind: pdf_pages, from: 6, to: 6 }
+  - id: "seccion"
+    source_id: "original"
+    kind: "pdf_pages"
+    from: 5
+    to: 6
+  - id: "p-5"
+    source_id: "original"
+    kind: "pdf_pages"
+    from: 5
+    to: 5
+  - id: "p-6"
+    source_id: "original"
+    kind: "pdf_pages"
+    from: 6
+    to: 6
 ---
 
 # Lo que un agente NO es

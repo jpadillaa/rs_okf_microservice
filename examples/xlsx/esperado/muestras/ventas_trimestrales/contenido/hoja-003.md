@@ -1,18 +1,26 @@
 ---
-type: Sheet
+type: "Sheet"
 title: "Supuestos"
 description: "Hoja 3 del libro ventas_trimestrales.xlsx: rango A1:C4 con 1 región."
 sources:
-  - id: original
-    resource: /references/original.xlsx
+  - id: "original"
+    resource: "/references/original.xlsx"
 generated:
-  by: process:document-conversion
+  by: "process:document-conversion"
   at: "<generado>"
 sheet_index: 3
-sheet_state: hidden
+sheet_state: "hidden"
 source_spans:
-  - { id: hoja, source_id: original, kind: xlsx_range, sheet: "Supuestos", range: "A1:C4" }
-  - { id: r-1, source_id: original, kind: xlsx_range, sheet: "Supuestos", range: "A1:C4" }
+  - id: "hoja"
+    source_id: "original"
+    kind: "xlsx_range"
+    sheet: "Supuestos"
+    range: "A1:C4"
+  - id: "r-1"
+    source_id: "original"
+    kind: "xlsx_range"
+    sheet: "Supuestos"
+    range: "A1:C4"
 ---
 
 # Supuestos

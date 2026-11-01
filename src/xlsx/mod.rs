@@ -7,7 +7,9 @@ mod read;
 mod regions;
 
 use crate::bundle::*;
+use crate::format::Format;
 use crate::ooxml::*;
+use crate::output::*;
 use crate::worker::{Config, Rejected};
 use a1::{Rect, cell_name, cells_phrase, col_name, shift_formula};
 use anyhow::{Context, Result, bail};
@@ -22,7 +24,7 @@ use std::{
     time::Instant,
 };
 use yaml_serde::Value as YamlValue;
-use zip::{ZipArchive, ZipWriter, write::SimpleFileOptions};
+use zip::{ZipArchive, write::SimpleFileOptions};
 
 /// Una región con más filas de datos o más celdas que estos límites es grande: tiene
 /// concepto propio, una muestra y sus datos completos como recurso.
@@ -96,12 +98,11 @@ fn plural(n: usize, one: &str, many: &str) -> String {
     format!("{n} {}", if n == 1 { one } else { many })
 }
 
-fn span(id: &str, sheet: &str, range: &Rect) -> String {
-    format!(
-        "  - {{ id: {id}, source_id: original, kind: xlsx_range, sheet: {}, range: \"{}\" }}\n",
-        yaml(sheet),
-        range.a1()
-    )
+/// Tramo de procedencia de un rango A1 de una hoja.
+fn range_span(id: &str, sheet: &str, range: &Rect) -> Fields {
+    span(id, "xlsx_range")
+        .with("sheet", sheet)
+        .with("range", range.a1())
 }
 
 fn csv_field(s: &str) -> String {
@@ -139,7 +140,7 @@ struct Builder<'a> {
     filename: &'a str,
     generated: &'a str,
     z_in: Zip<'a>,
-    zip: ZipWriter<fs::File>,
+    out: BundleWriter,
     issues: Vec<Issue>,
     t: Tally,
     sheet_index: HashMap<String, usize>,
@@ -160,27 +161,17 @@ impl Builder<'_> {
         n: usize,
         info: &SheetInfo,
         draft: bool,
-        spans: &str,
-    ) -> String {
-        let mut fm = format!(
-            "---\ntype: {kind}\ntitle: {}\ndescription: {}\nsources:\n  - id: original\n    resource: /references/original.xlsx\ngenerated:\n  by: process:document-conversion\n  at: {}\n",
-            yaml(title),
-            yaml(description),
-            yaml(self.generated)
-        );
-        if draft {
-            fm.push_str("status: draft\n");
+        spans: Vec<Fields>,
+    ) -> Fields {
+        let fields = concept_fields(Format::Xlsx, kind, title, description, self.generated)
+            .with_opt("status", draft.then_some("draft"))
+            .with("sheet_index", n)
+            .with_opt("sheet_state", info.state.as_ref());
+        if spans.is_empty() {
+            fields
+        } else {
+            fields.with("source_spans", spans)
         }
-        fm.push_str(&format!("sheet_index: {n}\n"));
-        if let Some(s) = &info.state {
-            fm.push_str(&format!("sheet_state: {s}\n"));
-        }
-        if !spans.is_empty() {
-            fm.push_str("source_spans:\n");
-            fm.push_str(spans);
-        }
-        fm.push_str("---\n\n");
-        fm
     }
 
     /// Destino Markdown de cada celda con hipervínculo.
@@ -509,7 +500,8 @@ impl Builder<'_> {
         // CSV: el rango completo, fila por fila, incluidas las filas vacías; las celdas
         // de la región llegan en orden de filas y se escriben sin acumular el archivo.
         let csv_path = format!("assets/{base}.csv");
-        self.zip
+        self.out
+            .zip()
             .start_file(&csv_path, SimpleFileOptions::default())?;
         let mut next = cells.iter().peekable();
         let mut line = vec![String::new(); r.rect.cols() as usize];
@@ -518,8 +510,8 @@ impl Builder<'_> {
             while let Some(c) = next.next_if(|c| c.row == row) {
                 line[(c.col - r.rect.c0) as usize] = csv_field(c.shown());
             }
-            self.zip.write_all(line.join(",").as_bytes())?;
-            self.zip.write_all(b"\r\n")?;
+            self.out.zip().write_all(line.join(",").as_bytes())?;
+            self.out.zip().write_all(b"\r\n")?;
         }
         self.t.csv += 1;
         let header: HashMap<u32, &Cell> = cells
@@ -539,12 +531,13 @@ impl Builder<'_> {
         }) || sh.merges.iter().any(|m| r.rect.contains(m.r0, m.c0));
         let records_path = format!("assets/{base}-celdas.jsonl");
         if needs_records {
-            self.zip
+            self.out
+                .zip()
                 .start_file(&records_path, SimpleFileOptions::default())?;
             for c in &cells {
                 let line = self.record(sh, c);
-                self.zip.write_all(line.as_bytes())?;
-                self.zip.write_all(b"\n")?;
+                self.out.zip().write_all(line.as_bytes())?;
+                self.out.zip().write_all(b"\n")?;
             }
             self.t.records += 1;
         }
@@ -670,8 +663,10 @@ impl Builder<'_> {
             layout.data_rows.len(),
             self.table_md(sh, r, layout, &sample, links)
         ));
-        let spans =
-            span("region", &info.name, &r.rect) + &span("muestra", &info.name, &sample_rect);
+        let spans = vec![
+            range_span("region", &info.name, &r.rect),
+            range_span("muestra", &info.name, &sample_rect),
+        ];
         let missing = cells.iter().any(|c| c.kind == Kind::NoValue);
         let description = format!(
             "Región {} de la hoja «{}» del libro {}: {} y {}, con datos completos en CSV.",
@@ -681,17 +676,18 @@ impl Builder<'_> {
             plural(layout.data_rows.len(), "fila de datos", "filas de datos"),
             plural(r.rect.cols() as usize, "columna", "columnas"),
         );
-        let md = self.frontmatter(
+        let fields = self.frontmatter(
             "Sheet Region",
             &layout.title,
             &description,
             n,
             info,
             missing,
-            &spans,
-        ) + &body;
+            spans,
+        );
         let file = format!("{base}.md");
-        write_zip_file(&mut self.zip, &format!("contenido/{file}"), md.as_bytes())?;
+        self.out
+            .concept(&format!("contenido/{file}"), &fields, &body)?;
         Ok(file)
     }
 
@@ -772,7 +768,7 @@ impl Builder<'_> {
                                 .unwrap_or_else(|| "bin".into());
                             let path = format!("assets/hoja-{n:03}-imagen-{image_n:02}.{ext}");
                             let data = read_entry(&mut self.z_in, t)?;
-                            write_zip_file(&mut self.zip, &path, &data)?;
+                            self.out.file(&path, &data)?;
                             self.t.images += 1;
                             images.push_str(&format!(
                                 "![{label}](../{path})\n\nImagen {image_n}{}{}.\n\n",
@@ -848,7 +844,7 @@ impl Builder<'_> {
         }
         let part = info.part.clone();
         let mut body = format!("# {}\n\n", escape_inline(&info.name));
-        let mut spans = String::new();
+        let mut spans = Vec::new();
         match (&info.kind, part) {
             (SheetKind::Chart, Some(part)) => {
                 let rels = relationships(&mut self.z_in, &part);
@@ -926,16 +922,17 @@ impl Builder<'_> {
                 self.filename
             ),
         };
-        let md = self.frontmatter(
+        let fields = self.frontmatter(
             "Sheet",
             &info.name,
             &description,
             n,
             info,
             !losses.is_empty(),
-            &spans,
-        ) + &body;
-        write_zip_file(&mut self.zip, &format!("contenido/{file}"), md.as_bytes())?;
+            spans,
+        );
+        self.out
+            .concept(&format!("contenido/{file}"), &fields, &body)?;
         Ok(summary)
     }
 
@@ -952,7 +949,7 @@ impl Builder<'_> {
         sh: &Sheet,
         summary: &mut SheetSummary,
         body: &mut String,
-        spans: &mut String,
+        spans: &mut Vec<Fields>,
         losses: &mut Vec<String>,
         notes: &mut Vec<String>,
         hidden_note: &str,
@@ -993,7 +990,7 @@ impl Builder<'_> {
         let regions = regions::regions(sh, &tables, &pivots);
         match summary.used {
             Some(u) => {
-                spans.push_str(&span("hoja", &info.name, &u));
+                spans.push(range_span("hoja", &info.name, &u));
                 body.push_str(&format!(
                     "Hoja {n} de {total} · rango con contenido {} ({} × {}) · {} con contenido, {} · {}.\n\n{hidden_note}",
                     u.a1(),
@@ -1042,7 +1039,7 @@ impl Builder<'_> {
             }
             self.t.inline_regions += 1;
             let id = format!("r-{k}");
-            spans.push_str(&span(&id, &info.name, &r.rect));
+            spans.push(range_span(&id, &info.name, &r.rect));
             body.push_str(&format!(
                 "## {heading}\n\n<!-- okf-source-span: {id} -->\n{}\n",
                 self.region_block(sh, r, &layout, &links)
@@ -1263,13 +1260,12 @@ pub(crate) fn build_bundle(
     if wb.sheets.is_empty() {
         return Err(Rejected("el libro no tiene hojas".into()).into());
     }
-    let zip_path = attempt.join("bundle.zip");
     let mut b = Builder {
         wb: &wb,
         filename,
         generated: &generated,
         z_in,
-        zip: ZipWriter::new(fs::File::create(&zip_path)?),
+        out: BundleWriter::create(Format::Xlsx, attempt)?,
         issues: Vec::new(),
         t: Tally::default(),
         sheet_index: wb
@@ -1284,7 +1280,6 @@ pub(crate) fn build_bundle(
     for (i, info) in wb.sheets.iter().enumerate() {
         sheets.push(b.sheet(i + 1, info)?);
     }
-    write_zip_file(&mut b.zip, "references/original.xlsx", bytes)?;
     let t = &b.t;
     let hidden = sheets.iter().filter(|s| s.state.is_some()).count();
     let chartsheets = sheets.iter().filter(|s| s.kind == SheetKind::Chart).count();
@@ -1322,57 +1317,57 @@ pub(crate) fn build_bundle(
             .map(|s| s.to_string_lossy().into_owned())
             .unwrap_or_else(|| filename.to_string())
     });
-    let (losses, notes): (Vec<&Issue>, Vec<&Issue>) =
-        issues.iter().partition(|i| i.severity == Severity::Loss);
-    let state = if losses.is_empty() {
-        "complete"
-    } else {
-        "partial"
-    };
-    let list = |items: &[&Issue], empty: &str| -> String {
-        if items.is_empty() {
-            format!("{empty}\n")
-        } else {
-            items
-                .iter()
-                .map(|i| format!("- {}\n", escape_inline(&i.text)))
-                .collect()
-        }
-    };
-    let report = format!(
-        "---\ntype: Conversion Report\ntitle: Informe de conversión\ngenerated:\n  by: process:document-conversion\n  at: {}\nstatus: {state}\nformat: xlsx\nsha256: {hash}\n---\n\n# Informe de conversión XLSX\n\n- Estado: `{state}`\n- Hojas inventariadas: {} ({} de gráfico; ocultas: {hidden})\n- Hojas representadas: {} (un concepto por hoja)\n- Celdas con contenido: {}; fórmulas: {}\n- Regiones: {} (en el concepto de su hoja: {}; con concepto propio: {})\n- Tablas de Excel: {}; tablas dinámicas: {}\n- Recursos de datos: {} CSV y {} de registros por celda\n- Gráficos: {}; imágenes adjuntas: {}\n- Rangos de celdas combinadas: {}\n- Comentarios de revisión: {}\n- Nombres definidos: {}; vínculos externos: {}\n- Duración de ensamblado: {} ms\n\n## Incidencias\n\nPérdidas o incertidumbres sustantivas; determinan el estado `partial`.\n\n{}\n## Observaciones\n\nInformación sobre la conversión que no afecta el estado.\n\n{}",
-        yaml(&generated),
-        sheets.len(),
-        chartsheets,
-        sheets.len(),
-        t.cells,
-        t.formulas,
-        t.inline_regions + t.own_regions,
-        t.inline_regions,
-        t.own_regions,
-        t.tables,
-        t.pivots,
-        t.csv,
-        t.records,
-        t.charts,
-        t.images,
-        t.merges,
-        t.comments,
-        wb.names.len(),
-        wb.external.len(),
-        started.elapsed().as_millis(),
-        list(&losses, "Sin pérdidas ni incertidumbres sustantivas."),
-        list(&notes, "Sin observaciones.")
-    );
+    let summary = [
+        format!(
+            "Hojas inventariadas: {} ({} de gráfico; ocultas: {hidden})",
+            sheets.len(),
+            chartsheets
+        ),
+        format!(
+            "Hojas representadas: {} (un concepto por hoja)",
+            sheets.len()
+        ),
+        format!(
+            "Celdas con contenido: {}; fórmulas: {}",
+            t.cells, t.formulas
+        ),
+        format!(
+            "Regiones: {} (en el concepto de su hoja: {}; con concepto propio: {})",
+            t.inline_regions + t.own_regions,
+            t.inline_regions,
+            t.own_regions
+        ),
+        format!(
+            "Tablas de Excel: {}; tablas dinámicas: {}",
+            t.tables, t.pivots
+        ),
+        format!(
+            "Recursos de datos: {} CSV y {} de registros por celda",
+            t.csv, t.records
+        ),
+        format!("Gráficos: {}; imágenes adjuntas: {}", t.charts, t.images),
+        format!("Rangos de celdas combinadas: {}", t.merges),
+        format!("Comentarios de revisión: {}", t.comments),
+        format!(
+            "Nombres definidos: {}; vínculos externos: {}",
+            wb.names.len(),
+            wb.external.len()
+        ),
+        format!(
+            "Duración de ensamblado: {} ms",
+            started.elapsed().as_millis()
+        ),
+    ];
+    let report = report(Format::Xlsx, &generated, hash, &issues, &summary, "");
     // documento.md e índices.
-    let mut doc_spans = String::new();
+    let mut doc_spans = Vec::new();
     let mut structure = String::new();
     let mut entries = String::new();
     let mut content_entries = String::new();
     for (i, s) in sheets.iter().enumerate() {
         let n = i + 1;
         if let Some(u) = s.used {
-            doc_spans.push_str(&span(&format!("hoja-{n}"), &s.name, &u));
+            doc_spans.push(range_span(&format!("hoja-{n}"), &s.name, &u));
         }
         let mut detail = Vec::new();
         match s.kind {
@@ -1444,36 +1439,32 @@ pub(crate) fn build_bundle(
     if wb.recalc_on_load {
         extra.push_str("\n> El libro pide recalcular al abrirse; los valores almacenados de las fórmulas pueden no estar actualizados.\n");
     }
+    let mut doc_fields = document_fields(
+        Format::Xlsx,
+        &title,
+        &format!("Libro {filename} convertido a conceptos OKF por hojas y regiones."),
+        &generated,
+        hash,
+    );
+    if !doc_spans.is_empty() {
+        doc_fields.push("source_spans", doc_spans);
+    }
     let doc = format!(
-        "---\ntype: Source Document\ntitle: {}\ndescription: {}\nsources:\n  - id: original\n    resource: /references/original.xlsx\ngenerated:\n  by: process:document-conversion\n  at: {}\nsource_file:\n  path: references/original.xlsx\n  sha256: {hash}\n{}---\n\n# {}\n\nLibro de {} ({} de gráfico; ocultas: {hidden}) con {} con contenido y {}.\n\n## Hojas\n\n{structure}{extra}",
-        yaml(&title),
-        yaml(&format!(
-            "Libro {filename} convertido a conceptos OKF por hojas y regiones."
-        )),
-        yaml(&generated),
-        if doc_spans.is_empty() {
-            String::new()
-        } else {
-            format!("source_spans:\n{doc_spans}")
-        },
+        "# {}\n\nLibro de {} ({} de gráfico; ocultas: {hidden}) con {} con contenido y {}.\n\n## Hojas\n\n{structure}{extra}",
         escape_inline(&title),
         plural(sheets.len(), "hoja", "hojas"),
         chartsheets,
         plural(t.cells, "celda", "celdas"),
         plural(t.formulas, "fórmula", "fórmulas"),
     );
-    let index = format!(
-        "---\nokf_version: \"0.2\"\n---\n\n# Bundle OKF\n\n- [Documento fuente](documento.md)\n- [Índice de contenido](contenido/index.md)\n- [Informe de conversión](conversion-report.md)\n\n## Hojas\n\n{entries}"
-    );
-    let contents_index = format!("# Contenido\n\n## Hojas\n\n{content_entries}");
-    let mut zip = b.zip;
-    write_zip_file(&mut zip, "index.md", index.as_bytes())?;
-    write_zip_file(&mut zip, "contenido/index.md", contents_index.as_bytes())?;
-    write_zip_file(&mut zip, "documento.md", doc.as_bytes())?;
-    write_zip_file(&mut zip, "conversion-report.md", report.as_bytes())?;
-    zip.finish()?;
-    validate_bundle(&zip_path)?;
-    Ok((zip_path, state.into()))
+    let nav = Navigation {
+        contents_label: "Índice de contenido",
+        heading: "Hojas",
+        root_entries: entries,
+        contents_entries: content_entries,
+    };
+    b.out
+        .finish(bytes, (&doc_fields, &doc), &nav, &report, &issues)
 }
 
 /// Extrae y ensambla el bundle de un libro.
@@ -1709,7 +1700,7 @@ mod tests {
         let detalle = &md["contenido/hoja-002.md"];
         assert!(detalle.contains("[Tabla «TablaDetalle» (A1:G301)](hoja-002-region-01.md)"));
         let region = &md["contenido/hoja-002-region-01.md"];
-        assert!(region.contains("type: Sheet Region"));
+        assert!(region.contains("type: \"Sheet Region\""));
         assert!(
             region.contains("| A | Fecha | fecha | 300 | 0 |"),
             "{region}"
@@ -1731,7 +1722,7 @@ mod tests {
             records.contains(r##""celda":"F3","formato":"#,##0.00\\ \"€\"","formula":"=D3*E3""##)
         );
         let supuestos = &md["contenido/hoja-003.md"];
-        assert!(supuestos.contains("sheet_state: hidden"));
+        assert!(supuestos.contains("sheet_state: \"hidden\""));
         assert!(supuestos.contains("| 2 | Tasa de cambio objetivo | 3.5% |"));
         assert!(supuestos.contains("#DIV/0!"));
         let notas = &md["contenido/hoja-004.md"];
@@ -1805,7 +1796,7 @@ mod tests {
         let (state, md) = convert_example("examples/xlsx/muestras/libro_con_perdidas.xlsx");
         assert_eq!(state, "partial");
         let pre = &md["contenido/hoja-001.md"];
-        assert!(pre.contains("status: draft"));
+        assert!(pre.contains("status: \"draft\""));
         assert!(pre.contains("\\[sin valor almacenado\\]"), "{pre}");
         assert!(pre.contains("- C2:C4: `=B2*(1+Tasa)` en C2; las demás celdas repiten la fórmula con sus referencias relativas desplazadas (C3: `=B3*(1+Tasa)`) — sin valor almacenado"));
         assert!(pre.contains("- B6: `=SUM(B2:B4*B2:B4)` — fórmula matricial sobre B6"));
