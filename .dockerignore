@@ -1,0 +1,5 @@
+# Solo el código entra en la imagen. datos_de_prueba/ contiene originales privados.
+*
+!Cargo.toml
+!Cargo.lock
+!src/

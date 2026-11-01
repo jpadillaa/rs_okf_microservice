@@ -1,0 +1,25 @@
+# API y worker como dos procesos de la misma imagen, con el volumen de datos compartido
+# (OKF_DATA_DIR): la base SQLite, los originales, los intentos y los bundles publicados.
+# Los dos contenedores deben correr en el mismo host, sobre un disco local.
+services:
+  api:
+    build: .
+    image: okf-microservice:local
+    command: ["api", "--bind", "0.0.0.0:8080"]
+    ports:
+      - "127.0.0.1:8080:8080"
+    volumes:
+      - okf-data:/data
+    restart: unless-stopped
+  worker:
+    build: .
+    image: okf-microservice:local
+    command: ["worker"]
+    volumes:
+      - okf-data:/data
+    # El worker solo lee y escribe el volumen; no necesita red.
+    network_mode: none
+    restart: unless-stopped
+
+volumes:
+  okf-data:

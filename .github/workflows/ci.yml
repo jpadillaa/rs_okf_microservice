@@ -16,9 +16,10 @@ jobs:
           toolchain: "1.99"
           components: rustfmt, clippy
       - uses: Swatinem/rust-cache@v2
-      # El renderizador PPTX necesita una fuente TrueType (ver render_font en src/main.rs).
+      # El renderizador PPTX necesita una fuente TrueType (ver render_font en src/pptx/mod.rs);
+      # la misma versión que instala el Dockerfile.
       - name: Instalar fuente para el renderizado
-        run: sudo apt-get update && sudo apt-get install -y --no-install-recommends fonts-dejavu-core
+        run: sudo apt-get update && sudo apt-get install -y --no-install-recommends fonts-dejavu-core=2.37-8
       - name: Formato
         run: cargo fmt --check
       - name: Clippy
@@ -34,3 +35,14 @@ jobs:
       - uses: EmbarkStudios/cargo-deny-action@v2
         with:
           command: check licenses sources
+
+  image:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - name: Construir la imagen
+        run: docker build -t okf-microservice:smoke .
+      # Una muestra de cada formato por la API, el worker en un contenedor sin red y
+      # la descarga de los cuatro bundles.
+      - name: Prueba de humo
+        run: tools/smoke.sh okf-microservice:smoke
