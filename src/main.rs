@@ -25,6 +25,7 @@ mod docx;
 mod format;
 mod omml;
 mod ooxml;
+mod pdf;
 mod pptx;
 mod worker;
 mod xlsx;
@@ -355,7 +356,7 @@ mod tests {
             .to_bytes();
         let accepted: Accepted = serde_json::from_slice(&response_body).unwrap();
         assert_eq!(accepted.status, "queued");
-        let unsupported = b"--pptx-test-boundary\r\nContent-Disposition: form-data; name=\"file\"; filename=\"later.pdf\"\r\nContent-Type: application/pdf\r\n\r\nplaceholder\r\n--pptx-test-boundary--\r\n";
+        let unsupported = b"--pptx-test-boundary\r\nContent-Disposition: form-data; name=\"file\"; filename=\"later.odt\"\r\nContent-Type: application/vnd.oasis.opendocument.text\r\n\r\nplaceholder\r\n--pptx-test-boundary--\r\n";
         let rejected = router(a.clone())
             .oneshot(
                 axum::http::Request::builder()
@@ -1031,6 +1032,88 @@ mod tests {
                     "contenido/index.md",
                     "- [Supuestos](hoja-003.md)\n- [Notas](hoja-004.md)",
                     "- [Notas](hoja-004.md)\n- [Supuestos](hoja-003.md)",
+                )),
+            ),
+        ];
+        for (expected, edit) in cases {
+            rewrite(&good, &bad, edit);
+            let error = validate_bundle(&bad).unwrap_err().to_string();
+            assert!(error.contains(expected), "{expected}: {error}");
+        }
+    }
+
+    #[tokio::test]
+    async fn pdf_is_converted_by_the_worker_and_checked_against_its_pages() {
+        let tmp = tempfile::tempdir().unwrap();
+        let a = test_app(tmp.path());
+        let bytes = fs::read("examples/pdf/muestras/articulo_columnas.pdf").unwrap();
+        enqueue(&a, "article", "articulo.pdf", &bytes, "queued", 0, 0).await;
+        assert!(work_one(&a).await.unwrap());
+        let (state, _, error, bundle) = job(&a, "article").await;
+        assert_eq!((state.as_str(), error), ("complete", None));
+        let good = a.root.join(bundle.unwrap());
+        validate_bundle(&good).unwrap();
+        let scanned = fs::read("examples/pdf/muestras/escaneado_mixto.pdf").unwrap();
+        enqueue(&a, "scan", "expediente.pdf", &scanned, "queued", 0, 0).await;
+        assert!(work_one(&a).await.unwrap());
+        let (state, _, error, _) = job(&a, "scan").await;
+        assert_eq!((state.as_str(), error), ("partial", None));
+        let bad = tmp.path().join("bad.zip");
+        let only = |name: &'static str, from: &'static str, to: &'static str| {
+            move |n: &str, md: String| if n == name { md.replace(from, to) } else { md }
+        };
+        type Edit = Box<dyn Fn(&str, String) -> String>;
+        let cases: Vec<(&str, Edit)> = vec![
+            (
+                "contenido/seccion-004.md tiene un bloque sin marcador de página",
+                Box::new(only(
+                    "contenido/seccion-004.md",
+                    "<!-- okf-source-span: p-1 -->\n",
+                    "",
+                )),
+            ),
+            (
+                "tiene un localizador de páginas fuera de su sección",
+                Box::new(only(
+                    "contenido/seccion-004.md",
+                    "{ id: p-1, source_id: original, kind: pdf_pages, from: 1, to: 1 }",
+                    "{ id: p-1, source_id: original, kind: pdf_pages, from: 3, to: 3 }",
+                )),
+            ),
+            (
+                "seccion-006.md empieza en la página 4 y el concepto anterior cubre 2–2",
+                Box::new(only(
+                    "contenido/seccion-006.md",
+                    "kind: pdf_pages, from: 3, to: 3 }",
+                    "kind: pdf_pages, from: 4, to: 4 }",
+                )),
+            ),
+            (
+                "documento.md no localiza las 4 páginas del original",
+                Box::new(only(
+                    "documento.md",
+                    "kind: pdf_pages, from: 1, to: 4 }",
+                    "kind: pdf_pages, from: 1, to: 5 }",
+                )),
+            ),
+            (
+                "page_labels tiene una entrada inválida para la página 9",
+                Box::new(only("documento.md", "\"4\": \"3\"", "\"9\": \"3\"")),
+            ),
+            (
+                "marcador de pasaje sin localizador en contenido/seccion-004.md: p-7",
+                Box::new(only(
+                    "contenido/seccion-004.md",
+                    "okf-source-span: p-1-2 -->",
+                    "okf-source-span: p-7 -->",
+                )),
+            ),
+            (
+                "un índice no enumera los conceptos en el orden del documento",
+                Box::new(only(
+                    "contenido/index.md",
+                    "- [3. Resultados](seccion-005.md)\n- [4. Conclusiones](seccion-006.md)",
+                    "- [4. Conclusiones](seccion-006.md)\n- [3. Resultados](seccion-005.md)",
                 )),
             ),
         ];

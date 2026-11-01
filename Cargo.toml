@@ -10,6 +10,7 @@ axum = { version = "0.8", default-features = false, features = ["http1", "json",
 betteroffice-pptx = { version = "0.5", features = ["raster"] }
 chrono = { version = "0.4", default-features = false, features = ["clock"] }
 clap = { version = "4", features = ["derive"] }
+pdf_oxide = { version = "0.3.78", features = ["rendering"] }
 quick-xml = "0.38"
 rusqlite = { version = "0.37", features = ["bundled"] }
 serde = { version = "1", features = ["derive"] }

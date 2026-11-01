@@ -31,6 +31,8 @@ pub struct Config {
     pub max_blocks: usize,
     /// Celdas con contenido máximas por libro XLSX (`OKF_MAX_CELLS`).
     pub max_cells: usize,
+    /// Páginas máximas por documento PDF (`OKF_MAX_PAGES`).
+    pub max_pages: usize,
     /// Duración máxima de una conversión (`OKF_CONVERSION_TIMEOUT_S`).
     pub timeout: Duration,
     /// Vigencia de la reserva en segundos; se renueva cada tercio (`OKF_LEASE_S`).
@@ -48,6 +50,7 @@ impl Default for Config {
             max_slides: 300,
             max_blocks: 50_000,
             max_cells: 1_000_000,
+            max_pages: 2_000,
             timeout: Duration::from_secs(300),
             lease_s: 60,
             max_attempts: 3,
@@ -72,6 +75,7 @@ impl Config {
             max_slides: var("OKF_MAX_SLIDES", d.max_slides)?,
             max_blocks: var("OKF_MAX_BLOCKS", d.max_blocks)?,
             max_cells: var("OKF_MAX_CELLS", d.max_cells)?,
+            max_pages: var("OKF_MAX_PAGES", d.max_pages)?,
             timeout: Duration::from_secs(var("OKF_CONVERSION_TIMEOUT_S", d.timeout.as_secs())?),
             lease_s: var("OKF_LEASE_S", d.lease_s)?,
             max_attempts: var("OKF_MAX_ATTEMPTS", d.max_attempts)?,
@@ -265,6 +269,7 @@ async fn run_child(a: &App, exe: &Path, job: &Job, original: &Path, dir: &Path) 
         .env("OKF_MAX_SLIDES", a.cfg.max_slides.to_string())
         .env("OKF_MAX_BLOCKS", a.cfg.max_blocks.to_string())
         .env("OKF_MAX_CELLS", a.cfg.max_cells.to_string())
+        .env("OKF_MAX_PAGES", a.cfg.max_pages.to_string())
         .stdin(Stdio::null())
         .stdout(Stdio::piped())
         .stderr(Stdio::piped())

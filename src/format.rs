@@ -13,16 +13,18 @@ pub(crate) enum Format {
     Pptx,
     Docx,
     Xlsx,
+    Pdf,
 }
 
 impl Format {
-    pub(crate) const ALL: &[Format] = &[Format::Pptx, Format::Docx, Format::Xlsx];
+    pub(crate) const ALL: &[Format] = &[Format::Pptx, Format::Docx, Format::Xlsx, Format::Pdf];
 
     pub(crate) fn extension(self) -> &'static str {
         match self {
             Format::Pptx => "pptx",
             Format::Docx => "docx",
             Format::Xlsx => "xlsx",
+            Format::Pdf => "pdf",
         }
     }
     pub(crate) fn from_extension(ext: &str) -> Option<Self> {
@@ -54,6 +56,7 @@ impl Format {
             Format::Pptx => crate::pptx::convert(cfg, bytes, filename, hash, dir),
             Format::Docx => crate::docx::convert(cfg, bytes, filename, hash, dir),
             Format::Xlsx => crate::xlsx::convert(cfg, bytes, filename, hash, dir),
+            Format::Pdf => crate::pdf::convert(cfg, bytes, filename, hash, dir),
         }
     }
     /// Comprobaciones propias del formato sobre un bundle que ya superó las comunes.
@@ -67,6 +70,7 @@ impl Format {
             Format::Pptx => crate::pptx::validate(z, names, original),
             Format::Docx => crate::docx::validate(z, names, original),
             Format::Xlsx => crate::xlsx::validate(z, names, original),
+            Format::Pdf => crate::pdf::validate(z, names, original),
         }
     }
 }
