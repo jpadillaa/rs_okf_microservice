@@ -1,13 +1,15 @@
 # Estado del proyecto
 
 **Corte:** 1 de noviembre de 2026, commit `d3a765e` en `main`.  
-**Alcance:** qué está implementado, con qué evidencia de calidad y qué queda pendiente. Los contratos están en la [especificación](../especificacion/ESPECIFICACION_OKF.md), las [arquitecturas](../arquitectura/ARQUITECTURA_TECNICA_MICROSERVICIO_OKF.md) y el [stack](../decisiones/STACK_TECNOLOGICO_MICROSERVICIO_OKF.md); este documento no los modifica y debe actualizarse al cerrar cada entrega.
+**Alcance:** qué está implementado, con qué evidencia de calidad, cómo se compara con el plan inicial y qué queda pendiente. Los contratos están en la [especificación](../especificacion/ESPECIFICACION_OKF.md), las [arquitecturas](../arquitectura/ARQUITECTURA_TECNICA_MICROSERVICIO_OKF.md) y el [stack](../decisiones/STACK_TECNOLOGICO_MICROSERVICIO_OKF.md); este documento no los modifica y debe actualizarse al cerrar cada entrega.
 
 ## 1. Resumen
 
 Las cuatro entregas previstas están implementadas: el servicio convierte PPTX, DOCX, XLSX y PDF en bundles OKF v0.2 con la misma API, el mismo worker y el mismo validador. Cada formato tiene pruebas de aceptación con documentos sintéticos y, salvo XLSX, con copias reducidas de documentos reales. La suite (48 pruebas), `clippy` sin advertencias y `rustfmt` pasan en local.
 
 Lo que falta no es un formato, sino **evidencia y operación**: evaluar DOCX con archivos guardados por Word, conseguir un corpus XLSX real, y cerrar los requisitos operativos que la arquitectura exige antes de desplegar (límites configurables, retención, imágenes reproducibles).
+
+Frente al plan inicial (§5), el alcance funcional está cumplido, pero los extractores son propios en lugar de Xberg y no existe el modelo intermedio común que prevé la arquitectura conceptual; ambas cosas requieren una decisión explícita.
 
 ## 2. Qué está implementado
 
@@ -83,17 +85,73 @@ Las copias reducidas conservan el texto y la estructura y sustituyen imágenes y
 | Dos ejecutables | Stack, §1 | Un ejecutable con subcomandos (ver §2.1). |
 | Autenticación | No exigida | La API no autentica; solo es adecuada para uso local o detrás de un proxy que lo haga. |
 
-## 5. Roadmap pendiente
+## 5. Estado frente al plan inicial
+
+El plan inicial es la documentación del commit `802b9b1` (28 de octubre), anterior a cualquier código: especificación, arquitecturas y stack. Lo que el plan pedía construir está hecho; cómo se construyó cambió en el stack y en parte de la arquitectura.
+
+### 5.1 Alcance y calendario
+
+| Plan inicial | Estado actual |
+| --- | --- |
+| Convertir PDF, DOCX, XLSX y PPTX a OKF v0.2. | Cumplido: los cuatro adaptadores funcionan sobre la misma API, el mismo worker y el mismo validador. |
+| Validar conformidad OKF e integridad editorial por separado; estados `complete`, `partial` y `failed`. | Cumplido. Ningún bundle inválido se publica y las pruebas comprueban que se rechazan bundles alterados. |
+| API asíncrona, cola SQLite durable, asignaciones con vencimiento, reintentos, publicación atómica y reconciliación al arrancar. | Cumplido. |
+| Sin orden de entrega; los cuatro formatos sobre Xberg. | Cambiado el 30 de octubre (commit `203f76b`): primero PPTX de extremo a extremo y después un formato cada vez. |
+
+Las cuatro entregas ocuparon del 29 de octubre al 1 de noviembre, con unas 16 800 líneas de Rust propio.
+
+### 5.2 Stack
+
+| Decisión inicial | Qué pasó | ¿Se siguió la regla del plan? |
+| --- | --- | --- |
+| Xberg como extractor general de los cuatro formatos. | No se usa en ningún formato. | Solo en PDF. El plan pedía medir y registrar resultados antes de sustituir Xberg: en PDF se midió y se descartó con datos; en PPTX, DOCX y XLSX no se midió, como reconoce el [stack](../decisiones/STACK_TECNOLOGICO_MICROSERVICIO_OKF.md). |
+| No implementar otro conversor OOXML completo; `zip` y `quick-xml` solo para los localizadores que faltaran. | Se escribió un lector OOXML propio de unas 9 000 líneas para PPTX, DOCX y XLSX. | No. La decisión está justificada en el stack (geometría, notas, comentarios y localizadores directamente del XML), pero contradice una regla explícita del plan. |
+| LibreOffice headless para las vistas PPTX, sin cambiar a un renderizador Rust sin comparar antes. | Se cambió a BetterOffice raster. | Sí: se compararon las dos rutas y se aceptaron pérdidas acotadas, como los bordes de tabla ([decisión de renderizado](../decisiones/RENDERIZADO_PPTX_MEDICIONES.md)). |
+| Calamine solo si Xberg no daba hoja y rango A1. | No se usa: el lector propio los da. | Sí, coherente con la condición. |
+| `pdf_oxide` como alternativa si Xberg no alcanzaba. | Se adoptó para PDF, con maquetación propia. | Sí. |
+
+El proyecto pasó de integrar una biblioteca general a escribir sus propios extractores. Eso dio control sobre los localizadores y la calidad, a cambio de mucho más código propio que mantener y de una decisión tomada sin la medición exigida en tres formatos.
+
+### 5.3 Arquitectura
+
+| Plan inicial | Estado actual |
+| --- | --- |
+| Modelo intermedio común: todos los adaptadores entregan los mismos tipos (unidades, bloques, recursos, localizadores, incidencias) y un ensamblador genera el bundle ([arquitectura conceptual, §3](../arquitectura/ARQUITECTURA_CONCEPTUAL_MICROSERVICIO_OKF.md)). | No existe. Cada adaptador tiene su propio modelo y su propio ensamblador; solo se comparten incidencias, comentarios, utilidades de Markdown y el validador. Es la mayor desviación arquitectónica: una regla común o un formato nuevo exige tocar cuatro ensambladores. |
+| Estados `queued → processing → validating → …`. | `validating` no se registra; la validación ocurre dentro de `processing` (decisión documentada en la arquitectura técnica). |
+| Dos ejecutables, `api` y `worker`. | Un ejecutable con dos subcomandos que corren como dos procesos. |
+| Límites configurables de entrada, trabajos simultáneos, recursos y tiempo; control de carga en la admisión. | Parcial: memoria, tiempo, páginas, diapositivas, bloques y celdas son configurables; la subida (100 MB) y la expansión ZIP están fijas en el código; la API no limita la cola. |
+| Política de retención. | No definida. |
+| Imágenes reproducibles de API y worker. | No existen. |
+| Registro por trabajo, intento, formato, etapa y duración. | Parcial: trabajo, intento y memoria máxima; no formato, etapa ni duración. |
+| Conversión fuera de los hilos HTTP. | Superado: cada conversión corre en un proceso hijo con límite de memoria medido, necesario porque la memoria de PPTX y PDF depende de las imágenes y no del número de unidades. |
+
+### 5.4 Corpus de prueba
+
+| El plan pedía | Cubierto |
+| --- | --- |
+| PDF digital, escaneado, mixto y largo multipágina. | Digital, con documentos reales. Escaneado y mixto, solo sintéticos. Largo, la presentación de 53 páginas; ningún PDF largo de texto (libro, tesis). |
+| DOCX breve y largo, con tablas, notas y revisiones. | Sí: 3 reales y 6 sintéticos; revisiones y notas solo en los sintéticos. |
+| XLSX con varias hojas y rangos desplazados. | Solo sintéticos. |
+| PPTX con diapositivas ocultas, sin título, con tablas e imágenes. | Sí; tablas nativas y gráficos reales sin medir en el renderizado. |
+| Duración, CPU y memoria máxima por archivo. | Duración y memoria; CPU solo en PPTX. |
+
+### 5.5 Documentación
+
+La especificación pasó de 112 a 172 líneas. Las reglas detalladas de cada formato se escribieron junto con su adaptador: el comportamiento real queda documentado, pero en esas reglas la especificación siguió al código en lugar de guiarlo. La incoherencia sobre la división en partes y capítulos (§3.3) es una consecuencia.
+
+## 6. Roadmap pendiente
 
 En orden de prioridad:
 
 1. **Revisar la CI del commit `d3a765e`.**
 2. **Evaluación DOCX con archivos guardados por Word**: las muestras reabiertas y guardadas en Word, o nuevos DOCX reales. Está en pausa hasta disponer de esos archivos.
-3. **Corpus XLSX real**, para contrastar regiones, títulos, formatos y gráficos con libros que no hayamos generado.
-4. **Cierre operativo para desplegar**: límite de subida y control de admisión configurables, política de retención, imágenes reproducibles de API y worker con la fuente de renderizado incluida.
-5. **Coherencia de la especificación sobre la división**: decidir si DOCX y PDF necesitan índices de partes y capítulos o si la tabla de la §5 debe describir la división en un nivel.
-6. **Revisión del renderizado PPTX** cuando aparezcan presentaciones reales con tablas, gráficos o SmartArt, o con picos de memoria cercanos al límite.
-7. **OCR local opcional** para PDF escaneados, activable por configuración y con presupuesto propio de CPU y memoria (stack, §4).
-8. **Mejoras de PDF según aparezcan casos**: tablas con reglas y celdas combinadas, uso de la estructura etiquetada, parejas etiqueta–valor.
+3. **Corpus real pendiente**: libros XLSX, un PDF escaneado y un PDF largo de texto, para contrastar lo que hoy solo cubren documentos sintéticos.
+4. **Modelo intermedio común**: construirlo ahora que hay cuatro adaptadores que unificar, o actualizar la arquitectura conceptual para describir adaptadores autónomos (§5.3).
+5. **Xberg en OOXML**: medirlo con el corpus de PPTX, DOCX y XLSX, o registrar formalmente su abandono en el stack (§5.2).
+6. **Cierre operativo para desplegar**: límite de subida y control de admisión configurables, política de retención, imágenes reproducibles de API y worker con la fuente de renderizado incluida, y registro con formato, etapa y duración.
+7. **Coherencia de la especificación sobre la división**: decidir si DOCX y PDF necesitan índices de partes y capítulos o si la tabla de la §5 de la especificación debe describir la división en un nivel.
+8. **Revisión del renderizado PPTX** cuando aparezcan presentaciones reales con tablas, gráficos o SmartArt, o con picos de memoria cercanos al límite.
+9. **OCR local opcional** para PDF escaneados, activable por configuración y con presupuesto propio de CPU y memoria (stack, §4).
+10. **Mejoras de PDF según aparezcan casos**: tablas con reglas y celdas combinadas, uso de la estructura etiquetada, parejas etiqueta–valor.
 
 **Fuera del alcance actual:** despliegue multinodo, formatos binarios antiguos (`.doc`, `.xls`, `.ppt`) y con macros, e indexación, embeddings o síntesis de conocimiento, que corresponden a consumidores del bundle.
