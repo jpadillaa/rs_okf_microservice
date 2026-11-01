@@ -13,6 +13,7 @@ clap = { version = "4", features = ["derive"] }
 pdf_oxide = { version = "0.3.78", features = ["rendering"] }
 quick-xml = "0.38"
 rusqlite = { version = "0.37", features = ["bundled"] }
+rustix = { version = "1", features = ["fs"] }
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
 sha2 = "0.10"

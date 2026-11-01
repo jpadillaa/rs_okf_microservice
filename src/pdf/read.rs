@@ -332,23 +332,48 @@ pub(crate) fn page(doc: &PdfDocument, index: usize) -> Result<Page> {
     })
 }
 
+/// Resultado de preparar una imagen para adjuntarla.
+pub(crate) enum Encoding {
+    Ready(Encoded),
+    /// Habría que decodificarla y supera `OKF_MAX_IMAGE_PIXELS`.
+    TooLarge,
+    /// No se pudo leer ni codificar.
+    Failed,
+}
+
 /// Bytes listos para adjuntar de las imágenes `wanted` de una página (por su posición
 /// en la enumeración de pdf_oxide): un JPEG que no esté en CMYK se copia tal cual y lo
-/// demás se decodifica a PNG; `None` si una no puede codificarse.
-pub(crate) fn encoded(doc: &PdfDocument, index: usize, wanted: &[usize]) -> Vec<Option<Encoded>> {
+/// demás se decodifica a PNG, salvo que tenga más de `max_pixels` píxeles.
+pub(crate) fn encoded(
+    doc: &PdfDocument,
+    index: usize,
+    wanted: &[usize],
+    max_pixels: u64,
+) -> Vec<Encoding> {
     let handles = doc.page_image_handles(index).unwrap_or_default();
     wanted
         .iter()
         .map(|&k| {
-            let h = handles.get(k)?;
+            let Some(h) = handles.get(k) else {
+                return Encoding::Failed;
+            };
             let jpeg = matches!(h.filter_chain.as_slice(), [PdfFilter::DCTDecode])
                 && !matches!(h.color_space, ColorSpace::DeviceCMYK);
-            let (bytes, ext) = if jpeg {
-                (h.raw_compressed_bytes().ok()?, "jpg")
+            if !jpeg && u64::from(h.width).saturating_mul(u64::from(h.height)) > max_pixels {
+                return Encoding::TooLarge;
+            }
+            let encoded = if jpeg {
+                h.raw_compressed_bytes().ok().map(|b| (b, "jpg"))
             } else {
-                (h.decode().ok()?.to_png_bytes().ok()?, "png")
+                h.decode()
+                    .ok()
+                    .and_then(|d| d.to_png_bytes().ok())
+                    .map(|b| (b, "png"))
             };
-            (!bytes.is_empty()).then_some(Encoded { bytes, ext })
+            match encoded {
+                Some((bytes, ext)) if !bytes.is_empty() => Encoding::Ready(Encoded { bytes, ext }),
+                _ => Encoding::Failed,
+            }
         })
         .collect()
 }

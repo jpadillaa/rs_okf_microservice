@@ -31,8 +31,6 @@ mod worker;
 mod xlsx;
 mod xml;
 
-const MAX_UPLOAD: usize = 100 * 1024 * 1024;
-
 #[derive(Parser)]
 #[command(name = "okf-microservice")]
 struct Cli {
@@ -120,16 +118,56 @@ fn valid_name(s: &str) -> bool {
     !s.is_empty() && !s.contains('/') && !s.contains('\\') && !s.contains("..")
 }
 
+/// Control de carga en la admisión, antes de leer el archivo: cola llena (`429`) o
+/// volumen de datos sin el espacio libre mínimo (`507`).
+async fn admit(a: &App) -> Result<(), (StatusCode, String)> {
+    if a.cfg.max_queued > 0 {
+        let pending: u64 =
+            a.db.lock()
+                .await
+                .query_row(
+                    "SELECT COUNT(*) FROM jobs WHERE status IN ('queued','processing')",
+                    [],
+                    |r| r.get(0),
+                )
+                .map_err(internal)?;
+        if pending >= a.cfg.max_queued {
+            return Err((
+                StatusCode::TOO_MANY_REQUESTS,
+                format!("hay {pending} trabajos pendientes; inténtalo más tarde"),
+            ));
+        }
+    }
+    if a.cfg.min_free_mb > 0 {
+        let free_mb = free_space_mb(&a.root).map_err(internal)?;
+        if free_mb < a.cfg.min_free_mb {
+            return Err((
+                StatusCode::INSUFFICIENT_STORAGE,
+                format!("el volumen de datos solo tiene {free_mb} MiB libres"),
+            ));
+        }
+    }
+    Ok(())
+}
+/// Espacio disponible para el proceso en el sistema de archivos de `path`, en MiB.
+fn free_space_mb(path: &FsPath) -> std::io::Result<u64> {
+    let s = rustix::fs::statvfs(path)?;
+    Ok(s.f_bavail.saturating_mul(s.f_frsize) / (1024 * 1024))
+}
+
 async fn submit(
     State(a): State<App>,
     mut multipart: Multipart,
 ) -> Result<impl IntoResponse, (StatusCode, String)> {
+    admit(&a).await?;
     let mut filename = None;
     let mut bytes = None;
-    while let Some(field) = multipart.next_field().await.map_err(internal)? {
+    // Un cuerpo por encima del límite llega como error del multipart, con su `413`.
+    let rejected = |e: axum::extract::multipart::MultipartError| (e.status(), e.body_text());
+    while let Some(field) = multipart.next_field().await.map_err(rejected)? {
         if let Some(n) = field.file_name() {
             filename = Some(n.to_string());
-            bytes = Some(field.bytes().await.map_err(internal)?.to_vec());
+            bytes = Some(field.bytes().await.map_err(rejected)?.to_vec());
             break;
         }
     }
@@ -158,10 +196,13 @@ async fn submit(
         ));
     };
     let bytes = bytes.unwrap_or_default();
-    if bytes.is_empty() || bytes.len() > MAX_UPLOAD {
+    if bytes.is_empty() || bytes.len() > a.cfg.max_upload_bytes() {
         return Err((
             StatusCode::PAYLOAD_TOO_LARGE,
-            "el archivo está vacío o supera 100 MiB".into(),
+            format!(
+                "el archivo está vacío o supera {} MiB (OKF_MAX_UPLOAD_MB)",
+                a.cfg.max_upload_mb
+            ),
         ));
     }
     let id = Uuid::new_v4().to_string();
@@ -252,11 +293,12 @@ async fn serve(root: PathBuf, bind: &str) -> Result<()> {
     Ok(())
 }
 fn router(a: App) -> Router {
+    let body_limit = a.cfg.max_upload_bytes().saturating_add(64 * 1024);
     Router::new()
         .route("/jobs", post(submit))
         .route("/jobs/{id}", get(status))
         .route("/jobs/{id}/bundle", get(download))
-        .layer(axum::extract::DefaultBodyLimit::max(MAX_UPLOAD + 64 * 1024))
+        .layer(axum::extract::DefaultBodyLimit::max(body_limit))
         .with_state(a)
 }
 
@@ -269,6 +311,7 @@ async fn main() -> Result<()> {
         .with_writer(std::io::stderr)
         .init();
     let cli = Cli::parse();
+    ooxml::set_limits(worker::Config::from_env()?.zip);
     let root = PathBuf::from(std::env::var("OKF_DATA_DIR").unwrap_or_else(|_| "data".into()));
     match cli.command {
         Command::Api { bind } => serve(root, &bind).await,
@@ -1122,5 +1165,68 @@ mod tests {
             let error = validate_bundle(&bad).unwrap_err().to_string();
             assert!(error.contains(expected), "{expected}: {error}");
         }
+    }
+
+    /// Envía `bytes` como `name` a `POST /jobs` y devuelve el código de estado.
+    async fn post(a: &App, name: &str, bytes: &[u8]) -> StatusCode {
+        let boundary = "admission-boundary";
+        let mut body = format!("--{boundary}\r\nContent-Disposition: form-data; name=\"file\"; filename=\"{name}\"\r\n\r\n").into_bytes();
+        body.extend_from_slice(bytes);
+        body.extend_from_slice(format!("\r\n--{boundary}--\r\n").as_bytes());
+        router(a.clone())
+            .oneshot(
+                axum::http::Request::builder()
+                    .method("POST")
+                    .uri("/jobs")
+                    .header(
+                        "content-type",
+                        format!("multipart/form-data; boundary={boundary}"),
+                    )
+                    .body(axum::body::Body::from(body))
+                    .unwrap(),
+            )
+            .await
+            .unwrap()
+            .status()
+    }
+
+    #[tokio::test]
+    async fn admission_limits_upload_size_queue_and_free_space() {
+        let tmp = tempfile::tempdir().unwrap();
+        let mut a = test_app(tmp.path());
+        let simple = example("simple");
+        // Valores por omisión: sin límite de cola ni de espacio libre.
+        assert_eq!(post(&a, "simple.pptx", &simple).await, StatusCode::ACCEPTED);
+        assert_eq!(post(&a, "simple.pptx", &simple).await, StatusCode::ACCEPTED);
+        Arc::make_mut(&mut a.cfg).max_upload_mb = 1;
+        let big = vec![0u8; 1024 * 1024 + 1];
+        assert_eq!(
+            post(&a, "big.pptx", &big).await,
+            StatusCode::PAYLOAD_TOO_LARGE
+        );
+        let over_body_limit = vec![0u8; 2 * 1024 * 1024];
+        assert_eq!(
+            post(&a, "big.pptx", &over_body_limit).await,
+            StatusCode::PAYLOAD_TOO_LARGE
+        );
+        Arc::make_mut(&mut a.cfg).max_queued = 2;
+        assert_eq!(
+            post(&a, "simple.pptx", &simple).await,
+            StatusCode::TOO_MANY_REQUESTS
+        );
+        Arc::make_mut(&mut a.cfg).max_queued = 3;
+        assert_eq!(post(&a, "simple.pptx", &simple).await, StatusCode::ACCEPTED);
+        Arc::make_mut(&mut a.cfg).max_queued = 0;
+        Arc::make_mut(&mut a.cfg).min_free_mb = u64::MAX;
+        assert_eq!(
+            post(&a, "simple.pptx", &simple).await,
+            StatusCode::INSUFFICIENT_STORAGE
+        );
+        let pending: u64 =
+            a.db.lock()
+                .await
+                .query_row("SELECT COUNT(*) FROM jobs", [], |r| r.get(0))
+                .unwrap();
+        assert_eq!(pending, 3);
     }
 }

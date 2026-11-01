@@ -42,6 +42,19 @@ pub struct Config {
     /// Espera antes del primer reintento, en segundos; se duplica en cada intento
     /// (`OKF_RETRY_BASE_S`).
     pub retry_base_s: i64,
+    /// Tamaño máximo de un archivo subido, en MiB (`OKF_MAX_UPLOAD_MB`).
+    pub max_upload_mb: u64,
+    /// Trabajos sin terminar (`queued` o `processing`) a partir de los cuales la API
+    /// responde `429`; 0 no limita (`OKF_MAX_QUEUED`).
+    pub max_queued: u64,
+    /// Espacio libre mínimo del volumen de datos, en MiB, por debajo del cual la API
+    /// responde `507`; 0 no lo comprueba (`OKF_MIN_FREE_MB`).
+    pub min_free_mb: u64,
+    /// Límites de expansión de los paquetes OOXML (`OKF_MAX_ZIP_ENTRY_MB`,
+    /// `OKF_MAX_ZIP_TOTAL_MB`, `OKF_MAX_ZIP_ENTRIES`).
+    pub zip: crate::ooxml::ZipLimits,
+    /// Píxeles máximos de una imagen que el conversor decodifica (`OKF_MAX_IMAGE_PIXELS`).
+    pub max_image_pixels: u64,
 }
 impl Default for Config {
     fn default() -> Self {
@@ -55,6 +68,11 @@ impl Default for Config {
             lease_s: 60,
             max_attempts: 3,
             retry_base_s: 30,
+            max_upload_mb: 100,
+            max_queued: 0,
+            min_free_mb: 0,
+            zip: crate::ooxml::ZipLimits::default(),
+            max_image_pixels: 33_554_432,
         }
     }
 }
@@ -80,11 +98,28 @@ impl Config {
             lease_s: var("OKF_LEASE_S", d.lease_s)?,
             max_attempts: var("OKF_MAX_ATTEMPTS", d.max_attempts)?,
             retry_base_s: var("OKF_RETRY_BASE_S", d.retry_base_s)?,
+            max_upload_mb: var("OKF_MAX_UPLOAD_MB", d.max_upload_mb)?,
+            max_queued: var("OKF_MAX_QUEUED", d.max_queued)?,
+            min_free_mb: var("OKF_MIN_FREE_MB", d.min_free_mb)?,
+            zip: crate::ooxml::ZipLimits {
+                entry_mb: var("OKF_MAX_ZIP_ENTRY_MB", d.zip.entry_mb)?,
+                total_mb: var("OKF_MAX_ZIP_TOTAL_MB", d.zip.total_mb)?,
+                entries: var("OKF_MAX_ZIP_ENTRIES", d.zip.entries)?,
+            },
+            max_image_pixels: var("OKF_MAX_IMAGE_PIXELS", d.max_image_pixels)?,
         };
         if c.lease_s < 3 || c.max_attempts == 0 {
             bail!("OKF_LEASE_S debe ser al menos 3 y OKF_MAX_ATTEMPTS al menos 1")
         }
+        if c.max_upload_mb == 0 || c.zip.entry_mb == 0 || c.zip.total_mb == 0 || c.zip.entries == 0
+        {
+            bail!("OKF_MAX_UPLOAD_MB y los límites OKF_MAX_ZIP_* deben ser mayores que 0")
+        }
         Ok(c)
+    }
+    /// Tamaño máximo de un archivo subido, en bytes.
+    pub fn max_upload_bytes(&self) -> usize {
+        usize::try_from(self.max_upload_mb.saturating_mul(1024 * 1024)).unwrap_or(usize::MAX)
     }
     /// Espera antes del siguiente intento, con tope de una hora.
     fn backoff(&self, attempt: u32) -> i64 {
@@ -270,6 +305,10 @@ async fn run_child(a: &App, exe: &Path, job: &Job, original: &Path, dir: &Path) 
         .env("OKF_MAX_BLOCKS", a.cfg.max_blocks.to_string())
         .env("OKF_MAX_CELLS", a.cfg.max_cells.to_string())
         .env("OKF_MAX_PAGES", a.cfg.max_pages.to_string())
+        .env("OKF_MAX_ZIP_ENTRY_MB", a.cfg.zip.entry_mb.to_string())
+        .env("OKF_MAX_ZIP_TOTAL_MB", a.cfg.zip.total_mb.to_string())
+        .env("OKF_MAX_ZIP_ENTRIES", a.cfg.zip.entries.to_string())
+        .env("OKF_MAX_IMAGE_PIXELS", a.cfg.max_image_pixels.to_string())
         .stdin(Stdio::null())
         .stdout(Stdio::piped())
         .stderr(Stdio::piped())

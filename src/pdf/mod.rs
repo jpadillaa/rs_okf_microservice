@@ -134,6 +134,8 @@ pub(crate) struct Tally {
     pub(crate) images: usize,
     pub(crate) decorative: usize,
     pub(crate) broken: Vec<usize>,
+    /// Páginas con imágenes que superan `OKF_MAX_IMAGE_PIXELS` y no se decodifican.
+    pub(crate) oversized: Vec<usize>,
     pub(crate) rotated: Vec<usize>,
     pub(crate) views_failed: Vec<usize>,
     pub(crate) unreadable: Vec<usize>,
@@ -293,9 +295,10 @@ fn printed_number(text: &str) -> Option<(String, Option<usize>)> {
 /// devuelve las unidades del documento en orden de lectura.
 pub(crate) fn extract(
     bytes: &[u8],
-    max_pages: usize,
+    cfg: &Config,
     z: &mut ZipWriter<fs::File>,
 ) -> Result<Extraction> {
+    let max_pages = cfg.max_pages;
     let reopen = bytes.len() > REOPEN_BYTES;
     let first = read::open(bytes)?;
     let n = read::page_count(&first)?;
@@ -539,7 +542,7 @@ pub(crate) fn extract(
         let mut view = None;
         with_doc(&mut |d| {
             if !missing.is_empty() {
-                encoded = read::encoded(d, p, &missing);
+                encoded = read::encoded(d, p, &missing, cfg.max_image_pixels);
             }
             if class.needs_view() {
                 view = Some(read::render_png(d, p, VIEW_PX));
@@ -555,9 +558,16 @@ pub(crate) fn extract(
                     let Some((_, e)) = encoded.find(|(i, _)| **i == index) else {
                         continue;
                     };
-                    let Some(e) = e else {
-                        tally.broken.push(p + 1);
-                        continue;
+                    let e = match e {
+                        read::Encoding::Ready(e) => e,
+                        read::Encoding::TooLarge => {
+                            tally.oversized.push(p + 1);
+                            continue;
+                        }
+                        read::Encoding::Failed => {
+                            tally.broken.push(p + 1);
+                            continue;
+                        }
                     };
                     ordinal += 1;
                     let path = format!("assets/pagina-{:03}-imagen-{ordinal:02}.{}", p + 1, e.ext);
@@ -586,6 +596,7 @@ pub(crate) fn extract(
         }
     }
     tally.broken.dedup();
+    tally.oversized.dedup();
     // 6. Orden de lectura y bloques de cada página.
     let mut units: Vec<Unit> = Vec::new();
     let mut leaves_of: Vec<(usize, usize)> = Vec::new();
@@ -1394,14 +1405,14 @@ pub(crate) fn build_bundle(
     bytes: &[u8],
     filename: &str,
     hash: &str,
-    max_pages: usize,
+    cfg: &Config,
     attempt: &FsPath,
 ) -> Result<(PathBuf, String)> {
     let started = Instant::now();
     let generated = chrono_now();
     let zip_path = attempt.join("bundle.zip");
     let mut z = ZipWriter::new(fs::File::create(&zip_path)?);
-    let mut ex = extract(bytes, max_pages, &mut z)?;
+    let mut ex = extract(bytes, cfg, &mut z)?;
     let outline = outline(&mut ex, filename);
     let n = ex.pages.len();
     let mut r = Render {
@@ -1603,6 +1614,12 @@ pub(crate) fn build_bundle(
         issues.push(Issue::loss(format!(
             "{}: imagen que no se pudo decodificar ni adjuntar",
             pages_phrase(&t.broken)
+        )));
+    }
+    if !t.oversized.is_empty() {
+        issues.push(Issue::loss(format!(
+            "{}: imagen no adjuntada porque supera el límite de píxeles (OKF_MAX_IMAGE_PIXELS)",
+            pages_phrase(&t.oversized)
         )));
     }
     if !t.unreadable.is_empty() {
@@ -1895,7 +1912,7 @@ pub(crate) fn convert(
     hash: &str,
     dir: &FsPath,
 ) -> Result<(PathBuf, String)> {
-    build_bundle(bytes, filename, hash, cfg.max_pages, dir)
+    build_bundle(bytes, filename, hash, cfg, dir)
 }
 
 /// Destinos de los enlaces Markdown que empiezan por `prefix`, en orden.
@@ -2080,11 +2097,18 @@ mod tests {
     /// Convierte un PDF y devuelve el estado, el contenido de cada entrada Markdown y
     /// los nombres de todas las entradas del bundle.
     fn convert_example(path: &str) -> (String, HashMap<String, String>, HashSet<String>) {
+        convert_with(path, &Config::default())
+    }
+
+    fn convert_with(
+        path: &str,
+        cfg: &Config,
+    ) -> (String, HashMap<String, String>, HashSet<String>) {
         let bytes = fs::read(path).unwrap();
         let tmp = tempfile::tempdir().unwrap();
         let hash = hex(&Sha256::digest(&bytes));
         let name = path.rsplit('/').next().unwrap();
-        let (zip, state) = build_bundle(&bytes, name, &hash, 2000, tmp.path()).unwrap();
+        let (zip, state) = build_bundle(&bytes, name, &hash, cfg, tmp.path()).unwrap();
         let mut z = ZipArchive::new(fs::File::open(zip).unwrap()).unwrap();
         let mut md = HashMap::new();
         let mut names = HashSet::new();
@@ -2102,6 +2126,20 @@ mod tests {
 
     fn sample(name: &str) -> (String, HashMap<String, String>, HashSet<String>) {
         convert_example(&format!("examples/pdf/muestras/{name}.pdf"))
+    }
+
+    #[test]
+    fn images_over_the_pixel_limit_are_not_decoded_and_are_declared() {
+        let cfg = Config {
+            max_image_pixels: 0,
+            ..Config::default()
+        };
+        let (state, md, names) = convert_with("examples/pdf/muestras/articulo_columnas.pdf", &cfg);
+        assert_eq!(state, "partial");
+        assert!(!names.contains("assets/pagina-002-imagen-01.png"));
+        assert!(md["conversion-report.md"].contains(
+            r"Página 2: imagen no adjuntada porque supera el límite de píxeles (OKF\_MAX\_IMAGE\_PIXELS)"
+        ));
     }
 
     fn corpus(name: &str) -> (String, HashMap<String, String>, HashSet<String>) {

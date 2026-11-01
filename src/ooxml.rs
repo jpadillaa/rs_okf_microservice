@@ -4,14 +4,49 @@ use anyhow::{Context, Result, bail};
 use std::{
     collections::HashMap,
     io::{Cursor, Read},
+    sync::OnceLock,
 };
 use zip::ZipArchive;
 
-pub(crate) const MAX_ZIP_ENTRY: u64 = 128 * 1024 * 1024;
+/// Límites de expansión de un paquete OOXML.
+#[derive(Clone, Copy, Debug)]
+pub struct ZipLimits {
+    /// Tamaño descomprimido máximo de una parte, en MiB.
+    pub entry_mb: u64,
+    /// Tamaño descomprimido máximo del paquete, en MiB.
+    pub total_mb: u64,
+    /// Número máximo de partes.
+    pub entries: usize,
+}
+impl Default for ZipLimits {
+    fn default() -> Self {
+        ZipLimits {
+            entry_mb: 128,
+            total_mb: 512,
+            entries: 4096,
+        }
+    }
+}
+impl ZipLimits {
+    pub(crate) fn entry_bytes(&self) -> u64 {
+        self.entry_mb.saturating_mul(1024 * 1024)
+    }
+    fn total_bytes(&self) -> u64 {
+        self.total_mb.saturating_mul(1024 * 1024)
+    }
+}
 
-pub(crate) const MAX_ZIP_TOTAL: u64 = 512 * 1024 * 1024;
+/// Límites del proceso. Cada proceso los fija una vez al arrancar desde su
+/// configuración; sin fijarlos (pruebas) valen los de omisión.
+static LIMITS: OnceLock<ZipLimits> = OnceLock::new();
 
-pub(crate) const MAX_ZIP_ENTRIES: usize = 4096;
+pub(crate) fn set_limits(limits: ZipLimits) {
+    let _ = LIMITS.set(limits);
+}
+
+pub(crate) fn limits() -> ZipLimits {
+    LIMITS.get().copied().unwrap_or_default()
+}
 
 /// Texto de un gráfico a partir de su caché: el título y, por serie, su nombre y los
 /// pares «categoría = valor». Las fórmulas (`c:f`) y los códigos de formato no son
@@ -117,8 +152,8 @@ pub(crate) fn read_entry(z: &mut ZipArchive<Cursor<&[u8]>>, path: &str) -> Resul
     let mut f = z
         .by_name(path)
         .with_context(|| format!("falta la parte {path} del paquete"))?;
-    if f.size() > MAX_ZIP_ENTRY {
-        bail!("una parte del paquete excede el límite de expansión");
+    if f.size() > limits().entry_bytes() {
+        bail!("una parte del paquete excede el límite de expansión (OKF_MAX_ZIP_ENTRY_MB)");
     }
     let mut b = Vec::new();
     f.read_to_end(&mut b)?;
@@ -126,18 +161,25 @@ pub(crate) fn read_entry(z: &mut ZipArchive<Cursor<&[u8]>>, path: &str) -> Resul
 }
 
 pub(crate) fn enforce_package_limits(z: &mut ZipArchive<Cursor<&[u8]>>) -> Result<()> {
-    if z.len() > MAX_ZIP_ENTRIES {
-        bail!("el paquete contiene demasiadas partes OOXML")
+    check_package(z, &limits())
+}
+
+fn check_package(z: &mut ZipArchive<Cursor<&[u8]>>, limits: &ZipLimits) -> Result<()> {
+    if z.len() > limits.entries {
+        bail!("el paquete contiene demasiadas partes OOXML (OKF_MAX_ZIP_ENTRIES)")
     }
     let mut expanded = 0u64;
     for i in 0..z.len() {
         let f = z.by_index(i)?;
-        if f.size() > MAX_ZIP_ENTRY {
-            bail!("una parte del paquete excede el límite de expansión")
+        if f.size() > limits.entry_bytes() {
+            bail!("una parte del paquete excede el límite de expansión (OKF_MAX_ZIP_ENTRY_MB)")
         }
         expanded = expanded.saturating_add(f.size());
-        if expanded > MAX_ZIP_TOTAL {
-            bail!("la expansión total del paquete excede 512 MiB")
+        if expanded > limits.total_bytes() {
+            bail!(
+                "la expansión total del paquete excede {} MiB (OKF_MAX_ZIP_TOTAL_MB)",
+                limits.total_mb
+            )
         }
         if f.size() > 1024 * 1024 && f.compressed_size() > 0 && f.size() / f.compressed_size() > 250
         {
@@ -288,4 +330,58 @@ pub(crate) fn main_part(z: &mut ZipArchive<Cursor<&[u8]>>) -> Option<String> {
         .iter()
         .find(|r| r.kind.ends_with("/officeDocument"))
         .map(|r| resolve("", &r.target))
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use std::io::Write;
+    use zip::{ZipWriter, write::SimpleFileOptions};
+
+    fn package(entries: usize, size: usize) -> Vec<u8> {
+        let mut z = ZipWriter::new(Cursor::new(Vec::new()));
+        for i in 0..entries {
+            z.start_file(format!("part-{i}.xml"), SimpleFileOptions::default())
+                .unwrap();
+            // Bytes poco compresibles: la relación de compresión tiene su propio límite.
+            let data: Vec<u8> = (0..size as u64)
+                .map(|n| (n.wrapping_mul(2_654_435_761) >> 13) as u8)
+                .collect();
+            z.write_all(&data).unwrap();
+        }
+        z.finish().unwrap().into_inner()
+    }
+
+    #[test]
+    fn package_limits_follow_the_configuration() {
+        let check = |bytes: &[u8], limits: ZipLimits| {
+            check_package(&mut ZipArchive::new(Cursor::new(bytes)).unwrap(), &limits)
+                .map_err(|e| e.to_string())
+        };
+        let two_mib = package(3, 2 * 1024 * 1024);
+        assert!(check(&two_mib, ZipLimits::default()).is_ok());
+        let entry = ZipLimits {
+            entry_mb: 1,
+            ..ZipLimits::default()
+        };
+        assert!(
+            check(&two_mib, entry)
+                .unwrap_err()
+                .contains("OKF_MAX_ZIP_ENTRY_MB")
+        );
+        let total = ZipLimits {
+            total_mb: 5,
+            ..ZipLimits::default()
+        };
+        assert!(check(&two_mib, total).unwrap_err().contains("excede 5 MiB"));
+        let entries = ZipLimits {
+            entries: 2,
+            ..ZipLimits::default()
+        };
+        assert!(
+            check(&two_mib, entries)
+                .unwrap_err()
+                .contains("OKF_MAX_ZIP_ENTRIES")
+        );
+    }
 }

@@ -541,8 +541,8 @@ pub(crate) fn sheet_part(
     let entry = z
         .by_name(part)
         .with_context(|| format!("falta la parte {part} del paquete"))?;
-    if entry.size() > MAX_ZIP_ENTRY {
-        bail!("una parte del paquete excede el límite de expansión");
+    if entry.size() > limits().entry_bytes() {
+        bail!("una parte del paquete excede el límite de expansión (OKF_MAX_ZIP_ENTRY_MB)");
     }
     sheet(std::io::BufReader::new(entry), wb, budget)
 }
