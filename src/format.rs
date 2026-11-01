@@ -1,11 +1,9 @@
 //! Formatos de entrada admitidos y su adaptador. Cada formato convierte un original
 //! en un bundle y añade sus propias comprobaciones al validador común.
+use crate::output::Built;
 use crate::worker::{Config, Rejected};
 use anyhow::Result;
-use std::{
-    fs,
-    path::{Path, PathBuf},
-};
+use std::{fs, path::Path, time::Instant};
 use zip::ZipArchive;
 
 #[derive(Clone, Copy, Debug, PartialEq)]
@@ -43,7 +41,8 @@ impl Format {
     pub(crate) fn original_entry(self) -> String {
         format!("references/original.{}", self.extension())
     }
-    /// Convierte el original en el directorio del intento; devuelve el bundle y su estado.
+    /// Convierte el original en el directorio del intento; devuelve el bundle validado,
+    /// su estado y la duración de sus etapas.
     pub(crate) fn convert(
         self,
         cfg: &Config,
@@ -51,13 +50,18 @@ impl Format {
         filename: &str,
         hash: &str,
         dir: &Path,
-    ) -> Result<(PathBuf, String)> {
-        match self {
+    ) -> Result<Built> {
+        let started = Instant::now();
+        let mut built = match self {
             Format::Pptx => crate::pptx::convert(cfg, bytes, filename, hash, dir),
             Format::Docx => crate::docx::convert(cfg, bytes, filename, hash, dir),
             Format::Xlsx => crate::xlsx::convert(cfg, bytes, filename, hash, dir),
             Format::Pdf => crate::pdf::convert(cfg, bytes, filename, hash, dir),
-        }
+        }?;
+        let s = &mut built.stages;
+        let total = u64::try_from(started.elapsed().as_millis()).unwrap_or(u64::MAX);
+        s.read_ms = total.saturating_sub(s.assemble_ms + s.validate_ms);
+        Ok(built)
     }
     /// Comprobaciones propias del formato sobre un bundle que ya superó las comunes.
     pub(crate) fn validate(

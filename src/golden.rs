@@ -102,10 +102,10 @@ fn snapshot(doc: &Path) -> BTreeMap<String, String> {
     let format = Format::from_filename(&filename).unwrap();
     let tmp = tempfile::tempdir().unwrap();
     let hash = hex(&Sha256::digest(&bytes));
-    let (zip, _) = format
+    let built = format
         .convert(&Config::default(), &bytes, &filename, &hash, tmp.path())
         .unwrap_or_else(|e| panic!("{}: {e:#}", doc.display()));
-    let mut z = ZipArchive::new(fs::File::open(zip).unwrap()).unwrap();
+    let mut z = ZipArchive::new(fs::File::open(built.path).unwrap()).unwrap();
     let mut files = BTreeMap::new();
     let mut resources = Vec::new();
     for i in 0..z.len() {

@@ -5,8 +5,10 @@
 use crate::App;
 use crate::bundle::{frontmatter, validate_bundle};
 use crate::now;
+use crate::output::Stages;
 use anyhow::{Context, Result, bail};
 use rusqlite::{OptionalExtension, Transaction, params};
+use serde::{Deserialize, Serialize};
 use sha2::{Digest, Sha256};
 use std::{
     fmt, fs,
@@ -162,11 +164,17 @@ pub fn classify(e: &anyhow::Error) -> FailureKind {
     }
 }
 
-/// Resultado de una conversión correcta: estado del informe y ruta del bundle.
-#[derive(Debug)]
+/// Resultado de una conversión correcta: estado del informe, ruta del bundle y duración
+/// de sus etapas. El proceso hijo lo entrega como una línea JSON.
+#[derive(Debug, Serialize, Deserialize)]
 pub struct Converted {
     pub status: String,
     pub bundle: PathBuf,
+    pub stages: Stages,
+    /// Memoria residente máxima del proceso que convirtió, en MB, si el sistema la da
+    /// (`VmHWM` en Linux). El muestreo del worker no ve los picos de menos de 100 ms.
+    #[serde(default)]
+    pub peak_mb: Option<u64>,
 }
 
 /// Convierte un original en el directorio del intento. Es el trabajo del proceso hijo.
@@ -175,21 +183,36 @@ pub fn convert(cfg: &Config, original: &Path, filename: &str, dir: &Path) -> Res
     let bytes = fs::read(original)
         .with_context(|| format!("no se pudo leer el original {}", original.display()))?;
     let hash = crate::bundle::hex(&Sha256::digest(&bytes));
-    let (bundle, status) = format.convert(cfg, &bytes, filename, &hash, dir)?;
-    Ok(Converted { status, bundle })
+    let built = format.convert(cfg, &bytes, filename, &hash, dir)?;
+    Ok(Converted {
+        status: built.status,
+        bundle: built.path,
+        stages: built.stages,
+        peak_mb: own_peak_mb(),
+    })
+}
+
+/// Memoria residente máxima del propio proceso en MB, leída de `/proc` en Linux.
+fn own_peak_mb() -> Option<u64> {
+    fs::read_to_string("/proc/self/status")
+        .ok()?
+        .lines()
+        .find_map(|l| l.strip_prefix("VmHWM:"))
+        .and_then(|v| v.trim().trim_end_matches("kB").trim().parse::<u64>().ok())
+        .map(|kb| kb / 1024)
 }
 
 /// Códigos de salida del proceso hijo para los fallos clasificados.
 pub const EXIT_PERMANENT: i32 = 3;
 pub const EXIT_TRANSIENT: i32 = 4;
 
-/// Subcomando interno `convert`: escribe `estado<TAB>ruta` en la salida estándar o
-/// termina con el código del tipo de fallo y el mensaje en la salida de error.
+/// Subcomando interno `convert`: escribe el resultado como una línea JSON en la salida
+/// estándar o termina con el código del tipo de fallo y el mensaje en la salida de error.
 pub fn convert_command(original: &Path, dir: &Path, filename: &str) -> Result<()> {
     let cfg = Config::from_env()?;
     match convert(&cfg, original, filename, dir) {
         Ok(c) => {
-            println!("{}\t{}", c.status, c.bundle.display());
+            println!("{}", serde_json::to_string(&c)?);
             Ok(())
         }
         Err(e) => {
@@ -255,7 +278,22 @@ struct Watch<'a> {
     renewed: Instant,
     peak_mb: u64,
 }
+
+/// Recursos que usó un intento: memoria residente máxima (solo en el proceso hijo) y
+/// duración total.
+#[derive(Clone, Copy, Debug, Default)]
+struct Usage {
+    peak_mb: u64,
+    total_ms: u64,
+}
+
 impl Watch<'_> {
+    fn usage(&self) -> Usage {
+        Usage {
+            peak_mb: self.peak_mb,
+            total_ms: u64::try_from(self.started.elapsed().as_millis()).unwrap_or(u64::MAX),
+        }
+    }
     async fn check(&mut self, pid: Option<u32>) -> Result<Option<Outcome>> {
         let cfg = &self.a.cfg;
         if let Some(pid) = pid
@@ -295,7 +333,14 @@ const TICK: Duration = Duration::from_millis(100);
 
 /// Ejecuta la conversión en un proceso hijo y lo termina si supera la memoria o el
 /// plazo, o si la reserva pasa a otro worker.
-async fn run_child(a: &App, exe: &Path, job: &Job, original: &Path, dir: &Path) -> Result<Outcome> {
+async fn run_child(
+    a: &App,
+    exe: &Path,
+    job: &Job,
+    original: &Path,
+    dir: &Path,
+    usage: &mut Usage,
+) -> Result<Outcome> {
     let mut child = tokio::process::Command::new(exe)
         .arg("convert")
         .arg(original)
@@ -345,23 +390,21 @@ async fn run_child(a: &App, exe: &Path, job: &Job, original: &Path, dir: &Path) 
             break status;
         }
         if let Some(outcome) = watch.check(child.id()).await? {
+            *usage = watch.usage();
             child.kill().await?;
             return Ok(outcome);
         }
     };
+    *usage = watch.usage();
     let (out, err) = (stdout.await?, stderr.await?);
-    info!(id = %job.id, peak_mb = watch.peak_mb, "proceso de conversión terminado");
     let message = err.trim().to_string();
     Ok(match status.code() {
         Some(0) => {
             let line = out.lines().last().unwrap_or_default();
-            let (state, bundle) = line
-                .split_once('\t')
-                .context("respuesta del proceso de conversión sin formato esperado")?;
-            Outcome::Done(Converted {
-                status: state.to_string(),
-                bundle: PathBuf::from(bundle),
-            })
+            Outcome::Done(
+                serde_json::from_str(line)
+                    .context("respuesta del proceso de conversión sin formato esperado")?,
+            )
         }
         Some(EXIT_PERMANENT) => Outcome::Failed(FailureKind::Permanent, message),
         Some(EXIT_TRANSIENT) => Outcome::Failed(FailureKind::Transient, message),
@@ -375,7 +418,13 @@ async fn run_child(a: &App, exe: &Path, job: &Job, original: &Path, dir: &Path) 
 
 /// Conversión en un hilo del propio proceso, para las pruebas unitarias: renueva la
 /// reserva y respeta el plazo, pero no puede medir ni limitar la memoria.
-async fn run_local(a: &App, job: &Job, original: &Path, dir: &Path) -> Result<Outcome> {
+async fn run_local(
+    a: &App,
+    job: &Job,
+    original: &Path,
+    dir: &Path,
+    usage: &mut Usage,
+) -> Result<Outcome> {
     let (cfg, original, filename, dir) = (
         (*a.cfg).clone(),
         original.to_path_buf(),
@@ -397,12 +446,14 @@ async fn run_local(a: &App, job: &Job, original: &Path, dir: &Path) -> Result<Ou
             _ = tick.tick() => None,
         };
         if let Some(result) = finished {
+            *usage = watch.usage();
             return Ok(match result {
                 Ok(c) => Outcome::Done(c),
                 Err(e) => Outcome::Failed(classify(&e), format!("{e:#}")),
             });
         }
         if let Some(outcome) = watch.check(None).await? {
+            *usage = watch.usage();
             return Ok(outcome);
         }
     }
@@ -582,19 +633,21 @@ pub async fn work_one(a: &App) -> Result<bool> {
         .join(&job.id)
         .join(job.attempt.to_string());
     let original = a.root.join(&job.original);
+    let mut usage = Usage::default();
     let outcome = async {
         if dir.exists() {
             fs::remove_dir_all(&dir)?
         }
         fs::create_dir_all(&dir)?;
         match &a.converter {
-            Some(exe) => run_child(a, exe, &job, &original, &dir).await,
-            None => run_local(a, &job, &original, &dir).await,
+            Some(exe) => run_child(a, exe, &job, &original, &dir, &mut usage).await,
+            None => run_local(a, &job, &original, &dir, &mut usage).await,
         }
     }
     .await
     // Un fallo de la propia supervisión (disco, arranque del hijo) es del entorno.
     .unwrap_or_else(|e| Outcome::Failed(FailureKind::Transient, format!("{e:#}")));
+    log_attempt(&job, &outcome, usage);
     match outcome {
         Outcome::Done(c) => {
             if let Err(e) = publish(a, &job, &c).await {
@@ -613,6 +666,35 @@ pub async fn work_one(a: &App) -> Result<bool> {
         }
     }
     Ok(true)
+}
+
+/// Una línea de registro por intento: formato, resultado, duración de cada etapa y total,
+/// y memoria máxima. No incluye nada del contenido del documento.
+fn log_attempt(job: &Job, outcome: &Outcome, usage: Usage) {
+    let format = crate::format::Format::from_filename(&job.filename)
+        .map_or("desconocido", |f| f.extension());
+    let mut peak_mb = usage.peak_mb;
+    let (status, stages) = match outcome {
+        Outcome::Done(c) => {
+            peak_mb = peak_mb.max(c.peak_mb.unwrap_or(0));
+            (c.status.as_str(), c.stages)
+        }
+        Outcome::Failed(FailureKind::Permanent, _) => ("failed", Stages::default()),
+        Outcome::Failed(FailureKind::Transient, _) => ("transient_failure", Stages::default()),
+        Outcome::LeaseLost => ("lease_lost", Stages::default()),
+    };
+    info!(
+        job_id = %job.id,
+        attempt = job.attempt,
+        format,
+        status,
+        read_ms = stages.read_ms,
+        assemble_ms = stages.assemble_ms,
+        validate_ms = stages.validate_ms,
+        total_ms = usage.total_ms,
+        peak_mb,
+        "intento terminado"
+    );
 }
 
 /// Reconciliación al arrancar: elimina publicaciones a medio hacer, completa las que

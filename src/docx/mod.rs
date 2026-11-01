@@ -17,7 +17,7 @@ use std::{
     collections::{HashMap, HashSet},
     fs,
     io::Cursor,
-    path::{Path as FsPath, PathBuf},
+    path::Path as FsPath,
     time::Instant,
 };
 use styles::{Numbering, Styles};
@@ -1182,7 +1182,7 @@ pub(crate) fn build_bundle(
     hash: &str,
     ex: &Extraction,
     attempt: &FsPath,
-) -> Result<(PathBuf, String)> {
+) -> Result<Built> {
     let started = Instant::now();
     let generated = chrono_now();
     let mut z_in = ZipArchive::new(Cursor::new(bytes))?;
@@ -1537,7 +1537,7 @@ pub(crate) fn convert(
     filename: &str,
     hash: &str,
     dir: &FsPath,
-) -> Result<(PathBuf, String)> {
+) -> Result<Built> {
     let ex = extract(bytes, cfg.max_blocks)?;
     if ex.blocks.is_empty() {
         return Err(Rejected("el documento no tiene bloques de contenido".into()).into());
@@ -1659,7 +1659,11 @@ mod tests {
             .unwrap()
             .to_string_lossy()
             .into_owned();
-        let (zip, state) = build_bundle(
+        let Built {
+            path: zip,
+            status: state,
+            ..
+        } = build_bundle(
             &bytes,
             &name,
             &hex(&Sha256::digest(&bytes)),

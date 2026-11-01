@@ -10,9 +10,11 @@
 use crate::bundle::{Issue, Severity, escape_inline, validate_bundle, write_zip_file};
 use crate::format::Format;
 use anyhow::Result;
+use serde::{Deserialize, Serialize};
 use std::{
     fs,
     path::{Path, PathBuf},
+    time::{Duration, Instant},
 };
 use zip::ZipWriter;
 
@@ -311,12 +313,36 @@ pub(crate) fn report(
     out
 }
 
+/// Duración de las etapas de una conversión, en milisegundos. En XLSX y PDF las hojas y
+/// las páginas se leen mientras se ensamblan, de modo que su lectura cuenta como
+/// ensamblado y `read_ms` solo cubre la apertura del archivo.
+#[derive(Clone, Copy, Debug, Default, PartialEq, Serialize, Deserialize)]
+pub struct Stages {
+    pub read_ms: u64,
+    pub assemble_ms: u64,
+    pub validate_ms: u64,
+}
+
+/// Bundle validado de un intento: ruta, estado y duración de sus etapas.
+#[derive(Debug)]
+pub(crate) struct Built {
+    pub(crate) path: PathBuf,
+    pub(crate) status: String,
+    pub(crate) stages: Stages,
+}
+
+fn ms(d: Duration) -> u64 {
+    u64::try_from(d.as_millis()).unwrap_or(u64::MAX)
+}
+
 /// Escritor del bundle de un intento. Los adaptadores añaden recursos y conceptos a
 /// medida que los producen, sin acumularlos; `finish` escribe el resto y valida.
 pub(crate) struct BundleWriter {
     format: Format,
     path: PathBuf,
     zip: ZipWriter<fs::File>,
+    /// Comienzo del ensamblado: lo anterior a crear el escritor es lectura.
+    created: Instant,
 }
 
 /// Navegación del bundle: el rótulo del índice de contenido, el título de la lista y sus
@@ -332,7 +358,12 @@ impl BundleWriter {
     pub(crate) fn create(format: Format, attempt: &Path) -> Result<Self> {
         let path = attempt.join("bundle.zip");
         let zip = ZipWriter::new(fs::File::create(&path)?);
-        Ok(BundleWriter { format, path, zip })
+        Ok(BundleWriter {
+            format,
+            path,
+            zip,
+            created: Instant::now(),
+        })
     }
     /// Escritor del ZIP, para los recursos que el adaptador escribe en streaming.
     pub(crate) fn zip(&mut self) -> &mut ZipWriter<fs::File> {
@@ -348,7 +379,7 @@ impl BundleWriter {
         self.file(path, md.as_bytes())
     }
     /// Escribe el original, `documento.md`, los índices y el informe, cierra el ZIP y lo
-    /// valida. Devuelve la ruta del bundle y su estado.
+    /// valida.
     pub(crate) fn finish(
         mut self,
         original: &[u8],
@@ -356,7 +387,7 @@ impl BundleWriter {
         nav: &Navigation,
         report: &str,
         issues: &[Issue],
-    ) -> Result<(PathBuf, String)> {
+    ) -> Result<Built> {
         let original_entry = self.format.original_entry();
         self.file(&original_entry, original)?;
         self.concept("documento.md", document.0, document.1)?;
@@ -375,8 +406,17 @@ impl BundleWriter {
         self.file("contenido/index.md", contents.as_bytes())?;
         self.file("conversion-report.md", report.as_bytes())?;
         self.zip.finish()?;
+        let assembled = Instant::now();
         validate_bundle(&self.path)?;
-        Ok((self.path, state(issues).into()))
+        Ok(Built {
+            path: self.path,
+            status: state(issues).into(),
+            stages: Stages {
+                read_ms: 0,
+                assemble_ms: ms(assembled - self.created),
+                validate_ms: ms(assembled.elapsed()),
+            },
+        })
     }
 }
 

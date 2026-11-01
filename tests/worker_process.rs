@@ -4,14 +4,18 @@ use std::{path::Path, process::Command};
 
 const BIN: &str = env!("CARGO_BIN_EXE_okf-microservice");
 
-fn worker_once(root: &Path, env: &[(&str, &str)]) {
-    let status = Command::new(BIN)
+/// Ejecuta el worker hasta vaciar la cola y devuelve su registro.
+fn worker_once(root: &Path, env: &[(&str, &str)]) -> String {
+    let out = Command::new(BIN)
         .args(["worker", "--once"])
         .env("OKF_DATA_DIR", root)
+        .env("RUST_LOG", "info")
+        .env("NO_COLOR", "1")
         .envs(env.iter().copied())
-        .status()
+        .output()
         .unwrap();
-    assert!(status.success());
+    assert!(out.status.success());
+    String::from_utf8(out.stderr).unwrap()
 }
 
 fn enqueue(root: &Path, id: &str) {
@@ -42,12 +46,38 @@ fn child_process_is_converted_or_stopped_at_its_limits() {
     // La primera ejecución crea la base y termina con la cola vacía.
     worker_once(root, &[]);
     enqueue(root, "ok");
-    worker_once(root, &[]);
+    let log = worker_once(root, &[]);
     assert_eq!(job(root, "ok"), ("complete".into(), None));
     assert!(root.join("published/ok/bundle.zip").exists());
+    // Una línea por intento con formato, estado, etapas, duración total y memoria
+    // máxima, sin texto del documento.
+    let line = log
+        .lines()
+        .find(|l| l.contains("intento terminado"))
+        .unwrap_or_else(|| panic!("sin línea del intento en:\n{log}"));
+    for field in [
+        "job_id=ok",
+        "attempt=1",
+        "format=\"pptx\"",
+        "status=\"complete\"",
+        "read_ms=",
+        "assemble_ms=",
+        "validate_ms=",
+        "total_ms=",
+        "peak_mb=",
+    ] {
+        assert!(line.contains(field), "{field} en {line}");
+    }
+    // En Linux el proceso hijo informa su máximo exacto; en otros sistemas solo hay el
+    // muestreo, que no ve una conversión de menos de 100 ms.
+    if cfg!(target_os = "linux") {
+        assert!(!line.ends_with("peak_mb=0"), "{line}");
+    }
+    assert!(!log.contains("A simple OKF test deck"));
 
     enqueue(root, "memory");
-    worker_once(root, &[("OKF_MAX_MEMORY_MB", "1")]);
+    let log = worker_once(root, &[("OKF_MAX_MEMORY_MB", "1")]);
+    assert!(log.contains("status=\"failed\""), "{log}");
     let (state, error) = job(root, "memory");
     assert_eq!(state, "failed");
     assert!(error.unwrap().contains("límite de memoria de 1 MB"));

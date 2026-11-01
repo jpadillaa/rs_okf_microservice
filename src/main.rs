@@ -634,7 +634,7 @@ mod tests {
             &attempt,
         )
         .unwrap()
-        .0;
+        .path;
         let mut original = ZipArchive::new(fs::File::open(good).unwrap()).unwrap();
         let bad = tmp.path().join("missing-view.zip");
         let mut z = ZipWriter::new(fs::File::create(&bad).unwrap());
@@ -769,7 +769,7 @@ mod tests {
             dir,
         )
         .unwrap()
-        .0
+        .path
     }
     #[tokio::test]
     async fn startup_reconciliation_repairs_interrupted_publications() {

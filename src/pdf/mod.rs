@@ -17,7 +17,7 @@ use read::{Bookmark, Info, Picture, Rect};
 use std::{
     collections::{HashMap, HashSet},
     fs,
-    path::{Path as FsPath, PathBuf},
+    path::Path as FsPath,
     time::Instant,
 };
 use yaml_serde::Value as YamlValue;
@@ -1373,7 +1373,7 @@ pub(crate) fn build_bundle(
     hash: &str,
     cfg: &Config,
     attempt: &FsPath,
-) -> Result<(PathBuf, String)> {
+) -> Result<Built> {
     let started = Instant::now();
     let generated = chrono_now();
     let mut out = BundleWriter::create(Format::Pdf, attempt)?;
@@ -1857,7 +1857,7 @@ pub(crate) fn convert(
     filename: &str,
     hash: &str,
     dir: &FsPath,
-) -> Result<(PathBuf, String)> {
+) -> Result<Built> {
     build_bundle(bytes, filename, hash, cfg, dir)
 }
 
@@ -2054,7 +2054,11 @@ mod tests {
         let tmp = tempfile::tempdir().unwrap();
         let hash = hex(&Sha256::digest(&bytes));
         let name = path.rsplit('/').next().unwrap();
-        let (zip, state) = build_bundle(&bytes, name, &hash, cfg, tmp.path()).unwrap();
+        let Built {
+            path: zip,
+            status: state,
+            ..
+        } = build_bundle(&bytes, name, &hash, cfg, tmp.path()).unwrap();
         let mut z = ZipArchive::new(fs::File::open(zip).unwrap()).unwrap();
         let mut md = HashMap::new();
         let mut names = HashSet::new();

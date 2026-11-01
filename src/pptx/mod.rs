@@ -8,13 +8,7 @@ use crate::output::*;
 use crate::worker::{Config, Rejected};
 use anyhow::{Context, Result, bail};
 use betteroffice_pptx::{Presentation, RenderOptions};
-use std::{
-    collections::HashMap,
-    fs,
-    io::Cursor,
-    path::{Path as FsPath, PathBuf},
-    time::Instant,
-};
+use std::{collections::HashMap, fs, io::Cursor, path::Path as FsPath, time::Instant};
 use yaml_serde::Value as YamlValue;
 use zip::ZipArchive;
 
@@ -950,7 +944,7 @@ pub(crate) fn build_bundle(
     hash: &str,
     extraction: &Extraction,
     attempt: &FsPath,
-) -> Result<(PathBuf, String)> {
+) -> Result<Built> {
     let slides = &extraction.slides;
     let started = Instant::now();
     let mut ppt = Presentation::open(bytes)?;
@@ -1137,7 +1131,7 @@ pub(crate) fn convert(
     filename: &str,
     hash: &str,
     dir: &FsPath,
-) -> Result<(PathBuf, String)> {
+) -> Result<Built> {
     let extraction = extract(bytes, dir)?;
     let slides = extraction.slides.len();
     if slides == 0 {
@@ -1359,7 +1353,11 @@ mod tests {
                 .iter()
                 .any(|n| n.contains("1 comentario(s) de revisión"))
         );
-        let (zip, state) = build_bundle(
+        let Built {
+            path: zip,
+            status: state,
+            ..
+        } = build_bundle(
             &bytes,
             "rich.pptx",
             &hex(&Sha256::digest(&bytes)),

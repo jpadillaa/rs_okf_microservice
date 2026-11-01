@@ -337,8 +337,8 @@ def convert(binary, doc, workdir):
     )
     if run.returncode != 0:
         raise RuntimeError(f"{doc}: conversion failed: {run.stderr.strip()}")
-    status, bundle = run.stdout.strip().splitlines()[-1].split("\t")
-    return status, Path(bundle)
+    result = json.loads(run.stdout.strip().splitlines()[-1])
+    return result["status"], Path(result["bundle"])
 
 
 # --- Comparison -----------------------------------------------------------------------
