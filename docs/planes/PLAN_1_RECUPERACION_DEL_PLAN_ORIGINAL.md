@@ -36,7 +36,7 @@ Tamaños relativos: **S** (un cambio acotado en un módulo o en la documentació
 3. **Ensamblador único.** Escribir el frontmatter serializando con `yaml_serde`, no con plantillas de texto; generar índices, marcadores y el esqueleto del informe en un solo sitio; limpiar los caracteres de control con una sola regla.
 4. **Migración.** Migrar los adaptadores uno por uno: primero PDF y DOCX, que ya comparten las secciones del paso 1; después XLSX y PPTX. Cada adaptador conserva su modelo de entrada y solo cambia lo que entrega.
 5. **Etapas.** Separar en la entrada de cada adaptador la lectura del ensamblado (en PPTX, el renderizado de vistas queda en el ensamblado), para que `R5` mida las etapas en un solo sitio.
-6. **Documentación.** Al terminar, completar en la [arquitectura conceptual, §3](../arquitectura/ARQUITECTURA_CONCEPTUAL_MICROSERVICIO_OKF.md#3-contrato-del-modelo-intermedio) y en el [stack, §3](../decisiones/STACK_TECNOLOGICO_MICROSERVICIO_OKF.md#3-extracción-y-procedencia-por-formato) la descripción del modelo de salida común que `R7` deja anunciada.
+6. **Documentación.** Al terminar, completar en la [arquitectura conceptual, §3](../arquitectura/ARQUITECTURA_CONCEPTUAL_MICROSERVICIO_OKF.md#3-modelos-de-lectura-y-modelo-de-salida) y en el [stack, §3](../decisiones/STACK_TECNOLOGICO_MICROSERVICIO_OKF.md#3-extracción-y-procedencia-por-formato) la descripción del modelo de salida común que `R7` deja anunciada.
 
 **Aceptación.** Tras migrar cada formato, sus bundles de referencia (`C1`) no cambian, salvo diferencias revisadas y justificadas. Ningún adaptador escribe frontmatter con plantillas de texto ni define sus propios tipos de sección.
 
@@ -121,7 +121,7 @@ Cada documento nuevo entra con su bundle de referencia (`C1`), su medición de c
 1. [Stack, §1](../decisiones/STACK_TECNOLOGICO_MICROSERVICIO_OKF.md#1-decisión-de-despliegue): un ejecutable con subcomandos `api` y `worker`, y una sola imagen.
 2. Stack, §2 y §3: Xberg abandonado, con los motivos de §3, y sin la condición «Reevaluar Xberg si el corpus DOCX muestra…» del párrafo «Lector OOXML propio».
 3. [Arquitectura conceptual, §4](../arquitectura/ARQUITECTURA_CONCEPTUAL_MICROSERVICIO_OKF.md#4-estados-y-garantías) y [arquitectura técnica, §3](../arquitectura/ARQUITECTURA_TECNICA_MICROSERVICIO_OKF.md#3-ciclo-de-un-trabajo): estados sin `validating`, con la validación dentro de `processing`.
-4. [Arquitectura conceptual, §3](../arquitectura/ARQUITECTURA_CONCEPTUAL_MICROSERVICIO_OKF.md#3-contrato-del-modelo-intermedio) y stack, §3 (párrafos del modelo intermedio y de los `source_spans`): describir lo que existe hoy, modelos de lectura propios por formato, y anunciar el modelo de salida común de `R1`.
+4. [Arquitectura conceptual, §3](../arquitectura/ARQUITECTURA_CONCEPTUAL_MICROSERVICIO_OKF.md#3-modelos-de-lectura-y-modelo-de-salida) y stack, §3 (párrafos del modelo intermedio y de los `source_spans`): describir lo que existe hoy, modelos de lectura propios por formato, y anunciar el modelo de salida común de `R1`.
 5. La decisión de `R8` sobre la división.
 
 **Aceptación.** Ningún documento normativo describe como vigente una decisión de la tabla de §3; el [estado del proyecto, §4 y §5](../estado/ESTADO_DEL_PROYECTO.md#4-brechas-frente-a-la-arquitectura-y-el-stack) se actualiza en consecuencia.

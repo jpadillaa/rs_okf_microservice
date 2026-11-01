@@ -17,16 +17,16 @@ El archivo original, la identidad y el estado del trabajo, y el resultado se con
 | --- | --- | --- |
 | **Registro** | Identificar el trabajo, conservar el archivo sin modificar y calcular su huella. | Original inmutable y trabajo pendiente. |
 | **Inspección** | Reconocer formato y características que afectan la extracción. | Inventario inicial de unidades y necesidades de extracción. |
-| **Extracción** | Aplicar el adaptador de PDF, DOCX, XLSX o PPTX. | Contenido, estructura, recursos, localizadores e incidencias en un modelo intermedio. |
+| **Extracción** | Aplicar el adaptador de PDF, DOCX, XLSX o PPTX. | Contenido, estructura, recursos, localizadores e incidencias en el modelo de lectura del formato. |
 | **Reconciliación** | Resolver orden, jerarquía, continuaciones, notas, referencias y duplicaciones con visión del documento completo. | Estructura editorial consolidada. |
 | **Ensamblado** | Generar conceptos Markdown, índices, recursos, procedencia y `conversion-report.md` según el perfil OKF. | Bundle candidato. |
 | **Validación y publicación** | Verificar conformidad OKF e integridad editorial por separado; publicar solo un resultado final coherente. | Bundle `complete` o `partial`, o trabajo `failed`. |
 
 Los documentos largos pueden extraerse por partes para limitar memoria. **Las partes de procesamiento no determinan la división final del bundle**: esa división sigue capítulos y secciones, hojas y regiones, o diapositivas. La reconciliación reúne las partes antes del ensamblado.
 
-## 3. Contrato del modelo intermedio
+## 3. Modelos de lectura y modelo de salida
 
-Todos los adaptadores entregan una representación con los mismos tipos de información:
+Cada adaptador lee el original con un **modelo de lectura propio de su formato**, que conserva la información que el ensamblado necesita:
 
 - **Fuente:** referencia al original inmutable, formato y huella.
 - **Unidades:** jerarquía, título y orden de documento, capítulo, sección, hoja, región o diapositiva.
@@ -35,11 +35,17 @@ Todos los adaptadores entregan una representación con los mismos tipos de infor
 - **Localizadores:** páginas físicas y etiquetas impresas; bloques DOCX; hoja y rango A1; posición e identificador de diapositiva.
 - **Incidencias:** contenido omitido, incierto, inferido o conservado únicamente como recurso visual.
 
-Cada adaptador conserva la estructura propia de su formato: el PDF parte de páginas; DOCX, de bloques y encabezados; XLSX, de hojas y regiones; PPTX, de diapositivas, objetos y notas. El ensamblador recibe este modelo y no necesita interpretar nuevamente los archivos originales.
+Cada modelo de lectura conserva la estructura propia de su formato: el PDF parte de páginas; DOCX, de bloques y encabezados; XLSX, de hojas y regiones; PPTX, de diapositivas, objetos y notas.
+
+Todos los adaptadores entregan su resultado con los mismos tipos, el **modelo de salida común**: conceptos (ruta, tipo, título, campos propios del formato, localizadores y contenido con sus marcadores), recursos e incidencias. Un único ensamblador escribe a partir de él el frontmatter, los índices, `documento.md` y el informe, de modo que las reglas comunes del bundle se aplican en un solo sitio y no necesita interpretar nuevamente los archivos originales.
+
+El plan inicial preveía un único modelo intermedio común antes del ensamblado. Se sustituyó por esta combinación porque los modelos de lectura ya conservaban los localizadores y unificar la salida da las mismas garantías sobre el bundle con menos cambio ([plan 1, §3](../planes/PLAN_1_RECUPERACION_DEL_PLAN_ORIGINAL.md#3-lo-que-no-se-recupera)).
 
 ## 4. Estados y garantías
 
-`received → queued → processing → validating → complete | partial | failed`
+`received → queued → processing → complete | partial | failed`
+
+La validación ocurre dentro de `processing`, antes de publicar; no se registra como estado aparte.
 
 - **`complete`:** bundle conforme y sin pérdida editorial sustantiva no resuelta.
 - **`partial`:** bundle conforme con limitaciones localizadas y declaradas en el informe.
