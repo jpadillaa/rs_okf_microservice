@@ -9,7 +9,7 @@ jobs:
   test:
     runs-on: ubuntu-24.04
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       # Debe coincidir con `rust-version` de Cargo.toml.
       - uses: dtolnay/rust-toolchain@master
         with:
@@ -30,7 +30,7 @@ jobs:
   dependencies:
     runs-on: ubuntu-24.04
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       # Licencias y orígenes según deny.toml; los avisos de seguridad van en scheduled.yml.
       - uses: EmbarkStudios/cargo-deny-action@v2
         with:
@@ -39,7 +39,7 @@ jobs:
   image:
     runs-on: ubuntu-24.04
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - name: Construir la imagen
         run: docker build -t okf-microservice:smoke .
       # Una muestra de cada formato por la API, el worker en un contenedor sin red y
