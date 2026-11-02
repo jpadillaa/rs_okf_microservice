@@ -220,7 +220,7 @@ pub const EXIT_TRANSIENT: i32 = 4;
 pub const EXIT_PANIC: i32 = 5;
 
 /// Solo para el proceso conversor: un defecto determinista no se reintenta.
-fn install_panic_hook() {
+pub(crate) fn install_panic_hook() {
     std::panic::set_hook(Box::new(|info| {
         eprintln!("defecto del conversor: {info}");
         std::process::exit(EXIT_PANIC);

@@ -134,6 +134,8 @@ El rechazo de trabajos nuevos cuando falta espacio (`507 Insufficient Storage`) 
 
 ### C10. Validador independiente (S)
 
+**Estado:** implementado el 2 de noviembre: `validate <ZIP o directorio>`, con original incluido, límites y rechazo de rutas inseguras; pruebas sobre los 26 ejemplos y alteraciones.
+
 **Trabajo.** Un subcomando `okf-microservice validate <bundle.zip | directorio>` que ejecuta la conformidad OKF y la integridad editorial, usando el original incluido en `references/`, y termina con un código distinto de cero si el bundle no es válido.
 
 **Aceptación.** Valida todos los bundles de referencia de `C1` y rechaza las alteraciones que ya prueban las pruebas del validador.

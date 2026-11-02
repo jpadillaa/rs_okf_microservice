@@ -140,3 +140,21 @@ metadatos devuelve `null`. La migración SQLite conserva las bases existentes.
 `build.rs` obtiene el SHA de Git al compilar o usa `OKF_BUILD_COMMIT`. Un árbol fuente
 sin Git ni ese argumento registra `unknown`; no inventa un commit. Los golden fijan
 solo ese campo variable como `<commit>` y siguen comparando paquete y perfil.
+
+### Validación independiente (plan 2, C10)
+
+`okf-microservice validate <bundle.zip | directorio>` aplica el mismo validador de
+conformidad OKF e integridad editorial del servicio, leyendo el original incluido en
+`references/`. Devuelve código 0 si es válido y un código distinto de cero con el
+motivo en stderr si falla. No necesita SQLite ni la API.
+
+Un directorio se copia a un ZIP temporal mediante `src/output.rs`; se rechazan enlaces
+simbólicos y archivos especiales. Un ZIP se lee sin extraerlo a disco; se rechazan
+rutas inseguras o duplicadas, y se verifican tamaños reales y CRC antes de validar.
+Aplican los límites `OKF_MAX_ZIP_*` y los rlimits de C4. El original privado contenido
+en un bundle sigue siendo parte de este: el validador no lo publica ni lo transmite.
+
+Los árboles golden guardan huellas de binarios, no sus bytes; la prueba reconstruye
+los bundles desde los 26 ejemplos y valida tanto sus ZIP como sus directorios,
+además de rechazar alteraciones. Se mantienen las pruebas editoriales específicas
+por formato que usan la misma función de validación.

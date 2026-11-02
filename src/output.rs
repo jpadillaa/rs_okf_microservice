@@ -427,6 +427,75 @@ impl BundleWriter {
     }
 }
 
+/// Empaqueta un directorio para el validador independiente sin seguir enlaces.
+/// Toda escritura de bundles, también esta copia temporal, pasa por el ensamblador.
+pub(crate) fn pack_directory(
+    root: &std::path::Path,
+    target: &std::path::Path,
+) -> anyhow::Result<()> {
+    use anyhow::{Context, bail};
+    use std::{fs, io::Read, path::Path};
+    use zip::{ZipWriter, write::SimpleFileOptions};
+    fn walk(
+        root: &Path,
+        dir: &Path,
+        zip: &mut ZipWriter<fs::File>,
+        count: &mut usize,
+        total: &mut u64,
+    ) -> anyhow::Result<()> {
+        let limits = crate::ooxml::limits();
+        let mut entries = fs::read_dir(dir)?.collect::<std::io::Result<Vec<_>>>()?;
+        entries.sort_by_key(|e| e.file_name());
+        for entry in entries {
+            let ty = entry.file_type()?;
+            if ty.is_dir() {
+                walk(root, &entry.path(), zip, count, total)?;
+            } else if ty.is_file() {
+                *count += 1;
+                if *count > limits.entries {
+                    bail!("demasiados archivos en el bundle")
+                }
+                let size = entry.metadata()?.len();
+                *total = total
+                    .checked_add(size)
+                    .context("tamaño del bundle desbordado")?;
+                if size > limits.entry_bytes()
+                    || *total > limits.total_mb.saturating_mul(1024 * 1024)
+                {
+                    bail!("bundle demasiado grande")
+                }
+                let path = entry.path();
+                let name = path.strip_prefix(root)?.to_str().context("ruta no UTF-8")?;
+                if !crate::validate::safe_name(name) {
+                    bail!("ruta insegura: {name}")
+                }
+                zip.start_file(
+                    name,
+                    SimpleFileOptions::default()
+                        .compression_method(zip::CompressionMethod::Deflated),
+                )?;
+                // NOFOLLOW evita seguir un enlace si el archivo cambia tras read_dir.
+                use std::os::unix::fs::OpenOptionsExt;
+                let file = fs::OpenOptions::new()
+                    .read(true)
+                    .custom_flags(libc::O_NOFOLLOW)
+                    .open(&path)?;
+                let read = std::io::copy(&mut file.take(limits.entry_bytes() + 1), zip)?;
+                if read != size {
+                    bail!("el archivo cambió mientras se validaba: {name}")
+                }
+            } else {
+                bail!("el bundle solo admite archivos regulares y directorios")
+            }
+        }
+        Ok(())
+    }
+    let mut zip = ZipWriter::new(fs::File::create(target)?);
+    walk(root, root, &mut zip, &mut 0, &mut 0)?;
+    zip.finish()?;
+    Ok(())
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

@@ -34,6 +34,7 @@ mod output;
 mod pdf;
 mod pptx;
 mod sections;
+mod validate;
 mod version;
 mod worker;
 mod xlsx;
@@ -65,6 +66,8 @@ enum Command {
         attempt: PathBuf,
         filename: String,
     },
+    /// Valida conformidad OKF e integridad editorial frente al original incluido.
+    Validate { bundle: PathBuf },
     /// Render every PPTX slide with the selected native Rust backend.
     BenchRender { pptx: PathBuf, output: PathBuf },
 }
@@ -331,6 +334,13 @@ fn main() -> Result<()> {
     let cli = Cli::parse();
     ooxml::set_limits(worker::Config::from_env()?.zip);
     let root = PathBuf::from(std::env::var("OKF_DATA_DIR").unwrap_or_else(|_| "data".into()));
+    if let Command::Validate { bundle } = &cli.command {
+        worker::install_panic_hook();
+        isolation::resource_limits(&worker::Config::from_env()?)?;
+        validate::path(bundle)?;
+        println!("bundle válido: {}", bundle.display());
+        return Ok(());
+    }
     // `convert` impone el aislamiento antes de crear cualquier hilo.
     if let Command::Convert {
         original,
@@ -352,6 +362,7 @@ fn main() -> Result<()> {
                     attempt,
                     filename,
                 } => worker::convert_command(&original, &attempt, &filename),
+                Command::Validate { .. } => unreachable!("validate se ejecuta antes del runtime"),
                 Command::BenchRender { pptx, output } => pptx::bench_render(&pptx, &output),
             }
         })
