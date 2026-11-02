@@ -27,6 +27,7 @@ mod docx;
 mod format;
 #[cfg(test)]
 mod golden;
+mod isolation;
 mod omml;
 mod ooxml;
 mod output;
@@ -308,8 +309,7 @@ fn router(a: App) -> Router {
         .with_state(a)
 }
 
-#[tokio::main]
-async fn main() -> Result<()> {
+fn main() -> Result<()> {
     // Los registros van a la salida de error: la estándar del subcomando `convert`
     // transporta su resultado al worker.
     tracing_subscriber::fmt()
@@ -319,16 +319,30 @@ async fn main() -> Result<()> {
     let cli = Cli::parse();
     ooxml::set_limits(worker::Config::from_env()?.zip);
     let root = PathBuf::from(std::env::var("OKF_DATA_DIR").unwrap_or_else(|_| "data".into()));
-    match cli.command {
-        Command::Api { bind } => serve(root, &bind).await,
-        Command::Worker { poll_ms, once } => worker::worker(root, poll_ms, once).await,
-        Command::Convert {
-            original,
-            attempt,
-            filename,
-        } => worker::convert_command(&original, &attempt, &filename),
-        Command::BenchRender { pptx, output } => pptx::bench_render(&pptx, &output),
+    // `convert` impone el aislamiento antes de crear cualquier hilo.
+    if let Command::Convert {
+        original,
+        attempt,
+        filename,
+    } = cli.command
+    {
+        return worker::convert_command(&original, &attempt, &filename);
     }
+    tokio::runtime::Builder::new_multi_thread()
+        .enable_all()
+        .build()?
+        .block_on(async {
+            match cli.command {
+                Command::Api { bind } => serve(root, &bind).await,
+                Command::Worker { poll_ms, once } => worker::worker(root, poll_ms, once).await,
+                Command::Convert {
+                    original,
+                    attempt,
+                    filename,
+                } => worker::convert_command(&original, &attempt, &filename),
+                Command::BenchRender { pptx, output } => pptx::bench_render(&pptx, &output),
+            }
+        })
 }
 
 #[cfg(test)]

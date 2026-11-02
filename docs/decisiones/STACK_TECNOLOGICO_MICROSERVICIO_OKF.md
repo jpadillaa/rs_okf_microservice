@@ -82,3 +82,10 @@ En la ruta LibreOffice, activar `ExportHiddenSlides`, desactivar páginas de not
 - [Calamine: rangos absolutos](https://docs.rs/calamine/latest/calamine/struct.Range.html); [AnyDoc: limitación PDF por páginas](https://github.com/firecrawl/anydoc/issues/62), [XLSX](https://github.com/firecrawl/anydoc/issues/10) y [PPTX](https://github.com/firecrawl/anydoc/issues/31).
 - [SQLite: WAL y procesos en un host](https://www.sqlite.org/wal.html); [redb: escritura multiproceso experimental](https://docs.rs/redb/latest/redb/).
 - [LibreOffice: conversión headless](https://help.libreoffice.org/latest/en-US/text/shared/guide/start_parameters.html) y [ExportHiddenSlides](https://help.libreoffice.org/latest/en-US/text/shared/guide/pdf_params.html); [BetterOffice PPTX raster 0.5](https://docs.rs/crate/betteroffice-pptx-raster/0.5.0) y [fachada Rust](https://docs.rs/crate/betteroffice-pptx/0.5.0).
+
+## 6. Aislamiento del conversor (plan 2, C4)
+
+`rustix` configura los rlimits del hijo; `libc` aporta los identificadores de señales
+y la consulta de disponibilidad de Landlock. En Linux, `landlock` 0.4.7 instala las
+reglas de archivos mediante su interfaz segura. Las versiones transitivas quedan en
+`Cargo.lock`. Las capas y sus límites se describen en la arquitectura técnica, §5.

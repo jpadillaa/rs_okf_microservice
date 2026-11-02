@@ -56,7 +56,10 @@ La primera entrega implementó la ruta completa con PPTX; la segunda añadió el
 
 | Variable | Predeterminado | Efecto |
 | --- | ---: | --- |
-| `OKF_MAX_MEMORY_MB` | 500 | Memoria residente máxima del proceso de conversión. |
+| `OKF_MAX_MEMORY_MB` | 500 | Memoria residente máxima; en Linux, RLIMIT_AS limita además el espacio de direcciones a 2 × este valor + 128 MiB. |
+| `OKF_MAX_OUTPUT_MB` | 512 | Tamaño máximo de cada archivo escrito por el conversor (RLIMIT_FSIZE). |
+| `OKF_MAX_OPEN_FILES` | 256 | Descriptores abiertos máximos en el conversor (RLIMIT_NOFILE), mínimo 16. |
+| `OKF_FONT_PATH` | búsqueda de fuente instalada | Archivo TrueType que puede leer el renderizador PPTX, también con Landlock. |
 | `OKF_MAX_SLIDES` | 300 | Diapositivas máximas por presentación. |
 | `OKF_MAX_BLOCKS` | 50000 | Bloques máximos (párrafos y tablas de primer nivel) por documento DOCX. |
 | `OKF_MAX_CELLS` | 1000000 | Celdas con contenido máximas por libro XLSX. |
@@ -74,6 +77,25 @@ La primera entrega implementó la ruta completa con PPTX; la segunda añadió el
 | `OKF_MAX_IMAGE_PIXELS` | 33554432 | Píxeles máximos de una imagen que el conversor decodifica (imágenes PDF que no se copian como JPEG); una imagen mayor no se adjunta y se declara como pérdida. Las vistas PPTX aplican el presupuesto fijo del renderizador, que es el mismo valor, y declaran igual las imágenes omitidas. |
 
 **Admisión.** La API comprueba la cola y el espacio libre antes de leer el archivo, y el tamaño mientras lo recibe. Los límites de los paquetes OOXML y de las imágenes se aplican en el proceso de conversión, que los recibe del worker; superar uno de los primeros es un fallo permanente.
+
+**Límites duros y rutas (plan 2, C4).** El subcomando `convert` se ejecuta sin runtime
+asíncrono y fija los límites antes de crear hilos o leer el documento: `RLIMIT_AS`
+solo en Linux (memoria virtual, con margen de 2 × RSS + 128 MiB), `RLIMIT_CPU`
+(plazo, mínimo un segundo de CPU, un segundo adicional de límite duro),
+`RLIMIT_FSIZE`, `RLIMIT_NOFILE` y `RLIMIT_CORE=0`. Nunca eleva un límite duro
+heredado. El padre mantiene el control de RSS y tiempo de pared cada 100 ms.
+SIGXCPU, SIGXFSZ y un aborto con el diagnóstico de asignación de memoria rechazada
+son fallos permanentes de recursos; otras señales siguen siendo transitorias.
+
+En Linux, Landlock (ABI 3, con degradación explícita en kernels anteriores) permite
+leer el original y leer/escribir solamente el directorio del intento. Permite además
+leer los archivos de fuente configurados o de reserva, `/etc/localtime` y
+`/proc/self/status`; no concede ejecución ni creación de enlaces o dispositivos.
+El worker registra al arrancar si Landlock no está disponible; un error al imponer
+una regla impide convertir. Los descriptores estándar heredados siguen abiertos.
+El contenedor del worker mantiene `network_mode: none`; Landlock aquí restringe
+archivos, no sustituye ese aislamiento de red. En macOS no se aplican Landlock ni
+RLIMIT_AS: la memoria se limita mediante la vigilancia de RSS.
 
 **Registro de cada intento.** Al terminar un intento, el worker escribe una línea con el trabajo, el intento, el formato, el resultado (`complete`, `partial`, `failed`, `transient_failure` o `lease_lost`), la duración de la lectura, el ensamblado y la validación, la duración total y la memoria residente máxima. El proceso hijo devuelve su resultado como una línea JSON con las etapas, que mide el ensamblador común, y en Linux con su máximo de memoria (`VmHWM`); en otros sistemas la memoria es la del muestreo cada 100 ms, que no ve una conversión más breve. En XLSX y PDF las hojas y las páginas se leen mientras se ensamblan, de modo que su lectura cuenta como ensamblado. El registro no incluye contenido del documento.
 

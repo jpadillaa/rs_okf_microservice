@@ -75,6 +75,22 @@ fn child_process_is_converted_or_stopped_at_its_limits() {
     }
     assert!(!log.contains("A simple OKF test deck"));
 
+    // Los cuatro formatos deben poder leer sus recursos con el aislamiento activo.
+    for (format, source) in [
+        ("docx", "examples/docx/breve.docx"),
+        ("xlsx", "examples/xlsx/muestras/ventas_trimestrales.xlsx"),
+        ("pdf", "examples/pdf/muestras/breve.pdf"),
+    ] {
+        let original = format!("originals/{format}.{format}");
+        std::fs::copy(source, root.join(&original)).unwrap();
+        Connection::open(root.join("jobs.sqlite3")).unwrap().execute(
+            "INSERT INTO jobs(id,filename,original,sha256,status,created_at) VALUES(?1,?2,?3,'-','queued',0)",
+            params![format, format!("sample.{format}"), original],
+        ).unwrap();
+        worker_once(root, &[]);
+        assert_eq!(job(root, format), ("complete".into(), None));
+    }
+
     enqueue(root, "memory");
     let log = worker_once(root, &[("OKF_MAX_MEMORY_MB", "1")]);
     assert!(log.contains("status=\"failed\""), "{log}");

@@ -61,6 +61,8 @@ medidas menos 0,50 puntos, según la concreción solicitada; véase [el método]
 
 ### C4. Límites duros del sistema operativo para el proceso hijo (M)
 
+**Estado:** implementación del 2 de noviembre en `src/isolation.rs`: rlimits antes de crear hilos, Landlock en Linux y prueba de rechazo de memoria, archivo y rutas.
+
 **Problema.** La memoria se vigila consultándola cada 100 ms; un pico rápido puede superar el límite antes de que el worker lo vea. El proceso hijo puede además abrir red, escribir donde quiera y crear archivos de cualquier tamaño.
 
 **Trabajo.**

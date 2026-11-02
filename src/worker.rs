@@ -26,6 +26,8 @@ use yaml_serde::Value as YamlValue;
 pub struct Config {
     /// Memoria residente máxima del proceso de conversión, en MB (`OKF_MAX_MEMORY_MB`).
     pub max_memory_mb: u64,
+    pub max_output_mb: u64,
+    pub max_open_files: u64,
     /// Diapositivas máximas por presentación (`OKF_MAX_SLIDES`).
     pub max_slides: usize,
     /// Bloques máximos (párrafos y tablas de primer nivel) por documento DOCX
@@ -62,6 +64,8 @@ impl Default for Config {
     fn default() -> Self {
         Config {
             max_memory_mb: 500,
+            max_output_mb: 512,
+            max_open_files: 256,
             max_slides: 300,
             max_blocks: 50_000,
             max_cells: 1_000_000,
@@ -92,6 +96,8 @@ impl Config {
         let d = Config::default();
         let c = Config {
             max_memory_mb: var("OKF_MAX_MEMORY_MB", d.max_memory_mb)?,
+            max_output_mb: var("OKF_MAX_OUTPUT_MB", d.max_output_mb)?,
+            max_open_files: var("OKF_MAX_OPEN_FILES", d.max_open_files)?,
             max_slides: var("OKF_MAX_SLIDES", d.max_slides)?,
             max_blocks: var("OKF_MAX_BLOCKS", d.max_blocks)?,
             max_cells: var("OKF_MAX_CELLS", d.max_cells)?,
@@ -110,6 +116,9 @@ impl Config {
             },
             max_image_pixels: var("OKF_MAX_IMAGE_PIXELS", d.max_image_pixels)?,
         };
+        if c.max_output_mb == 0 || c.max_open_files < 16 {
+            bail!("OKF_MAX_OUTPUT_MB debe ser positivo y OKF_MAX_OPEN_FILES al menos 16")
+        }
         if c.lease_s < 3 || c.max_attempts == 0 {
             bail!("OKF_LEASE_S debe ser al menos 3 y OKF_MAX_ATTEMPTS al menos 1")
         }
@@ -220,7 +229,9 @@ fn install_panic_hook() {
 pub fn convert_command(original: &Path, dir: &Path, filename: &str) -> Result<()> {
     install_panic_hook();
     let cfg = Config::from_env()?;
-    match convert(&cfg, original, filename, dir) {
+    let result = crate::isolation::apply(&cfg, original, dir)
+        .and_then(|()| convert(&cfg, original, filename, dir));
+    match result {
         Ok(c) => {
             println!("{}", serde_json::to_string(&c)?);
             Ok(())
@@ -356,6 +367,13 @@ async fn run_child(
         .arg(original)
         .arg(dir)
         .arg(&job.filename)
+        .env("OKF_MAX_MEMORY_MB", a.cfg.max_memory_mb.to_string())
+        .env("OKF_MAX_OUTPUT_MB", a.cfg.max_output_mb.to_string())
+        .env("OKF_MAX_OPEN_FILES", a.cfg.max_open_files.to_string())
+        .env(
+            "OKF_CONVERSION_TIMEOUT_S",
+            a.cfg.timeout.as_secs().to_string(),
+        )
         .env("OKF_MAX_SLIDES", a.cfg.max_slides.to_string())
         .env("OKF_MAX_BLOCKS", a.cfg.max_blocks.to_string())
         .env("OKF_MAX_CELLS", a.cfg.max_cells.to_string())
@@ -408,6 +426,9 @@ async fn run_child(
     *usage = watch.usage();
     let (out, err) = (stdout.await?, stderr.await?);
     let message = err.trim().to_string();
+    if let Some(message) = crate::isolation::limit_failure(status, &message, &a.cfg) {
+        return Ok(Outcome::Failed(FailureKind::Permanent, message));
+    }
     Ok(match status.code() {
         Some(0) => {
             let line = out.lines().last().unwrap_or_default();
@@ -768,6 +789,7 @@ pub async fn worker(root: PathBuf, poll_ms: u64, once: bool) -> Result<()> {
     if rss_mb(std::process::id()).await.is_none() {
         bail!("no se puede medir la memoria de los procesos (ni /proc ni ps disponibles)")
     }
+    crate::isolation::log_support();
     reconcile(&a).await?;
     info!(?a.cfg, "worker iniciado");
     loop {
