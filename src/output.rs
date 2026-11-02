@@ -243,7 +243,14 @@ pub(crate) fn document_fields(
     generated: &str,
     hash: &str,
 ) -> Fields {
-    concept_fields(format, "Source Document", title, description, generated).with(
+    crate::version::Versions::annotate(concept_fields(
+        format,
+        "Source Document",
+        title,
+        description,
+        generated,
+    ))
+    .with(
         "source_file",
         Fields::new()
             .with("path", format.original_entry())
@@ -272,7 +279,7 @@ pub(crate) fn report(
     sections: &str,
 ) -> String {
     let state = state(issues);
-    let fields = Fields::new()
+    let fields = crate::version::Versions::annotate(Fields::new())
         .with("type", "Conversion Report")
         .with("title", "Informe de conversión")
         .with("generated", generated_fields(generated))

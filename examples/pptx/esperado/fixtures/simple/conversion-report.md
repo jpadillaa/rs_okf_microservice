@@ -1,4 +1,7 @@
 ---
+converter_version: "0.1.0"
+converter_commit: "<commit>"
+profile_version: "1.0.0"
 type: "Conversion Report"
 title: "Informe de conversión"
 generated:

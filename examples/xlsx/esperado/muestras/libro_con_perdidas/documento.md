@@ -8,6 +8,9 @@ sources:
 generated:
   by: "process:document-conversion"
   at: "<generado>"
+converter_version: "0.1.0"
+converter_commit: "<commit>"
+profile_version: "1.0.0"
 source_file:
   path: "references/original.xlsx"
   sha256: "782106213febbcffae20d3f21c50c284a0b924d9afae2158ffecce866faf62e8"

@@ -34,6 +34,7 @@ mod output;
 mod pdf;
 mod pptx;
 mod sections;
+mod version;
 mod worker;
 mod xlsx;
 mod xml;
@@ -88,6 +89,8 @@ struct JobStatus {
     status: String,
     attempt: u32,
     error: Option<String>,
+    #[serde(flatten)]
+    versions: version::Versions,
 }
 
 fn app(root: PathBuf) -> Result<App> {
@@ -98,15 +101,22 @@ fn app(root: PathBuf) -> Result<App> {
     db.pragma_update(None, "journal_mode", "WAL")?;
     db.busy_timeout(Duration::from_secs(5))?;
     db.execute_batch("CREATE TABLE IF NOT EXISTS jobs(id TEXT PRIMARY KEY, filename TEXT NOT NULL, original TEXT NOT NULL, sha256 TEXT NOT NULL, status TEXT NOT NULL, attempt INTEGER NOT NULL DEFAULT 0, lease_until INTEGER, bundle TEXT, error TEXT, created_at INTEGER NOT NULL, retry_at INTEGER); CREATE INDEX IF NOT EXISTS jobs_status ON jobs(status, created_at);")?;
-    // Bases creadas antes de los reintentos con espera.
-    let has_retry = db
-        .prepare("SELECT 1 FROM pragma_table_info('jobs') WHERE name='retry_at'")?
-        .exists([])?;
-    if !has_retry
-        && let Err(e) = db.execute_batch("ALTER TABLE jobs ADD COLUMN retry_at INTEGER")
-        && !e.to_string().contains("duplicate column")
-    {
-        return Err(e.into());
+    // Migración compatible con bases anteriores y arranques simultáneos API/worker.
+    for (name, kind) in [
+        ("retry_at", "INTEGER"),
+        ("converter_version", "TEXT"),
+        ("converter_commit", "TEXT"),
+        ("profile_version", "TEXT"),
+    ] {
+        let exists = db
+            .prepare("SELECT 1 FROM pragma_table_info('jobs') WHERE name=?1")?
+            .exists([name])?;
+        if !exists
+            && let Err(e) = db.execute_batch(&format!("ALTER TABLE jobs ADD COLUMN {name} {kind}"))
+            && !e.to_string().contains("duplicate column")
+        {
+            return Err(e.into());
+        }
     }
     Ok(App {
         root,
@@ -237,24 +247,26 @@ async fn status(
     let db = a.db.lock().await;
     let row = db
         .query_row(
-            "SELECT status,attempt,error FROM jobs WHERE id=?1",
+            "SELECT status,attempt,error,converter_version,converter_commit,profile_version FROM jobs WHERE id=?1",
             [&id],
             |r| {
                 Ok((
                     r.get::<_, String>(0)?,
                     r.get::<_, u32>(1)?,
                     r.get::<_, Option<String>>(2)?,
+                    version::Versions { converter_version: r.get(3)?, converter_commit: r.get(4)?, profile_version: r.get(5)? },
                 ))
             },
         )
         .optional()
         .map_err(internal)?;
-    row.map(|(status, attempt, error)| {
+    row.map(|(status, attempt, error, versions)| {
         Json(JobStatus {
             job_id: id,
             status,
             attempt,
             error,
+            versions,
         })
     })
     .ok_or((StatusCode::NOT_FOUND, "trabajo inexistente".into()))
@@ -1248,5 +1260,29 @@ mod tests {
                 .query_row("SELECT COUNT(*) FROM jobs", [], |r| r.get(0))
                 .unwrap();
         assert_eq!(pending, 3);
+    }
+}
+
+#[cfg(test)]
+mod version_tests {
+    use super::*;
+    #[tokio::test]
+    async fn job_versions_survive_publication_recovery() {
+        let tmp = tempfile::tempdir().unwrap();
+        let a = app(tmp.path().to_owned()).unwrap();
+        fs::copy(
+            "examples/docx/breve.docx",
+            tmp.path().join("originals/v.docx"),
+        )
+        .unwrap();
+        a.db.lock().await.execute("INSERT INTO jobs(id,filename,original,sha256,status,created_at) VALUES('v','v.docx','originals/v.docx','-','queued',0)", []).unwrap();
+        worker::work_one(&a).await.unwrap();
+        let state = status(State(a.clone()), Path("v".into())).await.unwrap().0;
+        assert_eq!(state.versions, version::Versions::current());
+        a.db.lock().await.execute("UPDATE jobs SET status='processing',lease_until=0,converter_version=NULL,converter_commit=NULL,profile_version=NULL", []).unwrap();
+        worker::reconcile(&a).await.unwrap();
+        let state = status(State(a), Path("v".into())).await.unwrap().0;
+        assert_eq!(state.status, "complete");
+        assert_eq!(state.versions, version::Versions::current());
     }
 }

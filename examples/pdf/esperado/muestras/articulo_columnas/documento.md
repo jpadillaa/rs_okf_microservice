@@ -8,6 +8,9 @@ sources:
 generated:
   by: "process:document-conversion"
   at: "<generado>"
+converter_version: "0.1.0"
+converter_commit: "<commit>"
+profile_version: "1.0.0"
 source_file:
   path: "references/original.pdf"
   sha256: "b08ccb47fae3bff5631bfb60acae93017c7ec3b1cf290d0c6ad871787704fe6c"

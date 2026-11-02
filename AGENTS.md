@@ -6,6 +6,7 @@
 - Mantén los enlaces internos actualizados cuando cambien las rutas de los documentos.
 - La documentación se escribe en español. El índice está en [`docs/README.md`](docs/README.md); todo documento nuevo se enlaza desde allí.
 - La especificación, las arquitecturas y el stack describen lo que hace el código. Un cambio de comportamiento actualiza el documento que lo regula en el mismo commit.
+- Todo cambio de una regla de la especificación sube la versión del perfil en `src/version.rs` y en la especificación, con su registro de cambios, en el mismo commit.
 - Al cerrar un trabajo de un plan (`docs/planes/`), actualiza el [estado del proyecto](docs/estado/ESTADO_DEL_PROYECTO.md): corte, tablas afectadas y roadmap.
 
 ## Código y verificación

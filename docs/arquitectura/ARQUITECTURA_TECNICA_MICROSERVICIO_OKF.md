@@ -59,6 +59,7 @@ La primera entrega implementó la ruta completa con PPTX; la segunda añadió el
 | `OKF_MAX_MEMORY_MB` | 500 | Memoria residente máxima; en Linux, RLIMIT_AS limita además el espacio de direcciones a 2 × este valor + 128 MiB. |
 | `OKF_MAX_OUTPUT_MB` | 512 | Tamaño máximo de cada archivo escrito por el conversor (RLIMIT_FSIZE). |
 | `OKF_MAX_OPEN_FILES` | 256 | Descriptores abiertos máximos en el conversor (RLIMIT_NOFILE), mínimo 16. |
+| `OKF_BUILD_COMMIT` | HEAD Git, o `unknown` sin repositorio | Solo en compilación: SHA de 40 caracteres que identifica el conversor. En Docker se pasa como `--build-arg`; la CI lo fija. |
 | `OKF_FONT_PATH` | búsqueda de fuente instalada | Archivo TrueType que puede leer el renderizador PPTX, también con Landlock. |
 | `OKF_MAX_SLIDES` | 300 | Diapositivas máximas por presentación. |
 | `OKF_MAX_BLOCKS` | 50000 | Bloques máximos (párrafos y tablas de primer nivel) por documento DOCX. |
@@ -126,3 +127,16 @@ Y según el formato del original:
 - **DOCX:** los conceptos de `contenido/` reparten los bloques del original en tramos `docx_blocks` contiguos desde 1 hasta el último; cada localizador de bloque cae dentro del tramo de su concepto; `documento.md` localiza todos los bloques; ambos índices enumeran los conceptos en orden.
 - **XLSX:** un concepto por hoja del original, incluidas las ocultas, con su nombre exacto y su `sheet_index` en el orden del libro; los conceptos de región pertenecen a su hoja; el localizador `hoja` coincide con el rango que ocupan las celdas con contenido, ningún otro rango sale de él y cada celda con contenido cae en alguna región; el CSV de cada región grande tiene tantas filas como su rango; ambos índices enumeran las hojas y sus regiones en orden.
 - **PDF:** los conceptos de `contenido/` siguen el orden de las páginas (cada uno empieza en la página en la que termina el anterior o en la siguiente) y, con el título de `documento.md`, cubren todas las páginas del original; cada localizador `pdf_pages` cae dentro del tramo de su concepto; en un concepto de varias páginas cada bloque lleva un marcador y todo localizador se usa; `documento.md` localiza todas las páginas y `page_labels` solo tiene páginas físicas existentes con una etiqueta no vacía; ambos índices enumeran los conceptos en orden.
+
+### Identidad de cada conversión (plan 2, C9)
+
+`documento.md`, el informe y `GET /jobs/{id}` incluyen `converter_version`,
+`converter_commit` y `profile_version`. Al reclamar se registra la versión que va a
+convertir, incluso si falla; al publicar se conserva la identidad informada por el
+hijo. La recuperación de una publicación interrumpida recupera la identidad del
+bundle, no la del worker que reconcilia. Un trabajo aún no intentado o histórico sin
+metadatos devuelve `null`. La migración SQLite conserva las bases existentes.
+
+`build.rs` obtiene el SHA de Git al compilar o usa `OKF_BUILD_COMMIT`. Un árbol fuente
+sin Git ni ese argumento registra `unknown`; no inventa un commit. Los golden fijan
+solo ese campo variable como `<commit>` y siguen comparando paquete y perfil.

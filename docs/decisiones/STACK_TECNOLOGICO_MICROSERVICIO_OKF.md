@@ -89,3 +89,5 @@ En la ruta LibreOffice, activar `ExportHiddenSlides`, desactivar páginas de not
 y la consulta de disponibilidad de Landlock. En Linux, `landlock` 0.4.7 instala las
 reglas de archivos mediante su interfaz segura. Las versiones transitivas quedan en
 `Cargo.lock`. Las capas y sus límites se describen en la arquitectura técnica, §5.
+
+La imagen incorpora `build.rs` y recibe `OKF_BUILD_COMMIT` como argumento de construcción; la CI registra así el commit exacto del conversor (plan 2, C9).

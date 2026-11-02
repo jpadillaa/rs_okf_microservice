@@ -85,6 +85,8 @@ fn normalize(text: &str) -> String {
             .filter(|i| i.trim().is_empty())
         {
             out.push_str(&format!("{indent}at: \"<generado>\"{newline}"));
+        } else if body.starts_with("converter_commit: ") {
+            out.push_str(&format!("converter_commit: \"<commit>\"{newline}"));
         } else if body.starts_with("- Duración") && body.ends_with(" ms") {
             let label = body.split(':').next().unwrap();
             out.push_str(&format!("{label}: <duración> ms{newline}"));

@@ -8,6 +8,9 @@ sources:
 generated:
   by: "process:document-conversion"
   at: "<generado>"
+converter_version: "0.1.0"
+converter_commit: "<commit>"
+profile_version: "1.0.0"
 source_file:
   path: "references/original.pptx"
   sha256: "9f6a83313e4d37377c3e3f9f362bda7741d531991ac1a3ce610e9b054ea0af26"

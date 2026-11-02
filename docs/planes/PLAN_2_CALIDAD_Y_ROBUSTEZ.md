@@ -120,6 +120,8 @@ El rechazo de trabajos nuevos cuando falta espacio (`507 Insufficient Storage`) 
 
 ### C9. Versión del conversor y del perfil (S)
 
+**Estado:** implementado el 2 de noviembre: perfil 1.0.0, versión y commit del conversor en documento, informe y trabajos, con recuperación y validación de coherencia.
+
 **Problema.** `generated.by` es siempre `process:document-conversion`; no se puede saber qué bundles regenerar cuando cambia una regla.
 
 **Trabajo.**

@@ -7,7 +7,9 @@ ARG RUNTIME_IMAGE=debian:trixie-slim@sha256:f6b08b09a05725f9431502d3b5714f5c4576
 
 FROM ${RUST_IMAGE} AS build
 WORKDIR /src
-COPY Cargo.toml Cargo.lock ./
+COPY Cargo.toml Cargo.lock build.rs ./
+ARG OKF_BUILD_COMMIT=unknown
+ENV OKF_BUILD_COMMIT=$OKF_BUILD_COMMIT
 COPY src ./src
 RUN cargo build --release --locked \
     && cp target/release/okf-microservice /okf-microservice

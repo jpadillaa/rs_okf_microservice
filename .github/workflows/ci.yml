@@ -41,7 +41,7 @@ jobs:
     steps:
       - uses: actions/checkout@v5
       - name: Construir la imagen
-        run: docker build -t okf-microservice:smoke .
+        run: docker build --build-arg OKF_BUILD_COMMIT="$(git rev-parse HEAD)" -t okf-microservice:smoke .
       # Una muestra de cada formato por la API, el worker en un contenedor sin red y
       # la descarga de los cuatro bundles.
       - name: Prueba de humo

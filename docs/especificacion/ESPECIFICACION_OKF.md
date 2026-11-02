@@ -1,6 +1,7 @@
 # Perfil documental OKF para PDF, DOCX, XLSX y PPTX
 
 **Versión objetivo:** Open Knowledge Format (OKF) v0.2.  
+**Versión del perfil documental:** 1.0.0 (independiente de OKF v0.2).
 **Alcance:** especificar exclusivamente el bundle de salida. No define API, arquitectura, herramientas ni ejecución del conversor.
 
 Este perfil añade convenciones para convertir documentos a OKF sin perder estructura, contenido ni referencia al original. Las reglas indicadas como **OKF** proceden de la [especificación oficial](https://github.com/GoogleCloudPlatform/open-knowledge-format/blob/main/SPEC.md); las indicadas como **perfil** son requisitos de este proyecto. Un bundle puede cumplir OKF y aun así tener pérdidas de extracción: ambos controles se evalúan por separado.
@@ -31,6 +32,8 @@ bundle/
 │   └── original.<ext>       # Copia inmutable del archivo recibido
 └── conversion-report.md     # Cobertura e incidencias; concepto con type
 ```
+
+**Perfil:** `documento.md` y `conversion-report.md` declaran los mismos `converter_version` (versión del paquete), `converter_commit` (SHA Git de 40 caracteres; `unknown` si la fuente no lo proporciona) y `profile_version` (`1.0.0`). Son extensiones del perfil, no campos oficiales de OKF.
 
 **Perfil:** `documento.md`, `conversion-report.md` y el original son obligatorios. `documento.md` registra `source_file.path` como ruta del original relativa a la raíz del bundle y `source_file.sha256` como 64 caracteres hexadecimales de sus bytes; el informe repite esa huella. Los recursos no Markdown son adjuntos, no conceptos OKF. Toda imagen o archivo de datos sustantivo se enlaza desde el concepto correspondiente. Las rutas son únicas y estables; se usa un ordinal cuando importa el orden editorial. Se puede entregar el directorio como ZIP sin alterar su estructura interna.
 
@@ -170,3 +173,14 @@ El perfil se limita a `.pdf`, `.docx`, `.xlsx` y `.pptx`. Los formatos binarios 
 - [Microsoft, WordprocessingML](https://learn.microsoft.com/en-us/office/open-xml/word/structure-of-a-wordprocessingml-document).
 - [Microsoft, SpreadsheetML](https://learn.microsoft.com/en-us/office/open-xml/spreadsheet/structure-of-a-spreadsheetml-document).
 - [Microsoft, PresentationML](https://learn.microsoft.com/es-es/office/open-xml/presentation/structure-of-a-presentationml-document).
+
+## Registro de cambios del perfil
+
+Todo cambio de una regla de esta especificación incrementa `profile_version` en la
+especificación y en `src/version.rs`, con una entrada aquí, en el mismo commit.
+
+- **1.0.0 — 2 de noviembre de 2026:** primera versión explícita; conserva las reglas
+  de conversión existentes y exige identificar conversor, commit y perfil en el
+  documento fuente y el informe. El validador reconoce además bundles anteriores sin
+  esos campos como legado sin versión; rechaza metadatos incompletos, discordantes
+  o perfiles versionados que no conoce.

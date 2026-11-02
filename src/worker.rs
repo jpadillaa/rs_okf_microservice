@@ -180,6 +180,8 @@ pub struct Converted {
     pub status: String,
     pub bundle: PathBuf,
     pub stages: Stages,
+    #[serde(default)]
+    pub(crate) versions: crate::version::Versions,
     /// Memoria residente máxima del proceso que convirtió, en MB, si el sistema la da
     /// (`VmHWM` en Linux). El muestreo del worker no ve los picos de menos de 100 ms.
     #[serde(default)]
@@ -197,6 +199,7 @@ pub fn convert(cfg: &Config, original: &Path, filename: &str, dir: &Path) -> Res
         status: built.status,
         bundle: built.path,
         stages: built.stages,
+        versions: crate::version::Versions::current(),
         peak_mb: own_peak_mb(),
     })
 }
@@ -496,13 +499,13 @@ async fn run_local(
 
 /// Estado del bundle publicado de un trabajo, si existe y es válido. Un bundle
 /// inválido (publicación interrumpida) se elimina para que el trabajo se reprocese.
-fn published_state(root: &Path, id: &str) -> Option<String> {
+fn published_state(root: &Path, id: &str) -> Option<(String, crate::version::Versions)> {
     let dir = root.join("published").join(id);
     let zip = dir.join("bundle.zip");
     if !zip.exists() {
         return None;
     }
-    let state = (|| -> Result<String> {
+    let state = (|| -> Result<(String, crate::version::Versions)> {
         validate_bundle(&zip)?;
         let mut z = zip::ZipArchive::new(fs::File::open(&zip)?)?;
         let mut report = String::new();
@@ -516,7 +519,10 @@ fn published_state(root: &Path, id: &str) -> Option<String> {
         if !matches!(state.as_str(), "complete" | "partial") {
             bail!("estado de informe desconocido: {state}")
         }
-        Ok(state)
+        Ok((
+            state,
+            crate::version::Versions::from_report(&frontmatter(&report)?),
+        ))
     })();
     match state {
         Ok(s) => Some(s),
@@ -546,10 +552,10 @@ fn recover_expired(tx: &Transaction<'_>, root: &Path, cfg: &Config) -> Result<()
         .query_map([now()], |r| Ok((r.get(0)?, r.get(1)?)))?
         .collect::<rusqlite::Result<_>>()?;
     for (id, attempt) in expired {
-        if let Some(state) = published_state(root, &id) {
+        if let Some((state, versions)) = published_state(root, &id) {
             tx.execute(
-                "UPDATE jobs SET status=?2,bundle=?3,lease_until=NULL,retry_at=NULL,error=NULL WHERE id=?1",
-                params![id, state, format!("published/{id}/bundle.zip")],
+                "UPDATE jobs SET status=?2,bundle=?3,lease_until=NULL,retry_at=NULL,error=NULL,converter_version=?4,converter_commit=?5,profile_version=?6 WHERE id=?1",
+                params![id, state, format!("published/{id}/bundle.zip"), versions.converter_version, versions.converter_commit, versions.profile_version],
             )?;
             remove_attempts(root, &id);
             info!(%id, %state, "publicación interrumpida completada al reconciliar");
@@ -589,8 +595,8 @@ async fn claim(a: &App) -> Result<Option<Job>> {
         .optional()?;
     if let Some(job) = &job {
         tx.execute(
-            "UPDATE jobs SET status='processing',attempt=?2,lease_until=?3,retry_at=NULL,error=NULL WHERE id=?1",
-            params![job.id, job.attempt, now() + a.cfg.lease_s],
+            "UPDATE jobs SET status='processing',attempt=?2,lease_until=?3,retry_at=NULL,error=NULL,converter_version=?4,converter_commit=?5,profile_version=?6 WHERE id=?1",
+            params![job.id, job.attempt, now() + a.cfg.lease_s, crate::version::PACKAGE, crate::version::COMMIT, crate::version::PROFILE],
         )?;
     }
     tx.commit()?;
@@ -617,8 +623,8 @@ async fn publish(a: &App, job: &Job, c: &Converted) -> Result<()> {
     }
     fs::rename(&staging, &pubdir)?;
     a.db.lock().await.execute(
-        "UPDATE jobs SET status=?3,bundle=?4,lease_until=NULL,retry_at=NULL,error=NULL WHERE id=?1 AND attempt=?2",
-        params![id, job.attempt, c.status, format!("published/{id}/bundle.zip")],
+        "UPDATE jobs SET status=?3,bundle=?4,lease_until=NULL,retry_at=NULL,error=NULL,converter_version=?5,converter_commit=?6,profile_version=?7 WHERE id=?1 AND attempt=?2",
+        params![id, job.attempt, c.status, format!("published/{id}/bundle.zip"), c.versions.converter_version, c.versions.converter_commit, c.versions.profile_version],
     )?;
     remove_attempts(&a.root, id);
     info!(%id, status = %c.status, attempt = job.attempt, "trabajo publicado");
