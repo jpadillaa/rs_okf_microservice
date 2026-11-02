@@ -21,6 +21,8 @@ use tracing::info;
 use uuid::Uuid;
 
 mod bundle;
+#[cfg(test)]
+mod coverage;
 mod docx;
 mod format;
 #[cfg(test)]

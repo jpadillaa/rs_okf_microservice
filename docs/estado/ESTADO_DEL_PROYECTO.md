@@ -1,11 +1,11 @@
 # Estado del proyecto
 
-**Corte:** 1 de noviembre de 2026, commit `40692bd` en `main`, tras implementar el [plan 1](../planes/PLAN_1_RECUPERACION_DEL_PLAN_ORIGINAL.md) (el corte anterior, con las cuatro entregas, era el commit `d3a765e`).  
+**Corte:** 2 de noviembre de 2026, plan 2 C2 implementado sobre `7abd68c`; commits locales, sin push.
 **Alcance:** qué está implementado, con qué evidencia de calidad, cómo se compara con el plan inicial y qué queda pendiente. Los contratos están en la [especificación](../especificacion/ESPECIFICACION_OKF.md), las [arquitecturas](../arquitectura/ARQUITECTURA_TECNICA_MICROSERVICIO_OKF.md) y el [stack](../decisiones/STACK_TECNOLOGICO_MICROSERVICIO_OKF.md); este documento no los modifica y debe actualizarse al cerrar cada entrega.
 
 ## 1. Resumen
 
-Las cuatro entregas previstas están implementadas: el servicio convierte PPTX, DOCX, XLSX y PDF en bundles OKF v0.2 con la misma API, el mismo worker, el mismo ensamblador y el mismo validador. Cada formato tiene pruebas de aceptación con documentos sintéticos y, salvo XLSX, con copias reducidas de documentos reales, y los 26 documentos de ejemplo tienen un bundle de referencia que las pruebas comparan archivo por archivo. La suite (54 pruebas), `clippy` sin advertencias, `rustfmt` y la auditoría de dependencias pasan en local.
+Las cuatro entregas previstas están implementadas: el servicio convierte PPTX, DOCX, XLSX y PDF en bundles OKF v0.2 con la misma API, el mismo worker, el mismo ensamblador y el mismo validador. Cada formato tiene pruebas de aceptación con documentos sintéticos y, salvo XLSX, con copias reducidas de documentos reales, y los 26 documentos de ejemplo tienen un bundle de referencia que las pruebas comparan archivo por archivo. La suite (56 pruebas), `clippy` sin advertencias, `rustfmt` y la auditoría de dependencias pasan en local.
 
 El [plan 1](../planes/PLAN_1_RECUPERACION_DEL_PLAN_ORIGINAL.md) recuperó del plan inicial lo que seguía aportando (§5.6): un ensamblador único, la cobertura frente a una referencia independiente, límites configurables y control de admisión, el registro por etapa, una imagen reproducible y la auditoría de dependencias; y cerró en la documentación las decisiones abandonadas. Lo que falta es **evidencia**: evaluar DOCX con archivos guardados por Word y conseguir los documentos reales que pide el corpus (XLSX, PDF escaneado, mixto y largo); y las garantías del [plan 2](../planes/PLAN_2_CALIDAD_Y_ROBUSTEZ.md): retención, aislamiento, fuzzing y salud.
 
@@ -47,6 +47,7 @@ Las decisiones de biblioteca de cada formato y sus mediciones están en el [stac
 | --- | ---: | --- |
 | Servicio (`src/main.rs`) | 10 | Ruta completa por formato a través del worker, estados `complete`/`partial`/`failed`, clasificación de fallos y reintentos, asignaciones, reconciliación al arrancar, rechazo de bundles alterados por el validador y admisión (subida, cola y disco). |
 | Bundles de referencia (`src/golden.rs`) | 2 | Los 26 documentos de ejemplo, comparados archivo por archivo con `examples/<formato>/esperado/`, y determinismo de dos conversiones. |
+| Cobertura independiente (`src/coverage.rs`) | 2 | Los 26 ejemplos, con listas TSV y mínimos versionados independientes de los golden; normalización Unicode y pérdida deliberada de texto. |
 | Ensamblador y paquetes (`src/output.rs`, `src/ooxml.rs`) | 2 | Frontmatter legible por un analizador YAML con cadenas difíciles; límites de expansión ZIP configurables. |
 | Proceso hijo (`tests/worker_process.rs`) | 1 | Conversión real en proceso hijo, parada al superar los límites y línea de registro del intento. |
 | PPTX | 9 | Extracción con muestras y con el corpus reducido. |
@@ -54,7 +55,7 @@ Las decisiones de biblioteca de cada formato y sus mediciones están en el [stac
 | XLSX | 8 | Muestras sintéticas, referencias A1 y lectura de celdas. |
 | PDF | 13 | Corpus real reducido, muestras sintéticas, maquetación, lectura y límite de píxeles de imagen. |
 
-La [CI](../../.github/workflows/ci.yml) ejecuta `cargo fmt --check`, `cargo clippy --all-targets --locked -- -D warnings` y `cargo test --locked` en Ubuntu 24.04 con cada push a `main`; comprueba las licencias y los orígenes de las dependencias con `cargo deny`, y construye la imagen y ejecuta la prueba de humo `tools/smoke.sh`. Un [flujo diario](../../.github/workflows/scheduled.yml) comprueba los avisos de seguridad. Las pruebas, la auditoría, la construcción de la imagen y la prueba de humo pasan en local en el commit de corte; el resultado de la CI no se ha revisado.
+La [CI](../../.github/workflows/ci.yml) ejecuta `cargo fmt --check`, `cargo clippy --all-targets --locked -- -D warnings` y `cargo test --locked` en Ubuntu 24.04 con cada push a `main`; comprueba las licencias y los orígenes de las dependencias con `cargo deny`, y construye la imagen y ejecuta la prueba de humo `tools/smoke.sh`. Un [flujo diario](../../.github/workflows/scheduled.yml) comprueba los avisos de seguridad. Las pruebas, la auditoría, la construcción de la imagen y la prueba de humo pasan en local en el commit de corte; la CI de `1fd4347` pasó en Linux. Revisadas las dos siguientes: `cf0f869` pasó completa (`test`: 3 min 02 s) y `7abd68c` tiene `test` y dependencias correctos (`test`: 2 min 50 s), con imagen aún en curso al consultar. El aviso de Node.js 20 desapareció en ambas. El flujo programado de `1fd4347` falló por `RUSTSEC-2026-0429` (`ZipArchive::extract`); se verificó que ni el servicio ni BetterOffice usan esa función y se añadió la excepción razonada a `deny.toml`. La auditoría local actualizada pasa.
 
 Las pruebas de PDF y del validador alteran bundles válidos (marcador sin bloque, localizador fuera de su sección, tramos desordenados, índices en otro orden) y comprueban que se rechazan.
 
@@ -162,14 +163,14 @@ El [plan 1](../planes/PLAN_1_RECUPERACION_DEL_PLAN_ORIGINAL.md) se implementó e
 
 ## 6. Roadmap pendiente
 
-El plan 1 cerró los antiguos puntos sobre el modelo intermedio, Xberg, el cierre operativo (salvo la retención) y la división (§5.6). El corpus pendiente es el R6 de ese [plan](../planes/PLAN_1_RECUPERACION_DEL_PLAN_ORIGINAL.md#r6-corpus-representativo-m-continuo); las garantías de regresión, aislamiento, operación y versionado están en el [plan 2](../planes/PLAN_2_CALIDAD_Y_ROBUSTEZ.md), del que C1 ya está hecho.
+El plan 1 cerró los antiguos puntos sobre el modelo intermedio, Xberg, el cierre operativo (salvo la retención) y la división (§5.6). El corpus pendiente es el R6 de ese [plan](../planes/PLAN_1_RECUPERACION_DEL_PLAN_ORIGINAL.md#r6-corpus-representativo-m-continuo); las garantías de regresión, aislamiento, operación y versionado están en el [plan 2](../planes/PLAN_2_CALIDAD_Y_ROBUSTEZ.md), del que C1 y C2 ya están hechos.
 
 En orden de prioridad:
 
-1. **Revisar la CI** del commit de corte, incluidos los trabajos nuevos de dependencias e imagen, y que los bundles de referencia, generados en macOS, coinciden en Linux.
+1. **Seguimiento de CI**: confirmar la imagen de `7abd68c` y la próxima ejecución del flujo programado con la excepción razonada de `RUSTSEC-2026-0429`. Los golden pasan en Linux; el aviso de Node.js 20 ya desapareció y `test` tarda unos tres minutos.
 2. **Evaluación DOCX con archivos guardados por Word**: las muestras reabiertas y guardadas en Word, o nuevos DOCX reales. Está en pausa hasta disponer de esos archivos.
 3. **Corpus real pendiente** (plan 1, R6): libros XLSX, un PDF escaneado, uno mixto y uno largo de texto, y un DOCX real con notas y revisiones, cada uno con su bundle de referencia y su medición de cobertura.
-4. **Plan 2**: en su orden, cobertura como control de la CI (C2), contención de entradas hostiles (C3, C4), contrato (C9, C10), fuzzing (C5) y operación (C6, C7, C8, que incluye la retención).
+4. **Plan 2**: en su orden, contención de entradas hostiles (C3, C4), contrato (C9, C10), fuzzing (C5) y operación (C6, C7, C8, que incluye la retención).
 5. **Guiones legítimos al final de línea en PDF**: cambiar la regla de la especificación para conservar el guion en URL y compuestos ([cobertura, §4](../decisiones/COBERTURA_INDEPENDIENTE.md#4-hallazgos)).
 6. **Texto alternativo de los gráficos DOCX** cuando el gráfico no tiene datos.
 7. **Revisión del renderizado PPTX** cuando aparezcan presentaciones reales con tablas, gráficos o SmartArt, o con picos de memoria cercanos al límite.

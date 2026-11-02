@@ -39,6 +39,7 @@ multiple-versions = "allow"
 # Cada excepción explica por qué el aviso no afecta al servicio; un aviso nuevo hace
 # fallar el flujo programado hasta que se corrige o se justifica aquí.
 ignore = [
+    { id = "RUSTSEC-2026-0429", reason = "zip 4/8: solo afecta a ZipArchive::extract con enlaces simbólicos; ni el servicio ni betteroffice-opc llaman a extract, leen entradas en memoria. Revalidar si se incorpora extracción a disco" },
     { id = "RUSTSEC-2026-0367", reason = "zip: solo afecta a la extracción a disco (ZipArchive::extract, ZipStreamReader::extract), que el servicio no usa; los paquetes se leen entrada a entrada en memoria" },
     { id = "RUSTSEC-2026-0368", reason = "zip: solo afecta a ZipArchive::extract, que el servicio no usa" },
     { id = "RUSTSEC-2026-0369", reason = "zip: solo afecta a ZipArchive::extract y ZipStreamReader::extract, que el servicio no usa" },

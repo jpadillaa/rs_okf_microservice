@@ -33,6 +33,10 @@ Tamaños relativos: **S** (un cambio acotado en un módulo), **M** (varios módu
 
 ### C2. Cobertura como control de la CI (S)
 
+**Estado:** implementado el 2 de noviembre: `src/coverage.rs`, 26 mínimos en
+`examples/coverage-thresholds.json`. Se conservan las listas completas y las cifras
+medidas menos 0,50 puntos, según la concreción solicitada; véase [el método](../decisiones/COBERTURA_INDEPENDIENTE.md#6-control-de-regresión-en-rust-plan-2-c2).
+
 **Trabajo.** Una prueba en Rust que calcula la cobertura de palabras de cada bundle del corpus frente a las listas de referencia de `R2` y falla por debajo de un umbral por documento (el valor medido menos un margen pequeño, por ejemplo 0,5 puntos). Las diferencias explicadas en `R2` (encabezados registrados una vez, texto de diseño) se descuentan en la lista de referencia, no en el umbral.
 
 **Aceptación.** Un cambio que pierde texto de un documento del corpus hace fallar la CI aunque su bundle de referencia se regenere.

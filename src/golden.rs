@@ -19,7 +19,7 @@ use std::{
 use zip::ZipArchive;
 
 /// Documentos de ejemplo de todos los formatos, sin las carpetas de resultados.
-fn documents() -> Vec<PathBuf> {
+pub(crate) fn documents() -> Vec<PathBuf> {
     fn walk(dir: &Path, out: &mut Vec<PathBuf>) {
         for e in fs::read_dir(dir).unwrap().flatten() {
             let p = e.path();
@@ -43,7 +43,7 @@ fn documents() -> Vec<PathBuf> {
 
 /// Carpeta de la referencia: `corpus/s1.pptx` → `esperado/corpus/s1`; los documentos en
 /// la raíz del formato forman el grupo `fixtures`.
-fn expected_dir(doc: &Path) -> PathBuf {
+pub(crate) fn expected_dir(doc: &Path) -> PathBuf {
     let rel = doc.strip_prefix("examples").unwrap();
     let mut parts: Vec<_> = rel.iter().collect();
     let format = parts.remove(0);
@@ -96,7 +96,7 @@ fn normalize(text: &str) -> String {
 }
 
 /// Archivos de la referencia de un bundle: textos normalizados y `recursos.tsv`.
-fn snapshot(doc: &Path) -> BTreeMap<String, String> {
+pub(crate) fn bundle_files(doc: &Path) -> BTreeMap<String, String> {
     let bytes = fs::read(doc).unwrap();
     let filename = doc.file_name().unwrap().to_string_lossy().into_owned();
     let format = Format::from_filename(&filename).unwrap();
@@ -117,7 +117,7 @@ fn snapshot(doc: &Path) -> BTreeMap<String, String> {
             .iter()
             .any(|x| name.ends_with(x))
         {
-            files.insert(name, normalize(&String::from_utf8(data).unwrap()));
+            files.insert(name, String::from_utf8(data).unwrap());
         } else if is_view(&name) {
             resources.push(format!("{name}\tvista"));
         } else {
@@ -127,6 +127,13 @@ fn snapshot(doc: &Path) -> BTreeMap<String, String> {
     resources.sort();
     files.insert("recursos.tsv".into(), resources.join("\n") + "\n");
     files
+}
+
+fn snapshot(doc: &Path) -> BTreeMap<String, String> {
+    bundle_files(doc)
+        .into_iter()
+        .map(|(name, text)| (name, normalize(&text)))
+        .collect()
 }
 
 fn read_expected(dir: &Path) -> BTreeMap<String, String> {

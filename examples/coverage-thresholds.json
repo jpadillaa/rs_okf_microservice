@@ -1,0 +1,106 @@
+{
+  "examples/docx/breve.docx": {
+    "measured": 100.0,
+    "minimum": 99.5
+  },
+  "examples/docx/corpus/d1.docx": {
+    "measured": 100.0,
+    "minimum": 99.5
+  },
+  "examples/docx/corpus/d2.docx": {
+    "measured": 100.0,
+    "minimum": 99.5
+  },
+  "examples/docx/corpus/d3.docx": {
+    "measured": 100.0,
+    "minimum": 99.5
+  },
+  "examples/docx/estructura.docx": {
+    "measured": 99.07,
+    "minimum": 98.57
+  },
+  "examples/docx/muestras/anexos_con_perdidas.docx": {
+    "measured": 99.26,
+    "minimum": 98.76
+  },
+  "examples/docx/muestras/formato_directo.docx": {
+    "measured": 100.0,
+    "minimum": 99.5
+  },
+  "examples/docx/muestras/guia_tecnica.docx": {
+    "measured": 100.0,
+    "minimum": 99.5
+  },
+  "examples/docx/muestras/informe_revisado.docx": {
+    "measured": 100.0,
+    "minimum": 99.5
+  },
+  "examples/pptx/corpus/s1.pptx": {
+    "measured": 97.11,
+    "minimum": 96.61
+  },
+  "examples/pptx/corpus/s2.pptx": {
+    "measured": 100.0,
+    "minimum": 99.5
+  },
+  "examples/pptx/corpus/s3.pptx": {
+    "measured": 100.0,
+    "minimum": 99.5
+  },
+  "examples/pptx/multiple.pptx": {
+    "measured": 100.0,
+    "minimum": 99.5
+  },
+  "examples/pptx/rich.pptx": {
+    "measured": 100.0,
+    "minimum": 99.5
+  },
+  "examples/pptx/simple.pptx": {
+    "measured": 100.0,
+    "minimum": 99.5
+  },
+  "examples/pptx/visual.pptx": {
+    "measured": 100.0,
+    "minimum": 99.5
+  },
+  "examples/pdf/corpus/p1.pdf": {
+    "measured": 96.88,
+    "minimum": 96.38
+  },
+  "examples/pdf/corpus/p2.pdf": {
+    "measured": 95.06,
+    "minimum": 94.56
+  },
+  "examples/pdf/corpus/p4.pdf": {
+    "measured": 99.81,
+    "minimum": 99.31
+  },
+  "examples/pdf/muestras/articulo_columnas.pdf": {
+    "measured": 97.74,
+    "minimum": 97.24
+  },
+  "examples/pdf/muestras/breve.pdf": {
+    "measured": 100.0,
+    "minimum": 99.5
+  },
+  "examples/pdf/muestras/escaneado_mixto.pdf": {
+    "measured": 100.0,
+    "minimum": 99.5
+  },
+  "examples/pdf/muestras/informe_tecnico.pdf": {
+    "measured": 99.35,
+    "minimum": 98.85
+  },
+  "examples/xlsx/muestras/inventario_regiones.xlsx": {
+    "measured": 99.19,
+    "minimum": 98.69
+  },
+  "examples/xlsx/muestras/libro_con_perdidas.xlsx": {
+    "measured": 100.0,
+    "minimum": 99.5
+  },
+  "examples/xlsx/muestras/ventas_trimestrales.xlsx": {
+    "measured": 99.84,
+    "minimum": 99.34
+  }
+}

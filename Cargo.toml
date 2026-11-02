@@ -29,6 +29,9 @@ zip = { version = "4", default-features = false, features = ["deflate"] }
 tempfile = "3"
 tower = { version = "0.5", features = ["util"] }
 http-body-util = "0.1"
+caseless = "0.2.2"
+unicode-normalization = "0.1"
+regex = "1"
 
 # Las dependencias (renderizado PPTX, lectura PDF, ZIP) se optimizan también en las
 # pruebas: los bundles de referencia convierten todos los ejemplos y en debug tardan

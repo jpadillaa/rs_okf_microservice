@@ -99,3 +99,24 @@ uv run tools/coverage.py --write-reference examples/*/corpus/* examples/*/muestr
 ```
 
 Sin `--write-reference` el script solo informa. Con `--json RUTA` guarda también las 25 palabras que más faltan y más sobran de cada documento.
+
+## 6. Control de regresión en Rust (plan 2, C2)
+
+`cargo test --locked` ejecuta `src/coverage.rs` sobre los 26 documentos de `examples/`.
+Lee las listas TSV independientes, convierte de nuevo cada documento y cuenta las
+palabras de los mismos archivos y campos que `tools/coverage.py`: NFKC, eliminación
+del guion blando, casefold completo y secuencias Unicode de letras y números. Compara
+multiconjuntos; no usa la métrica más permisiva de reagrupación «Texto (%)».
+
+`examples/coverage-thresholds.json` guarda la cobertura medida y el mínimo de cada
+documento: la cifra publicada, redondeada a dos decimales, menos **0,50 puntos
+porcentuales**. Conservamos las listas completas y las cifras de esta medición,
+con las diferencias explicadas en §2 y §3; no se introducen descuentos adicionales
+ni se ajusta automáticamente el umbral. Esta es la concreción de C2 solicitada
+para el corte del 2 de noviembre.
+
+El control es independiente de los golden: `OKF_UPDATE_GOLDEN=1` no modifica las
+listas ni los umbrales. Una prueba de pérdida de texto comprueba esa separación.
+Añadir un ejemplo exige añadir su lista independiente y su umbral; eliminar o dejar
+huérfano un umbral también falla. Las actualizaciones de listas o mínimos requieren
+una nueva medición y la revisión explícita de su diferencia.
