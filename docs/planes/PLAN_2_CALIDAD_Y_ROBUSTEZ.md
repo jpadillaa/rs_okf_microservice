@@ -92,6 +92,8 @@ medidas menos 0,50 puntos, según la concreción solicitada; véase [el método]
 
 ### C6. Apagado ordenado (S)
 
+**Estado:** implementado el 2 de noviembre; señales reales verificadas durante una conversión, con publicación dentro de la gracia o vuelta a la cola sin consumir intento.
+
 **Trabajo.** Al recibir SIGTERM o SIGINT, el worker deja de reclamar trabajos, espera al proceso hijo hasta `OKF_SHUTDOWN_GRACE_S` y, si no termina, lo detiene y devuelve el trabajo a `queued` sin consumir un intento. La API deja de aceptar conexiones nuevas y termina las peticiones en curso.
 
 **Aceptación.** Una prueba envía la señal durante una conversión y comprueba que el trabajo vuelve a la cola con su intento intacto, o termina publicado si acabó dentro del plazo.

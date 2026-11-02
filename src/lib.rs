@@ -34,6 +34,7 @@ mod output;
 mod pdf;
 mod pptx;
 mod sections;
+mod shutdown;
 mod validate;
 mod version;
 mod worker;
@@ -80,6 +81,7 @@ struct App {
     /// Ejecutable para convertir en un proceso hijo vigilado; `None` convierte en el
     /// propio proceso (pruebas unitarias).
     converter: Option<PathBuf>,
+    shutdown: Arc<shutdown::Shutdown>,
 }
 #[derive(Deserialize, Serialize)]
 struct Accepted {
@@ -126,6 +128,7 @@ fn app(root: PathBuf) -> Result<App> {
         db: Arc::new(Mutex::new(db)),
         cfg: Arc::new(worker::Config::from_env()?),
         converter: None,
+        shutdown: Arc::new(shutdown::Shutdown::default()),
     })
 }
 fn now() -> i64 {
@@ -307,11 +310,15 @@ async fn download(
     Ok((headers, bytes))
 }
 async fn serve(root: PathBuf, bind: &str) -> Result<()> {
-    let a = app(root)?;
+    let mut a = app(root)?;
+    a.shutdown = shutdown::install()?;
+    let shutdown = a.shutdown.clone();
     let router = router(a);
     let listener = tokio::net::TcpListener::bind(bind).await?;
     info!(%bind,"API escuchando");
-    axum::serve(listener, router).await?;
+    axum::serve(listener, router)
+        .with_graceful_shutdown(async move { shutdown.wait().await })
+        .await?;
     Ok(())
 }
 fn router(a: App) -> Router {

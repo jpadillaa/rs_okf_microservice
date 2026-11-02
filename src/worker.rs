@@ -28,6 +28,7 @@ pub struct Config {
     pub max_memory_mb: u64,
     pub max_output_mb: u64,
     pub max_open_files: u64,
+    pub shutdown_grace: Duration,
     /// Diapositivas máximas por presentación (`OKF_MAX_SLIDES`).
     pub max_slides: usize,
     /// Bloques máximos (párrafos y tablas de primer nivel) por documento DOCX
@@ -66,6 +67,7 @@ impl Default for Config {
             max_memory_mb: 500,
             max_output_mb: 512,
             max_open_files: 256,
+            shutdown_grace: Duration::from_secs(30),
             max_slides: 300,
             max_blocks: 50_000,
             max_cells: 1_000_000,
@@ -98,6 +100,10 @@ impl Config {
             max_memory_mb: var("OKF_MAX_MEMORY_MB", d.max_memory_mb)?,
             max_output_mb: var("OKF_MAX_OUTPUT_MB", d.max_output_mb)?,
             max_open_files: var("OKF_MAX_OPEN_FILES", d.max_open_files)?,
+            shutdown_grace: Duration::from_secs(var(
+                "OKF_SHUTDOWN_GRACE_S",
+                d.shutdown_grace.as_secs(),
+            )?),
             max_slides: var("OKF_MAX_SLIDES", d.max_slides)?,
             max_blocks: var("OKF_MAX_BLOCKS", d.max_blocks)?,
             max_cells: var("OKF_MAX_CELLS", d.max_cells)?,
@@ -266,6 +272,7 @@ enum Outcome {
     Failed(FailureKind, String),
     /// Otro worker tomó el trabajo porque la reserva venció; este intento se abandona.
     LeaseLost,
+    Shutdown,
 }
 
 /// Memoria residente de un proceso en MB: `/proc` en Linux, `ps` en otros sistemas.
@@ -325,6 +332,14 @@ impl Watch<'_> {
     }
     async fn check(&mut self, pid: Option<u32>) -> Result<Option<Outcome>> {
         let cfg = &self.a.cfg;
+        if self
+            .a
+            .shutdown
+            .elapsed()
+            .is_some_and(|elapsed| elapsed >= cfg.shutdown_grace)
+        {
+            return Ok(Some(Outcome::Shutdown));
+        }
         if let Some(pid) = pid
             && let Some(mb) = rss_mb(pid).await
         {
@@ -692,6 +707,9 @@ async fn fail(a: &App, job: &Job, kind: FailureKind, message: &str) -> Result<()
 }
 
 pub async fn work_one(a: &App) -> Result<bool> {
+    if a.shutdown.requested() {
+        return Ok(false);
+    }
     let Some(job) = claim(a).await? else {
         return Ok(false);
     };
@@ -729,6 +747,25 @@ pub async fn work_one(a: &App) -> Result<bool> {
             }
         }
         Outcome::Failed(kind, message) => fail(a, &job, kind, &message).await?,
+        Outcome::Shutdown => {
+            // Limpia antes de hacer visible la cola: el siguiente intento puede
+            // reutilizar el mismo número y directorio en otro worker.
+            let mut db = a.db.lock().await;
+            let tx = db.transaction_with_behavior(rusqlite::TransactionBehavior::Immediate)?;
+            let owned = tx
+                .prepare("SELECT 1 FROM jobs WHERE id=?1 AND attempt=?2 AND status='processing'")?
+                .exists(params![job.id, job.attempt])?;
+            if owned {
+                if dir.exists()
+                    && let Err(error) = fs::remove_dir_all(&dir)
+                {
+                    warn!(%error, "limpieza interrumpida pendiente para el próximo intento");
+                }
+                tx.execute("UPDATE jobs SET status='queued',attempt=attempt-1,lease_until=NULL,retry_at=NULL,error=NULL WHERE id=?1", [&job.id])?;
+                info!(id = %job.id, "conversión interrumpida; vuelve a la cola sin consumir intento");
+            }
+            tx.commit()?;
+        }
         Outcome::LeaseLost => {
             warn!(id = %job.id, attempt = job.attempt, "reserva tomada por otro worker; se abandona el intento")
         }
@@ -750,6 +787,7 @@ fn log_attempt(job: &Job, outcome: &Outcome, usage: Usage) {
         Outcome::Failed(FailureKind::Permanent, _) => ("failed", Stages::default()),
         Outcome::Failed(FailureKind::Transient, _) => ("transient_failure", Stages::default()),
         Outcome::LeaseLost => ("lease_lost", Stages::default()),
+        Outcome::Shutdown => ("interrupted", Stages::default()),
     };
     info!(
         job_id = %job.id,
@@ -818,6 +856,7 @@ pub async fn reconcile(a: &App) -> Result<()> {
 pub async fn worker(root: PathBuf, poll_ms: u64, once: bool) -> Result<()> {
     let mut a = crate::app(root)?;
     a.converter = Some(std::env::current_exe()?);
+    a.shutdown = crate::shutdown::install()?;
     // El límite de memoria solo es una garantía si se puede medir.
     if rss_mb(std::process::id()).await.is_none() {
         bail!("no se puede medir la memoria de los procesos (ni /proc ni ps disponibles)")
@@ -825,14 +864,18 @@ pub async fn worker(root: PathBuf, poll_ms: u64, once: bool) -> Result<()> {
     crate::isolation::log_support();
     reconcile(&a).await?;
     info!(?a.cfg, "worker iniciado");
-    loop {
+    while !a.shutdown.requested() {
         if !work_one(&a).await? {
             if once {
-                return Ok(());
+                break;
             }
-            tokio::time::sleep(Duration::from_millis(poll_ms)).await;
+            tokio::select! {
+                _ = tokio::time::sleep(Duration::from_millis(poll_ms)) => {},
+                _ = a.shutdown.wait() => {},
+            }
         }
     }
+    Ok(())
 }
 
 #[cfg(all(test, unix))]

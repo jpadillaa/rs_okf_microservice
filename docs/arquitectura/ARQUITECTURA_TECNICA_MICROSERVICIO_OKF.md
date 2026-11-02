@@ -66,6 +66,7 @@ La primera entrega implementó la ruta completa con PPTX; la segunda añadió el
 | `OKF_MAX_CELLS` | 1000000 | Celdas con contenido máximas por libro XLSX. |
 | `OKF_MAX_PAGES` | 2000 | Páginas máximas por documento PDF. |
 | `OKF_CONVERSION_TIMEOUT_S` | 300 | Duración máxima de una conversión. |
+| `OKF_SHUTDOWN_GRACE_S` | 30 | Plazo de gracia del worker tras SIGTERM/SIGINT; 0 interrumpe sin espera adicional. |
 | `OKF_LEASE_S` | 60 | Vigencia de la asignación; el worker la renueva cada tercio mientras convierte. |
 | `OKF_MAX_ATTEMPTS` | 3 | Intentos máximos ante fallos transitorios. |
 | `OKF_RETRY_BASE_S` | 30 | Espera antes del primer reintento; se duplica en cada intento, con tope de una hora. |
@@ -97,11 +98,11 @@ El contenedor del worker mantiene `network_mode: none`; Landlock aquí restringe
 archivos, no sustituye ese aislamiento de red. En macOS no se aplican Landlock ni
 RLIMIT_AS: la memoria se limita mediante la vigilancia de RSS.
 
-**Registro de cada intento.** Al terminar un intento, el worker escribe una línea con el trabajo, el intento, el formato, el resultado (`complete`, `partial`, `failed`, `transient_failure` o `lease_lost`), la duración de la lectura, el ensamblado y la validación, la duración total y la memoria residente máxima. El proceso hijo devuelve su resultado como una línea JSON con las etapas, que mide el ensamblador común, y con su máximo de memoria (`getrusage` en Linux y macOS). Antes de aceptar el resultado, el worker comprueba también ese máximo y el tiempo total; así una conversión de menos de 100 ms que excede el límite no se publica. En XLSX y PDF las hojas y las páginas se leen mientras se ensamblan, de modo que su lectura cuenta como ensamblado. El registro no incluye contenido del documento.
+**Registro de cada intento.** Al terminar un intento, el worker escribe una línea con el trabajo, el intento, el formato, el resultado (`complete`, `partial`, `failed`, `transient_failure`, `lease_lost` o `interrupted`), la duración de la lectura, el ensamblado y la validación, la duración total y la memoria residente máxima. El proceso hijo devuelve su resultado como una línea JSON con las etapas, que mide el ensamblador común, y con su máximo de memoria (`getrusage` en Linux y macOS). Antes de aceptar el resultado, el worker comprueba también ese máximo y el tiempo total; así una conversión de menos de 100 ms que excede el límite no se publica. En XLSX y PDF las hojas y las páginas se leen mientras se ensamblan, de modo que su lectura cuenta como ensamblado. El registro no incluye contenido del documento.
 
 **Asignación.** Si la renovación encuentra que el trabajo ya pertenece a otro intento, el worker termina el proceso hijo y abandona el suyo sin publicar. Antes de publicar renueva la asignación para confirmar que sigue siendo suya. El registro final solo se escribe para el intento vigente.
 
-**Reintentos clasificados.** Un fallo permanente termina en `failed` en el primer intento: archivo inválido o dañado, límite de tamaño, diapositivas, bloques, celdas, páginas, memoria o tiempo superado, PDF protegido con contraseña, bundle que no supera la validación, o pánico del conversor. El subcomando `convert` instala un gancho que escribe el mensaje y la ubicación en stderr y sale con el código 5; el error del trabajo lo identifica como «defecto del conversor» y conserva ese diagnóstico. Un fallo transitorio vuelve a `queued` con espera creciente mientras queden intentos: errores del sistema de archivos (disco lleno, permisos, original inaccesible), un proceso hijo que termina por señal o código desconocido o un worker interrumpido cuya asignación vence. Al agotar los intentos, el trabajo termina en `failed` y el error indica cuántos se hicieron.
+**Reintentos clasificados.** Un fallo permanente termina en `failed` en el primer intento: archivo inválido o dañado, límite de tamaño, diapositivas, bloques, celdas, páginas, memoria o tiempo superado, PDF protegido con contraseña, bundle que no supera la validación, o pánico del conversor. El subcomando `convert` instala un gancho que escribe el mensaje y la ubicación en stderr y sale con el código 5; el error del trabajo lo identifica como «defecto del conversor» y conserva ese diagnóstico. Un fallo transitorio vuelve a `queued` con espera creciente mientras queden intentos: errores del sistema de archivos (disco lleno, permisos, original inaccesible), un proceso hijo que termina por señal o código desconocido o un worker terminado abruptamente cuya asignación vence. Al agotar los intentos, el trabajo termina en `failed` y el error indica cuántos se hicieron.
 
 **Reconciliación al arrancar.** Antes de reclamar trabajos, el worker:
 
@@ -161,3 +162,17 @@ por formato que usan la misma función de validación.
 ### Búsqueda de fallos (plan 2, C5)
 
 La [campaña de fuzzing](../decisiones/FUZZING.md) ejercita los cuatro adaptadores como biblioteca con entrada en memoria y salida temporal. El servicio mantiene el aislamiento C3/C4; los objetivos instrumentados usan los presupuestos de libFuzzer para conservar los fallos. El flujo nocturno comparte la auditoría de dependencias y conserva casos y logs.
+
+### Apagado ordenado (plan 2, C6)
+
+SIGTERM o SIGINT hace que el worker deje de reclamar trabajos. Mantiene la vigilancia
+y la renovación del intento activo durante `OKF_SHUTDOWN_GRACE_S`: si termina, lo
+publica; si vence la gracia, mata y recoge al hijo, limpia su carpeta y devuelve el
+trabajo a `queued`, descontando el intento interrumpido y sin espera de reintento.
+La limpieza y el cambio de estado se coordinan en una transacción para que otro
+worker pueda reutilizar el mismo número de intento sin perder sus archivos.
+Una reserva que ya pertenece a otro intento nunca se modifica.
+
+La API usa el apagado ordenado de Axum: deja de aceptar conexiones nuevas y termina
+las peticiones en curso. Una terminación forzada (SIGKILL, caída del host) sigue
+requiriendo la recuperación de asignaciones vencidas.
