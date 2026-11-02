@@ -23,6 +23,12 @@ allow = [
 ]
 confidence-threshold = 0.9
 
+# libFuzzer incorpora código de LLVM bajo NCSA, licencia permisiva; solo se usa
+# en el arnés de pruebas, no en el servicio de producción.
+[[licenses.exceptions]]
+name = "libfuzzer-sys"
+allow = ["NCSA"]
+
 [licenses.private]
 # El propio paquete no se publica ni declara licencia.
 ignore = true

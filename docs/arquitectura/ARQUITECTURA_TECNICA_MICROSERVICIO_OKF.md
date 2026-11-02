@@ -90,15 +90,14 @@ son fallos permanentes de recursos; otras señales siguen siendo transitorias.
 
 En Linux, Landlock (ABI 3, con degradación explícita en kernels anteriores) permite
 leer el original y leer/escribir solamente el directorio del intento. Permite además
-leer los archivos de fuente configurados o de reserva, `/etc/localtime` y
-`/proc/self/status`; no concede ejecución ni creación de enlaces o dispositivos.
+leer los archivos de fuente configurados o de reserva, `/etc/localtime`; no concede ejecución ni creación de enlaces o dispositivos.
 El worker registra al arrancar si Landlock no está disponible; un error al imponer
 una regla impide convertir. Los descriptores estándar heredados siguen abiertos.
 El contenedor del worker mantiene `network_mode: none`; Landlock aquí restringe
 archivos, no sustituye ese aislamiento de red. En macOS no se aplican Landlock ni
 RLIMIT_AS: la memoria se limita mediante la vigilancia de RSS.
 
-**Registro de cada intento.** Al terminar un intento, el worker escribe una línea con el trabajo, el intento, el formato, el resultado (`complete`, `partial`, `failed`, `transient_failure` o `lease_lost`), la duración de la lectura, el ensamblado y la validación, la duración total y la memoria residente máxima. El proceso hijo devuelve su resultado como una línea JSON con las etapas, que mide el ensamblador común, y en Linux con su máximo de memoria (`VmHWM`); en otros sistemas la memoria es la del muestreo cada 100 ms, que no ve una conversión más breve. En XLSX y PDF las hojas y las páginas se leen mientras se ensamblan, de modo que su lectura cuenta como ensamblado. El registro no incluye contenido del documento.
+**Registro de cada intento.** Al terminar un intento, el worker escribe una línea con el trabajo, el intento, el formato, el resultado (`complete`, `partial`, `failed`, `transient_failure` o `lease_lost`), la duración de la lectura, el ensamblado y la validación, la duración total y la memoria residente máxima. El proceso hijo devuelve su resultado como una línea JSON con las etapas, que mide el ensamblador común, y con su máximo de memoria (`getrusage` en Linux y macOS). Antes de aceptar el resultado, el worker comprueba también ese máximo y el tiempo total; así una conversión de menos de 100 ms que excede el límite no se publica. En XLSX y PDF las hojas y las páginas se leen mientras se ensamblan, de modo que su lectura cuenta como ensamblado. El registro no incluye contenido del documento.
 
 **Asignación.** Si la renovación encuentra que el trabajo ya pertenece a otro intento, el worker termina el proceso hijo y abandona el suyo sin publicar. Antes de publicar renueva la asignación para confirmar que sigue siendo suya. El registro final solo se escribe para el intento vigente.
 
@@ -158,3 +157,7 @@ Los árboles golden guardan huellas de binarios, no sus bytes; la prueba reconst
 los bundles desde los 26 ejemplos y valida tanto sus ZIP como sus directorios,
 además de rechazar alteraciones. Se mantienen las pruebas editoriales específicas
 por formato que usan la misma función de validación.
+
+### Búsqueda de fallos (plan 2, C5)
+
+La [campaña de fuzzing](../decisiones/FUZZING.md) ejercita los cuatro adaptadores como biblioteca con entrada en memoria y salida temporal. El servicio mantiene el aislamiento C3/C4; los objetivos instrumentados usan los presupuestos de libFuzzer para conservar los fallos. El flujo nocturno comparte la auditoría de dependencias y conserva casos y logs.

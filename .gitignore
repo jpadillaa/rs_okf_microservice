@@ -6,3 +6,9 @@
 # Bundles generados localmente para revisión manual.
 /output/
 __pycache__/
+
+# Resultados locales de libFuzzer; las semillas se copian solo de examples/.
+/fuzz/corpus/
+/fuzz/artifacts/
+/fuzz/target/
+/fuzz/coverage/

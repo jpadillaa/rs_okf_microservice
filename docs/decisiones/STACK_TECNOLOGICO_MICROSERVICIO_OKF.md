@@ -91,3 +91,5 @@ reglas de archivos mediante su interfaz segura. Las versiones transitivas quedan
 `Cargo.lock`. Las capas y sus límites se describen en la arquitectura técnica, §5.
 
 La imagen incorpora `build.rs` y recibe `OKF_BUILD_COMMIT` como argumento de construcción; la CI registra así el commit exacto del conversor (plan 2, C9).
+
+El fuzzing (plan 2, C5) usa `cargo-fuzz` 0.13.1 y nightly-2026-11-01, separados de la compilación estable. `fuzz/Cargo.lock` fija libFuzzer y las dependencias; método y límites en [Fuzzing](FUZZING.md).

@@ -102,7 +102,6 @@ fn restrict_files(original: &Path, attempt: &Path) -> Result<()> {
         "/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf".into(),
         "/usr/share/fonts/truetype/liberation2/LiberationSans-Regular.ttf".into(),
         "/etc/localtime".into(),
-        "/proc/self/status".into(),
     ];
     if let Some(font) = std::env::var_os("OKF_FONT_PATH") {
         readable.push(std::path::PathBuf::from(font));

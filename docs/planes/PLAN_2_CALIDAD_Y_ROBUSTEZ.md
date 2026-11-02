@@ -76,6 +76,8 @@ medidas menos 0,50 puntos, según la concreción solicitada; véase [el método]
 
 ### C5. Fuzzing de los lectores (L)
 
+**Estado:** infraestructura implementada el 2 de noviembre; cuatro objetivos, semillas, CI nocturna y conservación de fallos. **Aceptación pendiente:** siete noches consecutivas sin fallos nuevos tras publicar el flujo. Véase [Fuzzing](../decisiones/FUZZING.md).
+
 **Trabajo.**
 
 1. Objetivos de `cargo-fuzz` para cada formato que llaman a la conversión en memoria, con los límites del servicio, partiendo de las muestras y del corpus como semillas.

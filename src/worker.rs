@@ -183,7 +183,7 @@ pub struct Converted {
     #[serde(default)]
     pub(crate) versions: crate::version::Versions,
     /// Memoria residente máxima del proceso que convirtió, en MB, si el sistema la da
-    /// (`VmHWM` en Linux). El muestreo del worker no ve los picos de menos de 100 ms.
+    /// (`getrusage` en Linux y macOS). El muestreo no ve los picos de menos de 100 ms.
     #[serde(default)]
     pub peak_mb: Option<u64>,
 }
@@ -204,14 +204,19 @@ pub fn convert(cfg: &Config, original: &Path, filename: &str, dir: &Path) -> Res
     })
 }
 
-/// Memoria residente máxima del propio proceso en MB, leída de `/proc` en Linux.
+/// Máximo residente real incluso si la conversión termina entre dos muestras del padre.
 fn own_peak_mb() -> Option<u64> {
-    fs::read_to_string("/proc/self/status")
-        .ok()?
-        .lines()
-        .find_map(|l| l.strip_prefix("VmHWM:"))
-        .and_then(|v| v.trim().trim_end_matches("kB").trim().parse::<u64>().ok())
-        .map(|kb| kb / 1024)
+    let mut usage = std::mem::MaybeUninit::<libc::rusage>::uninit();
+    // getrusage inicializa toda la estructura cuando devuelve 0.
+    if unsafe { libc::getrusage(libc::RUSAGE_SELF, usage.as_mut_ptr()) } != 0 {
+        return None;
+    }
+    let rss = u64::try_from(unsafe { usage.assume_init() }.ru_maxrss).ok()?;
+    #[cfg(target_os = "macos")]
+    let divisor = 1024 * 1024; // Darwin da bytes; Linux da KiB.
+    #[cfg(not(target_os = "macos"))]
+    let divisor = 1024;
+    Some(rss.div_ceil(divisor))
 }
 
 /// Códigos de salida del proceso hijo para los fallos clasificados.
@@ -435,10 +440,32 @@ async fn run_child(
     Ok(match status.code() {
         Some(0) => {
             let line = out.lines().last().unwrap_or_default();
-            Outcome::Done(
-                serde_json::from_str(line)
-                    .context("respuesta del proceso de conversión sin formato esperado")?,
-            )
+            let converted: Converted = serde_json::from_str(line)
+                .context("respuesta del proceso de conversión sin formato esperado")?;
+            usage.peak_mb = usage.peak_mb.max(converted.peak_mb.unwrap_or(0));
+            if converted
+                .peak_mb
+                .is_some_and(|peak| peak > a.cfg.max_memory_mb)
+            {
+                Outcome::Failed(
+                    FailureKind::Permanent,
+                    format!(
+                        "la conversión superó el límite de memoria de {} MB (máximo {} MB)",
+                        a.cfg.max_memory_mb,
+                        converted.peak_mb.unwrap()
+                    ),
+                )
+            } else if watch.started.elapsed() > a.cfg.timeout {
+                Outcome::Failed(
+                    FailureKind::Permanent,
+                    format!(
+                        "la conversión superó el tiempo máximo de {} s",
+                        a.cfg.timeout.as_secs()
+                    ),
+                )
+            } else {
+                Outcome::Done(converted)
+            }
         }
         Some(EXIT_PERMANENT) => Outcome::Failed(FailureKind::Permanent, message),
         Some(EXIT_TRANSIENT) => Outcome::Failed(FailureKind::Transient, message),

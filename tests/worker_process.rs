@@ -68,11 +68,8 @@ fn child_process_is_converted_or_stopped_at_its_limits() {
     ] {
         assert!(line.contains(field), "{field} en {line}");
     }
-    // En Linux el proceso hijo informa su máximo exacto; en otros sistemas solo hay el
-    // muestreo, que no ve una conversión de menos de 100 ms.
-    if cfg!(target_os = "linux") {
-        assert!(!line.ends_with("peak_mb=0"), "{line}");
-    }
+    // El máximo del hijo cubre también conversiones más cortas que el muestreo.
+    assert!(!line.ends_with("peak_mb=0"), "{line}");
     assert!(!log.contains("A simple OKF test deck"));
 
     // Los cuatro formatos deben poder leer sus recursos con el aislamiento activo.
