@@ -29,6 +29,7 @@ pub struct Config {
     pub max_output_mb: u64,
     pub max_open_files: u64,
     pub shutdown_grace: Duration,
+    pub worker_health_s: i64,
     /// Diapositivas máximas por presentación (`OKF_MAX_SLIDES`).
     pub max_slides: usize,
     /// Bloques máximos (párrafos y tablas de primer nivel) por documento DOCX
@@ -68,6 +69,7 @@ impl Default for Config {
             max_output_mb: 512,
             max_open_files: 256,
             shutdown_grace: Duration::from_secs(30),
+            worker_health_s: 30,
             max_slides: 300,
             max_blocks: 50_000,
             max_cells: 1_000_000,
@@ -97,6 +99,7 @@ impl Config {
         }
         let d = Config::default();
         let c = Config {
+            worker_health_s: var("OKF_WORKER_HEALTH_S", d.worker_health_s)?,
             max_memory_mb: var("OKF_MAX_MEMORY_MB", d.max_memory_mb)?,
             max_output_mb: var("OKF_MAX_OUTPUT_MB", d.max_output_mb)?,
             max_open_files: var("OKF_MAX_OPEN_FILES", d.max_open_files)?,
@@ -124,6 +127,9 @@ impl Config {
         };
         if c.max_output_mb == 0 || c.max_open_files < 16 {
             bail!("OKF_MAX_OUTPUT_MB debe ser positivo y OKF_MAX_OPEN_FILES al menos 16")
+        }
+        if c.worker_health_s < 3 {
+            bail!("OKF_WORKER_HEALTH_S debe ser al menos 3")
         }
         if c.lease_s < 3 || c.max_attempts == 0 {
             bail!("OKF_LEASE_S debe ser al menos 3 y OKF_MAX_ATTEMPTS al menos 1")
@@ -733,7 +739,10 @@ pub async fn work_one(a: &App) -> Result<bool> {
     .await
     // Un fallo de la propia supervisión (disco, arranque del hijo) es del entorno.
     .unwrap_or_else(|e| Outcome::Failed(FailureKind::Transient, format!("{e:#}")));
-    log_attempt(&job, &outcome, usage);
+    let stats = log_attempt(&job, &outcome, usage);
+    if let Err(error) = crate::observability::record(a, stats).await {
+        warn!(%error, "no se pudieron persistir las métricas del intento");
+    }
     match outcome {
         Outcome::Done(c) => {
             if let Err(e) = publish(a, &job, &c).await {
@@ -775,7 +784,11 @@ pub async fn work_one(a: &App) -> Result<bool> {
 
 /// Una línea de registro por intento: formato, resultado, duración de cada etapa y total,
 /// y memoria máxima. No incluye nada del contenido del documento.
-fn log_attempt(job: &Job, outcome: &Outcome, usage: Usage) {
+fn log_attempt<'a>(
+    job: &Job,
+    outcome: &'a Outcome,
+    usage: Usage,
+) -> crate::observability::Attempt<'a> {
     let format = crate::format::Format::from_filename(&job.filename)
         .map_or("desconocido", |f| f.extension());
     let mut peak_mb = usage.peak_mb;
@@ -801,6 +814,14 @@ fn log_attempt(job: &Job, outcome: &Outcome, usage: Usage) {
         peak_mb,
         "intento terminado"
     );
+    crate::observability::Attempt {
+        format,
+        result: status,
+        stages,
+        total_ms: usage.total_ms,
+        peak_mb,
+        retry: job.attempt > 1 && !matches!(outcome, Outcome::Shutdown | Outcome::LeaseLost),
+    }
 }
 
 /// Reconciliación al arrancar: elimina publicaciones a medio hacer, completa las que
@@ -863,19 +884,25 @@ pub async fn worker(root: PathBuf, poll_ms: u64, once: bool) -> Result<()> {
     }
     crate::isolation::log_support();
     reconcile(&a).await?;
-    info!(?a.cfg, "worker iniciado");
-    while !a.shutdown.requested() {
-        if !work_one(&a).await? {
-            if once {
-                break;
-            }
-            tokio::select! {
-                _ = tokio::time::sleep(Duration::from_millis(poll_ms)) => {},
-                _ = a.shutdown.wait() => {},
+    let heartbeat = crate::observability::Heartbeat::start(&a).await?;
+    let result = async {
+        info!(?a.cfg, "worker iniciado");
+        while !a.shutdown.requested() {
+            if !work_one(&a).await? {
+                if once {
+                    break;
+                }
+                tokio::select! {
+                    _ = tokio::time::sleep(Duration::from_millis(poll_ms)) => {},
+                    _ = a.shutdown.wait() => {},
+                }
             }
         }
+        Ok(())
     }
-    Ok(())
+    .await;
+    heartbeat.stop().await;
+    result
 }
 
 #[cfg(all(test, unix))]

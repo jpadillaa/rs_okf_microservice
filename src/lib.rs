@@ -28,6 +28,7 @@ mod format;
 #[cfg(test)]
 mod golden;
 mod isolation;
+mod observability;
 mod omml;
 mod ooxml;
 mod output;
@@ -123,6 +124,7 @@ fn app(root: PathBuf) -> Result<App> {
             return Err(e.into());
         }
     }
+    observability::init(&db)?;
     Ok(App {
         root,
         db: Arc::new(Mutex::new(db)),
@@ -324,6 +326,8 @@ async fn serve(root: PathBuf, bind: &str) -> Result<()> {
 fn router(a: App) -> Router {
     let body_limit = a.cfg.max_upload_bytes().saturating_add(64 * 1024);
     Router::new()
+        .route("/health", get(observability::health))
+        .route("/metrics", get(observability::metrics))
         .route("/jobs", post(submit))
         .route("/jobs/{id}", get(status))
         .route("/jobs/{id}/bundle", get(download))

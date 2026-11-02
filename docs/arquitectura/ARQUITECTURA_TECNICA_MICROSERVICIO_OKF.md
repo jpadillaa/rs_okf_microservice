@@ -66,6 +66,7 @@ La primera entrega implementó la ruta completa con PPTX; la segunda añadió el
 | `OKF_MAX_CELLS` | 1000000 | Celdas con contenido máximas por libro XLSX. |
 | `OKF_MAX_PAGES` | 2000 | Páginas máximas por documento PDF. |
 | `OKF_CONVERSION_TIMEOUT_S` | 300 | Duración máxima de una conversión. |
+| `OKF_WORKER_HEALTH_S` | 30 | Antigüedad máxima aceptable del latido; mínimo 3 s. Cada worker lo renueva cada tercio del plazo. |
 | `OKF_SHUTDOWN_GRACE_S` | 30 | Plazo de gracia del worker tras SIGTERM/SIGINT; 0 interrumpe sin espera adicional. |
 | `OKF_LEASE_S` | 60 | Vigencia de la asignación; el worker la renueva cada tercio mientras convierte. |
 | `OKF_MAX_ATTEMPTS` | 3 | Intentos máximos ante fallos transitorios. |
@@ -176,3 +177,33 @@ Una reserva que ya pertenece a otro intento nunca se modifica.
 La API usa el apagado ordenado de Axum: deja de aceptar conexiones nuevas y termina
 las peticiones en curso. Una terminación forzada (SIGKILL, caída del host) sigue
 requiriendo la recuperación de asignaciones vencidas.
+
+### Salud y métricas (plan 2, C7)
+
+`GET /health` devuelve JSON y `200` solo si SQLite responde, se cumple
+`OKF_MIN_FREE_MB` (0 desactiva ese control) y existe un worker con latido de antigüedad
+no mayor que `OKF_WORKER_HEALTH_S`. En caso contrario devuelve `503` e indica qué
+comprobación falló. Cada worker escribe un latido con identidad propia, incluso
+mientras convierte o está ocioso; lo retira al salir ordenadamente. Si muere, el
+latido envejece. Con varios workers basta uno reciente. No se considera saludable
+una instalación sin worker activo.
+
+`GET /metrics` devuelve texto Prometheus (`text/plain; version=0.0.4`) sin dependencias
+nuevas. Las etiquetas son estados, formatos y etapas definidos por el servicio,
+nunca identificadores ni contenido de documentos:
+
+| Métrica | Significado |
+| --- | --- |
+| `okf_jobs{status}` | Trabajos actuales por estado (gauge). |
+| `okf_conversions_total{format,result}` | Intentos observados por resultado, incluidos fallos e interrupciones (counter). |
+| `okf_conversion_duration_seconds{format}` | Suma y número de duraciones totales, incluidos fallos (summary sin cuantiles). |
+| `okf_conversion_stage_seconds{format,stage}` | Suma y número de duraciones de lectura, ensamblado y validación de conversiones `complete`/`partial`. |
+| `okf_conversion_peak_memory_bytes{format}` | Mayor pico residente observado desde que se recopilan métricas (gauge histórico). |
+| `okf_retries_total{format}` | Intentos observados con número mayor que uno, salvo interrupción por apagado o pérdida de asignación. |
+
+Los acumulados se actualizan atómicamente en SQLite y sobreviven a reinicios; parten
+de cero al introducir C7 y no reconstruyen intentos históricos. Una caída antes de
+registrar el resultado puede dejar ese intento fuera de las métricas. Si falla su
+persistencia se registra el error y se mantiene el flujo de publicación; el estado
+del trabajo sigue siendo el registro operativo. Los tiempos son los mismos del
+registro R5. Las futuras eliminaciones de archivos no reinician los contadores.

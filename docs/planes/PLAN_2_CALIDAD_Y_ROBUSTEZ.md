@@ -100,6 +100,8 @@ medidas menos 0,50 puntos, según la concreción solicitada; véase [el método]
 
 ### C7. Salud y métricas (M)
 
+**Estado:** implementado el 2 de noviembre: `/health`, latidos por worker y `/metrics` Prometheus con acumulados persistidos en SQLite y pruebas de API.
+
 **Trabajo.**
 
 1. `GET /health`: base de datos accesible, espacio libre por encima de `OKF_MIN_FREE_MB` (definida en `R4`) y último latido del worker reciente (el worker escribe su latido en SQLite).
