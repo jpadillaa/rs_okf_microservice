@@ -205,10 +205,20 @@ fn own_peak_mb() -> Option<u64> {
 /// Códigos de salida del proceso hijo para los fallos clasificados.
 pub const EXIT_PERMANENT: i32 = 3;
 pub const EXIT_TRANSIENT: i32 = 4;
+pub const EXIT_PANIC: i32 = 5;
+
+/// Solo para el proceso conversor: un defecto determinista no se reintenta.
+fn install_panic_hook() {
+    std::panic::set_hook(Box::new(|info| {
+        eprintln!("defecto del conversor: {info}");
+        std::process::exit(EXIT_PANIC);
+    }));
+}
 
 /// Subcomando interno `convert`: escribe el resultado como una línea JSON en la salida
 /// estándar o termina con el código del tipo de fallo y el mensaje en la salida de error.
 pub fn convert_command(original: &Path, dir: &Path, filename: &str) -> Result<()> {
+    install_panic_hook();
     let cfg = Config::from_env()?;
     match convert(&cfg, original, filename, dir) {
         Ok(c) => {
@@ -408,7 +418,11 @@ async fn run_child(
         }
         Some(EXIT_PERMANENT) => Outcome::Failed(FailureKind::Permanent, message),
         Some(EXIT_TRANSIENT) => Outcome::Failed(FailureKind::Transient, message),
-        // Pánico, señal o código desconocido: se reintenta hasta el máximo de intentos.
+        Some(EXIT_PANIC) => Outcome::Failed(
+            FailureKind::Permanent,
+            format!("defecto del conversor (pánico): {message}"),
+        ),
+        // Señal o código desconocido: se reintenta hasta el máximo de intentos.
         _ => Outcome::Failed(
             FailureKind::Transient,
             format!("el proceso de conversión terminó de forma anormal ({status}): {message}"),
@@ -762,6 +776,62 @@ pub async fn worker(root: PathBuf, poll_ms: u64, once: bool) -> Result<()> {
                 return Ok(());
             }
             tokio::time::sleep(Duration::from_millis(poll_ms)).await;
+        }
+    }
+}
+
+#[cfg(all(test, unix))]
+mod tests {
+    use super::*;
+    use std::os::unix::fs::PermissionsExt;
+
+    // Se ejecuta en otro proceso, sin inyectar disparadores en el binario de producción.
+    #[test]
+    fn panic_child() {
+        if std::env::var_os("RUST_TEST_PANIC_CHILD").is_some() {
+            install_panic_hook();
+            panic!("pánico de prueba del conversor");
+        }
+    }
+
+    #[tokio::test]
+    async fn panic_fails_on_first_attempt_but_unknown_exit_retries() {
+        let tmp = tempfile::tempdir().unwrap();
+        let mut a = crate::app(tmp.path().to_path_buf()).unwrap();
+        let script = tmp.path().join("converter.sh");
+        let exe = std::env::current_exe()
+            .unwrap()
+            .to_string_lossy()
+            .replace('\'', "'\"'\"'");
+        fs::write(&script, format!("#!/bin/sh\nRUST_TEST_PANIC_CHILD=1 exec '{exe}' --exact worker::tests::panic_child --nocapture\n")).unwrap();
+        fs::set_permissions(&script, fs::Permissions::from_mode(0o700)).unwrap();
+        a.converter = Some(script.clone());
+        for id in ["panic", "unknown"] {
+            if id == "unknown" {
+                fs::write(&script, "#!/bin/sh\nexit 17\n").unwrap();
+            }
+            a.db.lock().await.execute("INSERT INTO jobs(id,filename,original,sha256,status,created_at) VALUES(?1,'test.docx','unused','-','queued',0)", [id]).unwrap();
+            assert!(work_one(&a).await.unwrap());
+            let (status, attempt, error): (String, u32, String) =
+                a.db.lock()
+                    .await
+                    .query_row(
+                        "SELECT status,attempt,error FROM jobs WHERE id=?1",
+                        [id],
+                        |r| Ok((r.get(0)?, r.get(1)?, r.get(2)?)),
+                    )
+                    .unwrap();
+            assert_eq!(attempt, 1);
+            if id == "panic" {
+                assert_eq!(status, "failed");
+                assert!(error.contains("defecto del conversor"), "{error}");
+                assert!(error.contains("pánico de prueba del conversor"), "{error}");
+                assert!(error.contains("src/worker.rs"), "{error}");
+                assert!(!work_one(&a).await.unwrap());
+            } else {
+                assert_eq!(status, "queued");
+                assert!(error.contains("transitorio"));
+            }
         }
     }
 }

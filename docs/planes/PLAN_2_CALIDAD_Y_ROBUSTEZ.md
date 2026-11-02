@@ -47,6 +47,8 @@ medidas menos 0,50 puntos, según la concreción solicitada; véase [el método]
 
 ### C3. Un pánico es un fallo permanente (S)
 
+**Estado:** implementado el 2 de noviembre; código 5 y prueba real de proceso que conserva mensaje y ubicación, falla en el primer intento y mantiene reintentables los códigos desconocidos.
+
 **Problema.** En `run_child` (`src/worker.rs`), un proceso hijo que termina por pánico, señal o código desconocido se clasifica como fallo transitorio. Un archivo que provoca un pánico por un defecto del conversor se reintenta `OKF_MAX_ATTEMPTS` veces, con espera creciente, y falla igual.
 
 **Trabajo.**
