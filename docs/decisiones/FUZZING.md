@@ -103,3 +103,6 @@ sigue detectando el defecto; no lo captura ni lo excluye de las semillas.
 
 **C5 no está cerrado.** Falta corregir o actualizar la dependencia, sustituir la
 prueba de contención por una regresión sin pánico y obtener las siete noches.
+
+El usuario decidió conservar esta contención y dejar C5 abierto mientras se resuelve
+en la dependencia, sin incorporar una copia parcheada de `pdf_oxide` al repositorio.

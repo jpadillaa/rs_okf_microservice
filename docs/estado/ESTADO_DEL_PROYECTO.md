@@ -1,6 +1,6 @@
 # Estado del proyecto
 
-**Corte:** 2 de noviembre de 2026, plan 2 C8 implementado tras C7 (`736d914`); C5 pendiente del hallazgo PDF y de siete noches de estabilidad; commits locales, sin push.
+**Corte:** 2 de noviembre de 2026, plan 2 hasta C8 (`b316cf0`), verificado para publicación en `main`; C5 pendiente del hallazgo PDF y de siete noches de estabilidad.
 **Alcance:** qué está implementado, con qué evidencia de calidad, cómo se compara con el plan inicial y qué queda pendiente. Los contratos están en la [especificación](../especificacion/ESPECIFICACION_OKF.md), las [arquitecturas](../arquitectura/ARQUITECTURA_TECNICA_MICROSERVICIO_OKF.md) y el [stack](../decisiones/STACK_TECNOLOGICO_MICROSERVICIO_OKF.md); este documento no los modifica y debe actualizarse al cerrar cada entrega.
 
 ## 1. Resumen
@@ -67,6 +67,8 @@ La [CI](../../.github/workflows/ci.yml) ejecuta `cargo fmt --check`, `cargo clip
 El [fuzzing nocturno](../decisiones/FUZZING.md) tiene cuatro objetivos, semillas de los 26 ejemplos y artefactos de fallos; PPTX, DOCX y XLSX completaron una campaña local de cinco minutos. PDF encontró un pánico en `pdf_oxide`, reducido a 566 bytes y contenido con C3/C4; la corrección de la dependencia y las siete noches consecutivas siguen pendientes.
 
 Las pruebas de PDF y del validador alteran bundles válidos (marcador sin bloque, localizador fuera de su sección, tramos desordenados, índices en otro orden) y comprueban que se rechazan.
+
+Antes de la publicación autorizada se repitieron `cargo fmt`, `clippy`, las 69 pruebas de macOS (incluidos los 26 ejemplos, golden y cobertura), `cargo deny check` y la prueba de humo de la imagen. También se procesaron los 10 originales locales con el worker y el validador independiente: 3 DOCX y 4 PDF `complete`; en PPTX, 1 `complete` y 2 `partial`. Los diez bundles superaron la validación. Las salidas se crearon en un directorio temporal y se eliminaron al terminar; ningún original ni salida privada se incorpora al repositorio.
 
 ### 3.2 Evidencia por formato
 
@@ -176,10 +178,10 @@ El plan 1 cerró los antiguos puntos sobre el modelo intermedio, Xberg, el cierr
 
 En orden de prioridad:
 
-1. **Seguimiento de CI**: revisar la CI del plan 2 después del push y la siguiente auditoría programada con la excepción razonada de `RUSTSEC-2026-0429`. Los dos últimos pushes anteriores (`cf0f869` y `7abd68c`) pasaron completos. Los golden pasan en Linux; el aviso de Node.js 20 ya desapareció y `test` tarda unos tres minutos.
+1. **Seguimiento de CI**: revisar la CI del push autorizado del plan 2 y la siguiente auditoría programada con la excepción razonada de `RUSTSEC-2026-0429`. Los dos últimos pushes anteriores (`cf0f869` y `7abd68c`) pasaron completos. Los golden pasan en Linux; el aviso de Node.js 20 ya desapareció y `test` tarda unos tres minutos.
 2. **Evaluación DOCX con archivos guardados por Word**: las muestras reabiertas y guardadas en Word, o nuevos DOCX reales. Está en pausa hasta disponer de esos archivos.
 3. **Corpus real pendiente** (plan 1, R6): libros XLSX, un PDF escaneado, uno mixto y uno largo de texto, y un DOCX real con notas y revisiones, cada uno con su bundle de referencia y su medición de cobertura.
-4. **Plan 2, C5**: resolver el pánico de `pdf_oxide` con el caso y la corrección propuestos en [Fuzzing](../decisiones/FUZZING.md#primera-campaña-completa-y-hallazgo-pendiente); publicar solo con autorización y observar siete noches. Los demás trabajos están implementados.
+4. **Plan 2, C5**: resolver el pánico de `pdf_oxide` con el caso y la corrección propuestos en [Fuzzing](../decisiones/FUZZING.md#primera-campaña-completa-y-hallazgo-pendiente); por decisión del usuario se mantiene C5 abierto con contención y regresión, a la espera de la corrección en la dependencia. Después harán falta siete noches estables. Los demás trabajos están implementados.
 5. **Guiones legítimos al final de línea en PDF**: cambiar la regla de la especificación para conservar el guion en URL y compuestos ([cobertura, §4](../decisiones/COBERTURA_INDEPENDIENTE.md#4-hallazgos)).
 6. **Texto alternativo de los gráficos DOCX** cuando el gráfico no tiene datos.
 7. **Revisión del renderizado PPTX** cuando aparezcan presentaciones reales con tablas, gráficos o SmartArt, o con picos de memoria cercanos al límite.
