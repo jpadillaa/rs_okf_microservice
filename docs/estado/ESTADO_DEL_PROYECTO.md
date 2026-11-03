@@ -1,13 +1,13 @@
 # Estado del proyecto
 
-**Corte:** 2 de noviembre de 2026, plan 2 C7 implementado tras C6 (`4e92e87`); C5 pendiente de siete noches de estabilidad; commits locales, sin push.
+**Corte:** 2 de noviembre de 2026, plan 2 C8 implementado tras C7 (`736d914`); C5 pendiente del hallazgo PDF y de siete noches de estabilidad; commits locales, sin push.
 **Alcance:** qué está implementado, con qué evidencia de calidad, cómo se compara con el plan inicial y qué queda pendiente. Los contratos están en la [especificación](../especificacion/ESPECIFICACION_OKF.md), las [arquitecturas](../arquitectura/ARQUITECTURA_TECNICA_MICROSERVICIO_OKF.md) y el [stack](../decisiones/STACK_TECNOLOGICO_MICROSERVICIO_OKF.md); este documento no los modifica y debe actualizarse al cerrar cada entrega.
 
 ## 1. Resumen
 
-Las cuatro entregas previstas están implementadas: el servicio convierte PPTX, DOCX, XLSX y PDF en bundles OKF v0.2 con la misma API, el mismo worker, el mismo ensamblador y el mismo validador. Cada formato tiene pruebas de aceptación con documentos sintéticos y, salvo XLSX, con copias reducidas de documentos reales, y los 26 documentos de ejemplo tienen un bundle de referencia que las pruebas comparan archivo por archivo. La suite (66 pruebas en macOS; C4 se verificó también con Landlock activo en Docker/Linux), `clippy` sin advertencias, `rustfmt` y la auditoría de dependencias pasan en local.
+Las cuatro entregas previstas están implementadas: el servicio convierte PPTX, DOCX, XLSX y PDF en bundles OKF v0.2 con la misma API, el mismo worker, el mismo ensamblador y el mismo validador. Cada formato tiene pruebas de aceptación con documentos sintéticos y, salvo XLSX, con copias reducidas de documentos reales, y los 26 documentos de ejemplo tienen un bundle de referencia que las pruebas comparan archivo por archivo. La suite (69 pruebas en macOS y 71 en Docker/Linux, con Landlock activo), `clippy` sin advertencias, `rustfmt` y la auditoría de dependencias pasan en local.
 
-El [plan 1](../planes/PLAN_1_RECUPERACION_DEL_PLAN_ORIGINAL.md) recuperó del plan inicial lo que seguía aportando (§5.6): un ensamblador único, la cobertura frente a una referencia independiente, límites configurables y control de admisión, el registro por etapa, una imagen reproducible y la auditoría de dependencias; y cerró en la documentación las decisiones abandonadas. Lo que falta es **evidencia**: evaluar DOCX con archivos guardados por Word y conseguir los documentos reales que pide el corpus (XLSX, PDF escaneado, mixto y largo); y las garantías del [plan 2](../planes/PLAN_2_CALIDAD_Y_ROBUSTEZ.md): retención, aislamiento, fuzzing y salud.
+El [plan 1](../planes/PLAN_1_RECUPERACION_DEL_PLAN_ORIGINAL.md) recuperó del plan inicial lo que seguía aportando (§5.6): un ensamblador único, la cobertura frente a una referencia independiente, límites configurables y control de admisión, el registro por etapa, una imagen reproducible y la auditoría de dependencias; y cerró en la documentación las decisiones abandonadas. Lo que falta es **evidencia**: evaluar DOCX con archivos guardados por Word y conseguir los documentos reales que pide el corpus (XLSX, PDF escaneado, mixto y largo); y corregir el pánico encontrado en `pdf_oxide`, además de siete noches consecutivas de estabilidad del fuzzing del [plan 2](../planes/PLAN_2_CALIDAD_Y_ROBUSTEZ.md), cuya infraestructura ya está disponible.
 
 Frente al plan inicial (§5), el alcance funcional está cumplido. Los extractores son propios en lugar de Xberg, cuyo abandono registra el stack con la cobertura independiente como evidencia, y un modelo de salida común sustituye al modelo intermedio previo al ensamblado.
 
@@ -24,6 +24,7 @@ Frente al plan inicial (§5), el alcance funcional está cumplido. Los extractor
 | Validador | Hecho | Conformidad OKF e integridad editorial por separado, con reglas comunes y por formato ([arquitectura técnica, §5](../arquitectura/ARQUITECTURA_TECNICA_MICROSERVICIO_OKF.md#5-implementación-en-las-entregas-pptx-docx-xlsx-y-pdf)). Un bundle que no lo supera no se publica. `validate <ZIP o directorio>` lo ejecuta de forma independiente, con el original incluido. |
 | Límites y admisión | Hecho | Rlimits del hijo (memoria virtual en Linux, CPU, archivo y descriptores), Landlock en Linux y vigilancia de memoria; diapositivas, bloques, celdas, páginas, tiempo, asignación, intentos, tamaño de subida, expansión ZIP y píxeles de imagen por variables `OKF_*`; la API responde `429` con la cola llena y `507` sin espacio libre, si se configuran. |
 | Registro de diagnóstico | Hecho | `tracing` con una línea por intento: trabajo, intento, formato, resultado, duración de lectura, ensamblado y validación, duración total y memoria máxima; sin contenido del documento. |
+| Retención | Hecho | `OKF_RETENTION_DAYS`, desactivada por defecto; expiración desde la finalización, limpieza reanudable y descarga `410`. |
 | Salud y métricas | Hecho | `/health` comprueba SQLite, disco y latido reciente; `/metrics` publica contadores persistidos, tiempos por formato/etapa y memoria, sin texto ni identificadores de documentos. |
 | Imagen | Hecho | Una imagen para API y worker (`Dockerfile`), con las imágenes base fijadas por digest y la fuente del renderizado; `compose.yaml` levanta los dos procesos, el worker sin red. |
 
@@ -49,20 +50,21 @@ Las decisiones de biblioteca de cada formato y sus mediciones están en el [stac
 | Servicio (`src/lib.rs`) | 10 | Ruta completa por formato a través del worker, estados `complete`/`partial`/`failed`, clasificación de fallos y reintentos, asignaciones, reconciliación al arrancar, rechazo de bundles alterados por el validador y admisión (subida, cola y disco). |
 | Bundles de referencia (`src/golden.rs`) | 2 | Los 26 documentos de ejemplo, comparados archivo por archivo con `examples/<formato>/esperado/`, y determinismo de dos conversiones. |
 | Cobertura independiente (`src/coverage.rs`) | 2 | Los 26 ejemplos, con listas TSV y mínimos versionados independientes de los golden; normalización Unicode y pérdida deliberada de texto. |
+| Retención (`src/retention.rs`) | 2 | Desactivación por defecto, solo terminados antiguos, descarga `410`, reanudación de limpieza fallida y ausencia de reencolado. |
 | Salud y métricas (`src/observability.rs`) | 2 | Latido ausente/caducado, disco y base no disponibles; métricas de una conversión real y persistencia tras reabrir SQLite. |
 | Apagado (`tests/shutdown.rs`) | 1 | SIGTERM con devolución a la cola sin consumir intento y SIGINT con publicación dentro de la gracia, durante una lectura detenida. |
 | Validador independiente (`src/validate.rs`, CLI) | 3 | Los 26 ejemplos como ZIP/directorio, rechazo de alteraciones y enlaces simbólicos, y códigos de salida del comando. |
 | Versionado (`src/version.rs`, consulta y recuperación) | 2 | Identidad persistida y recuperada del bundle; rechazo de versiones discordantes o perfiles desconocidos. |
 | Ensamblador y paquetes (`src/output.rs`, `src/ooxml.rs`) | 2 | Frontmatter legible por un analizador YAML con cadenas difíciles; límites de expansión ZIP configurables. |
-| Proceso hijo (`tests/worker_process.rs`, `src/worker.rs`, `src/isolation.rs`) | 3 en macOS, 5 en Linux | Conversión real en proceso hijo, parada al superar los límites, registro del intento y pánico permanente en el primer intento; código desconocido reintentable. En Linux, pruebas de límites duros de memoria/archivo y acceso a rutas con Landlock. |
+| Proceso hijo (`tests/worker_process.rs`, `src/worker.rs`, `src/isolation.rs`) | 4 en macOS, 6 en Linux | Conversión real en proceso hijo, parada al superar los límites, registro del intento y pánico permanente en el primer intento, incluido un caso real de fuzzing de PDF; código desconocido reintentable. En Linux, pruebas de límites duros de memoria/archivo y acceso a rutas con Landlock. |
 | PPTX | 9 | Extracción con muestras y con el corpus reducido. |
 | DOCX | 9 | Corpus real reducido, muestras artificiales y fixtures mínimos. |
 | XLSX | 8 | Muestras sintéticas, referencias A1 y lectura de celdas. |
 | PDF | 13 | Corpus real reducido, muestras sintéticas, maquetación, lectura y límite de píxeles de imagen. |
 
-La [CI](../../.github/workflows/ci.yml) ejecuta `cargo fmt --check`, `cargo clippy --all-targets --locked -- -D warnings` y `cargo test --locked` en Ubuntu 24.04 con cada push a `main`; comprueba las licencias y los orígenes de las dependencias con `cargo deny`, y construye la imagen y ejecuta la prueba de humo `tools/smoke.sh`. Un [flujo diario](../../.github/workflows/scheduled.yml) comprueba los avisos de seguridad. Las pruebas, la auditoría, la construcción de la imagen y la prueba de humo pasan en local en el commit de corte; la CI de `1fd4347` pasó en Linux. Revisadas las dos siguientes: `cf0f869` pasó completa (`test`: 3 min 02 s) y `7abd68c` tiene `test` y dependencias correctos (`test`: 2 min 50 s), con imagen aún en curso al consultar. El aviso de Node.js 20 desapareció en ambas. El flujo programado de `1fd4347` falló por `RUSTSEC-2026-0429` (`ZipArchive::extract`); se verificó que ni el servicio ni BetterOffice usan esa función y se añadió la excepción razonada a `deny.toml`. La auditoría local actualizada pasa.
+La [CI](../../.github/workflows/ci.yml) ejecuta `cargo fmt --check`, `cargo clippy --all-targets --locked -- -D warnings` y `cargo test --locked` en Ubuntu 24.04 con cada push a `main`; comprueba las licencias y los orígenes de las dependencias con `cargo deny`, y construye la imagen y ejecuta la prueba de humo `tools/smoke.sh`. Un [flujo diario](../../.github/workflows/scheduled.yml) comprueba los avisos de seguridad. Las pruebas, la auditoría, la construcción de la imagen y la prueba de humo pasan en local en el commit de corte; la CI de `1fd4347` pasó en Linux. Revisadas las dos siguientes: `cf0f869` pasó completa (`test`: 3 min 02 s) y `7abd68c` pasó completa (`test`: 2 min 50 s; imagen: 13 min 44 s). Ambos trabajos `test` restauraron la caché. El aviso de Node.js 20 desapareció en ambas. El flujo programado de `1fd4347` falló por `RUSTSEC-2026-0429` (`ZipArchive::extract`); se verificó que ni el servicio ni BetterOffice usan esa función y se añadió la excepción razonada a `deny.toml`. La auditoría local actualizada pasa.
 
-El [fuzzing nocturno](../decisiones/FUZZING.md) tiene cuatro objetivos, semillas de los 26 ejemplos y artefactos de fallos; la aceptación de siete noches consecutivas sigue pendiente.
+El [fuzzing nocturno](../decisiones/FUZZING.md) tiene cuatro objetivos, semillas de los 26 ejemplos y artefactos de fallos; PPTX, DOCX y XLSX completaron una campaña local de cinco minutos. PDF encontró un pánico en `pdf_oxide`, reducido a 566 bytes y contenido con C3/C4; la corrección de la dependencia y las siete noches consecutivas siguen pendientes.
 
 Las pruebas de PDF y del validador alteran bundles válidos (marcador sin bloque, localizador fuera de su sección, tramos desordenados, índices en otro orden) y comprueban que se rechazan.
 
@@ -93,7 +95,7 @@ La [cobertura frente a una referencia independiente](../decisiones/COBERTURA_IND
 | --- | --- | --- |
 | Límite de tamaño de entrada configurable | Arquitectura técnica, §4 | Hecho: `OKF_MAX_UPLOAD_MB`. |
 | Control de carga en la admisión | Arquitectura técnica, §4 | Hecho: `OKF_MAX_QUEUED` (`429`) y `OKF_MIN_FREE_MB` (`507`); sin configurar no limitan. |
-| Política de retención de originales, intentos y bundles | Arquitectura técnica, §2 | No definida; los publicados y los originales se conservan indefinidamente. Pendiente en el [plan 2, C8](../planes/PLAN_2_CALIDAD_Y_ROBUSTEZ.md#c8-retención-s). |
+| Política de retención de originales, intentos y bundles | Arquitectura técnica, §2 | Hecho (C8): conservación indefinida por defecto; `OKF_RETENTION_DAYS` activa la expiración desde la finalización, con `410` y limpieza reanudable. |
 | Imágenes reproducibles de API y worker con versiones fijadas | Stack, §1 y regla 4 | Hecho: una imagen para los dos procesos; el stack registra la decisión y las versiones. |
 | Dos ejecutables | Stack, §1 | Cerrado: el stack registra un ejecutable con subcomandos. |
 | Autenticación | No exigida | La API no autentica; solo es adecuada para uso local o detrás de un proxy que lo haga. |
@@ -133,7 +135,7 @@ El proyecto pasó de integrar una biblioteca general a escribir sus propios extr
 | Estados `queued → processing → validating → …`. | `validating` no se registra; la validación ocurre dentro de `processing`. Las dos arquitecturas lo describen así. |
 | Dos ejecutables, `api` y `worker`. | Un ejecutable con dos subcomandos que corren como dos procesos; decisión registrada en el stack. |
 | Límites configurables de entrada, trabajos simultáneos, recursos y tiempo; control de carga en la admisión. | Hecho (plan 1, R4): todos los límites son configurables, también la subida, la expansión ZIP y los píxeles de imagen; la API controla la cola y el espacio libre. La concurrencia se controla con el número de workers. |
-| Política de retención. | No definida; pendiente en el plan 2 (C8). |
+| Política de retención. | Hecho en C8: optativa, desde la finalización, con estado `expired` y descarga `410`. |
 | Imágenes reproducibles de API y worker. | Una imagen para los dos procesos, con versiones fijadas (plan 1, R3). |
 | Registro por trabajo, intento, formato, etapa y duración. | Hecho (plan 1, R5): una línea por intento con formato, resultado, etapas, duración total y memoria máxima. |
 | Conversión fuera de los hilos HTTP. | Superado: cada conversión corre en un proceso hijo con límite de memoria medido, necesario porque la memoria de PPTX y PDF depende de las imágenes y no del número de unidades. |
@@ -170,14 +172,14 @@ El [plan 1](../planes/PLAN_1_RECUPERACION_DEL_PLAN_ORIGINAL.md) se implementó e
 
 ## 6. Roadmap pendiente
 
-El plan 1 cerró los antiguos puntos sobre el modelo intermedio, Xberg, el cierre operativo (salvo la retención) y la división (§5.6). El corpus pendiente es el R6 de ese [plan](../planes/PLAN_1_RECUPERACION_DEL_PLAN_ORIGINAL.md#r6-corpus-representativo-m-continuo); las garantías de regresión, aislamiento, operación y versionado están en el [plan 2](../planes/PLAN_2_CALIDAD_Y_ROBUSTEZ.md), del que C1 a C4, C6, C7, C9 y C10 ya están hechos; C5 está implementado y espera siete noches de evidencia.
+El plan 1 cerró los antiguos puntos sobre el modelo intermedio, Xberg, el cierre operativo (salvo la retención) y la división (§5.6). El corpus pendiente es el R6 de ese [plan](../planes/PLAN_1_RECUPERACION_DEL_PLAN_ORIGINAL.md#r6-corpus-representativo-m-continuo); las garantías de regresión, aislamiento, operación y versionado están en el [plan 2](../planes/PLAN_2_CALIDAD_Y_ROBUSTEZ.md), del que C1 a C4 y C6 a C10 ya están hechos; C5 tiene infraestructura y un hallazgo PDF pendiente de corrección; después necesita siete noches de evidencia.
 
 En orden de prioridad:
 
-1. **Seguimiento de CI**: confirmar la imagen de `7abd68c` y la próxima ejecución del flujo programado con la excepción razonada de `RUSTSEC-2026-0429`. Los golden pasan en Linux; el aviso de Node.js 20 ya desapareció y `test` tarda unos tres minutos.
+1. **Seguimiento de CI**: revisar la CI del plan 2 después del push y la siguiente auditoría programada con la excepción razonada de `RUSTSEC-2026-0429`. Los dos últimos pushes anteriores (`cf0f869` y `7abd68c`) pasaron completos. Los golden pasan en Linux; el aviso de Node.js 20 ya desapareció y `test` tarda unos tres minutos.
 2. **Evaluación DOCX con archivos guardados por Word**: las muestras reabiertas y guardadas en Word, o nuevos DOCX reales. Está en pausa hasta disponer de esos archivos.
 3. **Corpus real pendiente** (plan 1, R6): libros XLSX, un PDF escaneado, uno mixto y uno largo de texto, y un DOCX real con notas y revisiones, cada uno con su bundle de referencia y su medición de cobertura.
-4. **Plan 2**: observar siete noches del fuzzing C5 después del push; continuar con retención (C8).
+4. **Plan 2, C5**: resolver el pánico de `pdf_oxide` con el caso y la corrección propuestos en [Fuzzing](../decisiones/FUZZING.md#primera-campaña-completa-y-hallazgo-pendiente); publicar solo con autorización y observar siete noches. Los demás trabajos están implementados.
 5. **Guiones legítimos al final de línea en PDF**: cambiar la regla de la especificación para conservar el guion en URL y compuestos ([cobertura, §4](../decisiones/COBERTURA_INDEPENDIENTE.md#4-hallazgos)).
 6. **Texto alternativo de los gráficos DOCX** cuando el gráfico no tiene datos.
 7. **Revisión del renderizado PPTX** cuando aparezcan presentaciones reales con tablas, gráficos o SmartArt, o con picos de memoria cercanos al límite.

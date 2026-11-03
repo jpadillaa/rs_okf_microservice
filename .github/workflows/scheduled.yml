@@ -48,6 +48,8 @@ jobs:
       - name: Cinco minutos por formato
         env:
           CARGO_NET_OFFLINE: 'true'
+          # Acota la cuarentena del instrumentador sin ampliar el límite RSS del servicio.
+          ASAN_OPTIONS: quarantine_size_mb=32:thread_local_quarantine_size_kb=256:malloc_context_size=10
         run: |
           cargo +nightly-2026-11-01 fuzz run ${{ matrix.format }} --codegen-units 16 -- \
             -max_total_time=300 -timeout=300 -rss_limit_mb=500 -max_len=104857600 \

@@ -102,3 +102,34 @@ fn child_process_is_converted_or_stopped_at_its_limits() {
     assert!(error.unwrap().contains("tiempo máximo de 0 s"));
     assert!(!root.join("published/memory").exists() && !root.join("published/slow").exists());
 }
+
+#[test]
+fn pdf_oxide_fuzz_panic_is_permanent_and_does_not_stop_the_worker() {
+    let tmp = tempfile::tempdir().unwrap();
+    let root = tmp.path();
+    worker_once(root, &[]);
+    std::fs::write(
+        root.join("originals/fuzz.pdf"),
+        include_bytes!("../fuzz/regressions/pdf/utf8-object-header.pdf"),
+    )
+    .unwrap();
+    Connection::open(root.join("jobs.sqlite3")).unwrap().execute(
+        "INSERT INTO jobs(id,filename,original,sha256,status,created_at) VALUES('fuzz','fuzz.pdf','originals/fuzz.pdf','-','queued',0)", [],
+    ).unwrap();
+    worker_once(root, &[]);
+    let (state, error) = job(root, "fuzz");
+    assert_eq!(state, "failed");
+    let error = error.unwrap();
+    assert!(error.contains("defecto del conversor (pánico)"), "{error}");
+    assert!(error.contains("char boundary"), "{error}");
+    let attempt: u32 = Connection::open(root.join("jobs.sqlite3"))
+        .unwrap()
+        .query_row("SELECT attempt FROM jobs WHERE id='fuzz'", [], |r| r.get(0))
+        .unwrap();
+    assert_eq!(attempt, 1);
+    assert!(!root.join("published/fuzz").exists());
+    // La contención deja al worker disponible para el siguiente documento válido.
+    enqueue(root, "after_fuzz");
+    worker_once(root, &[]);
+    assert_eq!(job(root, "after_fuzz"), ("complete".into(), None));
+}

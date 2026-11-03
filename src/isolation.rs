@@ -38,10 +38,13 @@ pub(crate) fn resource_limits(cfg: &Config) -> Result<()> {
     Ok(())
 }
 
-pub(crate) fn apply(cfg: &Config, original: &Path, attempt: &Path) -> Result<()> {
+pub(crate) fn apply(cfg: &Config, original: &Path, attempt: &Path) -> Result<std::fs::File> {
     resource_limits(cfg)?;
+    // Conserva el descriptor del original autorizado: no depende de reabrirlo tras
+    // Landlock; esta ruta se comprueba también en los montajes de Docker Desktop.
+    let input = std::fs::File::open(original).context("no se pudo abrir el original")?;
     restrict_files(original, attempt)?;
-    Ok(())
+    Ok(input)
 }
 
 #[cfg(target_os = "linux")]

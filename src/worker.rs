@@ -30,6 +30,7 @@ pub struct Config {
     pub max_open_files: u64,
     pub shutdown_grace: Duration,
     pub worker_health_s: i64,
+    pub retention_days: u64,
     /// Diapositivas máximas por presentación (`OKF_MAX_SLIDES`).
     pub max_slides: usize,
     /// Bloques máximos (párrafos y tablas de primer nivel) por documento DOCX
@@ -70,6 +71,7 @@ impl Default for Config {
             max_open_files: 256,
             shutdown_grace: Duration::from_secs(30),
             worker_health_s: 30,
+            retention_days: 0,
             max_slides: 300,
             max_blocks: 50_000,
             max_cells: 1_000_000,
@@ -100,6 +102,7 @@ impl Config {
         let d = Config::default();
         let c = Config {
             worker_health_s: var("OKF_WORKER_HEALTH_S", d.worker_health_s)?,
+            retention_days: var("OKF_RETENTION_DAYS", d.retention_days)?,
             max_memory_mb: var("OKF_MAX_MEMORY_MB", d.max_memory_mb)?,
             max_output_mb: var("OKF_MAX_OUTPUT_MB", d.max_output_mb)?,
             max_open_files: var("OKF_MAX_OPEN_FILES", d.max_open_files)?,
@@ -202,9 +205,20 @@ pub struct Converted {
 
 /// Convierte un original en el directorio del intento. Es el trabajo del proceso hijo.
 pub fn convert(cfg: &Config, original: &Path, filename: &str, dir: &Path) -> Result<Converted> {
+    let input = fs::File::open(original)
+        .with_context(|| format!("no se pudo abrir el original {}", original.display()))?;
+    convert_file(cfg, input, filename, dir)
+}
+
+fn convert_file(cfg: &Config, input: fs::File, filename: &str, dir: &Path) -> Result<Converted> {
     let format = crate::format::require(filename)?;
-    let bytes = fs::read(original)
-        .with_context(|| format!("no se pudo leer el original {}", original.display()))?;
+    let mut bytes = Vec::new();
+    input
+        .take((cfg.max_upload_bytes() as u64).saturating_add(1))
+        .read_to_end(&mut bytes)?;
+    if bytes.len() > cfg.max_upload_bytes() {
+        return Err(Rejected("el original supera OKF_MAX_UPLOAD_MB".into()).into());
+    }
     let hash = crate::bundle::hex(&Sha256::digest(&bytes));
     let built = format.convert(cfg, &bytes, filename, &hash, dir)?;
     Ok(Converted {
@@ -250,7 +264,7 @@ pub fn convert_command(original: &Path, dir: &Path, filename: &str) -> Result<()
     install_panic_hook();
     let cfg = Config::from_env()?;
     let result = crate::isolation::apply(&cfg, original, dir)
-        .and_then(|()| convert(&cfg, original, filename, dir));
+        .and_then(|input| convert_file(&cfg, input, filename, dir));
     match result {
         Ok(c) => {
             println!("{}", serde_json::to_string(&c)?);
@@ -602,15 +616,15 @@ fn recover_expired(tx: &Transaction<'_>, root: &Path, cfg: &Config) -> Result<()
     for (id, attempt) in expired {
         if let Some((state, versions)) = published_state(root, &id) {
             tx.execute(
-                "UPDATE jobs SET status=?2,bundle=?3,lease_until=NULL,retry_at=NULL,error=NULL,converter_version=?4,converter_commit=?5,profile_version=?6 WHERE id=?1",
-                params![id, state, format!("published/{id}/bundle.zip"), versions.converter_version, versions.converter_commit, versions.profile_version],
+                "UPDATE jobs SET status=?2,bundle=?3,lease_until=NULL,retry_at=NULL,error=NULL,converter_version=?4,converter_commit=?5,profile_version=?6,finished_at=COALESCE(finished_at,?7) WHERE id=?1",
+                params![id, state, format!("published/{id}/bundle.zip"), versions.converter_version, versions.converter_commit, versions.profile_version, now()],
             )?;
             remove_attempts(root, &id);
             info!(%id, %state, "publicación interrumpida completada al reconciliar");
         } else if attempt >= cfg.max_attempts {
             tx.execute(
-                "UPDATE jobs SET status='failed',lease_until=NULL,retry_at=NULL,error=?2 WHERE id=?1",
-                params![id, format!("el proceso de conversión se interrumpió en {attempt} intentos")],
+                "UPDATE jobs SET status='failed',lease_until=NULL,retry_at=NULL,error=?2,finished_at=?3 WHERE id=?1",
+                params![id, format!("el proceso de conversión se interrumpió en {attempt} intentos"), now()],
             )?;
             remove_attempts(root, &id);
         } else {
@@ -643,7 +657,7 @@ async fn claim(a: &App) -> Result<Option<Job>> {
         .optional()?;
     if let Some(job) = &job {
         tx.execute(
-            "UPDATE jobs SET status='processing',attempt=?2,lease_until=?3,retry_at=NULL,error=NULL,converter_version=?4,converter_commit=?5,profile_version=?6 WHERE id=?1",
+            "UPDATE jobs SET status='processing',attempt=?2,lease_until=?3,retry_at=NULL,error=NULL,converter_version=?4,converter_commit=?5,profile_version=?6,finished_at=NULL WHERE id=?1",
             params![job.id, job.attempt, now() + a.cfg.lease_s, crate::version::PACKAGE, crate::version::COMMIT, crate::version::PROFILE],
         )?;
     }
@@ -671,8 +685,8 @@ async fn publish(a: &App, job: &Job, c: &Converted) -> Result<()> {
     }
     fs::rename(&staging, &pubdir)?;
     a.db.lock().await.execute(
-        "UPDATE jobs SET status=?3,bundle=?4,lease_until=NULL,retry_at=NULL,error=NULL,converter_version=?5,converter_commit=?6,profile_version=?7 WHERE id=?1 AND attempt=?2",
-        params![id, job.attempt, c.status, format!("published/{id}/bundle.zip"), c.versions.converter_version, c.versions.converter_commit, c.versions.profile_version],
+        "UPDATE jobs SET status=?3,bundle=?4,lease_until=NULL,retry_at=NULL,error=NULL,converter_version=?5,converter_commit=?6,profile_version=?7,finished_at=?8 WHERE id=?1 AND attempt=?2",
+        params![id, job.attempt, c.status, format!("published/{id}/bundle.zip"), c.versions.converter_version, c.versions.converter_commit, c.versions.profile_version, now()],
     )?;
     remove_attempts(&a.root, id);
     info!(%id, status = %c.status, attempt = job.attempt, "trabajo publicado");
@@ -702,8 +716,8 @@ async fn fail(a: &App, job: &Job, kind: FailureKind, message: &str) -> Result<()
         ("failed", None, message.to_string())
     };
     a.db.lock().await.execute(
-        "UPDATE jobs SET status=?3,lease_until=NULL,retry_at=?4,error=?5 WHERE id=?1 AND attempt=?2 AND status='processing'",
-        params![job.id, job.attempt, status, retry_at, error],
+        "UPDATE jobs SET status=?3,lease_until=NULL,retry_at=?4,error=?5,finished_at=CASE WHEN ?3='failed' THEN ?6 ELSE NULL END WHERE id=?1 AND attempt=?2 AND status='processing'",
+        params![job.id, job.attempt, status, retry_at, error, now()],
     )?;
     if !retry {
         remove_attempts(&a.root, &job.id);
@@ -852,7 +866,7 @@ pub async fn reconcile(a: &App) -> Result<()> {
     for (id, bundle) in done {
         if bundle.is_empty() || !a.root.join(&bundle).is_file() {
             tx.execute(
-                "UPDATE jobs SET status='queued',bundle=NULL,retry_at=NULL,error='el bundle publicado no existe; se reprocesa el original' WHERE id=?1",
+                "UPDATE jobs SET status='queued',bundle=NULL,finished_at=NULL,retry_at=NULL,error='el bundle publicado no existe; se reprocesa el original' WHERE id=?1",
                 [&id],
             )?;
             warn!(%id, "bundle publicado ausente; trabajo reencolado");
@@ -883,6 +897,7 @@ pub async fn worker(root: PathBuf, poll_ms: u64, once: bool) -> Result<()> {
         bail!("no se puede medir la memoria de los procesos (ni /proc ni ps disponibles)")
     }
     crate::isolation::log_support();
+    let maintenance = crate::retention::start(&a).await?;
     reconcile(&a).await?;
     let heartbeat = crate::observability::Heartbeat::start(&a).await?;
     let result = async {
@@ -902,6 +917,10 @@ pub async fn worker(root: PathBuf, poll_ms: u64, once: bool) -> Result<()> {
     }
     .await;
     heartbeat.stop().await;
+    if let Some(task) = maintenance {
+        task.abort();
+        let _ = task.await;
+    }
     result
 }
 

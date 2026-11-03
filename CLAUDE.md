@@ -2,7 +2,7 @@
 
 ## Contexto para Claude
 
-- Microservicio en Rust que convierte PPTX, DOCX, XLSX y PDF en bundles OKF v0.2. Un ejecutable con los subcomandos `api`, `worker` y `convert` (interno); cada adaptador está en `src/<formato>/`.
-- Qué está hecho y qué falta: [estado del proyecto](docs/estado/ESTADO_DEL_PROYECTO.md). Trabajo planificado: [plan 1](docs/planes/PLAN_1_RECUPERACION_DEL_PLAN_ORIGINAL.md) (hecho, salvo el corpus R6) y [plan 2](docs/planes/PLAN_2_CALIDAD_Y_ROBUSTEZ.md) (hechos C1 a C4, C6, C7, C9 y C10; C5 implementado, pendiente de siete noches).
+- Microservicio en Rust que convierte PPTX, DOCX, XLSX y PDF en bundles OKF v0.2. Un ejecutable con los subcomandos `api`, `worker`, `validate` y `convert` (interno); cada adaptador está en `src/<formato>/`.
+- Qué está hecho y qué falta: [estado del proyecto](docs/estado/ESTADO_DEL_PROYECTO.md). Trabajo planificado: [plan 1](docs/planes/PLAN_1_RECUPERACION_DEL_PLAN_ORIGINAL.md) (hecho, salvo el corpus R6) y [plan 2](docs/planes/PLAN_2_CALIDAD_Y_ROBUSTEZ.md) (hechos C1 a C4 y C6 a C10; C5 con infraestructura, pendiente del hallazgo PDF y de siete noches).
 - `tools/coverage.py` declara sus dependencias y se ejecuta con `uv run`; los scripts de `examples/*/` indican en su cabecera los paquetes que necesitan.
 - La imagen se prueba con `docker build --build-arg OKF_BUILD_COMMIT="$(git rev-parse HEAD)" -t okf-microservice:smoke .` y `tools/smoke.sh okf-microservice:smoke`.

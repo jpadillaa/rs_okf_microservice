@@ -10,6 +10,8 @@ services:
       - "127.0.0.1:8080:8080"
     volumes:
       - okf-data:/data
+    # Supera los 30 s de gracia del worker; ajustar si cambia OKF_SHUTDOWN_GRACE_S.
+    stop_grace_period: 35s
     restart: unless-stopped
   worker:
     build: .
@@ -19,6 +21,8 @@ services:
       - okf-data:/data
     # El worker solo lee y escribe el volumen; no necesita red.
     network_mode: none
+    # Supera los 30 s de gracia del worker; ajustar si cambia OKF_SHUTDOWN_GRACE_S.
+    stop_grace_period: 35s
     restart: unless-stopped
 
 volumes:

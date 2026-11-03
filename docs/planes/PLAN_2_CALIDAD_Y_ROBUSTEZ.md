@@ -76,7 +76,7 @@ medidas menos 0,50 puntos, según la concreción solicitada; véase [el método]
 
 ### C5. Fuzzing de los lectores (L)
 
-**Estado:** infraestructura implementada el 2 de noviembre; cuatro objetivos, semillas, CI nocturna y conservación de fallos. **Aceptación pendiente:** siete noches consecutivas sin fallos nuevos tras publicar el flujo. Véase [Fuzzing](../decisiones/FUZZING.md).
+**Estado:** infraestructura implementada el 2 de noviembre; cuatro objetivos, semillas, CI nocturna y conservación de fallos. **Aceptación pendiente:** corregir el pánico encontrado en `pdf_oxide` (caso reducido y contención verificados) y siete noches consecutivas sin fallos nuevos tras publicar el flujo. Véase [Fuzzing](../decisiones/FUZZING.md).
 
 **Trabajo.**
 
@@ -111,6 +111,8 @@ medidas menos 0,50 puntos, según la concreción solicitada; véase [el método]
 
 ### C8. Retención (S)
 
+**Estado:** implementado el 2 de noviembre: retención optativa desde la finalización, limpieza reanudable, estado `expired` y descarga `410`.
+
 **Trabajo.**
 
 1. `OKF_RETENTION_DAYS`: el worker borra periódicamente los originales y bundles de trabajos terminados más antiguos que ese plazo y marca el trabajo como expirado; la descarga responde `410 Gone`.
@@ -120,7 +122,7 @@ El rechazo de trabajos nuevos cuando falta espacio (`507 Insufficient Storage`) 
 
 **Aceptación.** Pruebas de expiración; sin la variable, nada se borra (comportamiento actual).
 
-**Decisión abierta:** plazo de retención por defecto.
+**Decisión:** sin variable o con 0 no se elimina nada por retención; un plazo positivo se configura explícitamente.
 
 ## 5. Contrato
 

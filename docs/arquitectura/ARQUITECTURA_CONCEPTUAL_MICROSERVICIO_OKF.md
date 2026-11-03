@@ -56,3 +56,11 @@ El original y el estado sobreviven al reinicio del receptor o del worker. Un tra
 La **conformidad OKF** comprueba frontmatter, tipos, archivos reservados y enlaces. La **integridad editorial** comprueba cobertura, orden, recursos, ausencia de duplicaciones y resolución de las referencias al original. Una salida estructuralmente válida con pérdidas declaradas puede ser `partial`; una salida que incumple OKF no se presenta como bundle válido.
 
 En toda la cadena se preservan los localizadores de origen. Ninguna página, bloque, región o diapositiva sustantiva se omite en silencio. Los objetos incrustados y el contenido ejecutable del archivo se tratan como datos, sin ejecutarlos para convertir el documento.
+
+## Retención y expiración
+
+Con retención configurada, los trabajos terminados (`complete`, `partial`, `failed`)
+pasan a `expired` cuando vence el plazo desde su finalización. Se eliminan original,
+intentos y bundle; se conserva el registro, y la descarga devuelve `410 Gone`.
+Sin plazo configurado no se expiran. La política y la limpieza reanudable están en
+la [arquitectura técnica, §5](ARQUITECTURA_TECNICA_MICROSERVICIO_OKF.md#5-implementación-en-las-entregas-pptx-docx-xlsx-y-pdf).

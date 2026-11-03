@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Copia únicamente los ejemplos versionados como semillas de cargo-fuzz (plan 2, C5)."""
+"""Copia ejemplos y regresiones sintéticas como semillas de cargo-fuzz (plan 2, C5)."""
 from pathlib import Path
 import shutil
 
@@ -12,4 +12,6 @@ for fmt in ("pptx", "docx", "xlsx", "pdf"):
             continue
         relative = doc.relative_to(ROOT / "examples" / fmt)
         shutil.copyfile(doc, target / "__".join(relative.parts))
+    for doc in sorted((ROOT / "fuzz" / "regressions" / fmt).glob(f"*.{fmt}")):
+        shutil.copyfile(doc, target / f"regression__{doc.name}")
     print(f"{fmt}: {len(list(target.iterdir()))} semillas disponibles")

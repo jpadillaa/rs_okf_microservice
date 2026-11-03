@@ -83,7 +83,7 @@ En la ruta LibreOffice, activar `ExportHiddenSlides`, desactivar páginas de not
 - [SQLite: WAL y procesos en un host](https://www.sqlite.org/wal.html); [redb: escritura multiproceso experimental](https://docs.rs/redb/latest/redb/).
 - [LibreOffice: conversión headless](https://help.libreoffice.org/latest/en-US/text/shared/guide/start_parameters.html) y [ExportHiddenSlides](https://help.libreoffice.org/latest/en-US/text/shared/guide/pdf_params.html); [BetterOffice PPTX raster 0.5](https://docs.rs/crate/betteroffice-pptx-raster/0.5.0) y [fachada Rust](https://docs.rs/crate/betteroffice-pptx/0.5.0).
 
-## 6. Aislamiento del conversor (plan 2, C4)
+## 7. Aislamiento del conversor (plan 2, C4)
 
 `rustix` configura los rlimits del hijo; `libc` aporta los identificadores de señales
 y la consulta de disponibilidad de Landlock. En Linux, `landlock` 0.4.7 instala las

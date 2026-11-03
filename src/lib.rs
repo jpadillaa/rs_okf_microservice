@@ -34,6 +34,7 @@ mod ooxml;
 mod output;
 mod pdf;
 mod pptx;
+mod retention;
 mod sections;
 mod shutdown;
 mod validate;
@@ -113,6 +114,9 @@ fn app(root: PathBuf) -> Result<App> {
         ("converter_version", "TEXT"),
         ("converter_commit", "TEXT"),
         ("profile_version", "TEXT"),
+        ("finished_at", "INTEGER"),
+        ("expired_at", "INTEGER"),
+        ("purged_at", "INTEGER"),
     ] {
         let exists = db
             .prepare("SELECT 1 FROM pragma_table_info('jobs') WHERE name=?1")?
@@ -124,6 +128,9 @@ fn app(root: PathBuf) -> Result<App> {
             return Err(e.into());
         }
     }
+    // No conocemos el instante terminal histórico: empieza su retención al migrar.
+    db.execute("UPDATE jobs SET finished_at=?1 WHERE status IN ('complete','partial','failed') AND finished_at IS NULL", [now()])?;
+    db.execute_batch("CREATE INDEX IF NOT EXISTS jobs_retention ON jobs(status,finished_at)")?;
     observability::init(&db)?;
     Ok(App {
         root,
@@ -284,23 +291,46 @@ async fn download(
     Path(id): Path<String>,
 ) -> Result<impl IntoResponse, (StatusCode, String)> {
     let db = a.db.lock().await;
-    let path: Option<String> = db
-        .query_row(
-            "SELECT bundle FROM jobs WHERE id=?1 AND status IN ('complete','partial')",
-            [&id],
-            |r| r.get(0),
-        )
+    let row: Option<(String, Option<String>)> = db
+        .query_row("SELECT status,bundle FROM jobs WHERE id=?1", [&id], |r| {
+            Ok((r.get(0)?, r.get(1)?))
+        })
         .optional()
-        .map_err(internal)?
-        .flatten();
-    drop(db);
-    let Some(path) = path else {
+        .map_err(internal)?;
+    let Some((state, path)) = row else {
+        return Err((StatusCode::NOT_FOUND, "trabajo inexistente".into()));
+    };
+    if state == "expired" {
+        return Err((
+            StatusCode::GONE,
+            "el trabajo expiró; sus archivos ya no están disponibles".into(),
+        ));
+    }
+    let Some(path) = path.filter(|_| matches!(state.as_str(), "complete" | "partial")) else {
         return Err((
             StatusCode::NOT_FOUND,
             "el bundle aún no está publicado".into(),
         ));
     };
-    let bytes = fs::read(a.root.join(path)).map_err(internal)?;
+    // Mantener el bloqueo hasta terminar la lectura evita una carrera con la expiración
+    // en este proceso; un worker externo puede expirar entretanto: se comprueba abajo.
+    let bytes = match fs::read(a.root.join(path)) {
+        Ok(bytes) => bytes,
+        Err(error) => {
+            let expired = db
+                .query_row(
+                    "SELECT status='expired' FROM jobs WHERE id=?1",
+                    [&id],
+                    |r| r.get::<_, bool>(0),
+                )
+                .unwrap_or(false);
+            if expired {
+                return Err((StatusCode::GONE, "el trabajo expiró".into()));
+            }
+            return Err(internal(error));
+        }
+    };
+    drop(db);
     let mut headers = HeaderMap::new();
     headers.insert(header::CONTENT_TYPE, "application/zip".parse().unwrap());
     headers.insert(

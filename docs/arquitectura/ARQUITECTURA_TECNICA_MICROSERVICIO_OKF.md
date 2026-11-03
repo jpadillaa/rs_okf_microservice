@@ -24,7 +24,7 @@ El despliegue inicial ocupa un solo nodo. Si se añaden workers en ese nodo, tod
 | --- | --- |
 | **API** | Recibir y limitar el archivo; comprobar el formato admitido; conservar el original; registrar el trabajo; devolver su identificador; consultar estado e informe; entregar únicamente el bundle publicado. |
 | **Registro de trabajos** | Mantener identidad, estado, intento, propietario temporal, vencimiento de la asignación, incidencias y referencias a los archivos. Su actualización debe impedir que dos workers reclamen el mismo trabajo vigente. |
-| **Almacén de archivos** | Separar originales inmutables, áreas privadas por intento y bundles finales. Mantenerlos después de reinicios según una política de retención definida. |
+| **Almacén de archivos** | Separar originales inmutables, áreas privadas por intento y bundles finales. Mantenerlos después de reinicios; retención optativa por `OKF_RETENTION_DAYS`, desde la finalización (§5). |
 | **Worker** | Reclamar trabajos, renovar su asignación, ejecutar la conversión, registrar avance, clasificar fallos, validar y publicar. |
 | **Núcleo de conversión** | Inspección, adaptador por formato, modelo documental intermedio, reconciliación editorial y ensamblado OKF. Puede procesar documentos largos por partes sin convertir esas partes en conceptos finales. |
 | **Validadores** | Evaluar por separado conformidad OKF e integridad editorial; producir el informe y el estado final `complete`, `partial` o `failed`. |
@@ -56,6 +56,11 @@ La primera entrega implementó la ruta completa con PPTX; la segunda añadió el
 
 | Variable | Predeterminado | Efecto |
 | --- | ---: | --- |
+| `OKF_DATA_DIR` | `data` (`/data` en la imagen) | Raíz de SQLite, originales, intentos y publicaciones. |
+| `OKF_UPDATE_GOLDEN` | sin definir | Solo pruebas: su presencia regenera los golden; no modifica listas ni umbrales de cobertura. |
+| `OKF_CORPUS_DIR` | `examples/pptx/corpus` | Solo pruebas PPTX: carpeta del corpus alternativo local. |
+| `OKF_DOCX_CORPUS_DIR` | `examples/docx/corpus` | Solo pruebas DOCX: carpeta del corpus alternativo local. |
+| `OKF_PDF_CORPUS_DIR` | `examples/pdf/corpus` | Solo pruebas PDF: carpeta del corpus alternativo local. |
 | `OKF_MAX_MEMORY_MB` | 500 | Memoria residente máxima; en Linux, RLIMIT_AS limita además el espacio de direcciones a 2 × este valor + 128 MiB. |
 | `OKF_MAX_OUTPUT_MB` | 512 | Tamaño máximo de cada archivo escrito por el conversor (RLIMIT_FSIZE). |
 | `OKF_MAX_OPEN_FILES` | 256 | Descriptores abiertos máximos en el conversor (RLIMIT_NOFILE), mínimo 16. |
@@ -66,6 +71,7 @@ La primera entrega implementó la ruta completa con PPTX; la segunda añadió el
 | `OKF_MAX_CELLS` | 1000000 | Celdas con contenido máximas por libro XLSX. |
 | `OKF_MAX_PAGES` | 2000 | Páginas máximas por documento PDF. |
 | `OKF_CONVERSION_TIMEOUT_S` | 300 | Duración máxima de una conversión. |
+| `OKF_RETENTION_DAYS` | 0 (desactivada) | Días completos desde la finalización para expirar trabajos `complete`, `partial` o `failed`; sin variable o con 0 se conservan los archivos. |
 | `OKF_WORKER_HEALTH_S` | 30 | Antigüedad máxima aceptable del latido; mínimo 3 s. Cada worker lo renueva cada tercio del plazo. |
 | `OKF_SHUTDOWN_GRACE_S` | 30 | Plazo de gracia del worker tras SIGTERM/SIGINT; 0 interrumpe sin espera adicional. |
 | `OKF_LEASE_S` | 60 | Vigencia de la asignación; el worker la renueva cada tercio mientras convierte. |
@@ -94,10 +100,15 @@ En Linux, Landlock (ABI 3, con degradación explícita en kernels anteriores) pe
 leer el original y leer/escribir solamente el directorio del intento. Permite además
 leer los archivos de fuente configurados o de reserva, `/etc/localtime`; no concede ejecución ni creación de enlaces o dispositivos.
 El worker registra al arrancar si Landlock no está disponible; un error al imponer
-una regla impide convertir. Los descriptores estándar heredados siguen abiertos.
+una regla impide convertir. Los descriptores estándar heredados siguen abiertos. El descriptor del original se abre después de los rlimits y antes de restringir rutas, y se conserva durante la lectura; así no necesita reabrirlo después de la restricción. También se comprueba el tamaño del original al leerlo.
 El contenedor del worker mantiene `network_mode: none`; Landlock aquí restringe
 archivos, no sustituye ese aislamiento de red. En macOS no se aplican Landlock ni
 RLIMIT_AS: la memoria se limita mediante la vigilancia de RSS.
+
+Compose y la prueba de humo usan un volumen Linux para el almacén. En Docker
+Desktop, el montaje de una carpeta del host produjo `Permission denied` al
+escribir con Landlock activo; el volumen Linux pasó la misma conversión. No se
+desactiva Landlock para admitir ese montaje.
 
 **Registro de cada intento.** Al terminar un intento, el worker escribe una línea con el trabajo, el intento, el formato, el resultado (`complete`, `partial`, `failed`, `transient_failure`, `lease_lost` o `interrupted`), la duración de la lectura, el ensamblado y la validación, la duración total y la memoria residente máxima. El proceso hijo devuelve su resultado como una línea JSON con las etapas, que mide el ensamblador común, y con su máximo de memoria (`getrusage` en Linux y macOS). Antes de aceptar el resultado, el worker comprueba también ese máximo y el tiempo total; así una conversión de menos de 100 ms que excede el límite no se publica. En XLSX y PDF las hojas y las páginas se leen mientras se ensamblan, de modo que su lectura cuenta como ensamblado. El registro no incluye contenido del documento.
 
@@ -174,6 +185,8 @@ La limpieza y el cambio de estado se coordinan en una transacción para que otro
 worker pueda reutilizar el mismo número de intento sin perder sus archivos.
 Una reserva que ya pertenece a otro intento nunca se modifica.
 
+`compose.yaml` concede 35 s antes de SIGKILL, por encima de los 30 s de gracia por defecto; si se aumenta `OKF_SHUTDOWN_GRACE_S`, debe aumentarse también el plazo del contenedor.
+
 La API usa el apagado ordenado de Axum: deja de aceptar conexiones nuevas y termina
 las peticiones en curso. Una terminación forzada (SIGKILL, caída del host) sigue
 requiriendo la recuperación de asignaciones vencidas.
@@ -207,3 +220,25 @@ registrar el resultado puede dejar ese intento fuera de las métricas. Si falla 
 persistencia se registra el error y se mantiene el flujo de publicación; el estado
 del trabajo sigue siendo el registro operativo. Los tiempos son los mismos del
 registro R5. Las futuras eliminaciones de archivos no reinician los contadores.
+
+### Retención (plan 2, C8)
+
+La política por defecto conserva originales y bundles indefinidamente. Si
+`OKF_RETENTION_DAYS` es positivo, el worker ejecuta la limpieza al arrancar (antes de
+reconciliar publicaciones) y cada hora. Solo son elegibles `complete`, `partial` y
+`failed` cuyo `finished_at` tiene al menos ese número de días de 86400 segundos;
+los trabajos en cola o en proceso nunca se borran por retención.
+
+Primero se marca `expired` de forma durable, con `expired_at`, y se retira la ruta
+de descarga. Luego se borran original, intentos, publicación y publicación temporal;
+`purged_at` se registra solo al completar la limpieza. Si falta un archivo, se
+considera ya eliminado; ante un fallo de borrado se conserva `expired` y se reintenta
+al arrancar o en la siguiente pasada. La recuperación nunca reencola un expirado.
+Desactivar la variable detiene las siguientes pasadas de retención.
+
+`GET /jobs/{id}` conserva el registro y devuelve `expired`; la descarga responde
+`410 Gone`, también si una limpieza concurrente elimina el archivo durante la
+petición. Se conservan los metadatos del trabajo, su diagnóstico y versiones, y los
+acumulados de métricas. `created_at` no determina la expiración. Para registros
+históricos sin fecha terminal, la migración fija `finished_at` al instante de la
+migración, dando el plazo completo antes de poder expirar.
