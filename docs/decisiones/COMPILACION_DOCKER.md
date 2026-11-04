@@ -18,6 +18,8 @@ La CI usa `docker/setup-buildx-action@v4` y `docker/build-push-action@v7`, con `
 
 Cambiar `Cargo.toml`, `Cargo.lock`, el perfil, el toolchain o la estructura de targets puede exigir recompilar dependencias. La primera construcción también debe instalar `cargo-chef`; el beneficio principal aparece en las reconstrucciones. No se usa `--no-cache` en el flujo habitual. `.dockerignore` conserva la lista permitida de fuentes: no envía `.env`, datos privados, `.git` ni `target/` al builder.
 
+El job `test` mantiene una caché Rust independiente de Docker. Se configura con `Swatinem/rust-cache@v2`, prefijo `v1-rust-ci-no-debug` y `cache-bin: false`. Solo en ese job, `CARGO_PROFILE_DEV_DEBUG=0` y `CARGO_PROFILE_TEST_DEBUG=0` evitan guardar símbolos de depuración; conservan las aserciones, los controles de desbordamiento y las demás opciones de las pruebas. El prefijo nuevo impide recuperar la caché anterior con símbolos completos, que agotó el disco del runner al extraer 1 985 837 586 bytes comprimidos en la [ejecución de `b872f75`](https://github.com/jpadillaa/rs_okf_microservice/actions/runs/41827020407). El desarrollo local conserva sus símbolos.
+
 ## Imagen de ejecución
 
 La base es `gcr.io/distroless/cc-debian13:nonroot`, fijada por digest en el Dockerfile y el stack. La variante `cc` incluye las bibliotecas dinámicas que requiere el binario Rust; no se usa `static` porque el ejecutable enlaza con glibc y libgcc. La imagen no incluye Cargo, compilador, shell ni gestor de paquetes. `ENTRYPOINT` ejecuta una ruta absoluta en formato JSON.

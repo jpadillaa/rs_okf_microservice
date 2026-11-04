@@ -21,6 +21,10 @@ jobs:
           --health-interval 2s --health-timeout 3s --health-retries 30
     env:
       OKF_TEST_DATABASE_URL: postgresql://okf:okf_test_password@127.0.0.1:5432/okf_test?sslmode=disable
+      # Los símbolos de depuración llenaban el disco al restaurar target/ en CI.
+      # Solo cambia la información de depuración, no los checks del perfil de pruebas.
+      CARGO_PROFILE_DEV_DEBUG: "0"
+      CARGO_PROFILE_TEST_DEBUG: "0"
     steps:
       - uses: actions/checkout@v5
       # Debe coincidir con `rust-version` de Cargo.toml.
@@ -29,6 +33,10 @@ jobs:
           toolchain: "1.99"
           components: rustfmt, clippy
       - uses: Swatinem/rust-cache@v2
+        with:
+          # No restaurar las cachés antiguas con símbolos completos.
+          prefix-key: v1-rust-ci-no-debug
+          cache-bin: false
       # El renderizador PPTX necesita una fuente TrueType (ver render_font en src/pptx/mod.rs);
       # la misma versión que instala el Dockerfile.
       - name: Instalar fuente para el renderizado

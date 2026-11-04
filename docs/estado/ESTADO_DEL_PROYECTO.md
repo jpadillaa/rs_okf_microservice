@@ -192,6 +192,8 @@ El plan 1 cerró los antiguos puntos sobre el modelo intermedio, Xberg, el cierr
 
 La migración PostgreSQL, su configuración, la interfaz Swagger UI y la optimización de compilación y empaquetado Docker están implementadas; no cambian el perfil documental ni cierran C5. La caché GHA de la imagen está configurada y falta observar su restauración en el siguiente push; las reconstrucciones locales ya se midieron.
 
+La publicación de las optimizaciones detectó un fallo previo en el job `test`: la restauración de la caché Rust de 1,99 GB comprimidos agota el disco del runner. El workflow omite los símbolos solo en CI y usa el prefijo `v1-rust-ci-no-debug` para no recuperar esa caché antigua; la caché Docker se mantiene separada. El seguimiento de CI debe comprobar la ejecución y la restauración de ambas cachés con esta configuración.
+
 En orden de prioridad:
 
 1. **Seguimiento de CI**: revisar la CI del push autorizado del plan 2 y la siguiente auditoría programada con la excepción razonada de `RUSTSEC-2026-0429`. Los dos últimos pushes anteriores (`cf0f869` y `7abd68c`) pasaron completos. Los golden pasan en Linux; el aviso de Node.js 20 ya desapareció y `test` tarda unos tres minutos.

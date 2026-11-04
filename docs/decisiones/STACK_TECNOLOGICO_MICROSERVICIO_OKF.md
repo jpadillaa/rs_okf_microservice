@@ -16,6 +16,8 @@
 - Ejecutar sobre **Distroless `cc-debian13:nonroot`**, sin shell ni gestor de paquetes, con UID/GID 10001:10001 y datos en `/data`. La etapa Debian instala `fonts-dejavu-core` 2.37-8 y `ca-certificates` 20250419; solo se copian fuentes, certificados, avisos de licencia y directorio de datos al runtime junto con el binario. El UID conserva el acceso a los volúmenes anteriores. La CI instala la misma versión de las fuentes para las pruebas.
 - `compose.yaml` levanta API, worker y PostgreSQL; los dos primeros comparten los archivos y la imagen. PostgreSQL 17.11 usa un volumen propio. El supervisor tiene red hacia la base; el conversor bloquea sockets con seccomp en Linux y recibe un entorno sin credenciales. La CI construye la imagen y ejecuta `tools/smoke.sh`, que envía una muestra de cada formato a la API, ejecuta `worker --once`, descarga y valida los cuatro bundles. Montar el volumen persistente en ambos procesos. No agregar Redis, RabbitMQ, S3 ni servicios en la nube en la instalación inicial.
 
+La caché de las pruebas Rust es independiente de Docker. El job `test` omite símbolos de depuración mediante `CARGO_PROFILE_DEV_DEBUG=0` y `CARGO_PROFILE_TEST_DEBUG=0`, sin cambiar las aserciones ni los controles de desbordamiento, y usa el prefijo `v1-rust-ci-no-debug` de `Swatinem/rust-cache@v2`. Esto evita restaurar los artefactos antiguos que agotaban el disco del runner. Los perfiles locales mantienen su configuración.
+
 Las versiones de las bases están fijadas mediante sus índices multiarquitectura:
 
 | Etapa o servicio | Imagen | Digest SHA-256 |
