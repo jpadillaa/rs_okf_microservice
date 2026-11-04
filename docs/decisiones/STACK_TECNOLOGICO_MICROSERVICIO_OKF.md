@@ -33,7 +33,7 @@ Histórico previo a esta optimización: la imagen con Swagger UI medida el 4 de 
 
 | Uso | Elección | Regla de incorporación |
 | --- | --- | --- |
-| HTTP y ejecución | [`axum`](https://docs.rs/axum/), [`tokio`](https://docs.rs/tokio/) | Subcomandos `api` y `worker` de un mismo ejecutable; límites de concurrencia y de duración configurables. |
+| HTTP y ejecución | [`axum`](https://docs.rs/axum/), [`tokio`](https://docs.rs/tokio/), [`tokio-util` 0.7.20](https://docs.rs/tokio-util/0.7.20/) (`io`) | Subcomandos `api` y `worker` de un mismo ejecutable; límites de concurrencia y de duración configurables. La API escribe las subidas y sirve los bundles por partes (`ReaderStream`), sin cargarlos en memoria. |
 | Trabajo durable | [`sqlx`](https://docs.rs/sqlx/) 0.9 + PostgreSQL 17.11 | Solo el driver PostgreSQL; SQL explícito, pool asíncrono, TLS con Rustls y migraciones embebidas. Sin ORM ni broker. |
 | Configuración | [`dotenvy`](https://docs.rs/dotenvy/) 0.15.7 | `.env` o `--env-file`, cargado antes del runtime. |
 | Extracción general | [`xberg`](https://docs.xberg.io/features/) | Abandonado en los cuatro formatos (§3, «Abandono de Xberg»). PPTX, DOCX y XLSX se leen con el lector OOXML propio (fila «Lectura OOXML»); la etapa PDF midió su función `pdf` y eligió `pdf_oxide` (fila «Lectura PDF» y §3). |

@@ -56,9 +56,9 @@ Estados: `queued → processing → complete | partial | failed`; el paso 4 ocur
 
 | Operación documentada | Entrada y respuesta |
 | --- | --- |
-| `POST /jobs` | Formulario `multipart/form-data` con archivo `file`; `202` con `job_id` y `queued`. Documenta los rechazos `400`, `413`, `415`, `429`, `500` y `507`. |
+| `POST /jobs` | Formulario `multipart/form-data` con archivo `file`; `202` con `job_id` y `queued`. El original se escribe en disco a medida que llega, con su SHA-256 calculado en el mismo paso, sin reunirlo en memoria. Documenta los rechazos `400` (formulario, nombre o archivo vacío), `413` (tamaño), `415`, `429`, `500` y `507`; un rechazo borra lo escrito. |
 | `GET /jobs/{id}` | Identificador del trabajo; `200` con estado, intento, error y versiones; `404` si no existe, `500` si falla la consulta. |
-| `GET /jobs/{id}/bundle` | `200` con ZIP y `Content-Disposition` de descarga para `complete`/`partial`; `404` si no existe o no está publicado, `410` si expiró y `500` ante un error de lectura. |
+| `GET /jobs/{id}/bundle` | `200` con ZIP, `Content-Length` y `Content-Disposition` de descarga para `complete`/`partial`, enviado por partes desde el archivo; `404` si no existe o no está publicado, `410` si expiró y `500` ante un error de lectura. |
 | `GET /health` | `200` o `503` con las comprobaciones de PostgreSQL, almacenamiento y latido del worker. |
 | `GET /metrics` | `200` en texto Prometheus 0.0.4; `500` ante un error de consulta. |
 

@@ -188,8 +188,8 @@ fn free_space_mb(path: &FsPath) -> std::io::Result<u64> {
     request_body(content = api_docs::Upload, content_type = "multipart/form-data"),
     responses(
         (status = 202, description = "Original conservado y trabajo en cola", body = Accepted),
-        (status = 400, description = "Formulario, archivo o nombre no válido", body = String, content_type = "text/plain"),
-        (status = 413, description = "Archivo vacío o tamaño por encima del límite", body = String, content_type = "text/plain"),
+        (status = 400, description = "Formulario, nombre no válido o archivo vacío", body = String, content_type = "text/plain"),
+        (status = 413, description = "Tamaño por encima del límite", body = String, content_type = "text/plain"),
         (status = 415, description = "Extensión no admitida", body = String, content_type = "text/plain"),
         (status = 429, description = "Cola llena; reintentar más tarde", body = String, content_type = "text/plain"),
         (status = 500, description = "Error de persistencia", body = String, content_type = "text/plain"),
@@ -201,21 +201,21 @@ async fn submit(
     mut multipart: Multipart,
 ) -> Result<impl IntoResponse, (StatusCode, String)> {
     admit(&a).await?;
-    let mut filename = None;
-    let mut bytes = None;
     // Un cuerpo por encima del límite llega como error del multipart, con su `413`.
     let rejected = |e: axum::extract::multipart::MultipartError| (e.status(), e.body_text());
-    while let Some(field) = multipart.next_field().await.map_err(rejected)? {
-        if let Some(n) = field.file_name() {
-            filename = Some(n.to_string());
-            bytes = Some(field.bytes().await.map_err(rejected)?.to_vec());
-            break;
+    let mut field = loop {
+        match multipart.next_field().await.map_err(rejected)? {
+            Some(field) if field.file_name().is_some() => break field,
+            Some(_) => continue,
+            None => {
+                return Err((
+                    StatusCode::BAD_REQUEST,
+                    "multipart requiere un archivo".into(),
+                ));
+            }
         }
-    }
-    let filename = filename.ok_or((
-        StatusCode::BAD_REQUEST,
-        "multipart requiere un archivo".into(),
-    ))?;
+    };
+    let filename = field.file_name().unwrap_or_default().to_string();
     if !valid_name(&filename) {
         return Err((
             StatusCode::BAD_REQUEST,
@@ -236,21 +236,19 @@ async fn submit(
             ),
         ));
     };
-    let bytes = bytes.unwrap_or_default();
-    if bytes.is_empty() || bytes.len() > a.cfg.max_upload_bytes() {
-        return Err((
-            StatusCode::PAYLOAD_TOO_LARGE,
-            format!(
-                "el archivo está vacío o supera {} MiB (OKF_MAX_UPLOAD_MB)",
-                a.cfg.max_upload_mb
-            ),
-        ));
-    }
     let id = Uuid::new_v4().to_string();
-    let hash = bundle::hex(&Sha256::digest(&bytes));
     let original_rel = format!("originals/{id}.{}", format.extension());
     let path = a.root.join(&original_rel);
-    fs::write(&path, &bytes).map_err(internal)?;
+    // El original se escribe a medida que llega y se calcula su huella en el mismo paso,
+    // sin reunir el archivo en memoria. Cualquier rechazo posterior borra lo escrito.
+    let stored = store_upload(&a, &mut field, &path).await;
+    let hash = match stored {
+        Ok(hash) => hash,
+        Err(e) => {
+            let _ = tokio::fs::remove_file(&path).await;
+            return Err(e);
+        }
+    };
     if let Err(e) = sqlx::query(
         "INSERT INTO jobs(id,filename,original,sha256,status,created_at) VALUES($1,$2,\
         $3,$4,'queued',$5)",
@@ -263,7 +261,7 @@ async fn submit(
     .execute(&a.db)
     .await
     {
-        let _ = fs::remove_file(path);
+        let _ = tokio::fs::remove_file(path).await;
         return Err(internal(e));
     }
     Ok((
@@ -273,6 +271,45 @@ async fn submit(
             status: "queued".into(),
         }),
     ))
+}
+/// Escribe el campo del archivo en `path` por partes y devuelve su SHA-256 en
+/// hexadecimal. Rechaza un archivo vacío (`400`) o mayor que `OKF_MAX_UPLOAD_MB` (`413`).
+async fn store_upload(
+    a: &App,
+    field: &mut axum::extract::multipart::Field<'_>,
+    path: &FsPath,
+) -> Result<String, (StatusCode, String)> {
+    use tokio::io::AsyncWriteExt;
+    let limit = a.cfg.max_upload_bytes();
+    let too_large = || {
+        (
+            StatusCode::PAYLOAD_TOO_LARGE,
+            format!(
+                "el archivo supera {} MiB (OKF_MAX_UPLOAD_MB)",
+                a.cfg.max_upload_mb
+            ),
+        )
+    };
+    let mut file = tokio::fs::File::create(path).await.map_err(internal)?;
+    let mut hasher = Sha256::new();
+    let mut size = 0usize;
+    while let Some(chunk) = field
+        .chunk()
+        .await
+        .map_err(|e| (e.status(), e.body_text()))?
+    {
+        size = size.saturating_add(chunk.len());
+        if size > limit {
+            return Err(too_large());
+        }
+        hasher.update(&chunk);
+        file.write_all(&chunk).await.map_err(internal)?;
+    }
+    if size == 0 {
+        return Err((StatusCode::BAD_REQUEST, "el archivo está vacío".into()));
+    }
+    file.sync_all().await.map_err(internal)?;
+    Ok(bundle::hex(&hasher.finalize()))
 }
 fn internal(e: impl std::fmt::Display) -> (StatusCode, String) {
     (StatusCode::INTERNAL_SERVER_ERROR, e.to_string())
@@ -360,9 +397,10 @@ async fn download(
             "el bundle aún no está publicado".into(),
         ));
     };
-    // Si la retención borra el archivo entre la consulta y la lectura, devuelve 410.
-    let bytes = match fs::read(a.root.join(path)) {
-        Ok(bytes) => bytes,
+    // Si la retención borra el archivo entre la consulta y la apertura, devuelve 410.
+    // Una vez abierto, el archivo se sirve completo aunque se borre durante el envío.
+    let file = match tokio::fs::File::open(a.root.join(path)).await {
+        Ok(file) => file,
         Err(error) => {
             let expired: bool = sqlx::query_scalar("SELECT status='expired' FROM jobs WHERE id=$1")
                 .bind(&id)
@@ -375,15 +413,19 @@ async fn download(
             return Err(internal(error));
         }
     };
+    let length = file.metadata().await.map_err(internal)?.len();
     let mut headers = HeaderMap::new();
     headers.insert(header::CONTENT_TYPE, "application/zip".parse().unwrap());
+    headers.insert(header::CONTENT_LENGTH, length.into());
     headers.insert(
         header::CONTENT_DISPOSITION,
         format!("attachment; filename=\"{id}.zip\"")
             .parse()
             .unwrap(),
     );
-    Ok((headers, bytes))
+    // Se envía por partes: la memoria de la API no depende del tamaño del bundle.
+    let body = axum::body::Body::from_stream(tokio_util::io::ReaderStream::new(file));
+    Ok((headers, body))
 }
 async fn serve(root: PathBuf, bind: &str) -> Result<()> {
     let mut a = app(root).await?;
@@ -616,6 +658,16 @@ mod tests {
             .join("published")
             .join(&accepted.job_id)
             .join("bundle.zip");
+        let published = fs::read(&zip_path).unwrap();
+        assert_eq!(
+            download_response.headers()[header::CONTENT_LENGTH],
+            published.len().to_string().as_str()
+        );
+        let downloaded = http_body_util::BodyExt::collect(download_response.into_body())
+            .await
+            .unwrap()
+            .to_bytes();
+        assert_eq!(downloaded.as_ref(), published.as_slice());
         validate_bundle(&zip_path).unwrap();
         let mut z = ZipArchive::new(fs::File::open(zip_path).unwrap()).unwrap();
         let mut idx = String::new();
@@ -1344,7 +1396,10 @@ mod tests {
         // Valores por omisión: sin límite de cola ni de espacio libre.
         assert_eq!(post(&a, "simple.pptx", &simple).await, StatusCode::ACCEPTED);
         assert_eq!(post(&a, "simple.pptx", &simple).await, StatusCode::ACCEPTED);
+        assert_eq!(post(&a, "vacio.pptx", &[]).await, StatusCode::BAD_REQUEST);
         Arc::make_mut(&mut a.cfg).max_upload_mb = 1;
+        let exact = vec![0u8; 1024 * 1024];
+        assert_eq!(post(&a, "exacto.pptx", &exact).await, StatusCode::ACCEPTED);
         let big = vec![0u8; 1024 * 1024 + 1];
         assert_eq!(
             post(&a, "big.pptx", &big).await,
@@ -1355,12 +1410,12 @@ mod tests {
             post(&a, "big.pptx", &over_body_limit).await,
             StatusCode::PAYLOAD_TOO_LARGE
         );
-        Arc::make_mut(&mut a.cfg).max_queued = 2;
+        Arc::make_mut(&mut a.cfg).max_queued = 3;
         assert_eq!(
             post(&a, "simple.pptx", &simple).await,
             StatusCode::TOO_MANY_REQUESTS
         );
-        Arc::make_mut(&mut a.cfg).max_queued = 3;
+        Arc::make_mut(&mut a.cfg).max_queued = 4;
         assert_eq!(post(&a, "simple.pptx", &simple).await, StatusCode::ACCEPTED);
         Arc::make_mut(&mut a.cfg).max_queued = 0;
         Arc::make_mut(&mut a.cfg).min_free_mb = u64::MAX;
@@ -1373,7 +1428,16 @@ mod tests {
             .await
             .and_then(|r| r.try_get(0))
             .unwrap();
-        assert_eq!(pending, 3);
+        assert_eq!(pending, 4);
+        // Los rechazos no dejan originales a medio escribir.
+        let originals = fs::read_dir(a.root.join("originals")).unwrap().count();
+        assert_eq!(originals, 4);
+        let exact_hash: String =
+            sqlx::query_scalar("SELECT sha256 FROM jobs WHERE filename='exacto.pptx'")
+                .fetch_one(&a.db)
+                .await
+                .unwrap();
+        assert_eq!(exact_hash, bundle::hex(&Sha256::digest(&exact)));
     }
 }
 
