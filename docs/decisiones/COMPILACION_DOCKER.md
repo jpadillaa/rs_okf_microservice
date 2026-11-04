@@ -63,7 +63,24 @@ Verificaciones completadas:
 - `tools/smoke.sh okf-microservice:local`: PostgreSQL aislado, recepción por API, conversión en el proceso hijo de los cuatro formatos, descarga y validación independiente de los cuatro ZIP, salud sin worker y métricas por formato.
 - Compose con los volúmenes existentes: API y worker arrancan, `/health` responde `200` con base, almacenamiento y worker disponibles; Swagger, su JavaScript y OpenAPI responden `200`. Se conserva el trabajo anterior.
 - Inspección de UID/GID 10001:10001, directorio `/`, fuente TrueType y certificados CA en el runtime.
-- YAML de CI válido. La restauración de caché GHA en un runner nuevo queda por observar en el siguiente push; las mediciones anteriores son locales.
+- YAML de CI válido; la exportación y restauración de caché GHA entre runners se comprobaron después de publicar, como se detalla a continuación.
+
+## Verificación de CI y caché remota
+
+La [ejecución de `c4f76d9`](https://github.com/jpadillaa/rs_okf_microservice/actions/runs/41833194408) construyó la imagen sin una caché Docker previa, convirtió y validó los cuatro formatos y exportó 42 objetos de caché, 922 359 565 bytes en total. Su job `test` falló antes de ejecutar pruebas al restaurar la caché Rust antigua y agotar el disco; el fallo motivó la configuración sin símbolos y el prefijo nuevo descritos arriba.
+
+La [ejecución de `76466ee`](https://github.com/jpadillaa/rs_okf_microservice/actions/runs/41836323796), en runners nuevos, pasó los tres jobs: `test`, `dependencies` e `image`. El log de Docker muestra la importación del manifiesto GHA y `CACHED` en `cargo chef cook`; solo compila `okf-microservice`, porque cambió `OKF_BUILD_COMMIT`. La imagen resultante vuelve a superar las cuatro conversiones y validaciones.
+
+| Medida en GitHub Actions, Linux amd64 | Primera construcción (`c4f76d9`) | Con caché (`76466ee`) |
+| --- | ---: | ---: |
+| Paso «Construir la imagen» | 19 min 00 s | 1 min 46 s (−90,7 %) |
+| Job `image` completo | 19 min 50 s | 2 min 26 s |
+| Prueba de humo de cuatro formatos | 16 s | 16 s |
+| Dependencias de release | 13 min 50 s de Cargo | Capa `CACHED` |
+
+Estos tiempos incluyen las operaciones indicadas por cada fila y no son comparables directamente con el equipo arm64 local. En la primera ejecución, exportar la caché tomó 138,2 s. La segunda confirma reutilización entre commits y runners; no depende de que un runner conserve su disco.
+
+Con la corrección, `test` pasó las **75 pruebas Linux**, formato y Clippy. Al crear la nueva caché por primera vez, el job completo tardó 21 min 04 s; guardó **606 576 970 bytes**, frente a los 1 985 837 586 de la caché anterior. La ejecución local previa al commit también pasó formato, Clippy, las 73 pruebas macOS y la auditoría. No se cambiaron los golden ni el perfil documental.
 
 ## Fuentes
 
