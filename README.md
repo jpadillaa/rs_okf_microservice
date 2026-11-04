@@ -36,10 +36,13 @@ El archivo `.env` está excluido de Git. Todas las variables `OKF_*` se describe
 ## Servicio completo con Docker
 
 ```bash
-docker compose up -d --build
+docker compose build api
+docker compose up -d --no-build
 ```
 
 La API queda en `http://127.0.0.1:8080` (`POST /jobs`, `GET /jobs/{id}`, `GET /jobs/{id}/bundle`). API y worker aplican las migraciones de esquema al arrancar, con coordinación entre procesos. Ambos comparten el volumen `okf-data`; deben ver los mismos archivos. El worker alcanza PostgreSQL por una red interna y su proceso conversor bloquea sockets con seccomp en Linux, además de los límites y Landlock.
+
+API y worker usan la misma imagen `okf-microservice:local`: basta construirla una vez. BuildKit y `cargo-chef` reutilizan las dependencias cuando solo cambia el código. La imagen final usa Distroless Debian 13, conserva las fuentes y certificados y ejecuta el binario sin símbolos como UID 10001; no incluye shell ni gestor de paquetes. Para una revisión ya confirmada en Git, añade `--build-arg OKF_BUILD_COMMIT="$(git rev-parse HEAD)"` a `docker compose build`; sin argumento registra `unknown`. Consulta [Compilación y empaquetado Docker](docs/decisiones/COMPILACION_DOCKER.md) para las capas, cachés y mediciones.
 
 ## Probar los endpoints con Swagger UI
 

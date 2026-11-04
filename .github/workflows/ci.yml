@@ -53,8 +53,16 @@ jobs:
     runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v5
+      - uses: docker/setup-buildx-action@v4
       - name: Construir la imagen
-        run: docker build --build-arg OKF_BUILD_COMMIT="$(git rev-parse HEAD)" -t okf-microservice:smoke .
+        uses: docker/build-push-action@v7
+        with:
+          context: .
+          load: true
+          tags: okf-microservice:smoke
+          build-args: OKF_BUILD_COMMIT=${{ github.sha }}
+          cache-from: type=gha,scope=okf-image-linux-amd64
+          cache-to: type=gha,mode=max,scope=okf-image-linux-amd64
       # Una muestra de cada formato por la API, PostgreSQL, el conversor sin sockets y
       # la descarga de los cuatro bundles.
       - name: Prueba de humo

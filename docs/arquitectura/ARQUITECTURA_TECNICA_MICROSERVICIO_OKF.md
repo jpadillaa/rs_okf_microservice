@@ -130,6 +130,14 @@ Desktop, el montaje de una carpeta del host produjo `Permission denied` al
 escribir con Landlock activo; el volumen Linux pasó la misma conversión. No se
 desactiva Landlock para admitir ese montaje.
 
+La API y el worker comparten una imagen Distroless Debian 13 (`cc`, sin shell ni
+gestor de paquetes), con el ejecutable, las fuentes DejaVu y los certificados CA.
+El UID 10001 se conserva para acceder a los volúmenes existentes; los nuevos se
+inicializan con propietario 10001:10001. La compilación separa dependencias mediante
+`cargo-chef`, conserva su capa en la caché de BuildKit/CI y elimina los símbolos del
+binario. `OKF_BUILD_COMMIT` se aplica después de compilar las dependencias. Versiones,
+límites de la caché y mediciones en [Compilación y empaquetado Docker](../decisiones/COMPILACION_DOCKER.md).
+
 **Registro de cada intento.** Al terminar un intento, el worker escribe una línea con el trabajo, el intento, el formato, el resultado (`complete`, `partial`, `failed`, `transient_failure`, `lease_lost` o `interrupted`), la duración de la lectura, el ensamblado y la validación, la duración total y la memoria residente máxima. El proceso hijo devuelve su resultado como una línea JSON con las etapas, que mide el ensamblador común, y con su máximo de memoria (`getrusage` en Linux y macOS). Antes de aceptar el resultado, el worker comprueba también ese máximo y el tiempo total; así una conversión de menos de 100 ms que excede el límite no se publica. En XLSX y PDF las hojas y las páginas se leen mientras se ensamblan, de modo que su lectura cuenta como ensamblado. El registro no incluye contenido del documento.
 
 **Asignación.** Si la renovación encuentra que el trabajo ya pertenece a otro intento, el worker termina el proceso hijo y abandona el suyo sin publicar. Antes de publicar bloquea la fila y confirma que sigue perteneciendo al intento; mantiene el bloqueo durante el renombrado y la actualización del estado. El registro final solo se escribe para el intento vigente.

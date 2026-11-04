@@ -1,6 +1,6 @@
 # Estado del proyecto
 
-**Corte:** 4 de noviembre de 2026, interfaz Swagger UI configurable por `OKF_SWAGGER_ENABLED` sobre el servicio PostgreSQL, con configuración `.env` e instancia Docker de prueba. Plan 2: C5 sigue pendiente del hallazgo PDF y de siete noches de estabilidad.
+**Corte:** 4 de noviembre de 2026, compilación Docker con caché de dependencias y nueva imagen Distroless de 104 MB, sobre el servicio PostgreSQL con `.env` y Swagger UI configurable. Plan 2: C5 sigue pendiente del hallazgo PDF y de siete noches de estabilidad.
 **Alcance:** qué está implementado, con qué evidencia de calidad, cómo se compara con el plan inicial y qué queda pendiente. Los contratos están en la [especificación](../especificacion/ESPECIFICACION_OKF.md), las [arquitecturas](../arquitectura/ARQUITECTURA_TECNICA_MICROSERVICIO_OKF.md) y el [stack](../decisiones/STACK_TECNOLOGICO_MICROSERVICIO_OKF.md); este documento no los modifica y debe actualizarse al cerrar cada entrega.
 
 ## 1. Resumen
@@ -29,7 +29,7 @@ El 3 de noviembre se sustituyó SQLite por PostgreSQL como único motor a petici
 | Registro de diagnóstico | Hecho | `tracing` con una línea por intento: trabajo, intento, formato, resultado, duración de lectura, ensamblado y validación, duración total y memoria máxima; sin contenido del documento. |
 | Retención | Hecho | `OKF_RETENTION_DAYS`, desactivada por defecto; expiración desde la finalización, limpieza reanudable y descarga `410`. |
 | Salud y métricas | Hecho | `/health` comprueba PostgreSQL, disco y latido reciente; `/metrics` publica contadores persistidos, tiempos por formato/etapa y memoria, sin texto ni identificadores de documentos. |
-| Imagen | Hecho | Una imagen para API y worker (`Dockerfile`), con las imágenes base fijadas por digest y la fuente del renderizado; `compose.yaml` levanta API, worker y PostgreSQL; el conversor bloquea sockets con seccomp en Linux. |
+| Imagen | Hecho | Una imagen Distroless Debian 13 para API y worker, bases por digest, fuentes y certificados fijados, UID 10001 y binario sin símbolos. `cargo-chef` reutiliza dependencias y Buildx configura caché GHA de etapas intermedias. Tamaño local: 104 MB; reconstrucción solo de código: 13,81 s. Compose levanta API, worker y PostgreSQL; el conversor bloquea sockets con seccomp en Linux. |
 
 API y worker son subcomandos de un único ejecutable (`okf-microservice api` y `okf-microservice worker`) y se ejecutan como dos procesos, que es lo que exige la arquitectura; el stack registra la decisión.
 
@@ -73,6 +73,8 @@ La migración del 3 de noviembre pasa `cargo fmt`, `cargo clippy --all-targets -
 La incorporación de Swagger del 4 de noviembre pasa las **72 pruebas de macOS**, formato, Clippy y `cargo deny check`. Se construyó la imagen y se inició Compose: desde Swagger en el navegador se subió `examples/docx/breve.docx` (`202`), se consultó su estado `complete` y se obtuvo el ZIP (`200`, con enlace de descarga). El validador independiente aceptó el ZIP descargado; `/health` confirmó PostgreSQL, almacenamiento y worker disponibles. Los 26 golden siguen intactos.
 
 La opción `OKF_SWAGGER_ENABLED` añade una prueba de desactivación y lleva el total a **73 pruebas de macOS**, todas correctas junto con formato, Clippy y auditoría. Se comprobó además el binario con archivos de entorno: `true`, `false`, valor ausente, prioridad de una variable exportada y rechazo de un valor inválido; salud y métricas siguieron respondiendo `200` con la documentación apagada. Se reconstruyó y actualizó la API de Docker; un contenedor temporal confirmó también el modo `false` y se retiró al terminar. La configuración local queda en `true`.
+
+La optimización Docker del 4 de noviembre pasa de nuevo las **73 pruebas de macOS**, formato, Clippy y `cargo deny check`. La nueva imagen Distroless convierte los cuatro formatos y valida sus cuatro bundles mediante `tools/smoke.sh`; Compose conserva sus volúmenes y el trabajo anterior, con salud y Swagger disponibles. El tamaño baja de 207,7 a 104,2 MB y el binario de 41,4 a 31,5 MB. Las reconstrucciones locales tardan 1,00 s sin cambios y 13,81 s con un cambio solo de código; cambiar solo la revisión tarda 13,89 s y también reutiliza las dependencias. La primera construcción registró 622,22 s totales de Docker; método, límites y caché de CI en [Compilación y empaquetado Docker](../decisiones/COMPILACION_DOCKER.md).
 
 La [CI](../../.github/workflows/ci.yml) ejecuta `cargo fmt --check`, `cargo clippy --all-targets --locked -- -D warnings` y `cargo test --locked` en Ubuntu 24.04 con cada push a `main`; comprueba las licencias y los orígenes de las dependencias con `cargo deny`, y construye la imagen y ejecuta la prueba de humo `tools/smoke.sh`. Un [flujo diario](../../.github/workflows/scheduled.yml) comprueba los avisos de seguridad. Las pruebas, la auditoría, la construcción de la imagen y la prueba de humo pasan en local en el commit de corte; la CI de `1fd4347` pasó en Linux. Revisadas las dos siguientes: `cf0f869` pasó completa (`test`: 3 min 02 s) y `7abd68c` pasó completa (`test`: 2 min 50 s; imagen: 13 min 44 s). Ambos trabajos `test` restauraron la caché. El aviso de Node.js 20 desapareció en ambas. El flujo programado de `1fd4347` falló por `RUSTSEC-2026-0429` (`ZipArchive::extract`); se verificó que ni el servicio ni BetterOffice usan esa función y se añadió la excepción razonada a `deny.toml`. La auditoría local actualizada pasa.
 
@@ -176,7 +178,7 @@ El [plan 1](../planes/PLAN_1_RECUPERACION_DEL_PLAN_ORIGINAL.md) se implementó e
 | --- | --- |
 | R1. Modelo de salida común y ensamblador único | `src/output.rs` y `src/sections.rs`. Los bundles de referencia de los 26 ejemplos (plan 2, C1, hecho antes como requisito) comprobaron la migración: solo cambiaron las comillas del frontmatter, que ahora encierran toda cadena para que un analizador YAML 1.1 no lea fechas o resúmenes como otro tipo. |
 | R2. Referencia de cobertura independiente | `tools/coverage.py` y la [medición](../decisiones/COBERTURA_INDEPENDIENTE.md); encontró y corrigió la pérdida del texto alternativo de una imagen DOCX ausente, y registró dos hallazgos pendientes (§3.3). |
-| R3. Imagen reproducible | `Dockerfile`, `compose.yaml` y prueba de humo en la CI. |
+| R3. Imagen reproducible | `Dockerfile`, `compose.yaml` y prueba de humo en la CI; optimización posterior con `cargo-chef`, BuildKit y Distroless, medida el 4 de noviembre. |
 | R4. Límites configurables y control de admisión | Variables `OKF_MAX_UPLOAD_MB`, `OKF_MAX_ZIP_*`, `OKF_MAX_IMAGE_PIXELS`, `OKF_MAX_QUEUED` y `OKF_MIN_FREE_MB`. |
 | R5. Registro por formato, etapa y duración | Una línea por intento; el proceso hijo devuelve sus etapas y su memoria máxima (Linux y macOS; comprobación final añadida en C5). |
 | R6. Corpus representativo | Pendiente: requiere documentos del equipo o fuentes públicas aprobadas. |
@@ -188,7 +190,7 @@ El [plan 1](../planes/PLAN_1_RECUPERACION_DEL_PLAN_ORIGINAL.md) se implementó e
 
 El plan 1 cerró los antiguos puntos sobre el modelo intermedio, Xberg, el cierre operativo (salvo la retención) y la división (§5.6). El corpus pendiente es el R6 de ese [plan](../planes/PLAN_1_RECUPERACION_DEL_PLAN_ORIGINAL.md#r6-corpus-representativo-m-continuo); las garantías de regresión, aislamiento, operación y versionado están en el [plan 2](../planes/PLAN_2_CALIDAD_Y_ROBUSTEZ.md), del que C1 a C4 y C6 a C10 ya están hechos; C5 tiene infraestructura y un hallazgo PDF pendiente de corrección; después necesita siete noches de evidencia.
 
-La migración PostgreSQL, su configuración y la interfaz Swagger UI están implementadas; no cambian el perfil documental ni cierran C5.
+La migración PostgreSQL, su configuración, la interfaz Swagger UI y la optimización de compilación y empaquetado Docker están implementadas; no cambian el perfil documental ni cierran C5. La caché GHA de la imagen está configurada y falta observar su restauración en el siguiente push; las reconstrucciones locales ya se midieron.
 
 En orden de prioridad:
 
