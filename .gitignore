@@ -15,3 +15,6 @@ __pycache__/
 /fuzz/artifacts/
 /fuzz/target/
 /fuzz/coverage/
+
+# Configuración local de Obsidian; cada persona conserva la suya.
+/docs/.obsidian/

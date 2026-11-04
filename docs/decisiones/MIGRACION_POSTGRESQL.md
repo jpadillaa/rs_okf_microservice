@@ -18,21 +18,9 @@ Compose levanta PostgreSQL 17 con imagen fijada por digest, volumen propio, comp
 
 El supervisor necesita red hacia PostgreSQL. El hijo recibe solo el entorno de conversión permitido, sin credenciales ni carga de `.env`. En Linux, seccomp rechaza la creación de sockets, conexiones, `ptrace` e `io_uring_setup`; comprueba la arquitectura y rechaza la ABI x32. Se mantiene Landlock para rutas y los límites de recursos. Si seccomp no se instala, la conversión falla. En macOS esa capa de red no se aplica; la garantía se verifica en Linux/Docker.
 
-## Importar un registro SQLite anterior
+## Registros SQLite anteriores
 
-La importación es una herramienta de mantenimiento independiente, no un segundo motor del servicio:
-
-1. Detener API y workers antiguos y conservar una copia de SQLite y de su almacén completo. No debe haber trabajos `processing`.
-2. Arrancar una vez la API nueva para aplicar el esquema PostgreSQL y detenerla. El destino debe estar vacío.
-3. Preparar `.env` con la conexión de destino y mantener los archivos en las mismas rutas relativas. Si el destino es Compose, copiar el almacén al volumen `okf-data` antes de iniciar los consumidores.
-4. Comprobar y después importar:
-
-```bash
-uv run tools/migrate_sqlite.py data/jobs.sqlite3 --env-file .env --data-dir data
-uv run tools/migrate_sqlite.py data/jobs.sqlite3 --env-file .env --data-dir data --apply
-```
-
-Sin `--apply`, todas las inserciones se revierten. La importación bloquea las tablas destino, rechaza un destino ocupado, comprueba las rutas y los archivos referenciados y copia trabajos y métricas en una transacción. No importa latidos antiguos. Los trabajos terminados de versiones sin `finished_at` empiezan su retención al importar. La herramienta abre SQLite en solo lectura y no copia, borra ni publica archivos. Conserva la base anterior hasta verificar el nuevo servicio.
+No se importan. SQLite fue el registro durante el desarrollo, del 28 de octubre al 3 de noviembre de 2026; sus trabajos de prueba no se trasladan a PostgreSQL. La herramienta de importación (`tools/migrate_sqlite.py`) se retiró el 4 de noviembre; sigue en el historial de Git, en el commit `b872f75`, por si apareciera un registro que recuperar.
 
 ## Verificación
 

@@ -84,5 +84,3 @@ cargo deny check
 ```
 
 Las pruebas de persistencia crean esquemas aislados dentro de `okf_test`, nunca usan la base del servicio y no requieren SQLite. La CI levanta PostgreSQL antes de ejecutarlas. Los esquemas de prueba son desechables; se pueden eliminar recreando exclusivamente `okf_test` cuando no haya pruebas en curso.
-
-Para registros anteriores en SQLite, consulta la [migración a PostgreSQL](docs/decisiones/MIGRACION_POSTGRESQL.md). No se importan ni eliminan automáticamente.

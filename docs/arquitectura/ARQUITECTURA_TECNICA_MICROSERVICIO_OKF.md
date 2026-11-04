@@ -62,7 +62,7 @@ Estados: `queued → processing → complete | partial | failed`; el paso 4 ocur
 | `GET /health` | `200` o `503` con las comprobaciones de PostgreSQL, almacenamiento y latido del worker. |
 | `GET /metrics` | `200` en texto Prometheus 0.0.4; `500` ante un error de consulta. |
 
-**Persistencia PostgreSQL.** Único motor, mediante SQLx y un pool asíncrono de cinco conexiones por proceso (adquisición limitada a cinco segundos). Las tablas de trabajos, latidos y métricas se crean con migraciones embebidas, coordinadas entre procesos. La reclamación usa una transacción corta con `FOR UPDATE SKIP LOCKED`; publicación, recuperación y limpieza protegen también sus cambios de archivos con bloqueos de fila. Véase [la decisión y la importación desde SQLite](../decisiones/MIGRACION_POSTGRESQL.md).
+**Persistencia PostgreSQL.** Único motor, mediante SQLx y un pool asíncrono de cinco conexiones por proceso (adquisición limitada a cinco segundos). Las tablas de trabajos, latidos y métricas se crean con migraciones embebidas, coordinadas entre procesos. La reclamación usa una transacción corta con `FOR UPDATE SKIP LOCKED`; publicación, recuperación y limpieza protegen también sus cambios de archivos con bloqueos de fila. Véase [la decisión de migración](../decisiones/MIGRACION_POSTGRESQL.md).
 
 **Archivo de variables.** Se carga `.env` del directorio actual o el archivo indicado por `--env-file`, antes de crear hilos; las variables ya exportadas tienen prioridad. El hijo `convert` no carga ese archivo y recibe un entorno limitado sin credenciales. Compose tiene un servicio PostgreSQL y volúmenes separados para base y documentos. El supervisor accede a la base por una red interna; en Linux, el hijo instala seccomp para rechazar sockets, conexiones, `ptrace` e `io_uring_setup` antes de leer documentos. Si no puede instalarlo, falla. Landlock y los límites de recursos se conservan; seccomp no se aplica en macOS.
 
@@ -175,7 +175,7 @@ Y según el formato del original:
 convertir, incluso si falla; al publicar se conserva la identidad informada por el
 hijo. La recuperación de una publicación interrumpida recupera la identidad del
 bundle, no la del worker que reconcilia. Un trabajo aún no intentado o histórico sin
-metadatos devuelve `null`. Las migraciones PostgreSQL están embebidas; los registros SQLite anteriores se importan explícitamente con la herramienta de mantenimiento.
+metadatos devuelve `null`. Las migraciones PostgreSQL están embebidas; los registros SQLite anteriores no se importan.
 
 `build.rs` obtiene el SHA de Git al compilar o usa `OKF_BUILD_COMMIT`. Un árbol fuente
 sin Git ni ese argumento registra `unknown`; no inventa un commit. Los golden fijan
