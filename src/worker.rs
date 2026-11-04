@@ -7,9 +7,9 @@ use crate::bundle::{frontmatter, validate_bundle};
 use crate::now;
 use crate::output::Stages;
 use anyhow::{Context, Result, bail};
-use rusqlite::{OptionalExtension, Transaction, params};
 use serde::{Deserialize, Serialize};
 use sha2::{Digest, Sha256};
+use sqlx::{Postgres, Row, Transaction};
 use std::{
     fmt, fs,
     io::{ErrorKind, Read},
@@ -24,6 +24,8 @@ use yaml_serde::Value as YamlValue;
 /// Límites y plazos del worker; cada uno se ajusta con la variable de entorno indicada.
 #[derive(Clone, Debug)]
 pub struct Config {
+    /// Publicar Swagger UI y OpenAPI en la API (`OKF_SWAGGER_ENABLED`).
+    pub swagger_enabled: bool,
     /// Memoria residente máxima del proceso de conversión, en MB (`OKF_MAX_MEMORY_MB`).
     pub max_memory_mb: u64,
     pub max_output_mb: u64,
@@ -66,6 +68,7 @@ pub struct Config {
 impl Default for Config {
     fn default() -> Self {
         Config {
+            swagger_enabled: true,
             max_memory_mb: 500,
             max_output_mb: 512,
             max_open_files: 256,
@@ -101,6 +104,8 @@ impl Config {
         }
         let d = Config::default();
         let c = Config {
+            swagger_enabled: var("OKF_SWAGGER_ENABLED", d.swagger_enabled)
+                .map_err(|_| anyhow::anyhow!("OKF_SWAGGER_ENABLED debe ser true o false"))?,
             worker_health_s: var("OKF_WORKER_HEALTH_S", d.worker_health_s)?,
             retention_days: var("OKF_RETENTION_DAYS", d.retention_days)?,
             max_memory_mb: var("OKF_MAX_MEMORY_MB", d.max_memory_mb)?,
@@ -318,11 +323,15 @@ async fn rss_mb(pid: u32) -> Option<u64> {
 
 /// Prolonga la reserva si el trabajo sigue siendo de este intento.
 pub(crate) async fn renew(a: &App, id: &str, attempt: u32) -> Result<bool> {
-    let db = a.db.lock().await;
-    let n = db.execute(
-        "UPDATE jobs SET lease_until=?3 WHERE id=?1 AND attempt=?2 AND status='processing'",
-        params![id, attempt, now() + a.cfg.lease_s],
-    )?;
+    let n = sqlx::query(
+        "UPDATE jobs SET lease_until=$3 WHERE id=$1 AND attempt=$2 AND status='processing'",
+    )
+    .bind(id)
+    .bind(i64::from(attempt))
+    .bind(now() + a.cfg.lease_s)
+    .execute(&a.db)
+    .await?
+    .rows_affected();
     Ok(n == 1)
 }
 
@@ -405,7 +414,14 @@ async fn run_child(
     dir: &Path,
     usage: &mut Usage,
 ) -> Result<Outcome> {
-    let mut child = tokio::process::Command::new(exe)
+    let mut command = tokio::process::Command::new(exe);
+    command.env_clear();
+    for key in ["PATH", "TMPDIR", "TMP", "TEMP", "OKF_FONT_PATH", "RUST_LOG"] {
+        if let Some(value) = std::env::var_os(key) {
+            command.env(key, value);
+        }
+    }
+    let mut child = command
         .arg("convert")
         .arg(original)
         .arg(dir)
@@ -608,67 +624,121 @@ fn remove_attempts(root: &Path, id: &str) {
 /// Trabajos cuya reserva venció: el worker murió o quedó colgado. Si llegó a publicar,
 /// se completa el registro; si no, se reintenta con espera o se marca fallido al
 /// agotar los intentos.
-fn recover_expired(tx: &Transaction<'_>, root: &Path, cfg: &Config) -> Result<()> {
-    let expired: Vec<(String, u32)> = tx
-        .prepare("SELECT id,attempt FROM jobs WHERE status='processing' AND lease_until < ?1")?
-        .query_map([now()], |r| Ok((r.get(0)?, r.get(1)?)))?
-        .collect::<rusqlite::Result<_>>()?;
+async fn recover_expired(
+    tx: &mut Transaction<'_, Postgres>,
+    root: &Path,
+    cfg: &Config,
+) -> Result<()> {
+    let expired: Vec<(String, i64)> = sqlx::query_as(
+        "SELECT id,attempt FROM jobs WHERE status='processing' AND lease_until < $1 FOR \
+        UPDATE SKIP LOCKED",
+    )
+    .bind(now())
+    .fetch_all(&mut **tx)
+    .await?;
     for (id, attempt) in expired {
         if let Some((state, versions)) = published_state(root, &id) {
-            tx.execute(
-                "UPDATE jobs SET status=?2,bundle=?3,lease_until=NULL,retry_at=NULL,error=NULL,converter_version=?4,converter_commit=?5,profile_version=?6,finished_at=COALESCE(finished_at,?7) WHERE id=?1",
-                params![id, state, format!("published/{id}/bundle.zip"), versions.converter_version, versions.converter_commit, versions.profile_version, now()],
-            )?;
+            sqlx::query(
+                "UPDATE jobs SET status=$2,bundle=$3,lease_until=NULL,retry_at=NULL,error=NULL,\
+                converter_version=$4,converter_commit=$5,profile_version=$6,\
+                finished_at=COALESCE(finished_at,$7) WHERE id=$1",
+            )
+            .bind(&id)
+            .bind(&state)
+            .bind(format!("published/{id}/bundle.zip"))
+            .bind(&versions.converter_version)
+            .bind(&versions.converter_commit)
+            .bind(&versions.profile_version)
+            .bind(now())
+            .execute(&mut **tx)
+            .await?;
             remove_attempts(root, &id);
             info!(%id, %state, "publicación interrumpida completada al reconciliar");
-        } else if attempt >= cfg.max_attempts {
-            tx.execute(
-                "UPDATE jobs SET status='failed',lease_until=NULL,retry_at=NULL,error=?2,finished_at=?3 WHERE id=?1",
-                params![id, format!("el proceso de conversión se interrumpió en {attempt} intentos"), now()],
-            )?;
+        } else if attempt >= i64::from(cfg.max_attempts) {
+            sqlx::query(
+                "UPDATE jobs SET status='failed',lease_until=NULL,retry_at=NULL,error=$2,\
+                finished_at=$3 WHERE id=$1",
+            )
+            .bind(&id)
+            .bind(format!(
+                "el proceso de conversión se interrumpió en {attempt} intentos"
+            ))
+            .bind(now())
+            .execute(&mut **tx)
+            .await?;
             remove_attempts(root, &id);
         } else {
-            tx.execute(
-                "UPDATE jobs SET status='queued',lease_until=NULL,retry_at=?2,error='worker anterior interrumpido; se reprocesará el original' WHERE id=?1",
-                params![id, now() + cfg.backoff(attempt)],
-            )?;
+            sqlx::query(
+                "UPDATE jobs SET status='queued',lease_until=NULL,retry_at=$2,\
+                error='worker anterior interrumpido; se reprocesará el original' WHERE id=$1",
+            )
+            .bind(&id)
+            .bind(now() + cfg.backoff(attempt as u32))
+            .execute(&mut **tx)
+            .await?;
         }
     }
     Ok(())
 }
 
 async fn claim(a: &App) -> Result<Option<Job>> {
-    let mut db = a.db.lock().await;
-    let tx = db.transaction()?;
-    recover_expired(&tx, &a.root, &a.cfg)?;
-    let job = tx
-        .query_row(
-            "SELECT id,filename,original,attempt FROM jobs WHERE status='queued' AND (retry_at IS NULL OR retry_at <= ?1) ORDER BY created_at LIMIT 1",
-            [now()],
-            |r| {
-                Ok(Job {
-                    id: r.get(0)?,
-                    filename: r.get(1)?,
-                    original: r.get(2)?,
-                    attempt: r.get::<_, u32>(3)? + 1,
-                })
-            },
-        )
-        .optional()?;
+    let mut tx = a.db.begin().await?;
+    recover_expired(&mut tx, &a.root, &a.cfg).await?;
+    // Hace visibles los recuperados y libera sus filas antes de elegir uno nuevo.
+    tx.commit().await?;
+    let mut tx = a.db.begin().await?;
+    let row = sqlx::query(
+        "SELECT id,filename,original,attempt FROM jobs WHERE status='queued' AND \
+        (retry_at IS NULL OR retry_at <= $1) ORDER BY created_at,id LIMIT 1 FOR UPDATE \
+        SKIP LOCKED",
+    )
+    .bind(now())
+    .fetch_optional(&mut *tx)
+    .await?;
+    let job = row
+        .map(|r| -> Result<Job> {
+            Ok(Job {
+                id: r.try_get(0)?,
+                filename: r.try_get(1)?,
+                original: r.try_get(2)?,
+                attempt: u32::try_from(r.try_get::<i64, _>(3)?)?
+                    .checked_add(1)
+                    .context("demasiados intentos")?,
+            })
+        })
+        .transpose()?;
     if let Some(job) = &job {
-        tx.execute(
-            "UPDATE jobs SET status='processing',attempt=?2,lease_until=?3,retry_at=NULL,error=NULL,converter_version=?4,converter_commit=?5,profile_version=?6,finished_at=NULL WHERE id=?1",
-            params![job.id, job.attempt, now() + a.cfg.lease_s, crate::version::PACKAGE, crate::version::COMMIT, crate::version::PROFILE],
-        )?;
+        sqlx::query(
+            "UPDATE jobs SET status='processing',attempt=$2,lease_until=$3,retry_at=NULL,\
+            error=NULL,converter_version=$4,converter_commit=$5,profile_version=$6,\
+            finished_at=NULL WHERE id=$1",
+        )
+        .bind(&job.id)
+        .bind(i64::from(job.attempt))
+        .bind(now() + a.cfg.lease_s)
+        .bind(crate::version::PACKAGE)
+        .bind(crate::version::COMMIT)
+        .bind(crate::version::PROFILE)
+        .execute(&mut *tx)
+        .await?;
     }
-    tx.commit()?;
+    tx.commit().await?;
     Ok(job)
 }
 
 /// Copia el bundle a `published/<id>` con un renombrado atómico y registra el estado.
 async fn publish(a: &App, job: &Job, c: &Converted) -> Result<()> {
-    // Confirma que la reserva sigue siendo de este intento antes de tocar `published/`.
-    if !renew(a, &job.id, job.attempt).await? {
+    // El bloqueo de la fila protege también el renombrado contra recuperación/retención.
+    let mut tx = a.db.begin().await?;
+    let owned = sqlx::query(
+        "SELECT id FROM jobs WHERE id=$1 AND attempt=$2 AND status='processing' FOR UPDATE",
+    )
+    .bind(&job.id)
+    .bind(i64::from(job.attempt))
+    .fetch_optional(&mut *tx)
+    .await?
+    .is_some();
+    if !owned {
         warn!(id = %job.id, "reserva perdida antes de publicar; se abandona el intento");
         return Ok(());
     }
@@ -684,11 +754,23 @@ async fn publish(a: &App, job: &Job, c: &Converted) -> Result<()> {
         fs::remove_dir_all(&pubdir)?
     }
     fs::rename(&staging, &pubdir)?;
-    a.db.lock().await.execute(
-        "UPDATE jobs SET status=?3,bundle=?4,lease_until=NULL,retry_at=NULL,error=NULL,converter_version=?5,converter_commit=?6,profile_version=?7,finished_at=?8 WHERE id=?1 AND attempt=?2",
-        params![id, job.attempt, c.status, format!("published/{id}/bundle.zip"), c.versions.converter_version, c.versions.converter_commit, c.versions.profile_version, now()],
-    )?;
+    sqlx::query(
+        "UPDATE jobs SET status=$3,bundle=$4,lease_until=NULL,retry_at=NULL,error=NULL,\
+        converter_version=$5,converter_commit=$6,profile_version=$7,finished_at=$8 \
+        WHERE id=$1 AND attempt=$2",
+    )
+    .bind(id)
+    .bind(i64::from(job.attempt))
+    .bind(&c.status)
+    .bind(format!("published/{id}/bundle.zip"))
+    .bind(&c.versions.converter_version)
+    .bind(&c.versions.converter_commit)
+    .bind(&c.versions.profile_version)
+    .bind(now())
+    .execute(&mut *tx)
+    .await?;
     remove_attempts(&a.root, id);
+    tx.commit().await?;
     info!(%id, status = %c.status, attempt = job.attempt, "trabajo publicado");
     Ok(())
 }
@@ -696,6 +778,18 @@ async fn publish(a: &App, job: &Job, c: &Converted) -> Result<()> {
 /// Registra un fallo: el transitorio vuelve a la cola con espera creciente mientras
 /// queden intentos; el permanente, o el transitorio sin intentos, termina en `failed`.
 async fn fail(a: &App, job: &Job, kind: FailureKind, message: &str) -> Result<()> {
+    let mut tx = a.db.begin().await?;
+    let owned = sqlx::query(
+        "SELECT id FROM jobs WHERE id=$1 AND attempt=$2 AND status='processing' FOR UPDATE",
+    )
+    .bind(&job.id)
+    .bind(i64::from(job.attempt))
+    .fetch_optional(&mut *tx)
+    .await?
+    .is_some();
+    if !owned {
+        return Ok(());
+    }
     let retry = kind == FailureKind::Transient && job.attempt < a.cfg.max_attempts;
     let (status, retry_at, error) = if retry {
         (
@@ -715,13 +809,23 @@ async fn fail(a: &App, job: &Job, kind: FailureKind, message: &str) -> Result<()
     } else {
         ("failed", None, message.to_string())
     };
-    a.db.lock().await.execute(
-        "UPDATE jobs SET status=?3,lease_until=NULL,retry_at=?4,error=?5,finished_at=CASE WHEN ?3='failed' THEN ?6 ELSE NULL END WHERE id=?1 AND attempt=?2 AND status='processing'",
-        params![job.id, job.attempt, status, retry_at, error, now()],
-    )?;
+    sqlx::query(
+        "UPDATE jobs SET status=$3,lease_until=NULL,retry_at=$4,error=$5,\
+        finished_at=CASE WHEN $3='failed' THEN $6 ELSE NULL END WHERE id=$1 AND \
+        attempt=$2 AND status='processing'",
+    )
+    .bind(&job.id)
+    .bind(i64::from(job.attempt))
+    .bind(status)
+    .bind(retry_at)
+    .bind(&error)
+    .bind(now())
+    .execute(&mut *tx)
+    .await?;
     if !retry {
         remove_attempts(&a.root, &job.id);
     }
+    tx.commit().await?;
     warn!(id = %job.id, attempt = job.attempt, ?kind, %error, "falló conversión");
     Ok(())
 }
@@ -773,21 +877,31 @@ pub async fn work_one(a: &App) -> Result<bool> {
         Outcome::Shutdown => {
             // Limpia antes de hacer visible la cola: el siguiente intento puede
             // reutilizar el mismo número y directorio en otro worker.
-            let mut db = a.db.lock().await;
-            let tx = db.transaction_with_behavior(rusqlite::TransactionBehavior::Immediate)?;
-            let owned = tx
-                .prepare("SELECT 1 FROM jobs WHERE id=?1 AND attempt=?2 AND status='processing'")?
-                .exists(params![job.id, job.attempt])?;
+            let mut tx = a.db.begin().await?;
+            let owned = sqlx::query(
+                "SELECT id FROM jobs WHERE id=$1 AND attempt=$2 AND status='processing' FOR UPDATE",
+            )
+            .bind(&job.id)
+            .bind(i64::from(job.attempt))
+            .fetch_optional(&mut *tx)
+            .await?
+            .is_some();
             if owned {
                 if dir.exists()
                     && let Err(error) = fs::remove_dir_all(&dir)
                 {
                     warn!(%error, "limpieza interrumpida pendiente para el próximo intento");
                 }
-                tx.execute("UPDATE jobs SET status='queued',attempt=attempt-1,lease_until=NULL,retry_at=NULL,error=NULL WHERE id=?1", [&job.id])?;
+                sqlx::query(
+                    "UPDATE jobs SET status='queued',attempt=attempt-1,lease_until=NULL,\
+                    retry_at=NULL,error=NULL WHERE id=$1",
+                )
+                .bind(&job.id)
+                .execute(&mut *tx)
+                .await?;
                 info!(id = %job.id, "conversión interrumpida; vuelve a la cola sin consumir intento");
             }
-            tx.commit()?;
+            tx.commit().await?;
         }
         Outcome::LeaseLost => {
             warn!(id = %job.id, attempt = job.attempt, "reserva tomada por otro worker; se abandona el intento")
@@ -842,54 +956,67 @@ fn log_attempt<'a>(
 /// terminaron sin registrarse, reencola los trabajos cuyo bundle desapareció y borra
 /// los intentos de trabajos terminados.
 pub async fn reconcile(a: &App) -> Result<()> {
-    let published = a.root.join("published");
-    for entry in fs::read_dir(&published)? {
-        let entry = entry?;
-        let name = entry.file_name().to_string_lossy().into_owned();
-        if name.starts_with('.') && name.ends_with(".tmp") {
-            fs::remove_dir_all(entry.path())?;
-            info!(%name, "publicación a medio hacer eliminada");
+    let mut tx = a.db.begin().await?;
+    recover_expired(&mut tx, &a.root, &a.cfg).await?;
+    // Las filas bloqueadas impiden que publicación o retención compitan con esta limpieza.
+    let rows: Vec<(String, String, Option<String>)> = sqlx::query_as(
+        "SELECT id,status,bundle FROM jobs WHERE status IN ('queued','complete',\
+        'partial','failed','expired') FOR UPDATE SKIP LOCKED",
+    )
+    .fetch_all(&mut *tx)
+    .await?;
+    for (id, state, bundle) in rows {
+        let staging = a.root.join("published").join(format!(".{id}.tmp"));
+        if staging.exists() {
+            fs::remove_dir_all(staging)?;
         }
-    }
-    let mut db = a.db.lock().await;
-    let tx = db.transaction()?;
-    recover_expired(&tx, &a.root, &a.cfg)?;
-    let done: Vec<(String, String)> = tx
-        .prepare("SELECT id,bundle FROM jobs WHERE status IN ('complete','partial')")?
-        .query_map([], |r| {
-            Ok((
-                r.get(0)?,
-                r.get::<_, Option<String>>(1)?.unwrap_or_default(),
-            ))
-        })?
-        .collect::<rusqlite::Result<_>>()?;
-    for (id, bundle) in done {
-        if bundle.is_empty() || !a.root.join(&bundle).is_file() {
-            tx.execute(
-                "UPDATE jobs SET status='queued',bundle=NULL,finished_at=NULL,retry_at=NULL,error='el bundle publicado no existe; se reprocesa el original' WHERE id=?1",
-                [&id],
-            )?;
+        if matches!(state.as_str(), "complete" | "partial")
+            && bundle.as_ref().is_none_or(|p| !a.root.join(p).is_file())
+        {
+            sqlx::query(
+                "UPDATE jobs SET status='queued',bundle=NULL,finished_at=NULL,retry_at=NULL,\
+                error='el bundle publicado no existe; se reprocesa el original' WHERE id=$1",
+            )
+            .bind(&id)
+            .execute(&mut *tx)
+            .await?;
             warn!(%id, "bundle publicado ausente; trabajo reencolado");
         }
-    }
-    for entry in fs::read_dir(a.root.join("attempts"))? {
-        let id = entry?.file_name().to_string_lossy().into_owned();
-        let status: Option<String> = tx
-            .query_row("SELECT status FROM jobs WHERE id=?1", [&id], |r| r.get(0))
-            .optional()?;
         if matches!(
-            status.as_deref(),
-            None | Some("complete" | "partial" | "failed")
+            state.as_str(),
+            "complete" | "partial" | "failed" | "expired"
         ) {
             remove_attempts(&a.root, &id);
         }
     }
-    tx.commit()?;
+    // Directorios sin fila: el original siempre se registra antes de crear intentos/publicaciones.
+    for (folder, temporary) in [("attempts", false), ("published", true)] {
+        for entry in fs::read_dir(a.root.join(folder))? {
+            let entry = entry?;
+            let name = entry.file_name().to_string_lossy().into_owned();
+            let id = if temporary {
+                let Some(id) = name.strip_prefix('.').and_then(|s| s.strip_suffix(".tmp")) else {
+                    continue;
+                };
+                id
+            } else {
+                &name
+            };
+            let exists: bool = sqlx::query_scalar("SELECT EXISTS(SELECT 1 FROM jobs WHERE id=$1)")
+                .bind(id)
+                .fetch_one(&mut *tx)
+                .await?;
+            if !exists {
+                fs::remove_dir_all(entry.path())?;
+            }
+        }
+    }
+    tx.commit().await?;
     Ok(())
 }
 
 pub async fn worker(root: PathBuf, poll_ms: u64, once: bool) -> Result<()> {
-    let mut a = crate::app(root)?;
+    let mut a = crate::app(root).await?;
     a.converter = Some(std::env::current_exe()?);
     a.shutdown = crate::shutdown::install()?;
     // El límite de memoria solo es una garantía si se puede medir.
@@ -929,6 +1056,47 @@ mod tests {
     use super::*;
     use std::os::unix::fs::PermissionsExt;
 
+    #[tokio::test]
+    async fn concurrent_claims_skip_locked_rows_and_recover_expired_jobs_once() {
+        let tmp = tempfile::tempdir().unwrap();
+        let a = crate::app(tmp.path().to_owned()).await.unwrap();
+        let mut b = crate::app(tmp.path().to_owned()).await.unwrap();
+        std::sync::Arc::make_mut(&mut b.cfg).retry_base_s = 0;
+        let mut a = a;
+        std::sync::Arc::make_mut(&mut a.cfg).retry_base_s = 0;
+        for id in ["a_locked", "b_ready", "c_expired"] {
+            sqlx::query(
+                "INSERT INTO jobs(id,filename,original,sha256,status,created_at,lease_until,\
+                attempt) VALUES($1,'a.docx','unused','-',CASE WHEN $1='c_expired' THEN \
+                'processing' ELSE 'queued' END,0,0,0)",
+            )
+            .bind(id)
+            .execute(&a.db)
+            .await
+            .unwrap();
+        }
+        let mut lock = a.db.begin().await.unwrap();
+        sqlx::query("SELECT id FROM jobs WHERE id='a_locked' FOR UPDATE")
+            .fetch_one(&mut *lock)
+            .await
+            .unwrap();
+        let (first, second) = tokio::time::timeout(Duration::from_secs(3), async {
+            tokio::join!(claim(&a), claim(&b))
+        })
+        .await
+        .expect("la reclamación no debe esperar por la fila bloqueada");
+        let mut ids = [first.unwrap().unwrap().id, second.unwrap().unwrap().id];
+        ids.sort();
+        assert_eq!(ids, ["b_ready", "c_expired"]);
+        assert!(claim(&b).await.unwrap().is_none());
+        lock.rollback().await.unwrap();
+        let job = claim(&b).await.unwrap().unwrap();
+        assert_eq!(job.id, "a_locked");
+        assert_eq!(job.attempt, 1);
+        assert!(!renew(&a, &job.id, 0).await.unwrap());
+        assert!(renew(&a, &job.id, 1).await.unwrap());
+    }
+
     // Se ejecuta en otro proceso, sin inyectar disparadores en el binario de producción.
     #[test]
     fn panic_child() {
@@ -941,7 +1109,7 @@ mod tests {
     #[tokio::test]
     async fn panic_fails_on_first_attempt_but_unknown_exit_retries() {
         let tmp = tempfile::tempdir().unwrap();
-        let mut a = crate::app(tmp.path().to_path_buf()).unwrap();
+        let mut a = crate::app(tmp.path().to_path_buf()).await.unwrap();
         let script = tmp.path().join("converter.sh");
         let exe = std::env::current_exe()
             .unwrap()
@@ -954,16 +1122,21 @@ mod tests {
             if id == "unknown" {
                 fs::write(&script, "#!/bin/sh\nexit 17\n").unwrap();
             }
-            a.db.lock().await.execute("INSERT INTO jobs(id,filename,original,sha256,status,created_at) VALUES(?1,'test.docx','unused','-','queued',0)", [id]).unwrap();
+            sqlx::query(
+                "INSERT INTO jobs(id,filename,original,sha256,status,created_at) VALUES($1,\
+                'test.docx','unused','-','queued',0)",
+            )
+            .bind(id)
+            .execute(&a.db)
+            .await
+            .unwrap();
             assert!(work_one(&a).await.unwrap());
-            let (status, attempt, error): (String, u32, String) =
-                a.db.lock()
+            let (status, attempt, error): (String, i64, String) =
+                sqlx::query("SELECT status,attempt,error FROM jobs WHERE id=$1")
+                    .bind(id)
+                    .fetch_one(&a.db)
                     .await
-                    .query_row(
-                        "SELECT status,attempt,error FROM jobs WHERE id=?1",
-                        [id],
-                        |r| Ok((r.get(0)?, r.get(1)?, r.get(2)?)),
-                    )
+                    .and_then(|r| Ok((r.try_get(0)?, r.try_get(1)?, r.try_get(2)?)))
                     .unwrap();
             assert_eq!(attempt, 1);
             if id == "panic" {

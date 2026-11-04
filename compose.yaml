@@ -1,29 +1,62 @@
-# API y worker como dos procesos de la misma imagen, con el volumen de datos compartido
-# (OKF_DATA_DIR): la base SQLite, los originales, los intentos y los bundles publicados.
-# Los dos contenedores deben correr en el mismo host, sobre un disco local.
+# API y worker comparten los archivos; PostgreSQL conserva el registro durable.
 services:
+  postgres:
+    image: postgres:17-bookworm@sha256:839fbb5a4942a7758dd93e18b42ea5649807491a0545b5eeeb8f0b8bb11857a5
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-okf}
+      POSTGRES_USER: ${POSTGRES_USER:-okf}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-okf_test_password}
+    ports:
+      - "127.0.0.1:${POSTGRES_PORT:-5432}:5432"
+    volumes:
+      - okf-postgres:/var/lib/postgresql/data
+      - ./tools/postgres-init.sql:/docker-entrypoint-initdb.d/01-test.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB"]
+      interval: 2s
+      timeout: 3s
+      retries: 30
+    networks: [backend, default]
+    restart: unless-stopped
   api:
     build: .
     image: okf-microservice:local
     command: ["api", "--bind", "0.0.0.0:8080"]
+    env_file: .env
+    environment:
+      OKF_DATABASE_URL: ${OKF_DATABASE_URL_DOCKER:?configura .env a partir de .env.example}
+      OKF_DATA_DIR: /data
+    depends_on:
+      postgres:
+        condition: service_healthy
     ports:
       - "127.0.0.1:8080:8080"
     volumes:
       - okf-data:/data
-    # Supera los 30 s de gracia del worker; ajustar si cambia OKF_SHUTDOWN_GRACE_S.
+    networks: [backend, default]
     stop_grace_period: 35s
     restart: unless-stopped
   worker:
     build: .
     image: okf-microservice:local
     command: ["worker"]
+    env_file: .env
+    environment:
+      OKF_DATABASE_URL: ${OKF_DATABASE_URL_DOCKER:?configura .env a partir de .env.example}
+      OKF_DATA_DIR: /data
+    depends_on:
+      postgres:
+        condition: service_healthy
     volumes:
       - okf-data:/data
-    # El worker solo lee y escribe el volumen; no necesita red.
-    network_mode: none
-    # Supera los 30 s de gracia del worker; ajustar si cambia OKF_SHUTDOWN_GRACE_S.
+    # El supervisor alcanza PostgreSQL; el hijo bloquea sockets mediante seccomp.
+    networks: [backend]
     stop_grace_period: 35s
     restart: unless-stopped
 
+networks:
+  backend:
+    internal: true
 volumes:
   okf-data:
+  okf-postgres:

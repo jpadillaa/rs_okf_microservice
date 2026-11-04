@@ -1,5 +1,8 @@
 /target/
 /data/
+.env
+.env.*
+!.env.example
 # Originales del corpus real; las pruebas usan las copias reducidas de examples/pptx/corpus y examples/docx/corpus.
 /datos_de_prueba/
 .DS_Store

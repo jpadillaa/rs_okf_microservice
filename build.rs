@@ -6,6 +6,7 @@ fn git(args: &[&str]) -> Option<String> {
         .then(|| String::from_utf8_lossy(&out.stdout).trim().to_owned())
 }
 fn main() {
+    println!("cargo:rerun-if-changed=migrations");
     println!("cargo:rerun-if-env-changed=OKF_BUILD_COMMIT");
     // Sirve también con .git como archivo (worktree).
     for file in ["HEAD", "index", "packed-refs"] {

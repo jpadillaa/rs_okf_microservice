@@ -50,13 +50,33 @@ Estados: `queued → processing → complete | partial | failed`; el paso 4 ocur
 
 ## 5. Implementación en las entregas PPTX, DOCX, XLSX y PDF
 
+**Exploración y pruebas de la API.** El mismo proceso HTTP sirve Swagger UI en `GET /docs/` (`/docs` redirige allí) y su contrato OpenAPI en `GET /api-docs/openapi.json`. El contrato se genera a partir de las anotaciones de los handlers y los tipos serializados. La interfaz sirve sus recursos embebidos, sin CDN ni envío a un validador externo, y ejecuta las peticiones sobre el mismo origen, sin configurar CORS ni una segunda aplicación. No añade autenticación; conserva las condiciones de acceso del servicio. La guía de uso está en el [README](../../README.md#probar-los-endpoints-con-swagger-ui).
+
+`OKF_SWAGGER_ENABLED` controla ambas rutas al arrancar: `true` (también si no se define) las habilita; `false` omite Swagger, todos sus recursos y el contrato OpenAPI del router, por lo que responden `404`. Un valor distinto de `true` o `false` impide arrancar con un error de configuración. Los endpoints de trabajos, salud y métricas no dependen de esta opción. Tras editar `.env`, hay que reiniciar el proceso API o recrear su contenedor con `docker compose up -d --no-deps --force-recreate api`; un simple `restart` de Compose no recarga el archivo de variables.
+
+| Operación documentada | Entrada y respuesta |
+| --- | --- |
+| `POST /jobs` | Formulario `multipart/form-data` con archivo `file`; `202` con `job_id` y `queued`. Documenta los rechazos `400`, `413`, `415`, `429`, `500` y `507`. |
+| `GET /jobs/{id}` | Identificador del trabajo; `200` con estado, intento, error y versiones; `404` si no existe, `500` si falla la consulta. |
+| `GET /jobs/{id}/bundle` | `200` con ZIP y `Content-Disposition` de descarga para `complete`/`partial`; `404` si no existe o no está publicado, `410` si expiró y `500` ante un error de lectura. |
+| `GET /health` | `200` o `503` con las comprobaciones de PostgreSQL, almacenamiento y latido del worker. |
+| `GET /metrics` | `200` en texto Prometheus 0.0.4; `500` ante un error de consulta. |
+
+**Persistencia PostgreSQL.** Único motor, mediante SQLx y un pool asíncrono de cinco conexiones por proceso (adquisición limitada a cinco segundos). Las tablas de trabajos, latidos y métricas se crean con migraciones embebidas, coordinadas entre procesos. La reclamación usa una transacción corta con `FOR UPDATE SKIP LOCKED`; publicación, recuperación y limpieza protegen también sus cambios de archivos con bloqueos de fila. Véase [la decisión y la importación desde SQLite](../decisiones/MIGRACION_POSTGRESQL.md).
+
+**Archivo de variables.** Se carga `.env` del directorio actual o el archivo indicado por `--env-file`, antes de crear hilos; las variables ya exportadas tienen prioridad. El hijo `convert` no carga ese archivo y recibe un entorno limitado sin credenciales. Compose tiene un servicio PostgreSQL y volúmenes separados para base y documentos. El supervisor accede a la base por una red interna; en Linux, el hijo instala seccomp para rechazar sockets, conexiones, `ptrace` e `io_uring_setup` antes de leer documentos. Si no puede instalarlo, falla. Landlock y los límites de recursos se conservan; seccomp no se aplica en macOS.
+
 La primera entrega implementó la ruta completa con PPTX; la segunda añadió el adaptador DOCX, la tercera el adaptador XLSX y la cuarta el adaptador PDF, todos sobre la misma cola, el mismo worker y el mismo validador.
 
 **Conversión aislada.** El worker ejecuta cada conversión en un proceso hijo (`okf-microservice convert`, subcomando interno) y lo vigila cada 100 ms. Lo termina si su memoria residente supera el límite o si vence el plazo. La memoria se mide en `/proc` en Linux y con `ps` en otros sistemas; si no puede medirse, el worker no arranca. El límite de memoria es la garantía de recursos: el número de diapositivas no la predice, porque el consumo depende de las imágenes (ver [Decisión de renderizado PPTX](../decisiones/RENDERIZADO_PPTX_MEDICIONES.md)). Cada worker convierte un trabajo a la vez; la concurrencia se controla con el número de workers. La validación ocurre dentro de `processing`, antes de publicar, y no se registra como estado aparte.
 
 | Variable | Predeterminado | Efecto |
 | --- | ---: | --- |
-| `OKF_DATA_DIR` | `data` (`/data` en la imagen) | Raíz de SQLite, originales, intentos y publicaciones. |
+| `OKF_DATABASE_URL` | Obligatoria | URL PostgreSQL de API y worker; admite parámetros TLS. Se carga desde `.env`, `--env-file` o el entorno (que tiene prioridad). |
+| `OKF_DATABASE_URL_DOCKER` | En `.env.example` | Conexión que Compose pasa como `OKF_DATABASE_URL`; por defecto usa el host interno `postgres`. No la interpreta el binario. |
+| `OKF_TEST_DATABASE_URL` | Obligatoria para pruebas de persistencia | Base desechable de pruebas; cada caso usa un esquema aislado. Nunca se sustituye por la conexión del servicio. |
+| `OKF_DATA_DIR` | `data` (`/data` en la imagen) | Raíz de originales, intentos y publicaciones; la base está en PostgreSQL. |
+| `OKF_SWAGGER_ENABLED` | `true` | `true` habilita Swagger UI y OpenAPI; `false` deshabilita `/docs`, `/docs/`, sus recursos y `/api-docs/openapi.json` (`404`). Se lee al arrancar; admite solo `true` o `false`. |
 | `OKF_UPDATE_GOLDEN` | sin definir | Solo pruebas: su presencia regenera los golden; no modifica listas ni umbrales de cobertura. |
 | `OKF_CORPUS_DIR` | `examples/pptx/corpus` | Solo pruebas PPTX: carpeta del corpus alternativo local. |
 | `OKF_DOCX_CORPUS_DIR` | `examples/docx/corpus` | Solo pruebas DOCX: carpeta del corpus alternativo local. |
@@ -101,9 +121,9 @@ leer el original y leer/escribir solamente el directorio del intento. Permite ad
 leer los archivos de fuente configurados o de reserva, `/etc/localtime`; no concede ejecución ni creación de enlaces o dispositivos.
 El worker registra al arrancar si Landlock no está disponible; un error al imponer
 una regla impide convertir. Los descriptores estándar heredados siguen abiertos. El descriptor del original se abre después de los rlimits y antes de restringir rutas, y se conserva durante la lectura; así no necesita reabrirlo después de la restricción. También se comprueba el tamaño del original al leerlo.
-El contenedor del worker mantiene `network_mode: none`; Landlock aquí restringe
-archivos, no sustituye ese aislamiento de red. En macOS no se aplican Landlock ni
-RLIMIT_AS: la memoria se limita mediante la vigilancia de RSS.
+El supervisor accede a PostgreSQL por la red interna de Compose. El hijo aplica
+seccomp para bloquear sockets y conexiones; Landlock restringe archivos. En macOS
+no se aplican seccomp, Landlock ni RLIMIT_AS: la memoria se limita mediante la vigilancia de RSS.
 
 Compose y la prueba de humo usan un volumen Linux para el almacén. En Docker
 Desktop, el montaje de una carpeta del host produjo `Permission denied` al
@@ -112,7 +132,7 @@ desactiva Landlock para admitir ese montaje.
 
 **Registro de cada intento.** Al terminar un intento, el worker escribe una línea con el trabajo, el intento, el formato, el resultado (`complete`, `partial`, `failed`, `transient_failure`, `lease_lost` o `interrupted`), la duración de la lectura, el ensamblado y la validación, la duración total y la memoria residente máxima. El proceso hijo devuelve su resultado como una línea JSON con las etapas, que mide el ensamblador común, y con su máximo de memoria (`getrusage` en Linux y macOS). Antes de aceptar el resultado, el worker comprueba también ese máximo y el tiempo total; así una conversión de menos de 100 ms que excede el límite no se publica. En XLSX y PDF las hojas y las páginas se leen mientras se ensamblan, de modo que su lectura cuenta como ensamblado. El registro no incluye contenido del documento.
 
-**Asignación.** Si la renovación encuentra que el trabajo ya pertenece a otro intento, el worker termina el proceso hijo y abandona el suyo sin publicar. Antes de publicar renueva la asignación para confirmar que sigue siendo suya. El registro final solo se escribe para el intento vigente.
+**Asignación.** Si la renovación encuentra que el trabajo ya pertenece a otro intento, el worker termina el proceso hijo y abandona el suyo sin publicar. Antes de publicar bloquea la fila y confirma que sigue perteneciendo al intento; mantiene el bloqueo durante el renombrado y la actualización del estado. El registro final solo se escribe para el intento vigente.
 
 **Reintentos clasificados.** Un fallo permanente termina en `failed` en el primer intento: archivo inválido o dañado, límite de tamaño, diapositivas, bloques, celdas, páginas, memoria o tiempo superado, PDF protegido con contraseña, bundle que no supera la validación, o pánico del conversor. El subcomando `convert` instala un gancho que escribe el mensaje y la ubicación en stderr y sale con el código 5; el error del trabajo lo identifica como «defecto del conversor» y conserva ese diagnóstico. Un fallo transitorio vuelve a `queued` con espera creciente mientras queden intentos: errores del sistema de archivos (disco lleno, permisos, original inaccesible), un proceso hijo que termina por señal o código desconocido o un worker terminado abruptamente cuya asignación vence. Al agotar los intentos, el trabajo termina en `failed` y el error indica cuántos se hicieron.
 
@@ -147,7 +167,7 @@ Y según el formato del original:
 convertir, incluso si falla; al publicar se conserva la identidad informada por el
 hijo. La recuperación de una publicación interrumpida recupera la identidad del
 bundle, no la del worker que reconcilia. Un trabajo aún no intentado o histórico sin
-metadatos devuelve `null`. La migración SQLite conserva las bases existentes.
+metadatos devuelve `null`. Las migraciones PostgreSQL están embebidas; los registros SQLite anteriores se importan explícitamente con la herramienta de mantenimiento.
 
 `build.rs` obtiene el SHA de Git al compilar o usa `OKF_BUILD_COMMIT`. Un árbol fuente
 sin Git ni ese argumento registra `unknown`; no inventa un commit. Los golden fijan
@@ -158,7 +178,7 @@ solo ese campo variable como `<commit>` y siguen comparando paquete y perfil.
 `okf-microservice validate <bundle.zip | directorio>` aplica el mismo validador de
 conformidad OKF e integridad editorial del servicio, leyendo el original incluido en
 `references/`. Devuelve código 0 si es válido y un código distinto de cero con el
-motivo en stderr si falla. No necesita SQLite ni la API.
+motivo en stderr si falla. No necesita una base de datos ni la API.
 
 Un directorio se copia a un ZIP temporal mediante `src/output.rs`; se rechazan enlaces
 simbólicos y archivos especiales. Un ZIP se lee sin extraerlo a disco; se rechazan
@@ -193,7 +213,7 @@ requiriendo la recuperación de asignaciones vencidas.
 
 ### Salud y métricas (plan 2, C7)
 
-`GET /health` devuelve JSON y `200` solo si SQLite responde, se cumple
+`GET /health` devuelve JSON y `200` solo si PostgreSQL responde, se cumple
 `OKF_MIN_FREE_MB` (0 desactiva ese control) y existe un worker con latido de antigüedad
 no mayor que `OKF_WORKER_HEALTH_S`. En caso contrario devuelve `503` e indica qué
 comprobación falló. Cada worker escribe un latido con identidad propia, incluso
@@ -214,7 +234,7 @@ nunca identificadores ni contenido de documentos:
 | `okf_conversion_peak_memory_bytes{format}` | Mayor pico residente observado desde que se recopilan métricas (gauge histórico). |
 | `okf_retries_total{format}` | Intentos observados con número mayor que uno, salvo interrupción por apagado o pérdida de asignación. |
 
-Los acumulados se actualizan atómicamente en SQLite y sobreviven a reinicios; parten
+Los acumulados se actualizan atómicamente en PostgreSQL y sobreviven a reinicios; parten
 de cero al introducir C7 y no reconstruyen intentos históricos. Una caída antes de
 registrar el resultado puede dejar ese intento fuera de las métricas. Si falla su
 persistencia se registra el error y se mantiene el flujo de publicación; el estado

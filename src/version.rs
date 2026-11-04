@@ -6,10 +6,16 @@ pub(crate) const PROFILE: &str = "1.0.0";
 pub(crate) const PACKAGE: &str = env!("CARGO_PKG_VERSION");
 pub(crate) const COMMIT: &str = env!("OKF_BUILD_COMMIT");
 
-#[derive(Clone, Debug, Default, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, Default, PartialEq, Serialize, Deserialize, utoipa::ToSchema)]
 pub(crate) struct Versions {
+    /// Versión del paquete que produjo el bundle, o null antes de publicar.
+    #[schema(required)]
     pub converter_version: Option<String>,
+    /// Commit del conversor, `unknown` si no se conoce, o null antes de publicar.
+    #[schema(required)]
     pub converter_commit: Option<String>,
+    /// Versión del perfil documental del bundle, o null antes de publicar.
+    #[schema(required)]
     pub profile_version: Option<String>,
 }
 impl Versions {

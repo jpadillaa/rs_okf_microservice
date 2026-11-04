@@ -69,7 +69,7 @@ medidas menos 0,50 puntos, según la concreción solicitada; véase [el método]
 
 1. Antes de convertir, el proceso hijo se impone límites con `setrlimit`: espacio de direcciones (memoria máxima con margen), CPU (el plazo de conversión), tamaño de archivo escrito y archivos abiertos. Requiere una dependencia pequeña (`libc` o `rustix`).
 2. La vigilancia por consulta se mantiene como segunda capa: en macOS el límite de espacio de direcciones no se aplica.
-3. En Linux, restringir el sistema de archivos a la lectura del original y la escritura en la carpeta del intento (Landlock) y ejecutar el contenedor del worker sin red; si Landlock no está disponible, el worker lo registra al arrancar.
+3. En Linux, restringir el sistema de archivos a la lectura del original y la escritura en la carpeta del intento (Landlock) y aislar la red del conversor; desde la migración a PostgreSQL del 3 de noviembre, el supervisor tiene acceso a la base y el hijo bloquea sockets con seccomp. Si Landlock no está disponible, el worker lo registra al arrancar.
 4. Documentar las capas de aislamiento en la arquitectura técnica, §5.
 
 **Aceptación.** Una prueba que reserva memoria por encima del límite termina de inmediato, clasificada como límite de memoria; en Linux, un intento de escribir fuera de la carpeta del intento falla.
@@ -100,11 +100,11 @@ medidas menos 0,50 puntos, según la concreción solicitada; véase [el método]
 
 ### C7. Salud y métricas (M)
 
-**Estado:** implementado el 2 de noviembre: `/health`, latidos por worker y `/metrics` Prometheus con acumulados persistidos en SQLite y pruebas de API.
+**Estado:** implementado el 2 de noviembre: `/health`, latidos por worker y `/metrics` Prometheus con acumulados persistidos y pruebas de API; desde el 3 de noviembre se usa PostgreSQL.
 
 **Trabajo.**
 
-1. `GET /health`: base de datos accesible, espacio libre por encima de `OKF_MIN_FREE_MB` (definida en `R4`) y último latido del worker reciente (el worker escribe su latido en SQLite).
+1. `GET /health`: base de datos accesible, espacio libre por encima de `OKF_MIN_FREE_MB` (definida en `R4`) y último latido del worker reciente (el worker escribe su latido en PostgreSQL).
 2. `GET /metrics` en formato de texto Prometheus, escrito sin dependencias nuevas: trabajos por estado, conversiones por formato y resultado, duración por formato, memoria máxima y reintentos. Las duraciones salen de los datos por etapa que registra `R5`.
 
 **Aceptación.** Pruebas de la API para ambos endpoints; `/health` falla si el worker deja de latir.

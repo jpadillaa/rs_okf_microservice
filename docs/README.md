@@ -1,5 +1,7 @@
 # Documentación del microservicio OKF
 
+Para ejecutar peticiones desde el navegador, consulta [Probar los endpoints con Swagger UI](../README.md#probar-los-endpoints-con-swagger-ui).
+
 Este directorio es el punto de entrada para implementar el conversor de PDF, DOCX, XLSX y PPTX a bundles OKF v0.2. Los documentos describen el **resultado**, el **comportamiento del servicio** y las **herramientas elegidas**. Léelos en el orden de la tabla antes de escribir código.
 
 ## Mapa y orden de lectura
@@ -14,6 +16,7 @@ Este directorio es el punto de entrada para implementar el conversor de PDF, DOC
 | 4a | `docs/decisiones/RENDERIZADO_PPTX_MEDICIONES.md` | [Decisión de renderizado PPTX](decisiones/RENDERIZADO_PPTX_MEDICIONES.md) | Renderizador PPTX elegido y mediciones con ejemplos sintéticos y con el corpus real. |
 | 4b | `docs/decisiones/COBERTURA_INDEPENDIENTE.md` | [Cobertura frente a una referencia independiente](decisiones/COBERTURA_INDEPENDIENTE.md) | Método y resultados de la comparación de cada bundle con pdfium, python-docx, python-pptx y openpyxl; hallazgos. |
 | 4c | `docs/decisiones/FUZZING.md` | [Fuzzing de los lectores](decisiones/FUZZING.md) | Objetivos, límites, semillas, reproducción y criterio de estabilidad nocturna. |
+| 4d | `docs/decisiones/MIGRACION_POSTGRESQL.md` | [Migración a PostgreSQL](decisiones/MIGRACION_POSTGRESQL.md) | Configuración desde `.env`, concurrencia, despliegue e importación de registros antiguos. |
 | 5 | `docs/estado/ESTADO_DEL_PROYECTO.md` | [Estado del proyecto](estado/ESTADO_DEL_PROYECTO.md) | Qué está implementado, con qué evidencia de calidad, brechas frente a la arquitectura, comparación con el plan inicial y roadmap pendiente. |
 | 5a | `docs/planes/PLAN_1_RECUPERACION_DEL_PLAN_ORIGINAL.md` | [Plan 1: recuperar del plan original](planes/PLAN_1_RECUPERACION_DEL_PLAN_ORIGINAL.md) | Decisiones del plan inicial que se recuperan (modelo de salida común, referencia de cobertura, imagen reproducible, límites y admisión, registro, corpus, división en capítulos, auditoría de dependencias) y las que se cierran en la documentación. |
 | 5b | `docs/planes/PLAN_2_CALIDAD_Y_ROBUSTEZ.md` | [Plan 2: calidad y robustez](planes/PLAN_2_CALIDAD_Y_ROBUSTEZ.md) | Regresión, entradas hostiles, operación y contrato: bundles de referencia, aislamiento, fuzzing, salud, retención y versiones. |

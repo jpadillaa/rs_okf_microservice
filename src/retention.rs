@@ -1,7 +1,8 @@
 //! Expiración optativa y limpieza reanudable (plan 2, C8).
 use crate::{App, now};
 use anyhow::{Result, bail};
-use rusqlite::params;
+#[cfg(test)]
+use sqlx::Row;
 use std::{fs, io::ErrorKind, path::Path, time::Duration};
 
 fn remove(path: &Path, directory: bool) -> std::io::Result<()> {
@@ -24,17 +25,23 @@ pub(crate) async fn sweep(a: &App) -> Result<usize> {
     }
     let seconds = i64::try_from(a.cfg.retention_days.saturating_mul(86_400)).unwrap_or(i64::MAX);
     let cutoff = now().saturating_sub(seconds);
-    let pending: Vec<(String, String)> = {
-        let mut db = a.db.lock().await;
-        let tx = db.transaction_with_behavior(rusqlite::TransactionBehavior::Immediate)?;
-        tx.execute("UPDATE jobs SET status='expired',expired_at=?2,bundle=NULL,lease_until=NULL,retry_at=NULL WHERE status IN ('complete','partial','failed') AND finished_at<=?1", params![cutoff,now()])?;
-        let rows = tx
-            .prepare("SELECT id,original FROM jobs WHERE status='expired' AND purged_at IS NULL")?
-            .query_map([], |r| Ok((r.get(0)?, r.get(1)?)))?
-            .collect::<rusqlite::Result<_>>()?;
-        tx.commit()?;
-        rows
-    };
+    sqlx::query(
+        "UPDATE jobs SET status='expired',expired_at=$2,bundle=NULL,lease_until=NULL,\
+        retry_at=NULL WHERE status IN ('complete','partial','failed') AND finished_at \
+        <= $1",
+    )
+    .bind(cutoff)
+    .bind(now())
+    .execute(&a.db)
+    .await?;
+    // La marca de expiración ya es visible. Cada limpiador bloquea solo sus filas.
+    let mut tx = a.db.begin().await?;
+    let pending: Vec<(String, String)> = sqlx::query_as(
+        "SELECT id,original FROM jobs WHERE status='expired' AND purged_at IS NULL FOR \
+        UPDATE SKIP LOCKED",
+    )
+    .fetch_all(&mut *tx)
+    .await?;
     let mut purged = 0;
     for (id, original) in pending {
         let cleanup = || -> Result<()> {
@@ -59,13 +66,15 @@ pub(crate) async fn sweep(a: &App) -> Result<usize> {
             tracing::warn!(%id,%error,"trabajo expirado; limpieza pendiente");
             continue;
         }
-        a.db.lock().await.execute(
-            "UPDATE jobs SET purged_at=?2 WHERE id=?1 AND status='expired'",
-            params![id, now()],
-        )?;
+        sqlx::query("UPDATE jobs SET purged_at=$2 WHERE id=$1 AND status='expired'")
+            .bind(&id)
+            .bind(now())
+            .execute(&mut *tx)
+            .await?;
         purged += 1;
         tracing::info!(%id,"archivos del trabajo expirado eliminados");
     }
+    tx.commit().await?;
     Ok(purged)
 }
 
@@ -102,12 +111,23 @@ mod tests {
         )
         .unwrap();
         fs::create_dir_all(a.root.join("attempts").join(id)).unwrap();
-        a.db.lock().await.execute("INSERT INTO jobs(id,filename,original,sha256,status,created_at,finished_at,bundle) VALUES(?1,'a.docx',?2,'-',?3,0,?4,?5)", params![id,format!("originals/{id}.docx"),state,finished,format!("published/{id}/bundle.zip")]).unwrap();
+        sqlx::query(
+            "INSERT INTO jobs(id,filename,original,sha256,status,created_at,finished_at,\
+            bundle) VALUES($1,'a.docx',$2,'-',$3,0,$4,$5)",
+        )
+        .bind(id)
+        .bind(format!("originals/{id}.docx"))
+        .bind(state)
+        .bind(finished)
+        .bind(format!("published/{id}/bundle.zip"))
+        .execute(&a.db)
+        .await
+        .unwrap();
     }
     #[tokio::test]
     async fn retention_is_opt_in_and_only_expires_old_finished_jobs() {
         let tmp = tempfile::tempdir().unwrap();
-        let mut a = crate::app(tmp.path().to_owned()).unwrap();
+        let mut a = crate::app(tmp.path().to_owned()).await.unwrap();
         for (id, state, finished) in [
             ("complete", "complete", 1),
             ("partial", "partial", 1),
@@ -143,19 +163,17 @@ mod tests {
         }
         // La recuperación al arrancar nunca devuelve un expirado a la cola.
         crate::worker::reconcile(&a).await.unwrap();
-        let status: String =
-            a.db.lock()
-                .await
-                .query_row("SELECT status FROM jobs WHERE id='complete'", [], |r| {
-                    r.get(0)
-                })
-                .unwrap();
+        let status: String = sqlx::query("SELECT status FROM jobs WHERE id='complete'")
+            .fetch_one(&a.db)
+            .await
+            .and_then(|r| r.try_get(0))
+            .unwrap();
         assert_eq!(status, "expired");
     }
     #[tokio::test]
     async fn interrupted_cleanup_is_resumed_without_resetting_expiration() {
         let tmp = tempfile::tempdir().unwrap();
-        let mut a = crate::app(tmp.path().to_owned()).unwrap();
+        let mut a = crate::app(tmp.path().to_owned()).await.unwrap();
         std::sync::Arc::make_mut(&mut a.cfg).retention_days = 1;
         seed(&a, "retry", "failed", 1).await;
         let original = a.root.join("originals/retry.docx");
@@ -163,13 +181,10 @@ mod tests {
         fs::create_dir(&original).unwrap(); // Fuerza un fallo de limpieza del original.
         assert_eq!(sweep(&a).await.unwrap(), 0);
         let expired: (String, Option<i64>) =
-            a.db.lock()
+            sqlx::query("SELECT status,purged_at FROM jobs WHERE id='retry'")
+                .fetch_one(&a.db)
                 .await
-                .query_row(
-                    "SELECT status,purged_at FROM jobs WHERE id='retry'",
-                    [],
-                    |r| Ok((r.get(0)?, r.get(1)?)),
-                )
+                .and_then(|r| Ok((r.try_get(0)?, r.try_get(1)?)))
                 .unwrap();
         assert_eq!(expired, ("expired".into(), None));
         fs::remove_dir(&original).unwrap();

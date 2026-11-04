@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Prueba de humo de la imagen (plan 1, R3): la API recibe una muestra de cada formato,
-# el worker los convierte en un contenedor sin red y la API entrega los cuatro bundles.
+# el worker usa PostgreSQL y el hijo convierte sin sockets y la API entrega los cuatro bundles.
 # Uso: tools/smoke.sh IMAGEN
 set -euo pipefail
 
@@ -12,16 +12,30 @@ chmod 755 "$data"
 # El almacén usa un volumen Linux como Compose: Landlock no puede garantizar
 # las reglas de escritura sobre algunos montajes del host de Docker Desktop.
 volume=okf-smoke-$RANDOM-$$
-api=okf-smoke-api
+api=okf-smoke-api-$RANDOM-$$
+postgres=okf-smoke-postgres-$RANDOM-$$
+network=okf-smoke-net-$RANDOM-$$
+postgres_image=postgres:17-bookworm@sha256:839fbb5a4942a7758dd93e18b42ea5649807491a0545b5eeeb8f0b8bb11857a5
 cleanup() {
     docker rm -f "$api" >/dev/null 2>&1 || true
+    docker rm -f "$postgres" >/dev/null 2>&1 || true
+    docker network rm "$network" >/dev/null 2>&1 || true
     docker volume rm "$volume" >/dev/null 2>&1 || true
     rm -rf "$data" 2>/dev/null || true
 }
 trap cleanup EXIT
 docker volume create "$volume" >/dev/null
+docker network create "$network" >/dev/null
+docker run -d --name "$postgres" --network "$network" --network-alias postgres \
+    -e POSTGRES_USER=okf -e POSTGRES_PASSWORD=smoke_password -e POSTGRES_DB=okf "$postgres_image" >/dev/null
+for _ in $(seq 60); do
+    docker exec "$postgres" pg_isready -U okf -d okf >/dev/null 2>&1 && break
+    sleep 0.5
+done
+printf '%s\n' 'OKF_DATABASE_URL=postgresql://okf:smoke_password@postgres:5432/okf?sslmode=disable' > "$data/service.env"
+chmod 600 "$data/service.env"
 
-docker run -d --name "$api" -p "127.0.0.1:$port:8080" -v "$volume:/data" "$image" \
+docker run -d --name "$api" --network "$network" --env-file "$data/service.env" -p "127.0.0.1:$port:8080" -v "$volume:/data" "$image" \
     api --bind 0.0.0.0:8080 >/dev/null
 for _ in $(seq 60); do
     curl -s -o /dev/null "http://127.0.0.1:$port/jobs/ninguno" && break
@@ -36,7 +50,7 @@ for sample in examples/pptx/simple.pptx examples/docx/breve.docx \
     ids+=("$id")
 done
 
-docker run --rm --network none -v "$volume:/data" "$image" worker --once
+docker run --rm --network "$network" --env-file "$data/service.env" -v "$volume:/data" "$image" worker --once
 
 for id in "${ids[@]}"; do
     job=$(curl -sf "http://127.0.0.1:$port/jobs/$id")

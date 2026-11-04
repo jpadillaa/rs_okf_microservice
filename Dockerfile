@@ -11,13 +11,14 @@ COPY Cargo.toml Cargo.lock build.rs ./
 ARG OKF_BUILD_COMMIT=unknown
 ENV OKF_BUILD_COMMIT=$OKF_BUILD_COMMIT
 COPY src ./src
+COPY migrations ./migrations
 RUN cargo build --release --locked \
     && cp target/release/okf-microservice /okf-microservice
 
 FROM ${RUNTIME_IMAGE}
 # Fuente TrueType de las vistas PPTX (OKF_FONT_PATH); la misma versión que usa la CI.
 RUN apt-get update \
-    && apt-get install -y --no-install-recommends fonts-dejavu-core=2.37-8 \
+    && apt-get install -y --no-install-recommends fonts-dejavu-core=2.37-8 ca-certificates=20250419 \
     && rm -rf /var/lib/apt/lists/*
 RUN useradd --system --uid 10001 --home-dir /data okf \
     && mkdir /data \

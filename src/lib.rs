@@ -7,22 +7,25 @@ use axum::{
     routing::{get, post},
 };
 use clap::{Parser, Subcommand};
-use rusqlite::{Connection, OptionalExtension, params};
 use serde::{Deserialize, Serialize};
 use sha2::{Digest, Sha256};
+use sqlx::{PgPool, Row};
 use std::{
     fs,
     path::{Path as FsPath, PathBuf},
     sync::Arc,
-    time::{Duration, SystemTime, UNIX_EPOCH},
+    time::{SystemTime, UNIX_EPOCH},
 };
-use tokio::sync::Mutex;
+
 use tracing::info;
 use uuid::Uuid;
 
+mod api_docs;
 mod bundle;
 #[cfg(test)]
 mod coverage;
+#[cfg(not(test))]
+mod db;
 mod docx;
 mod format;
 #[cfg(test)]
@@ -37,6 +40,9 @@ mod pptx;
 mod retention;
 mod sections;
 mod shutdown;
+#[cfg(test)]
+#[path = "../tests/support/mod.rs"]
+mod test_support;
 mod validate;
 mod version;
 mod worker;
@@ -46,6 +52,9 @@ mod xml;
 #[derive(Parser)]
 #[command(name = "okf-microservice")]
 struct Cli {
+    /// Archivo de variables; por omisión se lee .env del directorio actual.
+    #[arg(long, global = true)]
+    env_file: Option<PathBuf>,
     #[command(subcommand)]
     command: Command,
 }
@@ -78,63 +87,49 @@ enum Command {
 #[derive(Clone)]
 struct App {
     root: PathBuf,
-    db: Arc<Mutex<Connection>>,
+    db: PgPool,
     cfg: Arc<worker::Config>,
     /// Ejecutable para convertir en un proceso hijo vigilado; `None` convierte en el
     /// propio proceso (pruebas unitarias).
     converter: Option<PathBuf>,
     shutdown: Arc<shutdown::Shutdown>,
 }
-#[derive(Deserialize, Serialize)]
+#[derive(Deserialize, Serialize, utoipa::ToSchema)]
 struct Accepted {
+    /// Identificador que se usa para consultar el estado y descargar el bundle.
+    #[schema(format = "uuid")]
     job_id: String,
+    /// Siempre `queued`: la conversión se ejecuta de forma asíncrona.
+    #[schema(examples("queued"))]
     status: String,
 }
-#[derive(Serialize)]
+#[derive(Serialize, utoipa::ToSchema)]
 struct JobStatus {
+    #[schema(format = "uuid")]
     job_id: String,
+    /// `queued`, `processing`, `complete`, `partial`, `failed` o `expired`.
+    #[schema(examples("complete"))]
     status: String,
+    /// Número de intentos iniciados; cero mientras espera el primero.
     attempt: u32,
+    /// Motivo del fallo, o null si no hay un error registrado.
+    #[schema(required)]
     error: Option<String>,
     #[serde(flatten)]
     versions: version::Versions,
 }
 
-fn app(root: PathBuf) -> Result<App> {
+async fn app(root: PathBuf) -> Result<App> {
     for p in ["originals", "attempts", "published"] {
         fs::create_dir_all(root.join(p))?;
     }
-    let db = Connection::open(root.join("jobs.sqlite3"))?;
-    db.pragma_update(None, "journal_mode", "WAL")?;
-    db.busy_timeout(Duration::from_secs(5))?;
-    db.execute_batch("CREATE TABLE IF NOT EXISTS jobs(id TEXT PRIMARY KEY, filename TEXT NOT NULL, original TEXT NOT NULL, sha256 TEXT NOT NULL, status TEXT NOT NULL, attempt INTEGER NOT NULL DEFAULT 0, lease_until INTEGER, bundle TEXT, error TEXT, created_at INTEGER NOT NULL, retry_at INTEGER); CREATE INDEX IF NOT EXISTS jobs_status ON jobs(status, created_at);")?;
-    // Migración compatible con bases anteriores y arranques simultáneos API/worker.
-    for (name, kind) in [
-        ("retry_at", "INTEGER"),
-        ("converter_version", "TEXT"),
-        ("converter_commit", "TEXT"),
-        ("profile_version", "TEXT"),
-        ("finished_at", "INTEGER"),
-        ("expired_at", "INTEGER"),
-        ("purged_at", "INTEGER"),
-    ] {
-        let exists = db
-            .prepare("SELECT 1 FROM pragma_table_info('jobs') WHERE name=?1")?
-            .exists([name])?;
-        if !exists
-            && let Err(e) = db.execute_batch(&format!("ALTER TABLE jobs ADD COLUMN {name} {kind}"))
-            && !e.to_string().contains("duplicate column")
-        {
-            return Err(e.into());
-        }
-    }
-    // No conocemos el instante terminal histórico: empieza su retención al migrar.
-    db.execute("UPDATE jobs SET finished_at=?1 WHERE status IN ('complete','partial','failed') AND finished_at IS NULL", [now()])?;
-    db.execute_batch("CREATE INDEX IF NOT EXISTS jobs_retention ON jobs(status,finished_at)")?;
-    observability::init(&db)?;
+    #[cfg(not(test))]
+    let db = db::connect().await?;
+    #[cfg(test)]
+    let db = test_support::pool(&root).await;
     Ok(App {
         root,
-        db: Arc::new(Mutex::new(db)),
+        db,
         cfg: Arc::new(worker::Config::from_env()?),
         converter: None,
         shutdown: Arc::new(shutdown::Shutdown::default()),
@@ -154,16 +149,12 @@ fn valid_name(s: &str) -> bool {
 /// volumen de datos sin el espacio libre mínimo (`507`).
 async fn admit(a: &App) -> Result<(), (StatusCode, String)> {
     if a.cfg.max_queued > 0 {
-        let pending: u64 =
-            a.db.lock()
+        let pending: i64 =
+            sqlx::query_scalar("SELECT COUNT(*) FROM jobs WHERE status IN ('queued','processing')")
+                .fetch_one(&a.db)
                 .await
-                .query_row(
-                    "SELECT COUNT(*) FROM jobs WHERE status IN ('queued','processing')",
-                    [],
-                    |r| r.get(0),
-                )
                 .map_err(internal)?;
-        if pending >= a.cfg.max_queued {
+        if pending as u64 >= a.cfg.max_queued {
             return Err((
                 StatusCode::TOO_MANY_REQUESTS,
                 format!("hay {pending} trabajos pendientes; inténtalo más tarde"),
@@ -187,6 +178,24 @@ fn free_space_mb(path: &FsPath) -> std::io::Result<u64> {
     Ok(s.f_bavail.saturating_mul(s.f_frsize) / (1024 * 1024))
 }
 
+/// Subir un documento y crear un trabajo
+///
+/// Selecciona un PDF, DOCX, XLSX o PPTX en el campo `file`. Se procesa el primer
+/// archivo del formulario. El límite es 100 MiB por defecto, configurable con
+/// `OKF_MAX_UPLOAD_MB`. Guarda el `job_id` de la respuesta para consultar el estado.
+#[utoipa::path(
+    post, path = "/jobs", tag = "Trabajos", operation_id = "crear_trabajo",
+    request_body(content = api_docs::Upload, content_type = "multipart/form-data"),
+    responses(
+        (status = 202, description = "Original conservado y trabajo en cola", body = Accepted),
+        (status = 400, description = "Formulario, archivo o nombre no válido", body = String, content_type = "text/plain"),
+        (status = 413, description = "Archivo vacío o tamaño por encima del límite", body = String, content_type = "text/plain"),
+        (status = 415, description = "Extensión no admitida", body = String, content_type = "text/plain"),
+        (status = 429, description = "Cola llena; reintentar más tarde", body = String, content_type = "text/plain"),
+        (status = 500, description = "Error de persistencia", body = String, content_type = "text/plain"),
+        (status = 507, description = "Espacio libre insuficiente", body = String, content_type = "text/plain")
+    )
+)]
 async fn submit(
     State(a): State<App>,
     mut multipart: Multipart,
@@ -242,8 +251,21 @@ async fn submit(
     let original_rel = format!("originals/{id}.{}", format.extension());
     let path = a.root.join(&original_rel);
     fs::write(&path, &bytes).map_err(internal)?;
-    let tx = a.db.lock().await;
-    if let Err(e) = tx.execute("INSERT INTO jobs(id,filename,original,sha256,status,created_at) VALUES(?1,?2,?3,?4,'queued',?5)", params![id, filename, original_rel, hash, now()]) { let _ = fs::remove_file(path); return Err(internal(e)); }
+    if let Err(e) = sqlx::query(
+        "INSERT INTO jobs(id,filename,original,sha256,status,created_at) VALUES($1,$2,\
+        $3,$4,'queued',$5)",
+    )
+    .bind(&id)
+    .bind(&filename)
+    .bind(&original_rel)
+    .bind(&hash)
+    .bind(now())
+    .execute(&a.db)
+    .await
+    {
+        let _ = fs::remove_file(path);
+        return Err(internal(e));
+    }
     Ok((
         StatusCode::ACCEPTED,
         Json(Accepted {
@@ -255,48 +277,74 @@ async fn submit(
 fn internal(e: impl std::fmt::Display) -> (StatusCode, String) {
     (StatusCode::INTERNAL_SERVER_ERROR, e.to_string())
 }
+/// Consultar el estado de un trabajo
+///
+/// Usa el `job_id` recibido al subir el archivo. Repite la consulta mientras esté
+/// `queued` o `processing`. Los estados `complete` y `partial` permiten descargar
+/// el bundle; `failed` indica un fallo y `expired` que se eliminaron sus archivos.
+#[utoipa::path(
+    get, path = "/jobs/{id}", tag = "Trabajos", operation_id = "consultar_trabajo",
+    params(("id" = String, Path, description = "job_id devuelto por POST /jobs")),
+    responses(
+        (status = 200, description = "Estado e identidad del conversor; las versiones pueden ser null antes de publicar", body = JobStatus),
+        (status = 404, description = "Trabajo inexistente", body = String, content_type = "text/plain"),
+        (status = 500, description = "Error al consultar PostgreSQL", body = String, content_type = "text/plain")
+    )
+)]
 async fn status(
     State(a): State<App>,
     Path(id): Path<String>,
 ) -> Result<Json<JobStatus>, (StatusCode, String)> {
-    let db = a.db.lock().await;
-    let row = db
-        .query_row(
-            "SELECT status,attempt,error,converter_version,converter_commit,profile_version FROM jobs WHERE id=?1",
-            [&id],
-            |r| {
-                Ok((
-                    r.get::<_, String>(0)?,
-                    r.get::<_, u32>(1)?,
-                    r.get::<_, Option<String>>(2)?,
-                    version::Versions { converter_version: r.get(3)?, converter_commit: r.get(4)?, profile_version: r.get(5)? },
-                ))
-            },
-        )
-        .optional()
-        .map_err(internal)?;
-    row.map(|(status, attempt, error, versions)| {
-        Json(JobStatus {
+    let row = sqlx::query(
+        "SELECT status,attempt,error,converter_version,converter_commit,profile_version \
+        FROM jobs WHERE id=$1",
+    )
+    .bind(&id)
+    .fetch_optional(&a.db)
+    .await
+    .map_err(internal)?;
+    row.map(|r| -> Result<_, sqlx::Error> {
+        Ok(Json(JobStatus {
             job_id: id,
-            status,
-            attempt,
-            error,
-            versions,
-        })
+            status: r.try_get(0)?,
+            attempt: r.try_get::<i64, _>(1)? as u32,
+            error: r.try_get(2)?,
+            versions: version::Versions {
+                converter_version: r.try_get(3)?,
+                converter_commit: r.try_get(4)?,
+                profile_version: r.try_get(5)?,
+            },
+        }))
     })
+    .transpose()
+    .map_err(internal)?
     .ok_or((StatusCode::NOT_FOUND, "trabajo inexistente".into()))
 }
+/// Descargar el bundle OKF en ZIP
+///
+/// Disponible cuando el trabajo termina en `complete` o `partial`. El enlace de
+/// descarga de la respuesta permite guardar el ZIP con el nombre del trabajo.
+#[utoipa::path(
+    get, path = "/jobs/{id}/bundle", tag = "Trabajos", operation_id = "descargar_bundle",
+    params(("id" = String, Path, description = "job_id de un trabajo complete o partial")),
+    responses(
+        (status = 200, description = "Bundle publicado", body = inline(api_docs::BinaryFile), content_type = "application/zip",
+            headers(("Content-Disposition" = String, description = "attachment; filename=\"<job_id>.zip\""))),
+        (status = 404, description = "Trabajo inexistente o bundle aún no publicado", body = String, content_type = "text/plain"),
+        (status = 410, description = "Trabajo expirado; archivos eliminados por retención", body = String, content_type = "text/plain"),
+        (status = 500, description = "Error al leer el registro o el archivo", body = String, content_type = "text/plain")
+    )
+)]
 async fn download(
     State(a): State<App>,
     Path(id): Path<String>,
 ) -> Result<impl IntoResponse, (StatusCode, String)> {
-    let db = a.db.lock().await;
-    let row: Option<(String, Option<String>)> = db
-        .query_row("SELECT status,bundle FROM jobs WHERE id=?1", [&id], |r| {
-            Ok((r.get(0)?, r.get(1)?))
-        })
-        .optional()
-        .map_err(internal)?;
+    let row: Option<(String, Option<String>)> =
+        sqlx::query_as("SELECT status,bundle FROM jobs WHERE id=$1")
+            .bind(&id)
+            .fetch_optional(&a.db)
+            .await
+            .map_err(internal)?;
     let Some((state, path)) = row else {
         return Err((StatusCode::NOT_FOUND, "trabajo inexistente".into()));
     };
@@ -312,17 +360,14 @@ async fn download(
             "el bundle aún no está publicado".into(),
         ));
     };
-    // Mantener el bloqueo hasta terminar la lectura evita una carrera con la expiración
-    // en este proceso; un worker externo puede expirar entretanto: se comprueba abajo.
+    // Si la retención borra el archivo entre la consulta y la lectura, devuelve 410.
     let bytes = match fs::read(a.root.join(path)) {
         Ok(bytes) => bytes,
         Err(error) => {
-            let expired = db
-                .query_row(
-                    "SELECT status='expired' FROM jobs WHERE id=?1",
-                    [&id],
-                    |r| r.get::<_, bool>(0),
-                )
+            let expired: bool = sqlx::query_scalar("SELECT status='expired' FROM jobs WHERE id=$1")
+                .bind(&id)
+                .fetch_one(&a.db)
+                .await
                 .unwrap_or(false);
             if expired {
                 return Err((StatusCode::GONE, "el trabajo expiró".into()));
@@ -330,7 +375,6 @@ async fn download(
             return Err(internal(error));
         }
     };
-    drop(db);
     let mut headers = HeaderMap::new();
     headers.insert(header::CONTENT_TYPE, "application/zip".parse().unwrap());
     headers.insert(
@@ -342,7 +386,7 @@ async fn download(
     Ok((headers, bytes))
 }
 async fn serve(root: PathBuf, bind: &str) -> Result<()> {
-    let mut a = app(root)?;
+    let mut a = app(root).await?;
     a.shutdown = shutdown::install()?;
     let shutdown = a.shutdown.clone();
     let router = router(a);
@@ -355,24 +399,39 @@ async fn serve(root: PathBuf, bind: &str) -> Result<()> {
 }
 fn router(a: App) -> Router {
     let body_limit = a.cfg.max_upload_bytes().saturating_add(64 * 1024);
-    Router::new()
+    let mut router = Router::new()
         .route("/health", get(observability::health))
         .route("/metrics", get(observability::metrics))
         .route("/jobs", post(submit))
         .route("/jobs/{id}", get(status))
-        .route("/jobs/{id}/bundle", get(download))
+        .route("/jobs/{id}/bundle", get(download));
+    if a.cfg.swagger_enabled {
+        router = router.merge(api_docs::swagger_ui());
+    }
+    router
         .layer(axum::extract::DefaultBodyLimit::max(body_limit))
         .with_state(a)
 }
 
 pub fn run() -> Result<()> {
+    let cli = Cli::parse();
+    // Antes de crear hilos. El conversor nunca carga archivos de entorno ni credenciales.
+    if !matches!(cli.command, Command::Convert { .. }) {
+        if let Some(path) = &cli.env_file {
+            dotenvy::from_path(path)
+                .map_err(|_| anyhow::anyhow!("no se pudo leer el archivo --env-file"))?;
+        } else if let Err(error) = dotenvy::from_path(".env")
+            && !error.not_found()
+        {
+            anyhow::bail!("no se pudo leer .env")
+        }
+    }
     // Los registros van a la salida de error: la estándar del subcomando `convert`
     // transporta su resultado al worker.
     tracing_subscriber::fmt()
         .with_env_filter(tracing_subscriber::EnvFilter::from_default_env())
         .with_writer(std::io::stderr)
         .init();
-    let cli = Cli::parse();
     ooxml::set_limits(worker::Config::from_env()?.zip);
     let root = PathBuf::from(std::env::var("OKF_DATA_DIR").unwrap_or_else(|_| "data".into()));
     if let Command::Validate { bundle } = &cli.command {
@@ -430,22 +489,21 @@ mod tests {
     use bundle::{hex, validate_bundle, write_zip_file};
     use pptx::{build_bundle, extract};
     use std::io::Read;
+
     use worker::{FailureKind, renew, work_one};
     use zip::{ZipArchive, ZipWriter};
     /// Aplicación de prueba: conversión en el propio proceso y reintentos sin espera.
-    fn test_app(root: &FsPath) -> App {
-        let mut a = app(root.to_path_buf()).unwrap();
+    async fn test_app(root: &FsPath) -> App {
+        let mut a = app(root.to_path_buf()).await.unwrap();
         Arc::make_mut(&mut a.cfg).retry_base_s = 0;
         a
     }
-    async fn job(a: &App, id: &str) -> (String, u32, Option<String>, Option<String>) {
-        a.db.lock()
+    async fn job(a: &App, id: &str) -> (String, i64, Option<String>, Option<String>) {
+        sqlx::query("SELECT status,attempt,error,bundle FROM jobs WHERE id=$1")
+            .bind(id)
+            .fetch_one(&a.db)
             .await
-            .query_row(
-                "SELECT status,attempt,error,bundle FROM jobs WHERE id=?1",
-                [id],
-                |r| Ok((r.get(0)?, r.get(1)?, r.get(2)?, r.get(3)?)),
-            )
+            .and_then(|r| Ok((r.try_get(0)?, r.try_get(1)?, r.try_get(2)?, r.try_get(3)?)))
             .unwrap()
     }
     use tower::ServiceExt;
@@ -460,10 +518,21 @@ mod tests {
     ) {
         let rel = format!("originals/{id}.pptx");
         fs::write(a.root.join(&rel), bytes).unwrap();
-        a.db.lock().await.execute(
-            "INSERT INTO jobs(id,filename,original,sha256,status,attempt,lease_until,created_at) VALUES(?1,?2,?3,?4,?5,?6,?7,?8)",
-            params![id,filename,rel,hex(&Sha256::digest(bytes)),status,attempt,lease,now()],
-        ).unwrap();
+        sqlx::query(
+            "INSERT INTO jobs(id,filename,original,sha256,status,attempt,lease_until,\
+            created_at) VALUES($1,$2,$3,$4,$5,$6,$7,$8)",
+        )
+        .bind(id)
+        .bind(filename)
+        .bind(&rel)
+        .bind(hex(&Sha256::digest(bytes)))
+        .bind(status)
+        .bind(attempt)
+        .bind(lease)
+        .bind(now())
+        .execute(&a.db)
+        .await
+        .unwrap();
     }
     fn example(name: &str) -> Vec<u8> {
         fs::read(format!("examples/pptx/{name}.pptx")).unwrap()
@@ -471,7 +540,7 @@ mod tests {
     #[tokio::test]
     async fn pptx_end_to_end_complete_partial_and_durable_recovery() {
         let tmp = tempfile::tempdir().unwrap();
-        let a = test_app(tmp.path());
+        let a = test_app(tmp.path()).await;
         let simple = example("simple");
         let boundary = "pptx-test-boundary";
         let mut body = format!("--{boundary}\r\nContent-Disposition: form-data; name=\"file\"; filename=\"simple.pptx\"\r\nContent-Type: application/vnd.openxmlformats-officedocument.presentationml.presentation\r\n\r\n").into_bytes();
@@ -515,15 +584,12 @@ mod tests {
             .unwrap();
         assert_eq!(rejected.status(), StatusCode::UNSUPPORTED_MEDIA_TYPE);
         assert!(work_one(&a).await.unwrap());
-        let completed: String =
-            a.db.lock()
-                .await
-                .query_row(
-                    "SELECT status FROM jobs WHERE id=?1",
-                    [&accepted.job_id],
-                    |r| r.get(0),
-                )
-                .unwrap();
+        let completed: String = sqlx::query("SELECT status FROM jobs WHERE id=$1")
+            .bind(&accepted.job_id)
+            .fetch_one(&a.db)
+            .await
+            .and_then(|r| r.try_get(0))
+            .unwrap();
         assert_eq!(completed, "complete");
         let status_response = router(a.clone())
             .oneshot(
@@ -577,14 +643,11 @@ mod tests {
         let multi = example("multiple");
         enqueue(&a, "multi", "multiple.pptx", &multi, "queued", 0, 0).await;
         assert!(work_one(&a).await.unwrap());
-        let (state, attempt): (String, u32) =
-            a.db.lock()
+        let (state, attempt): (String, i64) =
+            sqlx::query("SELECT status,attempt FROM jobs WHERE id='multi'")
+                .fetch_one(&a.db)
                 .await
-                .query_row(
-                    "SELECT status,attempt FROM jobs WHERE id='multi'",
-                    [],
-                    |r| Ok((r.get(0)?, r.get(1)?)),
-                )
+                .and_then(|r| Ok((r.try_get(0)?, r.try_get(1)?)))
                 .unwrap();
         // Una diapositiva sin título es una observación, no una pérdida.
         assert_eq!(state, "complete");
@@ -641,13 +704,11 @@ mod tests {
         let visual = example("visual");
         enqueue(&a, "visual", "visual.pptx", &visual, "queued", 0, 0).await;
         assert!(work_one(&a).await.unwrap());
-        let state: String =
-            a.db.lock()
-                .await
-                .query_row("SELECT status FROM jobs WHERE id='visual'", [], |r| {
-                    r.get(0)
-                })
-                .unwrap();
+        let state: String = sqlx::query("SELECT status FROM jobs WHERE id='visual'")
+            .fetch_one(&a.db)
+            .await
+            .and_then(|r| r.try_get(0))
+            .unwrap();
         assert_eq!(state, "partial");
         let mut z =
             ZipArchive::new(fs::File::open(a.root.join("published/visual/bundle.zip")).unwrap())
@@ -685,14 +746,11 @@ mod tests {
         fs::create_dir_all(stale.parent().unwrap()).unwrap();
         fs::write(&stale, "abandoned attempt").unwrap();
         assert!(work_one(&a).await.unwrap());
-        let (state, attempt): (String, u32) =
-            a.db.lock()
+        let (state, attempt): (String, i64) =
+            sqlx::query("SELECT status,attempt FROM jobs WHERE id='recovery'")
+                .fetch_one(&a.db)
                 .await
-                .query_row(
-                    "SELECT status,attempt FROM jobs WHERE id='recovery'",
-                    [],
-                    |r| Ok((r.get(0)?, r.get(1)?)),
-                )
+                .and_then(|r| Ok((r.try_get(0)?, r.try_get(1)?)))
                 .unwrap();
         assert_eq!(state, "complete");
         assert_eq!(attempt, 2);
@@ -703,17 +761,14 @@ mod tests {
     #[tokio::test]
     async fn malformed_pptx_fails_without_publishing_and_missing_view_is_rejected() {
         let tmp = tempfile::tempdir().unwrap();
-        let a = test_app(tmp.path());
+        let a = test_app(tmp.path()).await;
         enqueue(&a, "broken", "broken.pptx", b"not a pptx", "queued", 0, 0).await;
         assert!(work_one(&a).await.unwrap());
         let (state, bundle): (String, Option<String>) =
-            a.db.lock()
+            sqlx::query("SELECT status,bundle FROM jobs WHERE id='broken'")
+                .fetch_one(&a.db)
                 .await
-                .query_row(
-                    "SELECT status,bundle FROM jobs WHERE id='broken'",
-                    [],
-                    |r| Ok((r.get(0)?, r.get(1)?)),
-                )
+                .and_then(|r| Ok((r.try_get(0)?, r.try_get(1)?)))
                 .unwrap();
         assert_eq!(state, "failed");
         assert!(bundle.is_none());
@@ -749,7 +804,7 @@ mod tests {
     #[tokio::test]
     async fn failures_are_classified_and_transient_ones_retried_up_to_the_limit() {
         let tmp = tempfile::tempdir().unwrap();
-        let mut a = test_app(tmp.path());
+        let mut a = test_app(tmp.path()).await;
         // Original ausente: error del sistema de archivos, transitorio.
         enqueue(&a, "missing", "missing.pptx", b"x", "queued", 0, 0).await;
         fs::remove_file(a.root.join("originals/missing.pptx")).unwrap();
@@ -806,7 +861,7 @@ mod tests {
     #[tokio::test]
     async fn leases_are_renewed_by_their_owner_and_expired_ones_bounded() {
         let tmp = tempfile::tempdir().unwrap();
-        let a = test_app(tmp.path());
+        let a = test_app(tmp.path()).await;
         enqueue(
             &a,
             "owned",
@@ -818,13 +873,11 @@ mod tests {
         )
         .await;
         assert!(renew(&a, "owned", 1).await.unwrap());
-        let lease: i64 =
-            a.db.lock()
-                .await
-                .query_row("SELECT lease_until FROM jobs WHERE id='owned'", [], |r| {
-                    r.get(0)
-                })
-                .unwrap();
+        let lease: i64 = sqlx::query("SELECT lease_until FROM jobs WHERE id='owned'")
+            .fetch_one(&a.db)
+            .await
+            .and_then(|r| r.try_get(0))
+            .unwrap();
         assert!(lease >= now() + a.cfg.lease_s - 1);
         // Otro worker reclamó el trabajo (intento 2): el intento 1 ya no puede renovarla.
         assert!(!renew(&a, "owned", 2).await.unwrap());
@@ -839,12 +892,9 @@ mod tests {
             now() - 1,
         )
         .await;
-        a.db.lock()
+        sqlx::query("UPDATE jobs SET status='done-elsewhere' WHERE id='owned'")
+            .execute(&a.db)
             .await
-            .execute(
-                "UPDATE jobs SET status='done-elsewhere' WHERE id='owned'",
-                [],
-            )
             .unwrap();
         assert!(!work_one(&a).await.unwrap());
         let (state, _, error, _) = job(&a, "crashy").await;
@@ -869,7 +919,7 @@ mod tests {
     #[tokio::test]
     async fn startup_reconciliation_repairs_interrupted_publications() {
         let tmp = tempfile::tempdir().unwrap();
-        let a = test_app(tmp.path());
+        let a = test_app(tmp.path()).await;
         // El worker murió después de publicar y antes de registrar el estado.
         enqueue(
             &a,
@@ -900,12 +950,9 @@ mod tests {
             0,
         )
         .await;
-        a.db.lock()
+        sqlx::query("UPDATE jobs SET bundle='published/lost/bundle.zip' WHERE id='lost'")
+            .execute(&a.db)
             .await
-            .execute(
-                "UPDATE jobs SET bundle='published/lost/bundle.zip' WHERE id='lost'",
-                [],
-            )
             .unwrap();
         enqueue(
             &a,
@@ -1027,7 +1074,7 @@ mod tests {
     #[tokio::test]
     async fn docx_is_converted_by_the_worker_and_checked_against_its_blocks() {
         let tmp = tempfile::tempdir().unwrap();
-        let a = test_app(tmp.path());
+        let a = test_app(tmp.path()).await;
         let bytes = fs::read("examples/docx/estructura.docx").unwrap();
         enqueue(&a, "doc", "estructura.docx", &bytes, "queued", 0, 0).await;
         assert!(work_one(&a).await.unwrap());
@@ -1103,7 +1150,7 @@ mod tests {
     #[tokio::test]
     async fn xlsx_is_converted_by_the_worker_and_checked_against_its_cells() {
         let tmp = tempfile::tempdir().unwrap();
-        let a = test_app(tmp.path());
+        let a = test_app(tmp.path()).await;
         let bytes = fs::read("examples/xlsx/muestras/ventas_trimestrales.xlsx").unwrap();
         enqueue(&a, "book", "ventas.xlsx", &bytes, "queued", 0, 0).await;
         assert!(work_one(&a).await.unwrap());
@@ -1187,7 +1234,7 @@ mod tests {
     #[tokio::test]
     async fn pdf_is_converted_by_the_worker_and_checked_against_its_pages() {
         let tmp = tempfile::tempdir().unwrap();
-        let a = test_app(tmp.path());
+        let a = test_app(tmp.path()).await;
         let bytes = fs::read("examples/pdf/muestras/articulo_columnas.pdf").unwrap();
         enqueue(&a, "article", "articulo.pdf", &bytes, "queued", 0, 0).await;
         assert!(work_one(&a).await.unwrap());
@@ -1292,7 +1339,7 @@ mod tests {
     #[tokio::test]
     async fn admission_limits_upload_size_queue_and_free_space() {
         let tmp = tempfile::tempdir().unwrap();
-        let mut a = test_app(tmp.path());
+        let mut a = test_app(tmp.path()).await;
         let simple = example("simple");
         // Valores por omisión: sin límite de cola ni de espacio libre.
         assert_eq!(post(&a, "simple.pptx", &simple).await, StatusCode::ACCEPTED);
@@ -1321,11 +1368,11 @@ mod tests {
             post(&a, "simple.pptx", &simple).await,
             StatusCode::INSUFFICIENT_STORAGE
         );
-        let pending: u64 =
-            a.db.lock()
-                .await
-                .query_row("SELECT COUNT(*) FROM jobs", [], |r| r.get(0))
-                .unwrap();
+        let pending: i64 = sqlx::query("SELECT COUNT(*) FROM jobs")
+            .fetch_one(&a.db)
+            .await
+            .and_then(|r| r.try_get(0))
+            .unwrap();
         assert_eq!(pending, 3);
     }
 }
@@ -1336,17 +1383,29 @@ mod version_tests {
     #[tokio::test]
     async fn job_versions_survive_publication_recovery() {
         let tmp = tempfile::tempdir().unwrap();
-        let a = app(tmp.path().to_owned()).unwrap();
+        let a = app(tmp.path().to_owned()).await.unwrap();
         fs::copy(
             "examples/docx/breve.docx",
             tmp.path().join("originals/v.docx"),
         )
         .unwrap();
-        a.db.lock().await.execute("INSERT INTO jobs(id,filename,original,sha256,status,created_at) VALUES('v','v.docx','originals/v.docx','-','queued',0)", []).unwrap();
+        sqlx::query(
+            "INSERT INTO jobs(id,filename,original,sha256,status,created_at) VALUES('v',\
+            'v.docx','originals/v.docx','-','queued',0)",
+        )
+        .execute(&a.db)
+        .await
+        .unwrap();
         worker::work_one(&a).await.unwrap();
         let state = status(State(a.clone()), Path("v".into())).await.unwrap().0;
         assert_eq!(state.versions, version::Versions::current());
-        a.db.lock().await.execute("UPDATE jobs SET status='processing',lease_until=0,converter_version=NULL,converter_commit=NULL,profile_version=NULL", []).unwrap();
+        sqlx::query(
+            "UPDATE jobs SET status='processing',lease_until=0,converter_version=NULL,\
+            converter_commit=NULL,profile_version=NULL",
+        )
+        .execute(&a.db)
+        .await
+        .unwrap();
         worker::reconcile(&a).await.unwrap();
         let state = status(State(a), Path("v".into())).await.unwrap().0;
         assert_eq!(state.status, "complete");

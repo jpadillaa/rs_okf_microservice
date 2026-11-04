@@ -1,15 +1,17 @@
 # Estado del proyecto
 
-**Corte:** 2 de noviembre de 2026, plan 2 hasta C8 (`b316cf0`), verificado para publicación en `main`; C5 pendiente del hallazgo PDF y de siete noches de estabilidad.
+**Corte:** 4 de noviembre de 2026, interfaz Swagger UI configurable por `OKF_SWAGGER_ENABLED` sobre el servicio PostgreSQL, con configuración `.env` e instancia Docker de prueba. Plan 2: C5 sigue pendiente del hallazgo PDF y de siete noches de estabilidad.
 **Alcance:** qué está implementado, con qué evidencia de calidad, cómo se compara con el plan inicial y qué queda pendiente. Los contratos están en la [especificación](../especificacion/ESPECIFICACION_OKF.md), las [arquitecturas](../arquitectura/ARQUITECTURA_TECNICA_MICROSERVICIO_OKF.md) y el [stack](../decisiones/STACK_TECNOLOGICO_MICROSERVICIO_OKF.md); este documento no los modifica y debe actualizarse al cerrar cada entrega.
 
 ## 1. Resumen
 
-Las cuatro entregas previstas están implementadas: el servicio convierte PPTX, DOCX, XLSX y PDF en bundles OKF v0.2 con la misma API, el mismo worker, el mismo ensamblador y el mismo validador. Cada formato tiene pruebas de aceptación con documentos sintéticos y, salvo XLSX, con copias reducidas de documentos reales, y los 26 documentos de ejemplo tienen un bundle de referencia que las pruebas comparan archivo por archivo. La suite (69 pruebas en macOS y 71 en Docker/Linux, con Landlock activo), `clippy` sin advertencias, `rustfmt` y la auditoría de dependencias pasan en local.
+Las cuatro entregas previstas están implementadas: el servicio convierte PPTX, DOCX, XLSX y PDF en bundles OKF v0.2 con la misma API, el mismo worker, el mismo ensamblador y el mismo validador. Cada formato tiene pruebas de aceptación con documentos sintéticos y, salvo XLSX, con copias reducidas de documentos reales, y los 26 documentos de ejemplo tienen un bundle de referencia que las pruebas comparan archivo por archivo. La verificación del 4 de noviembre pasa 73 pruebas en macOS, además de `clippy` sin advertencias, `rustfmt` y la auditoría de dependencias. La última ejecución de la suite completa en Docker/Linux fue el 3 de noviembre, con 73 pruebas antes de añadir la comprobación de Swagger.
 
 El [plan 1](../planes/PLAN_1_RECUPERACION_DEL_PLAN_ORIGINAL.md) recuperó del plan inicial lo que seguía aportando (§5.6): un ensamblador único, la cobertura frente a una referencia independiente, límites configurables y control de admisión, el registro por etapa, una imagen reproducible y la auditoría de dependencias; y cerró en la documentación las decisiones abandonadas. Lo que falta es **evidencia**: evaluar DOCX con archivos guardados por Word y conseguir los documentos reales que pide el corpus (XLSX, PDF escaneado, mixto y largo); y corregir el pánico encontrado en `pdf_oxide`, además de siete noches consecutivas de estabilidad del fuzzing del [plan 2](../planes/PLAN_2_CALIDAD_Y_ROBUSTEZ.md), cuya infraestructura ya está disponible.
 
 Frente al plan inicial (§5), el alcance funcional está cumplido. Los extractores son propios en lugar de Xberg, cuyo abandono registra el stack con la cobertura independiente como evidencia, y un modelo de salida común sustituye al modelo intermedio previo al ensamblado.
+
+El 3 de noviembre se sustituyó SQLite por PostgreSQL como único motor a petición del usuario. La conexión se carga desde `.env` o `--env-file`, con prioridad de las variables exportadas; Compose incluye una instancia de prueba con volumen propio. Las pruebas de persistencia usan otra base y esquemas aislados. La [decisión de migración](../decisiones/MIGRACION_POSTGRESQL.md) describe los bloqueos de fila, el aislamiento del hijo y la importación explícita de registros anteriores, que se conservan intactos.
 
 ## 2. Qué está implementado
 
@@ -18,15 +20,16 @@ Frente al plan inicial (§5), el alcance funcional está cumplido. Los extractor
 | Pieza | Estado | Detalle |
 | --- | --- | --- |
 | API HTTP (Axum) | Hecho | `POST /jobs` recibe el archivo y devuelve el identificador; `GET /jobs/{id}` da estado, intento, error y versiones del conversor/perfil; `GET /jobs/{id}/bundle` entrega el ZIP solo si el trabajo terminó `complete` o `partial`. Escucha en `127.0.0.1:8080` por defecto. |
-| Registro y cola durable | Hecho | SQLite (WAL, `busy_timeout`) en `OKF_DATA_DIR`; originales, intentos y publicados en `originals/`, `attempts/<job>/<intento>/` y `published/<job>/`. |
+| Interfaz Swagger UI | Hecho | `/docs/` permite probar los cinco endpoints, subir un archivo y descargar el ZIP. OpenAPI se genera desde handlers y tipos en `/api-docs/openapi.json`; todos los recursos se sirven localmente. `OKF_SWAGGER_ENABLED=false` retira interfaz, recursos y contrato sin apagar los endpoints del servicio. |
+| Registro y cola durable | Hecho | PostgreSQL con SQLx, migraciones embebidas y reclamación con `FOR UPDATE SKIP LOCKED`; originales, intentos y publicados en `originals/`, `attempts/<job>/<intento>/` y `published/<job>/`. |
 | Worker | Hecho | Reclamación exclusiva con asignación renovable, conversión en un proceso hijo vigilado (memoria y tiempo), reintentos con espera creciente para fallos transitorios, fallo inmediato para los permanentes, incluidos los pánicos del conversor con mensaje y ubicación; apagado por señales con gracia y devolución sin consumir intento. |
 | Publicación y recuperación | Hecho | Publicación atómica por renombrado; al arrancar, reconciliación de publicaciones interrumpidas, bundles perdidos e intentos huérfanos. |
 | Validador | Hecho | Conformidad OKF e integridad editorial por separado, con reglas comunes y por formato ([arquitectura técnica, §5](../arquitectura/ARQUITECTURA_TECNICA_MICROSERVICIO_OKF.md#5-implementación-en-las-entregas-pptx-docx-xlsx-y-pdf)). Un bundle que no lo supera no se publica. `validate <ZIP o directorio>` lo ejecuta de forma independiente, con el original incluido. |
 | Límites y admisión | Hecho | Rlimits del hijo (memoria virtual en Linux, CPU, archivo y descriptores), Landlock en Linux y vigilancia de memoria; diapositivas, bloques, celdas, páginas, tiempo, asignación, intentos, tamaño de subida, expansión ZIP y píxeles de imagen por variables `OKF_*`; la API responde `429` con la cola llena y `507` sin espacio libre, si se configuran. |
 | Registro de diagnóstico | Hecho | `tracing` con una línea por intento: trabajo, intento, formato, resultado, duración de lectura, ensamblado y validación, duración total y memoria máxima; sin contenido del documento. |
 | Retención | Hecho | `OKF_RETENTION_DAYS`, desactivada por defecto; expiración desde la finalización, limpieza reanudable y descarga `410`. |
-| Salud y métricas | Hecho | `/health` comprueba SQLite, disco y latido reciente; `/metrics` publica contadores persistidos, tiempos por formato/etapa y memoria, sin texto ni identificadores de documentos. |
-| Imagen | Hecho | Una imagen para API y worker (`Dockerfile`), con las imágenes base fijadas por digest y la fuente del renderizado; `compose.yaml` levanta los dos procesos, el worker sin red. |
+| Salud y métricas | Hecho | `/health` comprueba PostgreSQL, disco y latido reciente; `/metrics` publica contadores persistidos, tiempos por formato/etapa y memoria, sin texto ni identificadores de documentos. |
+| Imagen | Hecho | Una imagen para API y worker (`Dockerfile`), con las imágenes base fijadas por digest y la fuente del renderizado; `compose.yaml` levanta API, worker y PostgreSQL; el conversor bloquea sockets con seccomp en Linux. |
 
 API y worker son subcomandos de un único ejecutable (`okf-microservice api` y `okf-microservice worker`) y se ejecutan como dos procesos, que es lo que exige la arquitectura; el stack registra la decisión.
 
@@ -48,19 +51,28 @@ Las decisiones de biblioteca de cada formato y sus mediciones están en el [stac
 | Grupo | Pruebas | Qué cubren |
 | --- | ---: | --- |
 | Servicio (`src/lib.rs`) | 10 | Ruta completa por formato a través del worker, estados `complete`/`partial`/`failed`, clasificación de fallos y reintentos, asignaciones, reconciliación al arrancar, rechazo de bundles alterados por el validador y admisión (subida, cola y disco). |
+| Swagger y OpenAPI (`src/api_docs.rs`) | 2 | Redirección y recursos locales, formulario de archivo binario obligatorio, respuesta ZIP, cinco endpoints y convivencia con el handler real de salud; desactivación completa de la documentación con el resto de la API disponible. |
 | Bundles de referencia (`src/golden.rs`) | 2 | Los 26 documentos de ejemplo, comparados archivo por archivo con `examples/<formato>/esperado/`, y determinismo de dos conversiones. |
 | Cobertura independiente (`src/coverage.rs`) | 2 | Los 26 ejemplos, con listas TSV y mínimos versionados independientes de los golden; normalización Unicode y pérdida deliberada de texto. |
 | Retención (`src/retention.rs`) | 2 | Desactivación por defecto, solo terminados antiguos, descarga `410`, reanudación de limpieza fallida y ausencia de reencolado. |
-| Salud y métricas (`src/observability.rs`) | 2 | Latido ausente/caducado, disco y base no disponibles; métricas de una conversión real y persistencia tras reabrir SQLite. |
+| Salud y métricas (`src/observability.rs`) | 2 | Latido ausente/caducado, disco y base no disponibles; métricas de una conversión real y persistencia tras reconectar a PostgreSQL. |
 | Apagado (`tests/shutdown.rs`) | 1 | SIGTERM con devolución a la cola sin consumir intento y SIGINT con publicación dentro de la gracia, durante una lectura detenida. |
 | Validador independiente (`src/validate.rs`, CLI) | 3 | Los 26 ejemplos como ZIP/directorio, rechazo de alteraciones y enlaces simbólicos, y códigos de salida del comando. |
 | Versionado (`src/version.rs`, consulta y recuperación) | 2 | Identidad persistida y recuperada del bundle; rechazo de versiones discordantes o perfiles desconocidos. |
+| Concurrencia PostgreSQL (`src/worker.rs`) | 1 | Dos pools reclaman sin duplicar; omiten una fila bloqueada, recuperan una asignación vencida y rechazan renovaciones de intentos anteriores. |
+| Configuración (`tests/environment.rs`) | 1 | Archivo explícito, prioridad del entorno y rechazo de conexión o archivo inválidos. |
 | Ensamblador y paquetes (`src/output.rs`, `src/ooxml.rs`) | 2 | Frontmatter legible por un analizador YAML con cadenas difíciles; límites de expansión ZIP configurables. |
 | Proceso hijo (`tests/worker_process.rs`, `src/worker.rs`, `src/isolation.rs`) | 4 en macOS, 6 en Linux | Conversión real en proceso hijo, parada al superar los límites, registro del intento y pánico permanente en el primer intento, incluido un caso real de fuzzing de PDF; código desconocido reintentable. En Linux, pruebas de límites duros de memoria/archivo y acceso a rutas con Landlock. |
 | PPTX | 9 | Extracción con muestras y con el corpus reducido. |
 | DOCX | 9 | Corpus real reducido, muestras artificiales y fixtures mínimos. |
 | XLSX | 8 | Muestras sintéticas, referencias A1 y lectura de celdas. |
 | PDF | 13 | Corpus real reducido, muestras sintéticas, maquetación, lectura y límite de píxeles de imagen. |
+
+La migración del 3 de noviembre pasa `cargo fmt`, `cargo clippy --all-targets --locked -- -D warnings`, las **71 pruebas de macOS**, las **73 de Docker/Linux** (incluido el rechazo de sockets del conversor) y `cargo deny check`. La prueba de humo con PostgreSQL convierte y valida PPTX, DOCX, XLSX y PDF. Los golden siguen intactos. La herramienta de importación se comprobó con datos sintéticos: simulación, aplicación, rechazo de destino ocupado y conservación de SQLite.
+
+La incorporación de Swagger del 4 de noviembre pasa las **72 pruebas de macOS**, formato, Clippy y `cargo deny check`. Se construyó la imagen y se inició Compose: desde Swagger en el navegador se subió `examples/docx/breve.docx` (`202`), se consultó su estado `complete` y se obtuvo el ZIP (`200`, con enlace de descarga). El validador independiente aceptó el ZIP descargado; `/health` confirmó PostgreSQL, almacenamiento y worker disponibles. Los 26 golden siguen intactos.
+
+La opción `OKF_SWAGGER_ENABLED` añade una prueba de desactivación y lleva el total a **73 pruebas de macOS**, todas correctas junto con formato, Clippy y auditoría. Se comprobó además el binario con archivos de entorno: `true`, `false`, valor ausente, prioridad de una variable exportada y rechazo de un valor inválido; salud y métricas siguieron respondiendo `200` con la documentación apagada. Se reconstruyó y actualizó la API de Docker; un contenedor temporal confirmó también el modo `false` y se retiró al terminar. La configuración local queda en `true`.
 
 La [CI](../../.github/workflows/ci.yml) ejecuta `cargo fmt --check`, `cargo clippy --all-targets --locked -- -D warnings` y `cargo test --locked` en Ubuntu 24.04 con cada push a `main`; comprueba las licencias y los orígenes de las dependencias con `cargo deny`, y construye la imagen y ejecuta la prueba de humo `tools/smoke.sh`. Un [flujo diario](../../.github/workflows/scheduled.yml) comprueba los avisos de seguridad. Las pruebas, la auditoría, la construcción de la imagen y la prueba de humo pasan en local en el commit de corte; la CI de `1fd4347` pasó en Linux. Revisadas las dos siguientes: `cf0f869` pasó completa (`test`: 3 min 02 s) y `7abd68c` pasó completa (`test`: 2 min 50 s; imagen: 13 min 44 s). Ambos trabajos `test` restauraron la caché. El aviso de Node.js 20 desapareció en ambas. El flujo programado de `1fd4347` falló por `RUSTSEC-2026-0429` (`ZipArchive::extract`); se verificó que ni el servicio ni BetterOffice usan esa función y se añadió la excepción razonada a `deny.toml`. La auditoría local actualizada pasa.
 
@@ -112,7 +124,7 @@ El plan inicial es la documentación del commit `802b9b1` (28 de octubre), anter
 | --- | --- |
 | Convertir PDF, DOCX, XLSX y PPTX a OKF v0.2. | Cumplido: los cuatro adaptadores funcionan sobre la misma API, el mismo worker y el mismo validador. |
 | Validar conformidad OKF e integridad editorial por separado; estados `complete`, `partial` y `failed`. | Cumplido. Ningún bundle inválido se publica y las pruebas comprueban que se rechazan bundles alterados. |
-| API asíncrona, cola SQLite durable, asignaciones con vencimiento, reintentos, publicación atómica y reconciliación al arrancar. | Cumplido. |
+| API asíncrona, cola durable, asignaciones con vencimiento, reintentos, publicación atómica y reconciliación al arrancar. | Cumplido; SQLite fue sustituido por PostgreSQL el 3 de noviembre. |
 | Sin orden de entrega; los cuatro formatos sobre Xberg. | Cambiado el 30 de octubre (commit `203f76b`): primero PPTX de extremo a extremo y después un formato cada vez. |
 
 Las cuatro entregas ocuparon del 29 de octubre al 1 de noviembre, con unas 16 800 líneas de Rust propio.
@@ -175,6 +187,8 @@ El [plan 1](../planes/PLAN_1_RECUPERACION_DEL_PLAN_ORIGINAL.md) se implementó e
 ## 6. Roadmap pendiente
 
 El plan 1 cerró los antiguos puntos sobre el modelo intermedio, Xberg, el cierre operativo (salvo la retención) y la división (§5.6). El corpus pendiente es el R6 de ese [plan](../planes/PLAN_1_RECUPERACION_DEL_PLAN_ORIGINAL.md#r6-corpus-representativo-m-continuo); las garantías de regresión, aislamiento, operación y versionado están en el [plan 2](../planes/PLAN_2_CALIDAD_Y_ROBUSTEZ.md), del que C1 a C4 y C6 a C10 ya están hechos; C5 tiene infraestructura y un hallazgo PDF pendiente de corrección; después necesita siete noches de evidencia.
+
+La migración PostgreSQL, su configuración y la interfaz Swagger UI están implementadas; no cambian el perfil documental ni cierran C5.
 
 En orden de prioridad:
 

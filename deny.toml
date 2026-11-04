@@ -16,6 +16,8 @@ allow = [
     "BSD-2-Clause",
     "BSD-3-Clause",
     "BSL-1.0",
+    # ISC es permisiva: ring, rustls-webpki y untrusted proporcionan TLS a PostgreSQL.
+    "ISC",
     "MIT",
     "Unicode-3.0",
     "Unlicense",
