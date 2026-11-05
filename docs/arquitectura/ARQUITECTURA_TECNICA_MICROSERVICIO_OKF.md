@@ -83,7 +83,6 @@ La primera entrega implementó la ruta completa con PPTX; la segunda añadió el
 | `OKF_PDF_CORPUS_DIR` | `examples/pdf/corpus` | Solo pruebas PDF: carpeta del corpus alternativo local. |
 | `OKF_MAX_MEMORY_MB` | 500 | Memoria residente máxima; en Linux, RLIMIT_AS limita además el espacio de direcciones a 2 × este valor + 128 MiB. |
 | `OKF_MAX_OUTPUT_MB` | 512 | Tamaño máximo de cada archivo escrito por el conversor (RLIMIT_FSIZE). |
-| `OKF_MAX_OPEN_FILES` | 256 | Descriptores abiertos máximos en el conversor (RLIMIT_NOFILE), mínimo 16. |
 | `OKF_BUILD_COMMIT` | HEAD Git, o `unknown` sin repositorio | Solo en compilación: SHA de 40 caracteres que identifica el conversor. En Docker se pasa como `--build-arg`; la CI lo fija. |
 | `OKF_FONT_PATH` | búsqueda de fuente instalada | Archivo TrueType que puede leer el renderizador PPTX, también con Landlock. |
 | `OKF_MAX_SLIDES` | 300 | Diapositivas máximas por presentación. |
@@ -92,11 +91,8 @@ La primera entrega implementó la ruta completa con PPTX; la segunda añadió el
 | `OKF_MAX_PAGES` | 2000 | Páginas máximas por documento PDF. |
 | `OKF_CONVERSION_TIMEOUT_S` | 300 | Duración máxima de una conversión. |
 | `OKF_RETENTION_DAYS` | 0 (desactivada) | Días completos desde la finalización para expirar trabajos `complete`, `partial` o `failed`; sin variable o con 0 se conservan los archivos. |
-| `OKF_WORKER_HEALTH_S` | 30 | Antigüedad máxima aceptable del latido; mínimo 3 s. Cada worker lo renueva cada tercio del plazo. |
 | `OKF_SHUTDOWN_GRACE_S` | 30 | Plazo de gracia del worker tras SIGTERM/SIGINT; 0 interrumpe sin espera adicional. |
-| `OKF_LEASE_S` | 60 | Vigencia de la asignación; el worker la renueva cada tercio mientras convierte. |
 | `OKF_MAX_ATTEMPTS` | 3 | Intentos máximos ante fallos transitorios. |
-| `OKF_RETRY_BASE_S` | 30 | Espera antes del primer reintento; se duplica en cada intento, con tope de una hora. |
 | `OKF_MAX_UPLOAD_MB` | 100 | Tamaño máximo de un archivo subido, en MiB; por encima, la API responde `413`. |
 | `OKF_MAX_QUEUED` | 0 | Trabajos sin terminar (`queued` o `processing`) a partir de los cuales la API responde `429`; 0 no limita. |
 | `OKF_MIN_FREE_MB` | 0 | Espacio libre mínimo del volumen de datos, en MiB, por debajo del cual la API responde `507`; 0 no lo comprueba. |
@@ -104,6 +100,8 @@ La primera entrega implementó la ruta completa con PPTX; la segunda añadió el
 | `OKF_MAX_ZIP_TOTAL_MB` | 512 | Tamaño descomprimido máximo de un paquete OOXML, en MiB. |
 | `OKF_MAX_ZIP_ENTRIES` | 4096 | Partes máximas de un paquete OOXML. |
 | `OKF_MAX_IMAGE_PIXELS` | 33554432 | Píxeles máximos de una imagen que el conversor decodifica (imágenes PDF que no se copian como JPEG); una imagen mayor no se adjunta y se declara como pérdida. Las vistas PPTX aplican el presupuesto fijo del renderizador, que es el mismo valor, y declaran igual las imágenes omitidas. |
+
+**Valores fijos.** Algunos plazos internos y un límite no se configuran, porque ningún despliegue necesita ajustarlos y algunos deben coincidir entre la API y los workers: vigencia de la asignación, 60 s, renovada cada tercio; espera antes del primer reintento, 30 s, duplicada en cada intento con tope de una hora; antigüedad máxima del latido, 30 s, renovado cada 10 s; y 256 descriptores abiertos en el conversor (RLIMIT_NOFILE). Están en `Config::default` (`src/worker.rs`); si un despliegue llega a necesitar otro valor, se vuelve a exponer como variable.
 
 **Admisión.** La API comprueba la cola y el espacio libre antes de leer el archivo, y el tamaño mientras lo recibe. Los límites de los paquetes OOXML y de las imágenes se aplican en el proceso de conversión, que los recibe del worker; superar uno de los primeros es un fallo permanente.
 
@@ -223,7 +221,7 @@ requiriendo la recuperación de asignaciones vencidas.
 
 `GET /health` devuelve JSON y `200` solo si PostgreSQL responde, se cumple
 `OKF_MIN_FREE_MB` (0 desactiva ese control) y existe un worker con latido de antigüedad
-no mayor que `OKF_WORKER_HEALTH_S`. En caso contrario devuelve `503` e indica qué
+no mayor que 30 s. En caso contrario devuelve `503` e indica qué
 comprobación falló. Cada worker escribe un latido con identidad propia, incluso
 mientras convierte o está ocioso; lo retira al salir ordenadamente. Si muere, el
 latido envejece. Con varios workers basta uno reciente. No se considera saludable

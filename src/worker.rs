@@ -29,8 +29,12 @@ pub struct Config {
     /// Memoria residente máxima del proceso de conversión, en MB (`OKF_MAX_MEMORY_MB`).
     pub max_memory_mb: u64,
     pub max_output_mb: u64,
+    /// Descriptores abiertos máximos del conversor (RLIMIT_NOFILE); fijo, 256.
     pub max_open_files: u64,
+    /// Plazo de gracia del worker tras SIGTERM/SIGINT (`OKF_SHUTDOWN_GRACE_S`).
     pub shutdown_grace: Duration,
+    /// Antigüedad máxima aceptable del latido, en segundos; fija, 30. API y workers
+    /// deben coincidir, por eso no se configura.
     pub worker_health_s: i64,
     pub retention_days: u64,
     /// Diapositivas máximas por presentación (`OKF_MAX_SLIDES`).
@@ -44,12 +48,12 @@ pub struct Config {
     pub max_pages: usize,
     /// Duración máxima de una conversión (`OKF_CONVERSION_TIMEOUT_S`).
     pub timeout: Duration,
-    /// Vigencia de la reserva en segundos; se renueva cada tercio (`OKF_LEASE_S`).
+    /// Vigencia de la reserva en segundos; se renueva cada tercio. Fija, 60.
     pub lease_s: i64,
     /// Intentos máximos de un trabajo con fallos transitorios (`OKF_MAX_ATTEMPTS`).
     pub max_attempts: u32,
-    /// Espera antes del primer reintento, en segundos; se duplica en cada intento
-    /// (`OKF_RETRY_BASE_S`).
+    /// Espera antes del primer reintento, en segundos; se duplica en cada intento.
+    /// Fija, 30; las pruebas la ponen a 0.
     pub retry_base_s: i64,
     /// Tamaño máximo de un archivo subido, en MiB (`OKF_MAX_UPLOAD_MB`).
     pub max_upload_mb: u64,
@@ -106,11 +110,9 @@ impl Config {
         let c = Config {
             swagger_enabled: var("OKF_SWAGGER_ENABLED", d.swagger_enabled)
                 .map_err(|_| anyhow::anyhow!("OKF_SWAGGER_ENABLED debe ser true o false"))?,
-            worker_health_s: var("OKF_WORKER_HEALTH_S", d.worker_health_s)?,
             retention_days: var("OKF_RETENTION_DAYS", d.retention_days)?,
             max_memory_mb: var("OKF_MAX_MEMORY_MB", d.max_memory_mb)?,
             max_output_mb: var("OKF_MAX_OUTPUT_MB", d.max_output_mb)?,
-            max_open_files: var("OKF_MAX_OPEN_FILES", d.max_open_files)?,
             shutdown_grace: Duration::from_secs(var(
                 "OKF_SHUTDOWN_GRACE_S",
                 d.shutdown_grace.as_secs(),
@@ -120,9 +122,7 @@ impl Config {
             max_cells: var("OKF_MAX_CELLS", d.max_cells)?,
             max_pages: var("OKF_MAX_PAGES", d.max_pages)?,
             timeout: Duration::from_secs(var("OKF_CONVERSION_TIMEOUT_S", d.timeout.as_secs())?),
-            lease_s: var("OKF_LEASE_S", d.lease_s)?,
             max_attempts: var("OKF_MAX_ATTEMPTS", d.max_attempts)?,
-            retry_base_s: var("OKF_RETRY_BASE_S", d.retry_base_s)?,
             max_upload_mb: var("OKF_MAX_UPLOAD_MB", d.max_upload_mb)?,
             max_queued: var("OKF_MAX_QUEUED", d.max_queued)?,
             min_free_mb: var("OKF_MIN_FREE_MB", d.min_free_mb)?,
@@ -132,15 +132,14 @@ impl Config {
                 entries: var("OKF_MAX_ZIP_ENTRIES", d.zip.entries)?,
             },
             max_image_pixels: var("OKF_MAX_IMAGE_PIXELS", d.max_image_pixels)?,
+            // Plazos internos y descriptores: fijos (arquitectura técnica, §5).
+            ..d
         };
-        if c.max_output_mb == 0 || c.max_open_files < 16 {
-            bail!("OKF_MAX_OUTPUT_MB debe ser positivo y OKF_MAX_OPEN_FILES al menos 16")
+        if c.max_output_mb == 0 {
+            bail!("OKF_MAX_OUTPUT_MB debe ser positivo")
         }
-        if c.worker_health_s < 3 {
-            bail!("OKF_WORKER_HEALTH_S debe ser al menos 3")
-        }
-        if c.lease_s < 3 || c.max_attempts == 0 {
-            bail!("OKF_LEASE_S debe ser al menos 3 y OKF_MAX_ATTEMPTS al menos 1")
+        if c.max_attempts == 0 {
+            bail!("OKF_MAX_ATTEMPTS debe ser al menos 1")
         }
         if c.max_upload_mb == 0 || c.zip.entry_mb == 0 || c.zip.total_mb == 0 || c.zip.entries == 0
         {
@@ -428,7 +427,6 @@ async fn run_child(
         .arg(&job.filename)
         .env("OKF_MAX_MEMORY_MB", a.cfg.max_memory_mb.to_string())
         .env("OKF_MAX_OUTPUT_MB", a.cfg.max_output_mb.to_string())
-        .env("OKF_MAX_OPEN_FILES", a.cfg.max_open_files.to_string())
         .env(
             "OKF_CONVERSION_TIMEOUT_S",
             a.cfg.timeout.as_secs().to_string(),
