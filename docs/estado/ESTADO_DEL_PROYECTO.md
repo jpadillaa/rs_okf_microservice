@@ -72,7 +72,7 @@ La [CI](../../.github/workflows/ci.yml) ejecuta en Ubuntu 24.04, con cada push a
 
 Además de las pruebas automáticas, se comprobó a mano el recorrido completo desde Swagger UI en el navegador (subida, estado y descarga del ZIP, aceptado después por el validador independiente) y el arranque con `OKF_SWAGGER_ENABLED` en `true`, `false`, ausente e inválido.
 
-El [fuzzing nocturno](../decisiones/FUZZING.md) tiene cuatro objetivos, semillas de los 26 ejemplos y artefactos de fallos; PPTX, DOCX y XLSX completaron una campaña local de cinco minutos. PDF encontró un pánico en `pdf_oxide`, reducido a 566 bytes y contenido con C3/C4; la corrección de la dependencia y las siete noches consecutivas siguen pendientes.
+El [fuzzing nocturno](../decisiones/FUZZING.md) tiene cuatro objetivos, semillas de los 26 ejemplos y artefactos de fallos; PPTX, DOCX y XLSX completaron una campaña local de cinco minutos. PDF encontró un pánico en `pdf_oxide`, reducido a 566 bytes y contenido con C3/C4. El proyecto ya lo conoce ([#2995](https://github.com/yfedoseev/pdf_oxide/issues/2995)) y lo da por corregido en la 0.3.79, aún no publicada. Hasta el 5 de noviembre la CI no había completado ninguna noche: primero no compilaba `cargo-fuzz` y después `tee` ocultaba el fallo de `pdf` ([Fuzzing](../decisiones/FUZZING.md#ci-y-criterio-de-cierre)).
 
 Las pruebas de PDF y del validador alteran bundles válidos (marcador sin bloque, localizador fuera de su sección, tramos desordenados, índices en otro orden) y comprueban que se rechazan.
 
@@ -189,7 +189,7 @@ En orden de prioridad:
 1. **Auditoría programada**: comprobar que la siguiente ejecución del flujo diario pasa con la excepción razonada de `RUSTSEC-2026-0429` en `deny.toml`.
 2. **Evaluación DOCX con archivos guardados por Word**: las muestras reabiertas y guardadas en Word, o nuevos DOCX reales. Está en pausa hasta disponer de esos archivos.
 3. **Corpus real pendiente** (plan 1, R6): libros XLSX, un PDF escaneado, uno mixto y uno largo de texto, y un DOCX real con notas y revisiones, cada uno con su bundle de referencia y su medición de cobertura.
-4. **Plan 2, C5**: resolver el pánico de `pdf_oxide` con el caso y la corrección propuestos en [Fuzzing](../decisiones/FUZZING.md#primera-campaña-completa-y-hallazgo-pendiente); por decisión del usuario se mantiene C5 abierto con contención y regresión, a la espera de la corrección en la dependencia. Después harán falta siete noches estables. Los demás trabajos están implementados.
+4. **Plan 2, C5**: resolver el pánico de `pdf_oxide` con el caso y la corrección propuestos en [Fuzzing](../decisiones/FUZZING.md#primera-campaña-completa-y-hallazgo-pendiente); por decisión del usuario se mantiene C5 abierto con contención y regresión, a la espera de la 0.3.79, que según el mantenedor incluye la corrección ([#2995](https://github.com/yfedoseev/pdf_oxide/issues/2995)). Al publicarse: actualizar, comprobar el caso reducido y sustituir la prueba de contención por una regresión. Después harán falta siete noches estables. Los demás trabajos están implementados.
 5. **Guiones legítimos al final de línea en PDF**: cambiar la regla de la especificación para conservar el guion en URL y compuestos ([cobertura, §4](../decisiones/COBERTURA_INDEPENDIENTE.md#4-hallazgos)).
 6. **Texto alternativo de los gráficos DOCX** cuando el gráfico no tiene datos.
 7. **Revisión del renderizado PPTX** cuando aparezcan presentaciones reales con tablas, gráficos o SmartArt, o con picos de memoria cercanos al límite.

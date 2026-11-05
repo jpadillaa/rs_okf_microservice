@@ -108,7 +108,19 @@ La corrección propuesta para la dependencia es comparar bytes, ya que `end` es 
 ```
 
 Debe acompañarse de una prueba de `has_standalone_obj_keyword("\u{fffd}\u{fffd}0 obj")`.
-La corrección **no está integrada ni enviada aguas arriba**. La prueba de proceso
+La corrección **no está integrada en ninguna versión publicada**. No hace falta
+reportarla: el proyecto ya la conoce.
+
+| Referencia | Estado al 5 de noviembre de 2026 |
+| --- | --- |
+| [yfedoseev/pdf_oxide#2995](https://github.com/yfedoseev/pdf_oxide/issues/2995) | Mismo pánico y misma corrección, con otro disparador: un comentario con un byte no UTF-8 antes de `obj`. Cerrada como «not planned» el 31 de octubre porque, según el mantenedor, el trabajo de la 0.3.79 ya acumula la cabecera como bytes (commit `f8709f8c`, con pruebas); ese trabajo era local y no estaba en `release/v0.3.79`. Pide reabrirla si la versión publicada no lo incluye. |
+| [yfedoseev/pdf_oxide#2999](https://github.com/yfedoseev/pdf_oxide/pull/2999) | Corrección mínima por comparación de bytes; abierta, sin integrar. |
+| [yfedoseev/pdf_oxide#3016](https://github.com/yfedoseev/pdf_oxide/issues/3016) | Corrección estructural: leer las cabeceras de objeto como bytes en lugar de una cadena con pérdidas; abierta. |
+
+La última versión publicada sigue siendo la 0.3.78. Cuando salga la 0.3.79 se
+actualiza la dependencia y se comprueba con
+`fuzz/regressions/pdf/utf8-object-header.pdf`; si el pánico persiste, se reabre
+#2995 con ese caso. La prueba de proceso
 `pdf_oxide_fuzz_panic_is_permanent_and_does_not_stop_the_worker` comprueba la
 contención C3/C4: `failed` en el primer intento, diagnóstico conservado, ningún bundle
 publicado y procesamiento posterior de un documento válido. El objetivo de fuzzing
