@@ -17,7 +17,7 @@ es 100 MiB. Cada conversión usa un directorio temporal independiente.
 
 ```bash
 rustup toolchain install nightly-2026-11-01 --profile minimal
-cargo install cargo-fuzz --version 0.13.1 --locked
+cargo +1.99 install cargo-fuzz --version 0.13.1 --locked
 python3 tools/fuzz_seeds.py
 cargo fetch --manifest-path fuzz/Cargo.toml --locked
 ASAN_OPTIONS='quarantine_size_mb=32:thread_local_quarantine_size_kb=256:malloc_context_size=10' \
@@ -46,7 +46,12 @@ El flujo `scheduled.yml` mantiene la auditoría diaria de dependencias y añade 
 matriz de cuatro objetivos: cinco minutos de fuzzing por formato, con un tope de
 45 minutos por trabajo que incluye instalación y compilación. Conserva el corpus
 en caché y sube logs y casos fallidos durante 14 días, incluso cuando el objetivo
-falla. Nightly se limita a este flujo; la CI normal sigue con Rust 1.99.
+falla. Nightly se limita a compilar y ejecutar los objetivos; la CI normal sigue
+con Rust 1.99. `cargo-fuzz` se instala con Rust 1.99: su lockfile fija `rustix`
+0.36.5, que en Linux activa `rustc_attrs` al detectar nightly y no compila con
+`nightly-2026-11-01`. Ese error detuvo las ejecuciones programadas del 3 y el 4 de
+noviembre antes de llegar al fuzzing, así que hasta la corrección no hubo ninguna
+noche en la CI.
 
 **Aceptación temporal pendiente:** hacen falta siete ejecuciones nocturnas
 consecutivas sin fallos nuevos. La implementación y una prueba local breve no

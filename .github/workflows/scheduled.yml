@@ -24,6 +24,11 @@ jobs:
         format: [pptx, docx, xlsx, pdf]
     steps:
       - uses: actions/checkout@v5
+      # cargo-fuzz se compila con la versión estable de la CI normal: su lockfile fija
+      # rustix 0.36.5, que en Linux activa `rustc_attrs` con nightly y no compila.
+      - uses: dtolnay/rust-toolchain@master
+        with:
+          toolchain: "1.99"
       - uses: dtolnay/rust-toolchain@master
         with:
           toolchain: nightly-2026-11-01
@@ -33,7 +38,7 @@ jobs:
           key: fuzz-${{ matrix.format }}
       - name: Herramientas y fuente
         run: |
-          cargo install cargo-fuzz --version 0.13.1 --locked
+          cargo +1.99 install cargo-fuzz --version 0.13.1 --locked
           sudo apt-get update
           sudo apt-get install -y --no-install-recommends fonts-dejavu-core=2.37-8
       - uses: actions/cache@v5
