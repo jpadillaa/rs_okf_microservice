@@ -53,6 +53,14 @@ con Rust 1.99. `cargo-fuzz` se instala con Rust 1.99: su lockfile fija `rustix`
 noviembre antes de llegar al fuzzing, así que hasta la corrección no hubo ninguna
 noche en la CI.
 
+El paso de fuzzing se ejecuta con `shell: bash`, que activa `pipefail`. Sin él, el
+`tee` que guarda el log devolvía éxito aunque cargo-fuzz fallara: en la primera
+ejecución completa (5 de noviembre, lanzada a mano) el objetivo `pdf` reprodujo el
+pánico conocido de `pdf_oxide` y el trabajo terminó en verde. Con `pipefail`, `pdf`
+falla cada noche mientras ese hallazgo siga abierto; los demás objetivos pasaron
+sus cinco minutos (DOCX, 53 932 ejecuciones; XLSX, 84 048; PPTX, 3356, con dos
+entradas lentas registradas por el renderizado).
+
 **Aceptación temporal pendiente:** hacen falta siete ejecuciones nocturnas
 consecutivas sin fallos nuevos. La implementación y una prueba local breve no
 sustituyen esa evidencia. Primero hay que resolver el hallazgo PDF descrito abajo

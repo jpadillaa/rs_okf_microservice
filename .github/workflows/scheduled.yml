@@ -51,6 +51,9 @@ jobs:
           python3 tools/fuzz_seeds.py
           cargo fetch --manifest-path fuzz/Cargo.toml --locked
       - name: Cinco minutos por formato
+        # `shell: bash` añade pipefail: sin él, `tee` ocultaba el fallo de cargo-fuzz y
+        # un objetivo con pánico terminaba en verde.
+        shell: bash
         env:
           CARGO_NET_OFFLINE: 'true'
           # Acota la cuarentena del instrumentador sin ampliar el límite RSS del servicio.
