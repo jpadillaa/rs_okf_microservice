@@ -52,7 +52,7 @@ La tabla agrupa las pruebas por lo que cubren; el número de cada grupo lo da `c
 
 | Grupo | Qué cubren |
 | --- | --- |
-| Servicio (`src/lib.rs`) | Ruta completa por formato a través del worker, estados `complete`/`partial`/`failed`, clasificación de fallos y reintentos, asignaciones, reconciliación al arrancar, rechazo de bundles alterados por el validador y admisión (subida, cola y disco). |
+| Servicio (`src/lib.rs`) | Ruta completa por formato a través del worker, estados `complete`/`partial`/`failed`, clasificación de fallos y reintentos, asignaciones, reconciliación al arrancar (incluidos los originales sin trabajo registrado), rechazo de bundles alterados por el validador y admisión (subida, cola y disco). |
 | Swagger y OpenAPI (`src/api_docs.rs`) | Redirección y recursos locales, formulario de archivo binario obligatorio, respuesta ZIP, cinco endpoints y convivencia con el handler real de salud; desactivación completa de la documentación con el resto de la API disponible. |
 | Bundles de referencia (`src/golden.rs`) | Los 26 documentos de ejemplo, comparados archivo por archivo con `examples/<formato>/esperado/`, y determinismo de dos conversiones. |
 | Cobertura independiente (`src/coverage.rs`) | Los 26 ejemplos, con listas TSV y mínimos versionados independientes de los golden; normalización Unicode y pérdida deliberada de texto. |

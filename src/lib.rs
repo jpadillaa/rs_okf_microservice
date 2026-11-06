@@ -1029,6 +1029,21 @@ mod tests {
         for id in ["dead", "ghost", "waiting"] {
             fs::create_dir_all(a.root.join(format!("attempts/{id}/1"))).unwrap();
         }
+        // Originales sin fila: uno antiguo (la API cayó antes de registrarlo) y uno
+        // reciente (una subida que otra instancia puede estar recibiendo). El original
+        // de un trabajo registrado se conserva aunque sea antiguo.
+        let two_hours_ago = std::time::SystemTime::now() - std::time::Duration::from_secs(7200);
+        for name in ["stale.pdf", "uploading.pdf"] {
+            fs::write(a.root.join("originals").join(name), b"%PDF").unwrap();
+        }
+        for name in ["stale.pdf", "waiting.pptx"] {
+            fs::File::options()
+                .write(true)
+                .open(a.root.join("originals").join(name))
+                .unwrap()
+                .set_modified(two_hours_ago)
+                .unwrap();
+        }
         worker::reconcile(&a).await.unwrap();
         let (state, attempt, _, bundle) = job(&a, "published").await;
         assert_eq!((state.as_str(), attempt), ("complete", 1));
@@ -1040,6 +1055,9 @@ mod tests {
         assert!(!a.root.join("attempts/dead").exists());
         assert!(!a.root.join("attempts/ghost").exists());
         assert!(a.root.join("attempts/waiting/1").exists());
+        assert!(!a.root.join("originals/stale.pdf").exists());
+        assert!(a.root.join("originals/uploading.pdf").exists());
+        assert!(a.root.join("originals/waiting.pptx").exists());
         // Un bundle publicado inválido se descarta y el trabajo vuelve a convertirse.
         enqueue(
             &a,

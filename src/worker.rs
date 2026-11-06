@@ -960,9 +960,13 @@ fn log_attempt<'a>(
     }
 }
 
+/// Antigüedad mínima de un original sin fila para borrarlo. La API escribe el original
+/// antes de registrar el trabajo, y otra instancia puede estar recibiéndolo todavía.
+const ORPHAN_ORIGINAL_GRACE: Duration = Duration::from_secs(3600);
+
 /// Reconciliación al arrancar: elimina publicaciones a medio hacer, completa las que
 /// terminaron sin registrarse, reencola los trabajos cuyo bundle desapareció y borra
-/// los intentos de trabajos terminados.
+/// los intentos de trabajos terminados y los originales que nunca llegaron a registrarse.
 pub async fn reconcile(a: &App) -> Result<()> {
     let mut tx = a.db.begin().await?;
     recover_expired(&mut tx, &a.root, &a.cfg).await?;
@@ -1017,6 +1021,26 @@ pub async fn reconcile(a: &App) -> Result<()> {
             if !exists {
                 fs::remove_dir_all(entry.path())?;
             }
+        }
+    }
+    // Originales sin fila: la API cayó entre escribir el original y registrar el trabajo.
+    for entry in fs::read_dir(a.root.join("originals"))? {
+        let entry = entry?;
+        let path = entry.path();
+        let Some(id) = path.file_stem().and_then(|s| s.to_str()) else {
+            continue;
+        };
+        let age = entry.metadata()?.modified()?.elapsed().unwrap_or_default();
+        if age < ORPHAN_ORIGINAL_GRACE {
+            continue;
+        }
+        let exists: bool = sqlx::query_scalar("SELECT EXISTS(SELECT 1 FROM jobs WHERE id=$1)")
+            .bind(id)
+            .fetch_one(&mut *tx)
+            .await?;
+        if !exists {
+            fs::remove_file(&path)?;
+            warn!(%id, "original sin trabajo registrado eliminado");
         }
     }
     tx.commit().await?;

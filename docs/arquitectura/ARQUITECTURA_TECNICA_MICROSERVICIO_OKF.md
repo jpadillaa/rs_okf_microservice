@@ -151,7 +151,8 @@ límites de la caché y mediciones en [Compilación y empaquetado Docker](../dec
 - elimina las publicaciones a medio hacer (`published/.<id>.tmp`);
 - completa el registro de los trabajos cuyo bundle llegó a publicarse antes de una interrupción, si el bundle supera la validación, y descarta el bundle si no la supera;
 - reencola los trabajos terminados cuyo bundle publicado ya no existe;
-- borra los directorios de intentos de trabajos terminados o desconocidos.
+- borra los directorios de intentos de trabajos terminados o desconocidos;
+- borra los originales sin trabajo registrado que llevan más de una hora sin modificarse. La API escribe el original antes de registrar el trabajo, así que una caída entre ambos pasos lo deja huérfano; la hora de gracia evita borrar una subida que otra instancia de la API sigue recibiendo.
 
 La recuperación de asignaciones vencidas aplica las mismas reglas cada vez que el worker reclama un trabajo.
 
