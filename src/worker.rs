@@ -492,7 +492,17 @@ async fn run_child(
             let converted: Converted = serde_json::from_str(line)
                 .context("respuesta del proceso de conversión sin formato esperado")?;
             usage.peak_mb = usage.peak_mb.max(converted.peak_mb.unwrap_or(0));
-            if converted
+            // La salida del hijo no es de confianza: publicar copia esta ruta con los
+            // permisos del supervisor, que puede leer más que el hijo aislado.
+            if converted.bundle != dir.join("bundle.zip") {
+                Outcome::Failed(
+                    FailureKind::Permanent,
+                    format!(
+                        "el proceso de conversión indicó un bundle fuera de su intento: {}",
+                        converted.bundle.display()
+                    ),
+                )
+            } else if converted
                 .peak_mb
                 .is_some_and(|peak| peak > a.cfg.max_memory_mb)
             {
@@ -1148,5 +1158,44 @@ mod tests {
                 assert!(error.contains("transitorio"));
             }
         }
+    }
+
+    #[tokio::test]
+    async fn bundle_outside_the_attempt_is_not_published() {
+        let tmp = tempfile::tempdir().unwrap();
+        let mut a = crate::app(tmp.path().to_path_buf()).await.unwrap();
+        // Un hijo comprometido señala un archivo que solo el supervisor puede leer.
+        let secret = tmp.path().join("secreto.txt");
+        fs::write(&secret, "OKF_DATABASE_URL=postgres://okf:clave@db/okf").unwrap();
+        let script = tmp.path().join("converter.sh");
+        let converted = serde_json::json!({
+            "status": "complete",
+            "bundle": secret,
+            "stages": {"read_ms": 0, "assemble_ms": 0, "validate_ms": 0},
+        });
+        fs::write(
+            &script,
+            format!("#!/bin/sh\ncat <<'EOF'\n{converted}\nEOF\n"),
+        )
+        .unwrap();
+        fs::set_permissions(&script, fs::Permissions::from_mode(0o700)).unwrap();
+        a.converter = Some(script);
+        sqlx::query(
+            "INSERT INTO jobs(id,filename,original,sha256,status,created_at) VALUES('ajeno',\
+            'test.docx','unused','-','queued',0)",
+        )
+        .execute(&a.db)
+        .await
+        .unwrap();
+        assert!(work_one(&a).await.unwrap());
+        let (status, attempt, error, bundle): (String, i64, String, Option<String>) =
+            sqlx::query_as("SELECT status,attempt,error,bundle FROM jobs WHERE id='ajeno'")
+                .fetch_one(&a.db)
+                .await
+                .unwrap();
+        assert_eq!((status.as_str(), attempt), ("failed", 1));
+        assert!(error.contains("fuera de su intento"), "{error}");
+        assert_eq!(bundle, None);
+        assert!(!tmp.path().join("published").join("ajeno").exists());
     }
 }

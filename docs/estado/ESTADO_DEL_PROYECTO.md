@@ -1,6 +1,6 @@
 # Estado del proyecto
 
-**Corte:** 4 de noviembre de 2026. Servicio con PostgreSQL, Swagger UI configurable e imagen Distroless. Plan 2: C5 sigue pendiente del hallazgo PDF y de siete noches de estabilidad.
+**Corte:** 6 de noviembre de 2026. Servicio con PostgreSQL, Swagger UI configurable e imagen Distroless. Plan 2: C5 sigue pendiente del hallazgo PDF y de siete noches de estabilidad.
 **Alcance:** qué está implementado, con qué evidencia de calidad, cómo se compara con el plan inicial y qué queda pendiente. Los contratos están en la [especificación](../especificacion/ESPECIFICACION_OKF.md), las [arquitecturas](../arquitectura/ARQUITECTURA_TECNICA_MICROSERVICIO_OKF.md) y el [stack](../decisiones/STACK_TECNOLOGICO_MICROSERVICIO_OKF.md); este documento no los modifica y debe actualizarse al cerrar cada entrega.
 
 ## 1. Resumen
@@ -62,7 +62,7 @@ Las decisiones de biblioteca de cada formato y sus mediciones están en el [stac
 | Concurrencia PostgreSQL (`src/worker.rs`) | 1 | Dos pools reclaman sin duplicar; omiten una fila bloqueada, recuperan una asignación vencida y rechazan renovaciones de intentos anteriores. |
 | Configuración (`tests/environment.rs`) | 1 | Archivo explícito, prioridad del entorno y rechazo de conexión o archivo inválidos. |
 | Ensamblador y paquetes (`src/output.rs`, `src/ooxml.rs`) | 2 | Frontmatter legible por un analizador YAML con cadenas difíciles; límites de expansión ZIP configurables. |
-| Proceso hijo (`tests/worker_process.rs`, `src/worker.rs`, `src/isolation.rs`) | 4 en macOS, 6 en Linux | Conversión real en proceso hijo, parada al superar los límites, registro del intento y pánico permanente en el primer intento, incluido un caso real de fuzzing de PDF; código desconocido reintentable. En Linux, pruebas de límites duros de memoria/archivo y acceso a rutas con Landlock. |
+| Proceso hijo (`tests/worker_process.rs`, `src/worker.rs`, `src/isolation.rs`) | 5 en macOS, 7 en Linux | Conversión real en proceso hijo, parada al superar los límites, registro del intento y pánico permanente en el primer intento, incluido un caso real de fuzzing de PDF; código desconocido reintentable; un bundle señalado fuera del intento no se publica. En Linux, pruebas de límites duros de memoria/archivo y acceso a rutas con Landlock. |
 | PPTX | 9 | Extracción con muestras y con el corpus reducido. |
 | DOCX | 9 | Corpus real reducido, muestras artificiales y fixtures mínimos. |
 | XLSX | 8 | Muestras sintéticas, referencias A1 y lectura de celdas. |

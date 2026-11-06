@@ -122,6 +122,10 @@ una regla impide convertir. Los descriptores estándar heredados siguen abiertos
 El supervisor accede a PostgreSQL por la red interna de Compose. El hijo aplica
 seccomp para bloquear sockets y conexiones; Landlock restringe archivos. En macOS
 no se aplican seccomp, Landlock ni RLIMIT_AS: la memoria se limita mediante la vigilancia de RSS.
+El supervisor no confía en la respuesta del hijo para elegir qué publica: si la ruta
+del bundle no es `bundle.zip` dentro del directorio del intento, el intento falla de
+forma permanente sin publicar. Así un hijo comprometido no puede hacer que el
+supervisor, que lee más rutas que él, copie otro archivo a `published/`.
 
 Compose y la prueba de humo usan un volumen Linux para el almacén. En Docker
 Desktop, el montaje de una carpeta del host produjo `Permission denied` al
