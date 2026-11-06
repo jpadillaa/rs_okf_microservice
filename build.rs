@@ -8,8 +8,9 @@ fn git(args: &[&str]) -> Option<String> {
 fn main() {
     println!("cargo:rerun-if-changed=migrations");
     println!("cargo:rerun-if-env-changed=OKF_BUILD_COMMIT");
-    // Sirve también con .git como archivo (worktree).
-    for file in ["HEAD", "index", "packed-refs"] {
+    // Sirve también con .git como archivo (worktree). El commit cambia con HEAD o con
+    // su referencia; el índice no, y vigilarlo recompilaba con cada `git add`.
+    for file in ["HEAD", "packed-refs"] {
         if let Some(path) = git(&["rev-parse", "--git-path", file]) {
             println!("cargo:rerun-if-changed={path}");
         }
