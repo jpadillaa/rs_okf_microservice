@@ -63,7 +63,7 @@ Las decisiones de biblioteca de cada formato y sus mediciones están en el [stac
 | Configuración (`tests/environment.rs`) | 1 | Archivo explícito, prioridad del entorno y rechazo de conexión o archivo inválidos. |
 | Ensamblador y paquetes (`src/output.rs`, `src/ooxml.rs`, `src/sections.rs`, `src/bundle.rs`) | 4 | Frontmatter legible por un analizador YAML con cadenas difíciles; límites de expansión ZIP configurables; entradas de índice con corchetes en el título; destinos de enlace entre `<` y `>` seguidos de texto multibyte. |
 | Proceso hijo (`tests/worker_process.rs`, `src/worker.rs`, `src/isolation.rs`) | 5 en macOS, 7 en Linux | Conversión real en proceso hijo, parada al superar los límites, registro del intento y pánico permanente en el primer intento, incluido un caso real de fuzzing de PDF; código desconocido reintentable; un bundle señalado fuera del intento no se publica. En Linux, pruebas de límites duros de memoria/archivo y acceso a rutas con Landlock. |
-| PPTX | 11 | Extracción con muestras y con el corpus reducido; imagen cuya parte falta en el paquete (pérdida, `partial`) y nivel de lista acotado. |
+| PPTX | 12 | Extracción con muestras y con el corpus reducido; imagen cuya parte falta en el paquete (pérdida, `partial`), nivel de lista acotado y límite de diapositivas aplicado antes de extraer. |
 | DOCX | 9 | Corpus real reducido, muestras artificiales y fixtures mínimos. |
 | XLSX | 8 | Muestras sintéticas, referencias A1 y lectura de celdas. |
 | PDF | 13 | Corpus real reducido, muestras sintéticas, maquetación, lectura y límite de píxeles de imagen. |
@@ -93,7 +93,7 @@ La [cobertura frente a una referencia independiente](../decisiones/COBERTURA_IND
 
 ### 3.3 Límites conocidos
 
-- **PPTX:** la vista no dibuja los bordes de tabla; las fuentes no instaladas se sustituyen con otras métricas; las diapositivas animadas muestran todas las formas a la vez. No se ha medido la fidelidad con tablas nativas, gráficos ni SmartArt reales. El pico de memoria (hasta 368 MB) queda cerca del límite de 500 MB.
+- **PPTX:** la vista no dibuja los bordes de tabla; las fuentes no instaladas se sustituyen con otras métricas; las diapositivas animadas muestran todas las formas a la vez. No se ha medido la fidelidad con tablas nativas, gráficos ni SmartArt reales. El pico de memoria (hasta 374 MB) queda cerca del límite de 500 MB; casi dos tercios corresponden a abrir la presentación en el renderizador, dentro de la dependencia ([medición por fases](../decisiones/RENDERIZADO_PPTX_MEDICIONES.md)).
 - **DOCX:** solo tres documentos reales, ninguno guardado expresamente por Word para la evaluación; es la comprobación pendiente de mayor valor. El texto alternativo de un gráfico sin datos se pierde.
 - **XLSX:** toda la evidencia es sintética. Por diseño, las fórmulas no se evalúan y los formatos con unidad o texto no se aplican (se declaran).
 - **PDF:** sin OCR (una página escaneada queda como vista y el bundle es `partial`); solo tablas sencillas, sin detección de reglas ni celdas combinadas; no se usa la estructura etiquetada del PDF; en el recibo, algunas parejas etiqueta–valor del encabezado salen como líneas sueltas; las páginas con texto, como diapositivas exportadas, no llevan vista. La unión de palabras partidas al final de línea suprime guiones legítimos en URL y compuestos (`langchain-ai`, `if-then-else`); corregirlo exige cambiar la regla de la especificación.

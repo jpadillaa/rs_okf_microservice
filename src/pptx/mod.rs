@@ -237,7 +237,9 @@ pub(crate) const VISUAL_ONLY_AREA: f64 = 0.15;
 
 pub(crate) const VISUAL_ONLY_MAX_CHARS: usize = 40;
 
-pub(crate) fn extract(bytes: &[u8], attempt: &FsPath) -> Result<Extraction> {
+/// Extrae las diapositivas. Rechaza la presentación antes de procesarlas si supera
+/// `max_slides`.
+pub(crate) fn extract(bytes: &[u8], attempt: &FsPath, max_slides: usize) -> Result<Extraction> {
     let mut z = ZipArchive::new(Cursor::new(bytes))?;
     enforce_package_limits(&mut z)?;
     let pres = String::from_utf8(read_entry(&mut z, "ppt/presentation.xml")?)?;
@@ -303,6 +305,12 @@ pub(crate) fn extract(bytes: &[u8], attempt: &FsPath) -> Result<Extraction> {
         bail!("PPTX no contiene diapositivas en la secuencia de presentación")
     }
     let total = order.len();
+    if total > max_slides {
+        return Err(Rejected(format!(
+            "la presentación tiene {total} diapositivas; el máximo admitido es {max_slides}"
+        ))
+        .into());
+    }
     let positions: HashMap<String, usize> = order
         .iter()
         .enumerate()
@@ -1140,18 +1148,7 @@ pub(crate) fn convert(
     hash: &str,
     dir: &FsPath,
 ) -> Result<Built> {
-    let extraction = extract(bytes, dir)?;
-    let slides = extraction.slides.len();
-    if slides == 0 {
-        return Err(Rejected("sin diapositivas".into()).into());
-    }
-    if slides > cfg.max_slides {
-        return Err(Rejected(format!(
-            "la presentación tiene {slides} diapositivas; el máximo admitido es {}",
-            cfg.max_slides
-        ))
-        .into());
-    }
+    let extraction = extract(bytes, dir, cfg.max_slides)?;
     build_bundle(bytes, filename, hash, &extraction, dir)
 }
 /// Comprobaciones PPTX del bundle: una vista enlazada por diapositiva, un concepto por
@@ -1232,7 +1229,7 @@ mod tests {
         let path = format!("{dir}/{name}.pptx");
         let bytes = fs::read(&path).unwrap_or_else(|e| panic!("no se pudo leer {path}: {e}"));
         let tmp = tempfile::tempdir().unwrap();
-        let Extraction { slides, issues, .. } = extract(&bytes, tmp.path()).unwrap();
+        let Extraction { slides, issues, .. } = extract(&bytes, tmp.path(), usize::MAX).unwrap();
         let md = slides
             .iter()
             .map(|s| {
@@ -1340,7 +1337,7 @@ mod tests {
     fn equations_comments_and_alt_text_are_kept_without_duplicates() {
         let bytes = example("rich");
         let tmp = tempfile::tempdir().unwrap();
-        let extraction = extract(&bytes, tmp.path()).unwrap();
+        let extraction = extract(&bytes, tmp.path(), usize::MAX).unwrap();
         let s = &extraction.slides[0];
         let (_, md) = markdown_slide(s, "rich.pptx", "2026-01-01T00:00:00Z");
         assert!(md.contains("- `E=mc^2+a/b`"), "{md}");
@@ -1395,6 +1392,16 @@ mod tests {
         assert!(text.contains("Revenue"));
         assert!(text.contains("North"));
         assert!(text.contains("12"));
+    }
+    #[test]
+    fn slide_limit_rejects_before_extracting_any_slide() {
+        let bytes = fs::read("examples/pptx/multiple.pptx").unwrap();
+        let tmp = tempfile::tempdir().unwrap();
+        let err = extract(&bytes, tmp.path(), 1).err().unwrap();
+        assert!(err.is::<Rejected>(), "{err:#}");
+        assert!(err.to_string().contains("el máximo admitido es 1"));
+        // Las imágenes se copian a assets/ al extraer; el rechazo llega antes.
+        assert!(!tmp.path().join("assets").exists());
     }
     #[test]
     fn missing_image_part_is_a_loss_and_the_bundle_is_partial() {

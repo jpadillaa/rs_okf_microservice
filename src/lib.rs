@@ -827,7 +827,7 @@ mod tests {
         let simple = example("simple");
         let attempt = tmp.path().join("validator");
         fs::create_dir_all(&attempt).unwrap();
-        let extraction = extract(&simple, &attempt).unwrap();
+        let extraction = extract(&simple, &attempt, usize::MAX).unwrap();
         let good = build_bundle(
             &simple,
             "simple.pptx",
@@ -957,7 +957,7 @@ mod tests {
     fn bundle_of(name: &str, dir: &FsPath) -> PathBuf {
         let bytes = example(name);
         fs::create_dir_all(dir).unwrap();
-        let extraction = extract(&bytes, dir).unwrap();
+        let extraction = extract(&bytes, dir, usize::MAX).unwrap();
         build_bundle(
             &bytes,
             &format!("{name}.pptx"),
