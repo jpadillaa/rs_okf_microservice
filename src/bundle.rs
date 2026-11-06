@@ -216,6 +216,36 @@ pub(crate) fn local_target(entry: &str, target: &str) -> Option<String> {
 /// Marcador de pasaje del perfil: `<!-- okf-source-span: ID -->`.
 const SPAN_MARKER: &str = "<!-- okf-source-span: ";
 
+/// Destinos de los enlaces Markdown de un texto, sin los `<` `>` que admiten paréntesis.
+/// `\](` es texto literal escapado, no un enlace.
+fn link_targets(md: &str) -> Vec<&str> {
+    let mut targets = Vec::new();
+    let mut pos = 0;
+    while let Some(start) = md[pos..].find("](") {
+        let s = pos + start + 2;
+        if md[..pos + start].ends_with('\\') {
+            pos = s;
+            continue;
+        }
+        // (fin del destino, siguiente posición): tras `>` se sigue leyendo desde ahí,
+        // sin suponer que viene `)`, que podría no ser el siguiente byte.
+        let close = if md[s..].starts_with('<') {
+            md[s..].find('>').map(|i| (i + 1, i + 1))
+        } else {
+            md[s..].find(')').map(|i| (i, i + 1))
+        };
+        let Some((end, next)) = close else { break };
+        targets.push(
+            md[s..s + end]
+                .trim()
+                .trim_start_matches('<')
+                .trim_end_matches('>'),
+        );
+        pos = s + next;
+    }
+    targets
+}
+
 pub(crate) fn validate_bundle(path: &FsPath) -> Result<()> {
     let mut z = ZipArchive::new(fs::File::open(path)?)?;
     let names: std::collections::HashSet<String> = (0..z.len())
@@ -317,34 +347,12 @@ pub(crate) fn validate_bundle(path: &FsPath) -> Result<()> {
         } else if name != "index.md" && md.starts_with("---\n") {
             bail!("{name} es un índice reservado y no admite frontmatter; solo el índice raíz")
         }
-        let mut pos = 0;
-        while let Some(start) = md[pos..].find("](") {
-            let s = pos + start + 2;
-            // `\](` es texto literal escapado, no un enlace.
-            if md[..pos + start].ends_with('\\') {
-                pos = s;
-                continue;
-            }
-            // Un destino entre `<` y `>` puede contener paréntesis.
-            let close = if md[s..].starts_with('<') {
-                md[s..].find('>').map(|i| i + 1)
-            } else {
-                md[s..].find(')')
-            };
-            if let Some(end) = close {
-                let target = md[s..s + end]
-                    .trim()
-                    .trim_start_matches('<')
-                    .trim_end_matches('>');
-                if let Some(t) = local_target(name, target) {
-                    if !names.contains(&t) {
-                        bail!("enlace interno sin resolver en {name}: {target}")
-                    }
-                    linked.insert(t);
+        for target in link_targets(&md) {
+            if let Some(t) = local_target(name, target) {
+                if !names.contains(&t) {
+                    bail!("enlace interno sin resolver en {name}: {target}")
                 }
-                pos = s + end + 1
-            } else {
-                break;
+                linked.insert(t);
             }
         }
         // Cada marcador de pasaje resuelve a un localizador del mismo concepto.
@@ -411,4 +419,22 @@ pub(crate) fn read_text(z: &mut ZipArchive<fs::File>, name: &str) -> Result<Stri
 }
 pub(crate) fn chrono_now() -> String {
     chrono::Utc::now().to_rfc3339_opts(chrono::SecondsFormat::Secs, true)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn link_targets_handle_angle_destinations_before_multibyte_text() {
+        assert_eq!(
+            link_targets("[a](<x (1).md>) y [b](y.md) \\](z.md) [c](<http://x>é"),
+            ["x (1).md", "y.md", "http://x"]
+        );
+        // Antes, saltar un byte tras `>` cortaba `é` y entraba en pánico.
+        assert_eq!(
+            link_targets("[c](<http://x>é [d](w.md)"),
+            ["http://x", "w.md"]
+        );
+    }
 }

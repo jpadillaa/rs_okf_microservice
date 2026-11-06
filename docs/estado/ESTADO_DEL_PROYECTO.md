@@ -61,9 +61,9 @@ Las decisiones de biblioteca de cada formato y sus mediciones están en el [stac
 | Versionado (`src/version.rs`, consulta y recuperación) | 2 | Identidad persistida y recuperada del bundle; rechazo de versiones discordantes o perfiles desconocidos. |
 | Concurrencia PostgreSQL (`src/worker.rs`) | 1 | Dos pools reclaman sin duplicar; omiten una fila bloqueada, recuperan una asignación vencida y rechazan renovaciones de intentos anteriores. |
 | Configuración (`tests/environment.rs`) | 1 | Archivo explícito, prioridad del entorno y rechazo de conexión o archivo inválidos. |
-| Ensamblador y paquetes (`src/output.rs`, `src/ooxml.rs`) | 2 | Frontmatter legible por un analizador YAML con cadenas difíciles; límites de expansión ZIP configurables. |
+| Ensamblador y paquetes (`src/output.rs`, `src/ooxml.rs`, `src/sections.rs`, `src/bundle.rs`) | 4 | Frontmatter legible por un analizador YAML con cadenas difíciles; límites de expansión ZIP configurables; entradas de índice con corchetes en el título; destinos de enlace entre `<` y `>` seguidos de texto multibyte. |
 | Proceso hijo (`tests/worker_process.rs`, `src/worker.rs`, `src/isolation.rs`) | 5 en macOS, 7 en Linux | Conversión real en proceso hijo, parada al superar los límites, registro del intento y pánico permanente en el primer intento, incluido un caso real de fuzzing de PDF; código desconocido reintentable; un bundle señalado fuera del intento no se publica. En Linux, pruebas de límites duros de memoria/archivo y acceso a rutas con Landlock. |
-| PPTX | 9 | Extracción con muestras y con el corpus reducido. |
+| PPTX | 11 | Extracción con muestras y con el corpus reducido; imagen cuya parte falta en el paquete (pérdida, `partial`) y nivel de lista acotado. |
 | DOCX | 9 | Corpus real reducido, muestras artificiales y fixtures mínimos. |
 | XLSX | 8 | Muestras sintéticas, referencias A1 y lectura de celdas. |
 | PDF | 13 | Corpus real reducido, muestras sintéticas, maquetación, lectura y límite de píxeles de imagen. |

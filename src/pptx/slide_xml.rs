@@ -381,7 +381,11 @@ pub fn parse_part(xml: &str, link: &dyn Fn(&str) -> Option<String>) -> anyhow::R
                 }
                 b"pPr" => {
                     if let Some(p) = para.as_mut() {
-                        p.level = attr(&e, b"lvl").and_then(|v| v.parse().ok()).unwrap_or(0);
+                        // OOXML admite los niveles 0–8; uno mayor solo agrandaría la sangría.
+                        p.level = attr(&e, b"lvl")
+                            .and_then(|v| v.parse::<u32>().ok())
+                            .unwrap_or(0)
+                            .min(8);
                     }
                 }
                 b"r" | b"fld" => {
@@ -589,6 +593,19 @@ mod tests {
         assert_eq!(shape.paragraphs[0].md, "Chunk Size & Overlap \\<x> €");
         assert_eq!(shape.paragraphs[1].level, 1);
         assert_eq!(shape.paragraphs[1].plain, "uno\ndos");
+    }
+
+    #[test]
+    fn paragraph_level_is_capped_at_the_ooxml_maximum() {
+        // Un nivel sin tope hacía reservar gigas para la sangría de la lista.
+        let xml = format!(
+            r#"<p:sld {NS}><p:cSld><p:spTree><p:sp><p:txBody><a:p><a:pPr lvl="4000000000"/><a:r><a:t>hondo</a:t></a:r></a:p></p:txBody></p:sp></p:spTree></p:cSld></p:sld>"#
+        );
+        let part = parse_part(&xml, &|_| None).unwrap();
+        let Block::Text(shape) = &part.blocks[0] else {
+            panic!()
+        };
+        assert_eq!(shape.paragraphs[0].level, 8);
     }
 
     #[test]

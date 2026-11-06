@@ -2,7 +2,7 @@
 //! sus encabezados y elige el nivel de división con sus propias reglas (especificación,
 //! §5); comparten los tipos del resultado, los umbrales, el nombre de los conceptos y la
 //! nota sobre el origen del título.
-use crate::bundle::{Issue, truncate_chars};
+use crate::bundle::{Issue, escape_inline, truncate_chars};
 
 /// Por debajo de este número de caracteres el documento es breve y forma un solo
 /// concepto aunque tenga encabezados.
@@ -53,6 +53,18 @@ pub(crate) fn section_file(split: Option<u8>, k: usize) -> String {
     }
 }
 
+/// Entrada de una sección en un índice: enlace con el título escapado y, si es el
+/// preámbulo, su aclaración fuera del enlace.
+pub(crate) fn index_entry(section: &Section, href: &str) -> String {
+    let title = escape_inline(&section.title);
+    let suffix = if section.preamble {
+        " — inicio del documento"
+    } else {
+        ""
+    };
+    format!("- [{title}]({href}){suffix}\n")
+}
+
 /// Observación sobre el origen del título del documento. `lone` describe un primer
 /// encabezado único de su nivel, que cada formato busca en un sitio distinto.
 pub(crate) fn title_note(source: TitleSource, title: &str, lone: &str) -> Issue {
@@ -68,4 +80,29 @@ pub(crate) fn title_note(source: TitleSource, title: &str, lone: &str) -> Issue 
         },
         truncate_chars(title, 120)
     ))
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn index_entry_keeps_escaped_brackets_inside_the_link() {
+        let section = |title: &str, preamble| Section {
+            title: title.into(),
+            heading: None,
+            from: 0,
+            to: 0,
+            preamble,
+            inferred: false,
+        };
+        assert_eq!(
+            index_entry(&section("Anexo [1]", false), "contenido/seccion-002.md"),
+            "- [Anexo \\[1\\]](contenido/seccion-002.md)\n"
+        );
+        assert_eq!(
+            index_entry(&section("Informe ]final[", true), "seccion-001.md"),
+            "- [Informe \\]final\\[](seccion-001.md) — inicio del documento\n"
+        );
+    }
 }

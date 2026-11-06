@@ -1392,16 +1392,8 @@ pub(crate) fn build_bundle(
         let file = outline.file(k);
         out.concept(&format!("contenido/{file}"), &fields, &md)?;
         let sec = &outline.sections[k];
-        let mut entry = format!("[{}]", escape_inline(&sec.title));
-        if sec.preamble {
-            entry.push_str(" — inicio del documento");
-        }
-        let link = |href: &str| {
-            let (label, rest) = entry.split_at(entry.find(']').map_or(0, |i| i + 1));
-            format!("- {label}({href}){rest}\n")
-        };
-        entries.push_str(&link(&format!("contenido/{file}")));
-        content_entries.push_str(&link(&file));
+        entries.push_str(&index_entry(sec, &format!("contenido/{file}")));
+        content_entries.push_str(&index_entry(sec, &file));
     }
     let inferred = std::mem::take(&mut r.inferred);
     // Estructura de encabezados para documento.md.

@@ -515,10 +515,18 @@ pub(crate) fn extract(bytes: &[u8], attempt: &FsPath) -> Result<Extraction> {
                         )));
                         continue;
                     }
+                    let rp = resolve(&path, target);
+                    // Una relación a una parte ausente es una pérdida, como en DOCX y XLSX.
+                    if !assets.contains_key(&rp) && z.by_name(&rp).is_err() {
+                        all_issues.push(Issue::loss(format!(
+                            "Diapositiva {}: imagen sin parte en el paquete: {rp}",
+                            index + 1
+                        )));
+                        continue;
+                    }
                     if alt.is_none() {
                         largest_image = largest_image.max(cover(p.rect));
                     }
-                    let rp = resolve(&path, target);
                     let asset = match assets.get(&rp) {
                         Some(a) => a.clone(),
                         None => {
@@ -1387,5 +1395,33 @@ mod tests {
         assert!(text.contains("Revenue"));
         assert!(text.contains("North"));
         assert!(text.contains("12"));
+    }
+    #[test]
+    fn missing_image_part_is_a_loss_and_the_bundle_is_partial() {
+        // `visual.pptx` sin la parte a la que apunta la relación de su imagen.
+        let original = example("visual");
+        let mut src = ZipArchive::new(Cursor::new(&original[..])).unwrap();
+        let mut w = zip::ZipWriter::new(Cursor::new(Vec::new()));
+        for i in 0..src.len() {
+            let mut f = src.by_index(i).unwrap();
+            if f.name() == "ppt/media/pixel.png" {
+                continue;
+            }
+            w.start_file(f.name(), zip::write::SimpleFileOptions::default())
+                .unwrap();
+            std::io::copy(&mut f, &mut w).unwrap();
+        }
+        let bytes = w.finish().unwrap().into_inner();
+        let tmp = tempfile::tempdir().unwrap();
+        let hash = hex(&Sha256::digest(&bytes));
+        let built = convert(&Config::default(), &bytes, "visual.pptx", &hash, tmp.path())
+            .expect("una imagen ausente no debe impedir la conversión");
+        assert_eq!(built.status, "partial");
+        let mut z = ZipArchive::new(fs::File::open(&built.path).unwrap()).unwrap();
+        let report = read_text(&mut z, "conversion-report.md").unwrap();
+        assert!(
+            report.contains("imagen sin parte en el paquete: ppt/media/pixel.png"),
+            "{report}"
+        );
     }
 }
