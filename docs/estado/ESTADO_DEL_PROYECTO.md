@@ -65,7 +65,7 @@ La tabla agrupa las pruebas por lo que cubren; el número de cada grupo lo da `c
 | Configuración (`tests/environment.rs`) | Archivo explícito, prioridad del entorno y rechazo de conexión o archivo inválidos. |
 | Ensamblador y paquetes (`src/output.rs`, `src/ooxml.rs`, `src/sections.rs`, `src/bundle.rs`) | Frontmatter legible por un analizador YAML con cadenas difíciles; límites de expansión ZIP configurables; entradas de índice con corchetes en el título; destinos de enlace entre `<` y `>` seguidos de texto multibyte. |
 | Proceso hijo (`tests/worker_process.rs`, `src/worker.rs`, `src/isolation.rs`) | Conversión real en proceso hijo, parada al superar los límites, registro del intento y pánico permanente en el primer intento, incluido un caso real de fuzzing de PDF; código desconocido reintentable; un bundle señalado fuera del intento no se publica. En Linux, pruebas de límites duros de memoria/archivo y acceso a rutas con Landlock. |
-| PPTX | Extracción con muestras y con el corpus reducido; imagen cuya parte falta en el paquete (pérdida, `partial`), nivel de lista acotado y límite de diapositivas aplicado antes de extraer. |
+| PPTX | Extracción con muestras y con el corpus reducido; pérdidas señaladas en la diapositiva y en el informe (imagen ausente, externa o sin relación, con su texto alternativo; SmartArt sin texto; imágenes que la vista omite); nivel de lista acotado y límite de diapositivas aplicado antes de extraer. |
 | DOCX | Corpus real reducido, muestras artificiales y fixtures mínimos. |
 | XLSX | Muestras sintéticas, referencias A1 y lectura de celdas. |
 | PDF | Corpus real reducido, muestras sintéticas, maquetación, lectura y límite de píxeles de imagen. |

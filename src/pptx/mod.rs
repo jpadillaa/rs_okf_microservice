@@ -17,9 +17,14 @@ use zip::ZipArchive;
 pub(crate) enum Item {
     Text(Vec<slide_xml::Paragraph>),
     Table(String),
-    Image { path: String, alt: Option<String> },
+    Image {
+        path: String,
+        alt: Option<String>,
+    },
     Chart(String),
     AltText(String),
+    /// Contenido que no pudo representarse, señalado en su posición además del informe.
+    Loss(String),
 }
 
 #[derive(Clone, Default)]
@@ -420,7 +425,11 @@ pub(crate) fn extract(bytes: &[u8], attempt: &FsPath, max_slides: usize) -> Resu
             ..Slide::default()
         };
         let part = slide_xml::parse_part(&raw, &|rid| link_target(&smap, &path, rid))?;
-        if part.smartart_frames > 0 {
+        if part
+            .blocks
+            .iter()
+            .any(|b| matches!(b, slide_xml::Block::SmartArt))
+        {
             all_issues.push(Issue::loss(format!(
                 "Diapositiva {} contiene SmartArt cuyo texto no se extrajo",
                 index + 1
@@ -508,28 +517,46 @@ pub(crate) fn extract(bytes: &[u8], attempt: &FsPath, max_slides: usize) -> Resu
                         s.decorative_images += 1;
                         continue;
                     }
+                    // Una imagen que no puede adjuntarse se señala en su posición, con su
+                    // texto alternativo, y en el informe.
+                    let mut lost = |report: String, inline: &str| {
+                        all_issues.push(Issue::loss(report));
+                        s.items.push(Item::Loss(inline.into()));
+                        if let Some(alt) = &alt {
+                            s.items.push(Item::AltText(alt.clone()));
+                        }
+                    };
                     let Some(target) = smap.get(&p.rid) else {
-                        all_issues.push(Issue::loss(format!(
-                            "Diapositiva {}: imagen sin relación resoluble ({})",
-                            index + 1,
-                            p.rid
-                        )));
+                        lost(
+                            format!(
+                                "Diapositiva {}: imagen sin relación resoluble ({})",
+                                index + 1,
+                                p.rid
+                            ),
+                            "Imagen sin relación resoluble en el paquete; no se incluye.",
+                        );
                         continue;
                     };
                     if target.contains("://") {
-                        all_issues.push(Issue::loss(format!(
-                            "Diapositiva {}: imagen vinculada externamente no incluida: {target}",
-                            index + 1
-                        )));
+                        lost(
+                            format!(
+                                "Diapositiva {}: imagen vinculada externamente no incluida: {target}",
+                                index + 1
+                            ),
+                            "Imagen vinculada a un archivo externo; no está incluida en el paquete.",
+                        );
                         continue;
                     }
                     let rp = resolve(&path, target);
                     // Una relación a una parte ausente es una pérdida, como en DOCX y XLSX.
                     if !assets.contains_key(&rp) && z.by_name(&rp).is_err() {
-                        all_issues.push(Issue::loss(format!(
-                            "Diapositiva {}: imagen sin parte en el paquete: {rp}",
-                            index + 1
-                        )));
+                        lost(
+                            format!(
+                                "Diapositiva {}: imagen sin parte en el paquete: {rp}",
+                                index + 1
+                            ),
+                            "Imagen cuya parte falta en el paquete; no se incluye.",
+                        );
                         continue;
                     }
                     if alt.is_none() {
@@ -562,6 +589,9 @@ pub(crate) fn extract(bytes: &[u8], attempt: &FsPath, max_slides: usize) -> Resu
                         s.items.push(Item::AltText(d));
                     }
                 }
+                slide_xml::Block::SmartArt => s.items.push(Item::Loss(
+                    "SmartArt sin texto extraído; solo se ve en la vista de la diapositiva.".into(),
+                )),
                 slide_xml::Block::Chart(rid) => {
                     if let Some(target) = smap.get(&rid) {
                         let cp = resolve(&path, target);
@@ -620,7 +650,7 @@ pub(crate) fn extract(bytes: &[u8], attempt: &FsPath, max_slides: usize) -> Resu
                 Item::Table(md) | Item::Chart(md) | Item::AltText(md) => {
                     md.chars().filter(|c| c.is_alphanumeric()).count()
                 }
-                Item::Image { .. } => 0,
+                Item::Image { .. } | Item::Loss(_) => 0,
             })
             .sum();
         s.visual_only = largest_image >= VISUAL_ONLY_AREA && body_chars < VISUAL_ONLY_MAX_CHARS;
@@ -830,6 +860,7 @@ pub(crate) fn markdown_slide(s: &Slide, deck: &str, instant: &str) -> (Fields, S
             Item::AltText(text) => {
                 out.push_str(&format!("> Texto alternativo: {}\n\n", escape_inline(text)))
             }
+            Item::Loss(text) => out.push_str(&format!("_{text}_\n\n")),
         }
     }
     if s.items.is_empty() {
@@ -994,6 +1025,12 @@ pub(crate) fn build_bundle(
             "\n## Vista visual\n\n![Vista de la diapositiva {}](../assets/slide-{:03}.png)\n",
             s.idx, s.idx
         ));
+        if rendered.skipped_images > 0 {
+            md.push_str(&format!(
+                "\n_La vista omite {} imagen(es) que el renderizador no pudo dibujar._\n",
+                rendered.skipped_images
+            ));
+        }
         out.concept(&format!("contenido/slide-{:03}.md", s.idx), &fields, &md)?;
     }
     for entry in fs::read_dir(attempt.join("assets"))? {
@@ -1218,6 +1255,7 @@ pub(crate) fn validate(
 mod tests {
     use super::*;
     use sha2::{Digest, Sha256};
+    use std::io::{Read, Write};
     fn example(name: &str) -> Vec<u8> {
         fs::read(format!("examples/pptx/{name}.pptx")).unwrap()
     }
@@ -1403,32 +1441,130 @@ mod tests {
         // Las imágenes se copian a assets/ al extraer; el rechazo llega antes.
         assert!(!tmp.path().join("assets").exists());
     }
-    #[test]
-    fn missing_image_part_is_a_loss_and_the_bundle_is_partial() {
-        // `visual.pptx` sin la parte a la que apunta la relación de su imagen.
+    /// Convierte `visual.pptx` tras aplicar `edit` a cada parte (`None` la quita) y
+    /// devuelve el estado, el concepto de su única diapositiva y el informe.
+    fn convert_visual_with(
+        edit: impl Fn(&str, String) -> Option<String>,
+    ) -> (String, String, String) {
         let original = example("visual");
         let mut src = ZipArchive::new(Cursor::new(&original[..])).unwrap();
         let mut w = zip::ZipWriter::new(Cursor::new(Vec::new()));
         for i in 0..src.len() {
             let mut f = src.by_index(i).unwrap();
-            if f.name() == "ppt/media/pixel.png" {
-                continue;
-            }
-            w.start_file(f.name(), zip::write::SimpleFileOptions::default())
+            let name = f.name().to_string();
+            let mut data = Vec::new();
+            f.read_to_end(&mut data).unwrap();
+            // Las partes binarias solo pueden quitarse; las de texto, también editarse.
+            let data = match String::from_utf8(data) {
+                Ok(text) => match edit(&name, text) {
+                    Some(text) => text.into_bytes(),
+                    None => continue,
+                },
+                Err(e) => match edit(&name, String::new()) {
+                    Some(_) => e.into_bytes(),
+                    None => continue,
+                },
+            };
+            w.start_file(name, zip::write::SimpleFileOptions::default())
                 .unwrap();
-            std::io::copy(&mut f, &mut w).unwrap();
+            w.write_all(&data).unwrap();
         }
         let bytes = w.finish().unwrap().into_inner();
         let tmp = tempfile::tempdir().unwrap();
         let hash = hex(&Sha256::digest(&bytes));
         let built = convert(&Config::default(), &bytes, "visual.pptx", &hash, tmp.path())
-            .expect("una imagen ausente no debe impedir la conversión");
-        assert_eq!(built.status, "partial");
+            .expect("una pérdida no debe impedir la conversión");
         let mut z = ZipArchive::new(fs::File::open(&built.path).unwrap()).unwrap();
-        let report = read_text(&mut z, "conversion-report.md").unwrap();
+        (
+            built.status.to_string(),
+            read_text(&mut z, "contenido/slide-001.md").unwrap(),
+            read_text(&mut z, "conversion-report.md").unwrap(),
+        )
+    }
+    #[test]
+    fn missing_image_part_is_a_loss_marked_in_place_with_its_alt_text() {
+        let (status, slide, report) = convert_visual_with(|name, text| match name {
+            "ppt/media/pixel.png" => None,
+            "ppt/slides/slide1.xml" => Some(text.replace(
+                r#"name="Diagram"/>"#,
+                r#"name="Diagram" descr="Flujo de datos"/>"#,
+            )),
+            _ => Some(text),
+        });
+        assert_eq!(status, "partial");
         assert!(
             report.contains("imagen sin parte en el paquete: ppt/media/pixel.png"),
             "{report}"
+        );
+        assert!(
+            slide.contains(
+                "_Imagen cuya parte falta en el paquete; no se incluye._\n\n> Texto alternativo: Flujo de datos"
+            ),
+            "{slide}"
+        );
+        // El renderizador tampoco puede dibujarla: la vista lo dice bajo su enlace.
+        assert!(
+            slide.contains("_La vista omite 1 imagen(es) que el renderizador no pudo dibujar._")
+        );
+    }
+    #[test]
+    fn external_and_unresolvable_images_are_marked_in_place() {
+        let (status, slide, report) = convert_visual_with(|name, text| match name {
+            "ppt/slides/_rels/slide1.xml.rels" => Some(text.replace(
+                r#"Target="../media/pixel.png"/>"#,
+                r#"Target="https://example.org/pixel.png" TargetMode="External"/>"#,
+            )),
+            _ => Some(text),
+        });
+        assert_eq!(status, "partial");
+        assert!(
+            report.contains("imagen vinculada externamente no incluida"),
+            "{report}"
+        );
+        assert!(
+            slide.contains(
+                "_Imagen vinculada a un archivo externo; no está incluida en el paquete._"
+            ),
+            "{slide}"
+        );
+        let (_, slide, report) = convert_visual_with(|name, text| match name {
+            "ppt/slides/slide1.xml" => {
+                Some(text.replace(r#"r:embed="rIdImage""#, r#"r:embed="rIdNone""#))
+            }
+            _ => Some(text),
+        });
+        assert!(
+            report.contains("imagen sin relación resoluble (rIdNone)"),
+            "{report}"
+        );
+        assert!(
+            slide.contains("_Imagen sin relación resoluble en el paquete; no se incluye._"),
+            "{slide}"
+        );
+    }
+    #[test]
+    fn smartart_without_text_is_marked_in_place() {
+        let frame = concat!(
+            r#"<p:graphicFrame><p:nvGraphicFramePr><p:cNvPr id="20" name="SmartArt"/>"#,
+            r#"<p:cNvGraphicFramePr/><p:nvPr/></p:nvGraphicFramePr><p:xfrm><a:off x="0" y="0"/>"#,
+            r#"<a:ext cx="100" cy="100"/></p:xfrm><a:graphic>"#,
+            r#"<a:graphicData uri="http://schemas.openxmlformats.org/drawingml/2006/diagram"/>"#,
+            r#"</a:graphic></p:graphicFrame></p:spTree>"#
+        );
+        let (status, slide, report) = convert_visual_with(|name, text| match name {
+            "ppt/slides/slide1.xml" => Some(text.replace("</p:spTree>", frame)),
+            _ => Some(text),
+        });
+        assert_eq!(status, "partial");
+        assert!(
+            report.contains("Diapositiva 1 contiene SmartArt cuyo texto no se extrajo"),
+            "{report}"
+        );
+        assert!(
+            slide.contains(
+                "_SmartArt sin texto extraído; solo se ve en la vista de la diapositiva._"
+            ),
+            "{slide}"
         );
     }
 }

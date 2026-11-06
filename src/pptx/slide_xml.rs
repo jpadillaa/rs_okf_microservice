@@ -62,13 +62,14 @@ pub enum Block {
     Chart(String),
     /// Texto alternativo de una forma sin imagen, un grupo o un marco gráfico.
     AltText(String),
+    /// Marco gráfico con un SmartArt; su texto no se extrae.
+    SmartArt,
 }
 
 #[derive(Debug, Default)]
 pub struct Part {
     pub blocks: Vec<Block>,
     pub background_images: usize,
-    pub smartart_frames: usize,
     /// Ecuaciones OMML convertidas a notación lineal.
     pub equations: usize,
 }
@@ -517,7 +518,7 @@ pub fn parse_part(xml: &str, link: &dyn Fn(&str) -> Option<String>) -> anyhow::R
                             part.blocks.push(Block::Chart(rid));
                         }
                         if frame_smartart {
-                            part.smartart_frames += 1;
+                            part.blocks.push(Block::SmartArt);
                         }
                     }
                     _ => {}
