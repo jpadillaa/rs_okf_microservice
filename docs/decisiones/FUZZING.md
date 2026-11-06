@@ -69,10 +69,20 @@ sin fallos; su máximo residente, 482 MB, queda cerca del límite de 500 MB del 
 sus cinco minutos (DOCX, 53 932 ejecuciones; XLSX, 84 048; PPTX, 3356, con dos
 entradas lentas registradas por el renderizado).
 
-**Aceptación temporal pendiente:** hacen falta siete ejecuciones nocturnas
-consecutivas sin fallos nuevos. La implementación y una prueba local breve no
-sustituyen esa evidencia. Primero hay que resolver el hallazgo PDF descrito abajo
-y publicar el flujo.
+**Criterio de cierre:** cada objetivo debe acumular dos horas de fuzzing sin fallos
+nuevos, con las opciones de la CI (las de [Ejecutar y reproducir](#ejecutar-y-reproducir)).
+Cuentan las ejecuciones nocturnas y las campañas locales que se registren aquí con su
+fecha, duración y resultado, a partir del 6 de noviembre; no hace falta que sean
+consecutivas. Un fallo nuevo
+reinicia la cuenta de su objetivo cuando queda corregido y reducido como regresión. Si
+`pdf` reencuentra el pánico conocido de `pdf_oxide`, identificado por su ubicación en la
+dependencia, la ejecución cuenta hasta ese punto y no reinicia la cuenta. Además, C5
+sigue abierto hasta resolver el hallazgo PDF descrito abajo.
+
+Hasta el 6 de noviembre el criterio eran siete noches consecutivas sin fallos nuevos.
+Se cambió porque daba poca evidencia (35 minutos por objetivo) y porque cualquier
+fallo de la infraestructura volvía a empezar el calendario. Dos horas equivalen a
+unas 24 noches de cinco minutos; las campañas locales permiten llegar antes.
 
 La verificación de C5 detectó una carrera en la prueba del worker: una conversión de 17 ms podía terminar antes del muestreo de memoria. Se añadió la comprobación final de `getrusage` en Linux y macOS, y del tiempo total, antes de aceptar el resultado.
 
@@ -136,7 +146,7 @@ no captura el defecto, pero excluye ese caso de las semillas hasta que la
 corrección llegue a la dependencia; entonces se retira de `OPEN`.
 
 **C5 no está cerrado.** Falta corregir o actualizar la dependencia, sustituir la
-prueba de contención por una regresión sin pánico y obtener las siete noches.
+prueba de contención por una regresión sin pánico y acumular las dos horas por objetivo.
 
 El usuario decidió conservar esta contención y dejar C5 abierto mientras se resuelve
 en la dependencia, sin incorporar una copia parcheada de `pdf_oxide` al repositorio.

@@ -1,13 +1,13 @@
 # Estado del proyecto
 
-**Corte:** 6 de noviembre de 2026. Servicio con PostgreSQL, Swagger UI configurable e imagen Distroless. Plan 2: C5 sigue pendiente del hallazgo PDF y de siete noches de estabilidad.
+**Corte:** 6 de noviembre de 2026. Servicio con PostgreSQL, Swagger UI configurable e imagen Distroless. Plan 2: C5 sigue pendiente del hallazgo PDF y de dos horas de fuzzing sin fallos nuevos por objetivo.
 **Alcance:** qué está implementado, con qué evidencia de calidad, cómo se compara con el plan inicial y qué queda pendiente. Los contratos están en la [especificación](../especificacion/ESPECIFICACION_OKF.md), las [arquitecturas](../arquitectura/ARQUITECTURA_TECNICA_MICROSERVICIO_OKF.md) y el [stack](../decisiones/STACK_TECNOLOGICO_MICROSERVICIO_OKF.md); este documento no los modifica y debe actualizarse al cerrar cada entrega.
 
 ## 1. Resumen
 
 Las cuatro entregas previstas están implementadas: el servicio convierte PPTX, DOCX, XLSX y PDF en bundles OKF v0.2 con la misma API, el mismo worker, el mismo ensamblador y el mismo validador. Cada formato tiene pruebas de aceptación con documentos sintéticos y, salvo XLSX, con copias reducidas de documentos reales, y los 26 documentos de ejemplo tienen un bundle de referencia que las pruebas comparan archivo por archivo. La CI ejecuta formato, Clippy, las pruebas, la auditoría de dependencias y una prueba de humo de la imagen con los cuatro formatos (§3.1).
 
-El [plan 1](../planes/PLAN_1_RECUPERACION_DEL_PLAN_ORIGINAL.md) recuperó del plan inicial lo que seguía aportando (§5.6): un ensamblador único, la cobertura frente a una referencia independiente, límites configurables y control de admisión, el registro por etapa, una imagen reproducible y la auditoría de dependencias; y cerró en la documentación las decisiones abandonadas. Lo que falta es **evidencia**: evaluar DOCX con archivos guardados por Word y conseguir los documentos reales que pide el corpus (XLSX, PDF escaneado, mixto y largo); y corregir el pánico encontrado en `pdf_oxide`, además de siete noches consecutivas de estabilidad del fuzzing del [plan 2](../planes/PLAN_2_CALIDAD_Y_ROBUSTEZ.md), cuya infraestructura ya está disponible.
+El [plan 1](../planes/PLAN_1_RECUPERACION_DEL_PLAN_ORIGINAL.md) recuperó del plan inicial lo que seguía aportando (§5.6): un ensamblador único, la cobertura frente a una referencia independiente, límites configurables y control de admisión, el registro por etapa, una imagen reproducible y la auditoría de dependencias; y cerró en la documentación las decisiones abandonadas. Lo que falta es **evidencia**: evaluar DOCX con archivos guardados por Word y conseguir los documentos reales que pide el corpus (XLSX, PDF escaneado, mixto y largo); y corregir el pánico encontrado en `pdf_oxide`, además de dos horas de fuzzing sin fallos nuevos por objetivo del [plan 2](../planes/PLAN_2_CALIDAD_Y_ROBUSTEZ.md), cuya infraestructura ya está disponible.
 
 Frente al plan inicial (§5), el alcance funcional está cumplido. Los extractores son propios en lugar de Xberg, cuyo abandono registra el stack con la cobertura independiente como evidencia, y un modelo de salida común sustituye al modelo intermedio previo al ensamblado.
 
@@ -48,25 +48,27 @@ Las decisiones de biblioteca de cada formato y sus mediciones están en el [stac
 
 ### 3.1 Verificación automatizada
 
-| Grupo | Pruebas | Qué cubren |
-| --- | ---: | --- |
-| Servicio (`src/lib.rs`) | 10 | Ruta completa por formato a través del worker, estados `complete`/`partial`/`failed`, clasificación de fallos y reintentos, asignaciones, reconciliación al arrancar, rechazo de bundles alterados por el validador y admisión (subida, cola y disco). |
-| Swagger y OpenAPI (`src/api_docs.rs`) | 2 | Redirección y recursos locales, formulario de archivo binario obligatorio, respuesta ZIP, cinco endpoints y convivencia con el handler real de salud; desactivación completa de la documentación con el resto de la API disponible. |
-| Bundles de referencia (`src/golden.rs`) | 2 | Los 26 documentos de ejemplo, comparados archivo por archivo con `examples/<formato>/esperado/`, y determinismo de dos conversiones. |
-| Cobertura independiente (`src/coverage.rs`) | 2 | Los 26 ejemplos, con listas TSV y mínimos versionados independientes de los golden; normalización Unicode y pérdida deliberada de texto. |
-| Retención (`src/retention.rs`) | 2 | Desactivación por defecto, solo terminados antiguos, descarga `410`, reanudación de limpieza fallida y ausencia de reencolado. |
-| Salud y métricas (`src/observability.rs`) | 2 | Latido ausente/caducado, disco y base no disponibles; métricas de una conversión real y persistencia tras reconectar a PostgreSQL. |
-| Apagado (`tests/shutdown.rs`) | 1 | SIGTERM con devolución a la cola sin consumir intento y SIGINT con publicación dentro de la gracia, durante una lectura detenida. |
-| Validador independiente (`src/validate.rs`, CLI) | 3 | Los 26 ejemplos como ZIP/directorio, rechazo de alteraciones y enlaces simbólicos, y códigos de salida del comando. |
-| Versionado (`src/version.rs`, consulta y recuperación) | 2 | Identidad persistida y recuperada del bundle; rechazo de versiones discordantes o perfiles desconocidos. |
-| Concurrencia PostgreSQL (`src/worker.rs`) | 1 | Dos pools reclaman sin duplicar; omiten una fila bloqueada, recuperan una asignación vencida y rechazan renovaciones de intentos anteriores. |
-| Configuración (`tests/environment.rs`) | 1 | Archivo explícito, prioridad del entorno y rechazo de conexión o archivo inválidos. |
-| Ensamblador y paquetes (`src/output.rs`, `src/ooxml.rs`, `src/sections.rs`, `src/bundle.rs`) | 4 | Frontmatter legible por un analizador YAML con cadenas difíciles; límites de expansión ZIP configurables; entradas de índice con corchetes en el título; destinos de enlace entre `<` y `>` seguidos de texto multibyte. |
-| Proceso hijo (`tests/worker_process.rs`, `src/worker.rs`, `src/isolation.rs`) | 5 en macOS, 7 en Linux | Conversión real en proceso hijo, parada al superar los límites, registro del intento y pánico permanente en el primer intento, incluido un caso real de fuzzing de PDF; código desconocido reintentable; un bundle señalado fuera del intento no se publica. En Linux, pruebas de límites duros de memoria/archivo y acceso a rutas con Landlock. |
-| PPTX | 12 | Extracción con muestras y con el corpus reducido; imagen cuya parte falta en el paquete (pérdida, `partial`), nivel de lista acotado y límite de diapositivas aplicado antes de extraer. |
-| DOCX | 9 | Corpus real reducido, muestras artificiales y fixtures mínimos. |
-| XLSX | 8 | Muestras sintéticas, referencias A1 y lectura de celdas. |
-| PDF | 13 | Corpus real reducido, muestras sintéticas, maquetación, lectura y límite de píxeles de imagen. |
+La tabla agrupa las pruebas por lo que cubren; el número de cada grupo lo da `cargo test --locked`.
+
+| Grupo | Qué cubren |
+| --- | --- |
+| Servicio (`src/lib.rs`) | Ruta completa por formato a través del worker, estados `complete`/`partial`/`failed`, clasificación de fallos y reintentos, asignaciones, reconciliación al arrancar, rechazo de bundles alterados por el validador y admisión (subida, cola y disco). |
+| Swagger y OpenAPI (`src/api_docs.rs`) | Redirección y recursos locales, formulario de archivo binario obligatorio, respuesta ZIP, cinco endpoints y convivencia con el handler real de salud; desactivación completa de la documentación con el resto de la API disponible. |
+| Bundles de referencia (`src/golden.rs`) | Los 26 documentos de ejemplo, comparados archivo por archivo con `examples/<formato>/esperado/`, y determinismo de dos conversiones. |
+| Cobertura independiente (`src/coverage.rs`) | Los 26 ejemplos, con listas TSV y mínimos versionados independientes de los golden; normalización Unicode y pérdida deliberada de texto. |
+| Retención (`src/retention.rs`) | Desactivación por defecto, solo terminados antiguos, descarga `410`, reanudación de limpieza fallida y ausencia de reencolado. |
+| Salud y métricas (`src/observability.rs`) | Latido ausente/caducado, disco y base no disponibles; métricas de una conversión real y persistencia tras reconectar a PostgreSQL. |
+| Apagado (`tests/shutdown.rs`) | SIGTERM con devolución a la cola sin consumir intento y SIGINT con publicación dentro de la gracia, durante una lectura detenida. |
+| Validador independiente (`src/validate.rs`, CLI) | Los 26 ejemplos como ZIP/directorio, rechazo de alteraciones y enlaces simbólicos, y códigos de salida del comando. |
+| Versionado (`src/version.rs`, consulta y recuperación) | Identidad persistida y recuperada del bundle; rechazo de versiones discordantes o perfiles desconocidos. |
+| Concurrencia PostgreSQL (`src/worker.rs`) | Dos pools reclaman sin duplicar; omiten una fila bloqueada, recuperan una asignación vencida y rechazan renovaciones de intentos anteriores. |
+| Configuración (`tests/environment.rs`) | Archivo explícito, prioridad del entorno y rechazo de conexión o archivo inválidos. |
+| Ensamblador y paquetes (`src/output.rs`, `src/ooxml.rs`, `src/sections.rs`, `src/bundle.rs`) | Frontmatter legible por un analizador YAML con cadenas difíciles; límites de expansión ZIP configurables; entradas de índice con corchetes en el título; destinos de enlace entre `<` y `>` seguidos de texto multibyte. |
+| Proceso hijo (`tests/worker_process.rs`, `src/worker.rs`, `src/isolation.rs`) | Conversión real en proceso hijo, parada al superar los límites, registro del intento y pánico permanente en el primer intento, incluido un caso real de fuzzing de PDF; código desconocido reintentable; un bundle señalado fuera del intento no se publica. En Linux, pruebas de límites duros de memoria/archivo y acceso a rutas con Landlock. |
+| PPTX | Extracción con muestras y con el corpus reducido; imagen cuya parte falta en el paquete (pérdida, `partial`), nivel de lista acotado y límite de diapositivas aplicado antes de extraer. |
+| DOCX | Corpus real reducido, muestras artificiales y fixtures mínimos. |
+| XLSX | Muestras sintéticas, referencias A1 y lectura de celdas. |
+| PDF | Corpus real reducido, muestras sintéticas, maquetación, lectura y límite de píxeles de imagen. |
 
 La [CI](../../.github/workflows/ci.yml) ejecuta en Ubuntu 24.04, con cada push a `main`, `cargo fmt --check`, `cargo clippy --all-targets --locked -- -D warnings` y `cargo test --locked`; comprueba licencias y orígenes con `cargo deny`, y construye la imagen y ejecuta `tools/smoke.sh`, que convierte y valida una muestra de cada formato a través de la API y PostgreSQL. Un [flujo diario](../../.github/workflows/scheduled.yml) comprueba los avisos de seguridad; las excepciones razonadas están en `deny.toml`. Los resultados de cada ejecución están en GitHub Actions, no en este documento.
 
@@ -182,14 +184,14 @@ El [plan 1](../planes/PLAN_1_RECUPERACION_DEL_PLAN_ORIGINAL.md) se implementó e
 
 ## 6. Roadmap pendiente
 
-El plan 1 cerró los antiguos puntos sobre el modelo intermedio, Xberg, el cierre operativo (salvo la retención) y la división (§5.6). El corpus pendiente es el R6 de ese [plan](../planes/PLAN_1_RECUPERACION_DEL_PLAN_ORIGINAL.md#r6-corpus-representativo-m-continuo); las garantías de regresión, aislamiento, operación y versionado están en el [plan 2](../planes/PLAN_2_CALIDAD_Y_ROBUSTEZ.md), del que C1 a C4 y C6 a C10 ya están hechos; C5 tiene infraestructura y un hallazgo PDF pendiente de corrección; después necesita siete noches de evidencia.
+El plan 1 cerró los antiguos puntos sobre el modelo intermedio, Xberg, el cierre operativo (salvo la retención) y la división (§5.6). El corpus pendiente es el R6 de ese [plan](../planes/PLAN_1_RECUPERACION_DEL_PLAN_ORIGINAL.md#r6-corpus-representativo-m-continuo); las garantías de regresión, aislamiento, operación y versionado están en el [plan 2](../planes/PLAN_2_CALIDAD_Y_ROBUSTEZ.md), del que C1 a C4 y C6 a C10 ya están hechos; C5 tiene infraestructura y un hallazgo PDF pendiente de corrección; después necesita dos horas de fuzzing sin fallos nuevos por objetivo.
 
 En orden de prioridad:
 
 1. **Auditoría programada**: comprobar que la siguiente ejecución del flujo diario pasa con la excepción razonada de `RUSTSEC-2026-0429` en `deny.toml`.
 2. **Evaluación DOCX con archivos guardados por Word**: las muestras reabiertas y guardadas en Word, o nuevos DOCX reales. Está en pausa hasta disponer de esos archivos.
 3. **Corpus real pendiente** (plan 1, R6): libros XLSX, un PDF escaneado, uno mixto y uno largo de texto, y un DOCX real con notas y revisiones, cada uno con su bundle de referencia y su medición de cobertura.
-4. **Plan 2, C5**: resolver el pánico de `pdf_oxide` con el caso y la corrección propuestos en [Fuzzing](../decisiones/FUZZING.md#primera-campaña-completa-y-hallazgo-pendiente); por decisión del usuario se mantiene C5 abierto con contención y regresión, a la espera de la 0.3.79, que según el mantenedor incluye la corrección ([#2995](https://github.com/yfedoseev/pdf_oxide/issues/2995)). Al publicarse: actualizar, comprobar el caso reducido y sustituir la prueba de contención por una regresión. Después harán falta siete noches estables. Los demás trabajos están implementados.
+4. **Plan 2, C5**: resolver el pánico de `pdf_oxide` con el caso y la corrección propuestos en [Fuzzing](../decisiones/FUZZING.md#primera-campaña-completa-y-hallazgo-pendiente); por decisión del usuario se mantiene C5 abierto con contención y regresión, a la espera de la 0.3.79, que según el mantenedor incluye la corrección ([#2995](https://github.com/yfedoseev/pdf_oxide/issues/2995)). Al publicarse: actualizar, comprobar el caso reducido y sustituir la prueba de contención por una regresión. Después hará falta acumular dos horas de fuzzing sin fallos nuevos por objetivo ([criterio](../decisiones/FUZZING.md#ci-y-criterio-de-cierre)). Los demás trabajos están implementados.
 5. **Guiones legítimos al final de línea en PDF**: cambiar la regla de la especificación para conservar el guion en URL y compuestos ([cobertura, §4](../decisiones/COBERTURA_INDEPENDIENTE.md#4-hallazgos)).
 6. **Texto alternativo de los gráficos DOCX** cuando el gráfico no tiene datos.
 7. **Revisión del renderizado PPTX** cuando aparezcan presentaciones reales con tablas, gráficos o SmartArt, o con picos de memoria cercanos al límite.
