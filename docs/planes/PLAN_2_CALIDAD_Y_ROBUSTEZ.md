@@ -76,7 +76,7 @@ medidas menos 0,50 puntos, según la concreción solicitada; véase [el método]
 
 ### C5. Fuzzing de los lectores (L)
 
-**Estado:** infraestructura implementada el 2 de noviembre; cuatro objetivos, semillas, CI nocturna y conservación de fallos. **Aceptación pendiente:** corregir el pánico encontrado en `pdf_oxide` (caso reducido y contención verificados; ya reportado en el proyecto como [#2995](https://github.com/yfedoseev/pdf_oxide/issues/2995), corregido para la 0.3.79 aún no publicada) y siete noches consecutivas sin fallos nuevos tras publicar el flujo. Véase [Fuzzing](../decisiones/FUZZING.md).
+**Estado:** infraestructura implementada el 2 de noviembre; cuatro objetivos, semillas, CI nocturna y conservación de fallos. **Aceptación pendiente:** corregir el pánico encontrado en `pdf_oxide` (caso reducido y contención verificados; ya conocido en el proyecto como [#2995](https://github.com/yfedoseev/pdf_oxide/issues/2995); el mantenedor la atribuye al trabajo de la 0.3.79, aún no publicada, pero esa corrección no estaba en `release/v0.3.79` al 5 de noviembre; el caso no se usa como semilla mientras siga abierto) y siete noches consecutivas sin fallos nuevos tras publicar el flujo. Véase [Fuzzing](../decisiones/FUZZING.md).
 
 **Trabajo.**
 

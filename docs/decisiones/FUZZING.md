@@ -33,6 +33,9 @@ cambió.
 
 Las semillas se copian **solo** de `examples/` y las regresiones sintéticas de
 `fuzz/regressions/`; el script no lee `datos_de_prueba/` ni el recibo privado.
+Las regresiones de defectos aún abiertos (lista `OPEN` de `tools/fuzz_seeds.py`)
+no se copian y se retiran del corpus restaurado: como semilla harían caer el
+objetivo al cargar el corpus, antes de mutar nada.
 El corpus que libFuzzer amplía, sus artefactos y los binarios
 no se versionan. Para reproducir un fallo, se pasa su archivo como corpus; para
 reducirlo se usa `cargo +nightly-2026-11-01 fuzz tmin FORMATO ARCHIVO`.
@@ -57,7 +60,12 @@ El paso de fuzzing se ejecuta con `shell: bash`, que activa `pipefail`. Sin él,
 `tee` que guarda el log devolvía éxito aunque cargo-fuzz fallara: en la primera
 ejecución completa (5 de noviembre, lanzada a mano) el objetivo `pdf` reprodujo el
 pánico conocido de `pdf_oxide` y el trabajo terminó en verde. Con `pipefail`, `pdf`
-falla cada noche mientras ese hallazgo siga abierto; los demás objetivos pasaron
+fallaba cada noche al cargar la regresión copiada como semilla, sin llegar a mutar;
+desde el 6 de noviembre esa regresión no se usa como semilla mientras siga abierta,
+y el objetivo vuelve a explorar (si una mutación reencuentra el mismo pánico, el log
+lo identifica por su ubicación en `pdf_oxide`). Una ejecución local de 120 s en macOS,
+con las opciones de ASan de la CI, cargó las 60 semillas y completó 238 ejecuciones
+sin fallos; su máximo residente, 482 MB, queda cerca del límite de 500 MB del arnés. Los demás objetivos pasaron
 sus cinco minutos (DOCX, 53 932 ejecuciones; XLSX, 84 048; PPTX, 3356, con dos
 entradas lentas registradas por el renderizado).
 
@@ -124,7 +132,8 @@ actualiza la dependencia y se comprueba con
 `pdf_oxide_fuzz_panic_is_permanent_and_does_not_stop_the_worker` comprueba la
 contención C3/C4: `failed` en el primer intento, diagnóstico conservado, ningún bundle
 publicado y procesamiento posterior de un documento válido. El objetivo de fuzzing
-sigue detectando el defecto; no lo captura ni lo excluye de las semillas.
+no captura el defecto, pero excluye ese caso de las semillas hasta que la
+corrección llegue a la dependencia; entonces se retira de `OPEN`.
 
 **C5 no está cerrado.** Falta corregir o actualizar la dependencia, sustituir la
 prueba de contención por una regresión sin pánico y obtener las siete noches.
