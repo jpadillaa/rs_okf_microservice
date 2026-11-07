@@ -1,7 +1,7 @@
 ---
 converter_version: "0.1.0"
 converter_commit: "<commit>"
-profile_version: "1.1.0"
+profile_version: "1.2.0"
 type: "Conversion Report"
 title: "Informe de conversión"
 generated:
@@ -51,6 +51,5 @@ Sin pérdidas ni incertidumbres sustantivas.
 Información sobre la conversión que no afecta el estado.
 
 - 4 párrafo(s) unidos con su continuación en otra columna o página (la frase sigue en minúscula con el mismo formato): páginas 1→2, 2→3, 4→5, 6→7
-- 3 palabra(s) partidas con guion al final de línea, unidas sin el guion
 - Encabezados tomados de los marcadores del PDF (13 de 13 encontrados en el texto)
 - Título del documento tomado del primer encabezado, seguido directamente por otro de igual o mayor rango: «¿Qué es un agente de inteligencia artificial?»

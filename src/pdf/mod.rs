@@ -835,7 +835,8 @@ pub(crate) fn extract(
     let mut merged: Vec<Unit> = merged.into_iter().map(|(u, _)| u).collect();
     // Guion final de línea: se conserva si la palabra compuesta aparece con guion dentro
     // de alguna línea del documento (`human-generated`), se suprime si la palabra unida
-    // aparece entera (`Chat-` + `GPT`) y, si no, se une solo entre minúsculas.
+    // aparece entera (`Chat-` + `GPT`), se conserva en direcciones y series y, si no, se
+    // une solo entre minúsculas.
     let mut compounds: HashSet<String> = HashSet::new();
     let mut words: HashSet<String> = HashSet::new();
     for u in &merged {
@@ -892,10 +893,19 @@ pub(crate) fn extract(
                 if l.is_empty() || r.is_empty() {
                     continue;
                 }
+                let original = p.lines[k].text();
+                let left = original.rsplit(char::is_whitespace).next().unwrap_or("");
+                let following = p.lines[k + 1].text();
+                let right = following.split(char::is_whitespace).next().unwrap_or("");
+                // Primero lo que atestigua el documento; las direcciones y las series
+                // solo deciden cuando no lo hace (`creativecom-` + `mons.org` se une
+                // porque «creativecommons» aparece entero).
                 if compounds.contains(&format!("{l}-{r}")) {
                     p.keep_hyphen.push(k);
                 } else if words.contains(&format!("{l}{r}")) {
                     p.join_hyphen.push(k);
+                } else if hyphen_is_part_of(left, right) {
+                    p.keep_hyphen.push(k);
                 }
             }
             tally.dehyphenated += layout::join_runs(&p.runs()).1;
@@ -912,6 +922,25 @@ pub(crate) fn extract(
         info,
         tally,
     })
+}
+
+/// ¿El guion de fin de línea pertenece al texto aunque la palabra compuesta no aparezca
+/// en otra línea? `left` es la última palabra de la línea, con el guion, y `right` la
+/// primera de la siguiente. Sí cuando la palabra forma parte de una dirección (URL,
+/// ruta o correo: `https://langchain-` + `ai.github.io`) o cuando la parte anterior ya
+/// lleva un guion entre letras o cifras, como en una serie (`if-then-` + `else`).
+fn hyphen_is_part_of(left: &str, right: &str) -> bool {
+    let head = left.strip_suffix(['-', '\u{2010}']).unwrap_or(left);
+    let address = |t: &str| t.contains("://") || t.contains("www.") || t.contains(['/', '@']);
+    let dotted = |t: &str| {
+        let c: Vec<char> = t.chars().collect();
+        c.windows(2).any(|w| w[0] == '.' && w[1].is_alphanumeric())
+    };
+    let chars: Vec<char> = head.chars().collect();
+    let series = chars
+        .windows(3)
+        .any(|w| w[1] == '-' && w[0].is_alphanumeric() && w[2].is_alphanumeric());
+    address(head) || address(right) || dotted(head) || dotted(right) || series
 }
 
 fn terminal_text(s: &str) -> bool {
@@ -2805,5 +2834,32 @@ mod tests {
             md.values()
                 .any(|t| t.contains("> Página escaneada sin capa de texto: el OCR falló"))
         );
+    }
+
+    #[test]
+    fn line_end_hyphens_in_addresses_and_series_are_kept() {
+        // Direcciones: URL, ruta, correo o dominio a cualquier lado del corte.
+        assert!(hyphen_is_part_of(
+            "https://langchain-",
+            "ai.github.io/langgraph/"
+        ));
+        assert!(hyphen_is_part_of(
+            "https://openai.github.io/openai-agents-",
+            "python/"
+        ));
+        assert!(hyphen_is_part_of("equipo-", "datos@ejemplo.org"));
+        assert!(hyphen_is_part_of("langchain-", "ai.github.io"));
+        // Series: la parte anterior ya lleva un guion.
+        assert!(hyphen_is_part_of("if-then-", "else."));
+        assert!(hyphen_is_part_of("editor-in-", "chief"));
+        // Palabras partidas por sílabas: se unen.
+        for (l, r) in [
+            ("manipu-", "lation"),
+            ("discus-", "sion."),
+            ("migra-", "ción,"),
+            ("(care-", "fully)"),
+        ] {
+            assert!(!hyphen_is_part_of(l, r), "{l}{r}");
+        }
     }
 }

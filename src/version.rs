@@ -2,10 +2,11 @@
 use crate::output::Fields;
 use serde::{Deserialize, Serialize};
 
-pub(crate) const PROFILE: &str = "1.1.0";
-/// Perfiles anteriores cuyos bundles siguen siendo válidos: 1.1.0 solo añade reglas
-/// para páginas que un bundle 1.0.0 no puede contener (OCR del servicio).
-const PREVIOUS_PROFILES: [&str; 1] = ["1.0.0"];
+pub(crate) const PROFILE: &str = "1.2.0";
+/// Perfiles anteriores cuyos bundles siguen siendo válidos: 1.1.0 añadió reglas para
+/// páginas que un bundle 1.0.0 no puede contener (OCR del servicio) y 1.2.0 solo cambia
+/// qué guiones de fin de línea conserva el texto PDF, que el validador no comprueba.
+const PREVIOUS_PROFILES: [&str; 2] = ["1.0.0", "1.1.0"];
 pub(crate) const PACKAGE: &str = env!("CARGO_PKG_VERSION");
 pub(crate) const COMMIT: &str = env!("OKF_BUILD_COMMIT");
 
@@ -99,9 +100,11 @@ mod tests {
         let mut report = doc.clone();
         report["converter_version"] = "999".into();
         assert!(check(&doc, &report).is_err());
-        let mut previous = doc.clone();
-        previous["profile_version"] = "1.0.0".into();
-        check(&previous, &previous).unwrap();
+        for v in ["1.0.0", "1.1.0"] {
+            let mut previous = doc.clone();
+            previous["profile_version"] = v.into();
+            check(&previous, &previous).unwrap();
+        }
         let mut future = doc.clone();
         future["profile_version"] = "999".into();
         assert!(check(&future, &future).is_err());

@@ -29,9 +29,9 @@ source_spans:
 - Forrester. "Introducing AEGIS: The Guardrails CISOs Need for the Agentic Enterprise." 2025. Actualizado 2026.
 - Gartner. "Gartner Predicts Over 40% of Agentic AI Projects Will Be Canceled by End of 2027." Press Release, IT Symposium/Xpo, Gold Coast, junio 25, 2025.
 - Google Cloud. "Introducing Gemini Enterprise Agent Platform." Cloud Next '26, abril 2026.
-- LangGraph Documentation. "How-to Guides: Persistence." https://langchainai.github.io/langgraph/
+- LangGraph Documentation. "How-to Guides: Persistence." https://langchain-ai.github.io/langgraph/
 - McKinsey & Company. "The State of AI in 2025: Agents, Innovation, and Transformation." 2025.
 - Microsoft. "What is Microsoft Foundry Agent Service?" Microsoft Learn, 2026.
-- OpenAI. "Agents SDK Documentation." https://openai.github.io/openai-agentspython/
+- OpenAI. "Agents SDK Documentation." https://openai.github.io/openai-agents-python/
 - OWASP. "Top 10 for Agentic Applications 2026." Publicada diciembre 2025.
 

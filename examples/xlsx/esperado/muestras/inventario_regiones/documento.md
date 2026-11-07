@@ -10,7 +10,7 @@ generated:
   at: "<generado>"
 converter_version: "0.1.0"
 converter_commit: "<commit>"
-profile_version: "1.1.0"
+profile_version: "1.2.0"
 source_file:
   path: "references/original.xlsx"
   sha256: "9c522156b40fd3386cf9fdf9c237f544387ffa0e46d973d806c7398a34b2715d"

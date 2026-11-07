@@ -38,7 +38,7 @@ Las copias reducidas de `examples/*/corpus/` dan exactamente las mismas cifras q
 | `p1.pdf` (presentación de Canva, 53 páginas) | complete | 2792 | 96,88 | 99,64 | 87 | 2277 |
 | `p2.pdf` (artículo a dos columnas) | complete | 5848 | 95,06 | 98,48 | 289 | 349 |
 | `p3.pdf` (recibo, solo en local) | complete | 148 | 100,0 | 100,0 | 0 | 32 |
-| `p4.pdf` (exportación de Word) | complete | 3169 | 99,81 | 99,97 | 6 | 245 |
+| `p4.pdf` (exportación de Word) | complete | 3169 | 100,0 | 100,0 | 0 | 242 |
 | `s1.pptx` | complete | 8144 | 97,11 | 97,11 | 235 | 839 |
 | `s2.pptx` | partial | 505 | 100,0 | 100,0 | 0 | 652 |
 | `s3.pptx` | partial | 1292 | 100,0 | 100,0 | 0 | 773 |
@@ -51,7 +51,7 @@ Todas las palabras que faltan están explicadas:
 
 - **`p1.pdf`.** Canva coloca cada palabra por posición y pdfium las une (`bibianaalfonsorivera`, `sonmediosynofines`); en el bundle están separadas. Después de reagruparlas quedan 10 palabras: fragmentos de menos de cuatro letras de palabras partidas por pdfium (`t`, `ens`, `sie`, `v`) y números de página impresos, que van a `page_labels`.
 - **`p2.pdf`.** El encabezado de página «Cheng et al. Advances in Simulation (2025) 10:22» y el pie «Page N of 9» se repiten en casi todas las páginas y el bundle los registra una vez en `documento.md`, como manda la especificación. El resto son fragmentos de palabras partidas con guion al final de línea (`gen`, `pro`, `ers`), que el bundle une.
-- **`p4.pdf`.** Una sola palabra: el guion de `langchain-ai.github.io` se suprime al unir el final de línea (ver §4).
+- **`p4.pdf`.** No falta ninguna desde el perfil 1.2.0 (7 de noviembre). Antes faltaba una palabra: el guion de `langchain-ai.github.io` se suprimía al unir el final de línea (ver §4).
 - **`s1.pptx`.** 208 palabras son el texto alternativo `preencoded.png` de 104 iconos: un nombre de archivo, que el conversor descarta junto con el icono decorativo. Las otras 27 son el total «/ 29» del número visible de cada diapositiva («01 / 29»), del que `display_label` conserva solo el número.
 
 ### 2.2 Qué sobra y por qué
@@ -89,7 +89,7 @@ Lo que falta: en `estructura.docx`, la ecuación se escribe linealizada (`E=mc^2
 
 - **DOCX: texto alternativo de una imagen ausente.** Cuando la imagen falta en el paquete, el bundle escribía solo «Imagen ausente del paquete original» y perdía su texto alternativo. Corregido: ahora lo añade («Texto alternativo: …»).
 - **DOCX: texto alternativo de un gráfico sin datos.** Sigue perdiéndose: el lector no conserva el texto alternativo de los gráficos. Pendiente.
-- **PDF: guiones legítimos al final de línea.** La regla de la especificación suprime el guion de fin de línea entre minúsculas cuando la palabra compuesta no aparece con guion en otra línea. En `p4.pdf` eso convierte `langchain-ai.github.io` en `langchainai.github.io` e `if-then-else` en `if-thenelse`. Mejoras posibles: conservar el guion dentro de URL y cuando la primera parte ya contiene un guion. Requiere cambiar la regla de la especificación.
+- **PDF: guiones legítimos al final de línea.** Corregido en el perfil 1.2.0 (7 de noviembre). La regla suprimía el guion de fin de línea entre minúsculas cuando la palabra compuesta no aparecía con guion en otra línea. En `p4.pdf` eso convierte `langchain-ai.github.io` en `langchainai.github.io` e `if-then-else` en `if-thenelse`. Mejoras posibles: conservar el guion dentro de URL y cuando la primera parte ya contiene un guion. Requiere cambiar la regla de la especificación.
 - **XLSX: valor almacenado en tablas pequeñas.** Las tablas Markdown muestran el valor con su formato y el número almacenado completo solo está en los registros por celda de las regiones grandes. Se revisará con el primer libro real.
 
 ## 5. Repetir la medición

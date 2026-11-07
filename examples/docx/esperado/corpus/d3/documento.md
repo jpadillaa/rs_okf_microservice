@@ -10,7 +10,7 @@ generated:
   at: "<generado>"
 converter_version: "0.1.0"
 converter_commit: "<commit>"
-profile_version: "1.1.0"
+profile_version: "1.2.0"
 source_file:
   path: "references/original.docx"
   sha256: "9a68ae57c666128a9b729096d5c2ba1fd100e5edfc46b5fb9a77d3c4b4911fbe"
