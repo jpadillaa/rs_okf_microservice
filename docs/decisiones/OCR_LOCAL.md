@@ -41,7 +41,7 @@ La prueba de concepto se hizo fuera del repositorio sobre 30 páginas de cinco P
 El texto reconocido se comparó con el de pdfium. Usar el OCR de `pdf_oxide` tal cual no bastaba; hicieron falta cuatro ajustes:
 
 1. **Enderezar.** Con 0,8° de giro, la detección unía líneas vecinas: pasaba de 18 líneas a 4, y la exactitud de las páginas degradadas caía al 6–42 %. Ni el ruido, ni el JPEG, ni la resolución tenían ese efecto. La página se endereza antes de detectar: el ángulo (±5°, en pasos de 0,1°) es el que maximiza la varianza del perfil de filas de la tinta, medida en una copia reducida. Detecta exactamente −0,80°.
-2. **Anchos fijos.** tract prepara un plan por cada forma de entrada, y `pdf_oxide` solo redondea el ancho de cada línea a múltiplos de 4 píxeles. La memoria crecía con cada línea nueva (760 MB en dos páginas). Cada línea se lleva a 48 píxeles de alto y se rellena de blanco hasta un múltiplo de 320.
+2. **Anchos fijos.** tract prepara un plan por cada forma de entrada, y `pdf_oxide` solo redondea el ancho de cada línea a múltiplos de 4 píxeles. La memoria crecía con cada línea nueva (760 MB en dos páginas). Cada línea se lleva a 48 píxeles de alto y se rellena de blanco hasta un múltiplo de 64. La prueba de concepto usaba múltiplos de 320, pero el primer escaneo real (§4) mostró que tanto relleno hace perder espacios entre palabras en las líneas cortas («DOCUMENTODEPRUEBAPARAOCR»). Con 64 px desaparece el defecto y la exactitud sube también en los escaneos sintéticos, sin más tiempo; la memoria crece unos 150 MB porque hay más formas.
 3. **Tamaño de la página e hilos.** La página se renderiza a 200 DPI con el lado mayor limitado a 2400 píxeles (las diapositivas salían de 4000), y las líneas se reconocen en 2 hilos. Ampliar la imagen de detección más allá de 960 píxeles no mejoró el resultado y llevó la memoria a 1,3 GB.
 4. **Tamaño de letra por la tinta.** La altura de la caja detectada no sirve para estimar el tamaño de letra: en la misma letra varía alrededor del 20 % (cuerpo en dos grupos de 10,3 y 12,3 pt), y un subtítulo era indistinguible del cuerpo. Se mide en el recorte a resolución completa, desde lo alto de las ascendentes hasta la línea base (0,73 cuerpos de letra). Así el cuerpo queda en 9,9–10,9 pt, los subtítulos en 11,8 y los títulos en 12,8–15,6. Los tamaños entre un 25 % por debajo y un 6 % por encima de la mediana de la página toman la mediana, para no partir párrafos: la medición falla sobre todo por defecto (líneas cortas, letra monoespaciada). Además, cada recorte se ensancha a la derecha 0,15 alturas de línea, porque la caja detectada dejaba fuera el punto final. Un margen mayor, o también a la izquierda, hacía leer el grano del papel como guiones.
 
@@ -49,7 +49,7 @@ El texto reconocido se convierte en caracteres posicionados (`Glyph`) repartidos
 
 ## 4. Resultados
 
-Prueba de concepto, macOS arm64, 2 hilos (palabras de la referencia presentes en el OCR):
+Prueba de concepto, macOS arm64, 2 hilos y anchos de 320 px (palabras de la referencia presentes en el OCR):
 
 | Documento | Limpio | Degradado | Tildes y ñ |
 | --- | ---: | ---: | ---: |
@@ -61,33 +61,41 @@ Prueba de concepto, macOS arm64, 2 hilos (palabras de la referencia presentes en
 
 En `p1`, pdfium parte las palabras de algunas diapositivas en letras sueltas, así que la comparación se hace por caracteres; el OCR las lee enteras.
 
+Con anchos de 64 px, las versiones degradadas suben: `p2` del 92,3 % al 97,3 %, `articulo_columnas` del 96,2 % al 98,7 % y `p4` del 99,5 % al 99,8 %.
+
 Rendimiento en macOS: unos 2,2 s por página de texto con 2 hilos (1,7 s con 4) y unos 430 MB de memoria residente para el OCR solo.
 
 En el contenedor Linux (Docker Desktop, aarch64, 8 CPU), con la imagen y sus restricciones (Landlock, seccomp y `RLIMIT_AS`), las conversiones completas con OCR dieron:
 
 | Documento | Páginas | Tiempo | Por página | Pico de memoria |
 | --- | ---: | ---: | ---: | ---: |
-| `escaneado_ocr.pdf` | 2 | 9,5 s | 4,7 s | 288 MB |
-| `p4` degradado | 8 | 30 s | 3,7 s | 286 MB |
-| `p2` degradado (artículo denso a dos columnas) | 8 | 68 s | 8,5 s | 314 MB |
-| `p1` degradado (diapositivas) | 8 | 11 s | 1,4 s | 256 MB |
+| Escaneo real de una página (§4) | 1 | 3 s | 3 s | 221 MB |
+| `escaneado_ocr.pdf` | 2 | 9 s | 4,5 s | 423 MB |
+| `p4` degradado | 8 | 28 s | 3,5 s | 439 MB |
+| `p2` degradado (artículo denso a dos columnas) | 8 | 58 s | 7,3 s | 469 MB |
+| `p1` degradado (diapositivas) | 8 | 10 s | 1,3 s | 349 MB |
+
+Con los anchos de 320 px de la prueba de concepto, los picos eran de 256–314 MB y `p2` tardaba 68 s.
 
 Con 2 hilos, una página densa consume unos 15 s de CPU, y el hijo tiene un límite de CPU igual al plazo de conversión (300 s). Sin un presupuesto de tiempo, un documento de 20 a 40 páginas densas fallaría entero. Por eso el OCR no empieza una página más tras consumir dos tercios del plazo: con `OKF_CONVERSION_TIMEOUT_S=45`, `p2` degradado salió `partial` en 20 s, con 2 páginas transcritas y 6 como vista, sin fallar. Con el plazo por defecto se transcriben entre unas 12 páginas densas y 40 ligeras; para documentos escaneados largos hay que subir el plazo.
 
-El pico de memoria en Linux (hasta 314 MB, conversión incluida) cabe en los 500 MB por defecto. Pero en macOS el OCR solo llega a 430 MB, y un PDF grande ya ocupaba 306 MB sin OCR. `OKF_OCR_MEMORY_MB=256` cubre ambos casos (756 MB en total); se comprobó con `p2` degradado en Linux.
+El pico de memoria en Linux llega a 469 MB, conversión incluida, y en macOS a 567 MB con `p2` degradado. Un PDF grande ya ocupaba 306 MB sin OCR. `OKF_OCR_MEMORY_MB=256` (756 MB en total) cubre estos casos; se comprobó con todos los documentos de la tabla en Linux.
 
 Integrado en el servicio, la muestra `examples/pdf/muestras/escaneado_ocr.pdf` (las dos páginas de `informe_tecnico.pdf`, degradadas por `create_scans.py`) sale `complete` y tiene:
 
 - la confianza media del 97–98 %;
 - los encabezados y pies repetidos («Informe técnico — Página N de 2») y los números de página detectados;
 - tres secciones por encabezados inferidos y las listas numeradas;
-- en macOS, 9,3 s y 400 MB de pico; en Linux, 9,5 s y 288 MB.
+- en macOS, 8,6 s y 502 MB de pico; en Linux, 9 s y 423 MB.
 
 La prueba `ocr_transcribes_scanned_pages_through_the_common_layout` exige que recupere al menos el 95 % de las palabras del documento digital.
 
+**Primer escaneo real (7 de noviembre).** Es un documento privado de `datos_de_prueba/`, que no entra al repositorio: una página generada como imagen JPEG de 1493 × 1570 px, sin capa de texto, con un título y tres párrafos en español en letra monoespaciada, con tildes y paréntesis. Sin OCR sale `partial`; con OCR, `complete`, con confianza media del 98 %, el título y los párrafos bien separados y todas las tildes correctas. Comparado con el texto de la vista, transcrito a mano, tiene dos errores: falta un espacio en el título («DEPRUEBA») y la sigla «(OCR)» del final sale «(ocR)». Con anchos de 320 px faltaban además los espacios de una línea entera; ese hallazgo llevó a los anchos de 64 px. Probar márgenes derechos de 0, 0,08, 0,1 y 0,12 no dio una tendencia: el espacio del título aparece o falta según el margen. Se mantuvo 0,15, el único que no pierde puntos finales en la muestra sintética.
+
 ## 5. Límites conocidos
 
-- Solo se ha medido con escaneos sintéticos, generados a partir de PDF digitales con letra nítida. Un escaneo real (fotografías, baja resolución, papel manchado o texto manuscrito) dará peores resultados. El corpus pendiente (plan 1, R6) incluye un PDF escaneado real.
+- Se ha medido con escaneos sintéticos y con un solo escaneo real, limpio y de una página. Faltan escaneos con fotografías, baja resolución, papel manchado o varias columnas (plan 1, R6); darán peores resultados. El texto manuscrito no se reconoce.
+- En letra monoespaciada, el hueco entre palabras apenas se distingue del hueco entre letras, y alguna línea puede perder un espacio. El OCR puede confundir mayúsculas y minúsculas en siglas («ocR»).
 - El OCR no distingue negrita ni cursiva. Un subtítulo apenas mayor que el cuerpo puede no reconocerse como encabezado, y los niveles de los encabezados inferidos pueden variar entre secciones del mismo nivel.
 - Las viñetas pueden leerse como guiones («—», «–») y la letra monoespaciada no se reconoce como código.
 - Un pánico dentro del OCR termina la conversión como fallo permanente, igual que cualquier pánico del conversor.

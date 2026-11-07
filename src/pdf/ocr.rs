@@ -24,8 +24,9 @@ const MAX_SIDE_PX: f32 = 2400.0;
 const LINE_HEIGHT: u32 = 48;
 /// Las líneas se rellenan hasta un múltiplo de este ancho: tract prepara un plan por
 /// cada forma de entrada, y con anchos libres la memoria y el tiempo crecen con cada
-/// línea nueva.
-const WIDTH_STEP: u32 = 320;
+/// línea nueva. Un relleno mayor hace que el reconocedor pierda espacios entre
+/// palabras: con 320 px, las líneas cortas salían unidas («DOCUMENTODEPRUEBA»).
+const WIDTH_STEP: u32 = 64;
 /// Hilos que reconocen las líneas de una página.
 const THREADS: usize = 2;
 /// Inclinación máxima que se corrige, en grados, y paso de la búsqueda.
@@ -424,7 +425,7 @@ mod tests {
             .map(|w| padded(&DynamicImage::ImageLuma8(GrayImage::new(w, 30))).width())
             .collect();
         assert!(widths.iter().all(|w| w % WIDTH_STEP == 0));
-        assert!(widths.len() <= 9, "{widths:?}");
+        assert!(widths.len() <= 40, "{widths:?}");
     }
 
     #[test]
