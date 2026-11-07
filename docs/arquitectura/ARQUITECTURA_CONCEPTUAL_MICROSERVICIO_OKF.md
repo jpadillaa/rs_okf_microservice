@@ -17,7 +17,7 @@ El archivo original, la identidad y el estado del trabajo, y el resultado se con
 | --- | --- | --- |
 | **Registro** | Identificar el trabajo, conservar el archivo sin modificar y calcular su huella. | Original inmutable y trabajo pendiente. |
 | **Inspección** | Reconocer formato y características que afectan la extracción. | Inventario inicial de unidades y necesidades de extracción. |
-| **Extracción** | Aplicar el adaptador de PDF, DOCX, XLSX o PPTX. | Contenido, estructura, recursos, localizadores e incidencias en el modelo de lectura del formato. |
+| **Extracción** | Aplicar el adaptador de PDF, DOCX, XLSX o PPTX. En PDF, si el OCR local está activo, las páginas escaneadas sin capa de texto se transcriben aquí, antes de la maquetación, y su texto sigue el mismo camino que el digital. | Contenido, estructura, recursos, localizadores e incidencias en el modelo de lectura del formato. |
 | **Reconciliación** | Resolver orden, jerarquía, continuaciones, notas, referencias y duplicaciones con visión del documento completo. | Estructura editorial consolidada. |
 | **Ensamblado** | Generar conceptos Markdown, índices, recursos, procedencia y `conversion-report.md` según el perfil OKF. | Bundle candidato. |
 | **Validación y publicación** | Verificar conformidad OKF e integridad editorial por separado; publicar solo un resultado final coherente. | Bundle `complete` o `partial`, o trabajo `failed`. |
@@ -35,7 +35,7 @@ Cada adaptador lee el original con un **modelo de lectura propio de su formato**
 - **Localizadores:** páginas físicas y etiquetas impresas; bloques DOCX; hoja y rango A1; posición e identificador de diapositiva.
 - **Incidencias:** contenido omitido, incierto, inferido o conservado únicamente como recurso visual.
 
-Cada modelo de lectura conserva la estructura propia de su formato: el PDF parte de páginas; DOCX, de bloques y encabezados; XLSX, de hojas y regiones; PPTX, de diapositivas, objetos y notas.
+Cada modelo de lectura conserva la estructura propia de su formato: el PDF parte de páginas, con caracteres posicionados que proceden del propio PDF o, en un escaneo, del OCR local ([OCR local](../decisiones/OCR_LOCAL.md)); DOCX, de bloques y encabezados; XLSX, de hojas y regiones; PPTX, de diapositivas, objetos y notas.
 
 Todos los adaptadores entregan su resultado con los mismos tipos, el **modelo de salida común**: conceptos (ruta, tipo, título, campos propios del formato, localizadores y contenido con sus marcadores), recursos e incidencias. Un único ensamblador escribe a partir de él el frontmatter, los índices, `documento.md` y el informe, de modo que las reglas comunes del bundle se aplican en un solo sitio y no necesita interpretar nuevamente los archivos originales.
 

@@ -158,4 +158,4 @@ El rechazo de trabajos nuevos cuando falta espacio (`507 Insufficient Storage`) 
 | D. Búsqueda de fallos | `C5` | Necesita `C3` y `C4` para que los fallos se contengan y se clasifiquen bien. |
 | E. Operación | `C6`, `C7`, `C8` | Se cierran junto con las imágenes de `R3`, que es cuando el servicio se despliega. |
 
-**Fuera de este plan:** despliegue multinodo, autenticación (se delega en un proxy delante de la API) y OCR, que sigue en el roadmap del [estado del proyecto](../estado/ESTADO_DEL_PROYECTO.md#6-roadmap-pendiente).
+**Fuera de este plan:** despliegue multinodo, autenticación (se delega en un proxy delante de la API) y OCR, que se implementó fuera de este plan el 6 de noviembre ([OCR local](../decisiones/OCR_LOCAL.md)).

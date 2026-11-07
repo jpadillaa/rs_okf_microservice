@@ -110,6 +110,8 @@ Cada documento nuevo entra con su bundle de referencia (`C1`), su medición de c
 
 **Aceptación.** El corpus cubre todos los casos de la regla 5 del stack inicial con al menos un documento real.
 
+**Avance (7 de noviembre).** Llegó un primer PDF escaneado real: una página limpia, generada como imagen. Se midió en local con el OCR ([OCR local](../decisiones/OCR_LOCAL.md), §4) y se queda en `datos_de_prueba/`, sin incorporar al repositorio. Siguen pendientes un escaneo de escáner o de fotografía, de varias páginas, y el resto de documentos de la lista.
+
 **Depende de:** archivos que aporte el equipo o fuentes públicas aprobadas; revisión de licencia y privacidad de cada uno.
 
 ### R7. Cierres documentales (S)

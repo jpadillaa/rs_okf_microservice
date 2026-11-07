@@ -156,7 +156,7 @@ El proyecto pasó de integrar una biblioteca general a escribir sus propios extr
 
 | El plan pedía | Cubierto |
 | --- | --- |
-| PDF digital, escaneado, mixto y largo multipágina. | Digital, con documentos reales. Escaneado y mixto, solo sintéticos. Largo, la presentación de 53 páginas; ningún PDF largo de texto (libro, tesis). |
+| PDF digital, escaneado, mixto y largo multipágina. | Digital, con documentos reales. Escaneado, un escaneo real limpio de una página, medido en local con el OCR, y sintéticos. Mixto, solo sintético. Largo, la presentación de 53 páginas; ningún PDF largo de texto (libro, tesis). |
 | DOCX breve y largo, con tablas, notas y revisiones. | Sí: 3 reales y 6 sintéticos; revisiones y notas solo en los sintéticos. |
 | XLSX con varias hojas y rangos desplazados. | Solo sintéticos. |
 | PPTX con diapositivas ocultas, sin título, con tablas e imágenes. | Sí; tablas nativas y gráficos reales sin medir en el renderizado. |
@@ -177,7 +177,7 @@ El [plan 1](../planes/PLAN_1_RECUPERACION_DEL_PLAN_ORIGINAL.md) se implementó e
 | R3. Imagen reproducible | `Dockerfile`, `compose.yaml` y prueba de humo en la CI; optimización posterior con `cargo-chef`, BuildKit y Distroless, medida el 4 de noviembre. |
 | R4. Límites configurables y control de admisión | Variables `OKF_MAX_UPLOAD_MB`, `OKF_MAX_ZIP_*`, `OKF_MAX_IMAGE_PIXELS`, `OKF_MAX_QUEUED` y `OKF_MIN_FREE_MB`. |
 | R5. Registro por formato, etapa y duración | Una línea por intento; el proceso hijo devuelve sus etapas y su memoria máxima (Linux y macOS; comprobación final añadida en C5). |
-| R6. Corpus representativo | Pendiente: requiere documentos del equipo o fuentes públicas aprobadas. |
+| R6. Corpus representativo | En curso: el 7 de noviembre llegó un escaneo real limpio de una página, medido en local con el OCR y no incorporado al repositorio. El resto requiere documentos del equipo o fuentes públicas aprobadas. |
 | R7. Cierres documentales | Stack, arquitecturas y especificación describen lo que hace el código. |
 | R8. División en partes y capítulos | La especificación describe la división en un nivel (§3.3). |
 | R9. Auditoría de dependencias | `cargo deny` en la CI; la primera comprobación llevó a actualizar `quick-xml` por dos avisos de denegación de servicio. |

@@ -25,7 +25,7 @@ const LINE_HEIGHT: u32 = 48;
 /// Las líneas se rellenan hasta un múltiplo de este ancho: tract prepara un plan por
 /// cada forma de entrada, y con anchos libres la memoria y el tiempo crecen con cada
 /// línea nueva. Un relleno mayor hace que el reconocedor pierda espacios entre
-/// palabras: con 320 px, las líneas cortas salían unidas («DOCUMENTODEPRUEBA»).
+/// palabras: con 320 px, las líneas cortas salían con todas sus palabras unidas.
 const WIDTH_STEP: u32 = 64;
 /// Hilos que reconocen las líneas de una página.
 const THREADS: usize = 2;
