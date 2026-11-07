@@ -51,3 +51,35 @@ async fn environment_file_configures_postgres_and_process_environment_takes_prec
     assert!(!run(Some(&support::database_url(&root))).status.success());
     db.close().await;
 }
+
+#[tokio::test]
+async fn worker_refuses_to_start_with_ocr_enabled_and_no_models() {
+    let tmp = tempfile::tempdir().unwrap();
+    let root = tmp.path().join("datos");
+    fs::create_dir(&root).unwrap();
+    let db = support::pool(&root).await;
+    let run = |enabled: &str| {
+        Command::new(BIN)
+            .args(["worker", "--once"])
+            .env("OKF_DATABASE_URL", support::database_url(&root))
+            .env("OKF_DATA_DIR", &root)
+            .env("OKF_OCR_ENABLED", enabled)
+            .env("OKF_OCR_MODELS_DIR", tmp.path().join("sin-modelos"))
+            .output()
+            .unwrap()
+    };
+    let output = run("true");
+    let stderr = String::from_utf8_lossy(&output.stderr);
+    assert!(!output.status.success());
+    assert!(
+        stderr.contains("det.onnx") && stderr.contains("OKF_OCR_MODELS_DIR"),
+        "{stderr}"
+    );
+    let output = run("quizá");
+    assert!(!output.status.success());
+    assert!(
+        String::from_utf8_lossy(&output.stderr).contains("OKF_OCR_ENABLED debe ser true o false")
+    );
+    assert!(run("false").status.success());
+    db.close().await;
+}

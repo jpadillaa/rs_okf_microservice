@@ -25,6 +25,8 @@ jobs:
       # Solo cambia la información de depuración, no los checks del perfil de pruebas.
       CARGO_PROFILE_DEV_DEBUG: "0"
       CARGO_PROFILE_TEST_DEBUG: "0"
+      # Las pruebas del OCR se omiten en local sin modelos; en la CI son obligatorias.
+      OKF_REQUIRE_OCR_MODELS: "1"
     steps:
       - uses: actions/checkout@v5
       # Debe coincidir con `rust-version` de Cargo.toml.
@@ -41,6 +43,14 @@ jobs:
       # la misma versión que instala el Dockerfile.
       - name: Instalar fuente para el renderizado
         run: sudo apt-get update && sudo apt-get install -y --no-install-recommends fonts-dejavu-core=2.37-8
+      # Los modelos están fijados por SHA-256 en el script; la caché evita descargarlos
+      # en cada ejecución y el script vuelve a verificarlos.
+      - uses: actions/cache@v4
+        with:
+          path: models/ocr
+          key: ocr-models-${{ hashFiles('tools/ocr_models.sh') }}
+      - name: Modelos del OCR
+        run: tools/ocr_models.sh models/ocr
       - name: Formato
         run: cargo fmt --check
       - name: Clippy

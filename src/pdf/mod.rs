@@ -1,8 +1,10 @@
 //! Adaptador PDF: lee cada página con pdf_oxide (caracteres, imágenes y vistas), separa
 //! encabezados y pies repetidos, reconstruye el orden de lectura y los bloques con la
 //! maquetación propia de `layout`, clasifica las páginas (texto digital, escaneo,
-//! mixta, solo visual o en blanco) y divide el documento en conceptos por secciones.
+//! mixta, solo visual o en blanco), aplica OCR a los escaneos si está activo
+//! (`ocr`) y divide el documento en conceptos por secciones.
 mod layout;
+pub(crate) mod ocr;
 mod read;
 
 use crate::bundle::*;
@@ -39,6 +41,8 @@ pub(crate) enum Class {
     Mixed,
     Scanned,
     ScannedOcr,
+    /// Escaneo sin capa de texto transcrito con el OCR local del servicio.
+    Ocr,
     Visual,
     Blank,
 }
@@ -50,13 +54,67 @@ impl Class {
             Class::Mixed => "mixta (texto e imagen)",
             Class::Scanned => "escaneo sin texto",
             Class::ScannedOcr => "escaneo con capa de OCR",
+            Class::Ocr => "escaneo con OCR del servicio",
             Class::Visual => "solo visual",
             Class::Blank => "en blanco",
         }
     }
     fn needs_view(self) -> bool {
-        matches!(self, Class::Scanned | Class::ScannedOcr | Class::Visual)
+        matches!(
+            self,
+            Class::Scanned | Class::ScannedOcr | Class::Ocr | Class::Visual
+        )
     }
+    /// El texto de la página no procede del PDF, sino de un OCR sin verificar.
+    fn unverified(self) -> bool {
+        matches!(self, Class::Scanned | Class::ScannedOcr | Class::Ocr)
+    }
+}
+
+/// Resultado del OCR del servicio en una página escaneada sin capa de texto.
+#[derive(Clone, Debug, PartialEq)]
+pub(crate) enum Ocr {
+    /// Texto reconocido, con su confianza media y sus líneas de confianza baja.
+    Done {
+        confidence: f32,
+        lines: usize,
+        low_lines: usize,
+    },
+    /// El OCR no reconoció texto.
+    Empty,
+    /// No se aplicó porque se agotó el presupuesto del OCR.
+    Skipped(Budget),
+    /// El OCR falló; el mensaje no incluye rutas del sistema.
+    Failed(String),
+}
+
+/// Presupuesto del OCR que se agotó.
+#[derive(Clone, Copy, Debug, PartialEq)]
+pub(crate) enum Budget {
+    /// Páginas transcritas por documento (`OKF_OCR_MAX_PAGES`).
+    Pages,
+    /// Tiempo y CPU: el OCR no empieza una página más tras consumir `OCR_TIME_SHARE`
+    /// del plazo de la conversión, que es también el límite de CPU del proceso.
+    Time,
+}
+
+/// Fracción del plazo de conversión (`OKF_CONVERSION_TIMEOUT_S`) que puede consumir el
+/// OCR antes de dejar las páginas restantes como vista; el resto queda para ensamblar
+/// y validar el bundle.
+const OCR_TIME_SHARE: f64 = 2.0 / 3.0;
+
+/// Tiempo de CPU consumido por el proceso, todos sus hilos incluidos.
+fn cpu_time() -> std::time::Duration {
+    let mut u: libc::rusage = unsafe { std::mem::zeroed() };
+    // SAFETY: getrusage solo escribe en la estructura que recibe.
+    if unsafe { libc::getrusage(libc::RUSAGE_SELF, &mut u) } != 0 {
+        return std::time::Duration::ZERO;
+    }
+    let tv = |t: libc::timeval| {
+        std::time::Duration::from_secs(t.tv_sec.max(0) as u64)
+            + std::time::Duration::from_micros(t.tv_usec.max(0) as u64)
+    };
+    tv(u.ru_utime) + tv(u.ru_stime)
 }
 
 /// Página leída: líneas sin encabezados ni pies, imágenes y clasificación.
@@ -66,6 +124,8 @@ pub(crate) struct PageInfo {
     pub(crate) rotated: Vec<Line>,
     pub(crate) pictures: Vec<Picture>,
     pub(crate) ocr_layer: bool,
+    /// OCR del servicio, si la página es un escaneo sin texto y el OCR está activo.
+    pub(crate) ocr: Option<Ocr>,
     /// Rectángulos de las líneas de encabezado o pie de página.
     pub(crate) furniture: Vec<Rect>,
     pub(crate) class: Class,
@@ -273,6 +333,7 @@ pub(crate) fn extract(
     cfg: &Config,
     z: &mut ZipWriter<fs::File>,
 ) -> Result<Extraction> {
+    let started = Instant::now();
     let max_pages = cfg.max_pages;
     let reopen = bytes.len() > REOPEN_BYTES;
     let first = read::open(bytes)?;
@@ -321,6 +382,7 @@ pub(crate) fn extract(
             rotated,
             pictures: raw.pictures,
             ocr_layer: raw.ocr_layer,
+            ocr: None,
             furniture: Vec::new(),
             class: Class::Digital,
             label: None,
@@ -329,7 +391,90 @@ pub(crate) fn extract(
             columns: false,
         });
     }
-    // 2. Encabezados y pies de página: textos de las franjas superior e inferior que se
+    // 2. Imágenes repetidas en muchas páginas (logotipos, fondos de plantilla): se
+    //    registran una vez en documento.md.
+    let mut by_hash: HashMap<String, Vec<usize>> = HashMap::new();
+    for (p, page) in pages.iter().enumerate() {
+        let mut seen = HashSet::new();
+        for pic in &page.pictures {
+            if let Some(h) = &pic.hash
+                && seen.insert(h.clone())
+            {
+                by_hash.entry(h.clone()).or_default().push(p);
+            }
+        }
+    }
+    let template = |h: &str| {
+        by_hash
+            .get(h)
+            .is_some_and(|v| v.len() >= 2 && (v.len() >= 3 || v.len() * 2 >= n))
+    };
+    // Imagen de contenido mayor de la página, sin contar las de plantilla.
+    let largest = |page: &PageInfo| {
+        page.pictures
+            .iter()
+            .filter(|x| x.hash.as_deref().is_some_and(|h| !template(h)))
+            .map(|x| x.coverage)
+            .fold(0.0f32, f32::max)
+    };
+    let text_chars = |page: &PageInfo| -> usize {
+        page.lines
+            .iter()
+            .chain(&page.rotated)
+            .map(|l| l.text().chars().filter(|c| !c.is_whitespace()).count())
+            .sum()
+    };
+    // 3. OCR de los escaneos sin capa de texto, antes de buscar encabezados y pies para
+    //    que también se separen los de las páginas escaneadas.
+    if cfg.ocr.enabled {
+        let mut engine: Option<std::result::Result<ocr::Engine, String>> = None;
+        let mut done = 0;
+        let budget = cfg.timeout.mul_f64(OCR_TIME_SHARE);
+        for (p, page) in pages.iter_mut().enumerate() {
+            if text_chars(page) > 0 || largest(page) < LARGE_PICTURE {
+                continue;
+            }
+            if done >= cfg.ocr.max_pages {
+                page.ocr = Some(Ocr::Skipped(Budget::Pages));
+                continue;
+            }
+            if started.elapsed() >= budget || cpu_time() >= budget {
+                page.ocr = Some(Ocr::Skipped(Budget::Time));
+                continue;
+            }
+            let engine = engine.get_or_insert_with(|| {
+                ocr::Engine::load(&cfg.ocr.models_dir).map_err(|e| e.to_string())
+            });
+            let engine = match engine {
+                Ok(engine) => engine,
+                Err(e) => {
+                    page.ocr = Some(Ocr::Failed(e.clone()));
+                    continue;
+                }
+            };
+            done += 1;
+            let mut text = None;
+            with_doc(&mut |d| {
+                text = Some(ocr::page(engine, d, p));
+                Ok(())
+            })?;
+            page.ocr = Some(match text.expect("OCR de la página") {
+                Ok(t) if t.lines == 0 => Ocr::Empty,
+                Ok(t) => {
+                    let (lines, rotated) = layout::lines(&t.glyphs);
+                    page.lines = lines;
+                    page.rotated = rotated;
+                    Ocr::Done {
+                        confidence: t.confidence,
+                        lines: t.lines,
+                        low_lines: t.low_lines,
+                    }
+                }
+                Err(e) => Ocr::Failed(e.to_string()),
+            });
+        }
+    }
+    // 4. Encabezados y pies de página: textos de las franjas superior e inferior que se
     //    repiten, y números de página impresos.
     let mut keys: HashMap<(bool, String), Vec<usize>> = HashMap::new();
     for (p, page) in pages.iter().enumerate() {
@@ -433,39 +578,12 @@ pub(crate) fn extract(
         }
         page.lines = kept;
     }
-    // 3. Imágenes repetidas en muchas páginas (logotipos, fondos de plantilla): se
-    //    registran una vez en documento.md.
-    let mut by_hash: HashMap<String, Vec<usize>> = HashMap::new();
-    for (p, page) in pages.iter().enumerate() {
-        let mut seen = HashSet::new();
-        for pic in &page.pictures {
-            if let Some(h) = &pic.hash
-                && seen.insert(h.clone())
-            {
-                by_hash.entry(h.clone()).or_default().push(p);
-            }
-        }
-    }
-    let template = |h: &str| {
-        by_hash
-            .get(h)
-            .is_some_and(|v| v.len() >= 2 && (v.len() >= 3 || v.len() * 2 >= n))
-    };
-    // 4. Clasificación de cada página.
+    // 5. Clasificación de cada página.
     for (p, page) in pages.iter_mut().enumerate() {
-        let text_chars: usize = page
-            .lines
-            .iter()
-            .chain(&page.rotated)
-            .map(|l| l.text().chars().filter(|c| !c.is_whitespace()).count())
-            .sum();
-        let large = page
-            .pictures
-            .iter()
-            .filter(|x| x.hash.as_deref().is_some_and(|h| !template(h)))
-            .map(|x| x.coverage)
-            .fold(0.0f32, f32::max);
-        let class = if text_chars == 0 {
+        let large = largest(page);
+        let class = if matches!(page.ocr, Some(Ocr::Done { .. })) {
+            Class::Ocr
+        } else if text_chars(page) == 0 {
             if large >= LARGE_PICTURE {
                 Class::Scanned
             } else {
@@ -496,7 +614,7 @@ pub(crate) fn extract(
         };
         page.class = class;
     }
-    // 5. Imágenes adjuntas y vistas de las páginas que no se pueden transcribir.
+    // 6. Imágenes adjuntas y vistas de las páginas que no se pueden transcribir.
     let mut written: HashMap<String, String> = HashMap::new();
     let mut furniture_images: Vec<(String, Vec<usize>)> = Vec::new();
     for (p, page) in pages.iter_mut().enumerate() {
@@ -572,7 +690,7 @@ pub(crate) fn extract(
     }
     tally.broken.dedup();
     tally.oversized.dedup();
-    // 6. Orden de lectura y bloques de cada página.
+    // 7. Orden de lectura y bloques de cada página.
     let mut units: Vec<Unit> = Vec::new();
     let mut leaves_of: Vec<(usize, usize)> = Vec::new();
     for (p, page) in pages.iter_mut().enumerate() {
@@ -669,7 +787,7 @@ pub(crate) fn extract(
         }
     }
     tally.tables.dedup();
-    // 7. Párrafos que continúan en otra columna o página: la línea anterior no termina
+    // 8. Párrafos que continúan en otra columna o página: la línea anterior no termina
     //    la frase y la siguiente empieza en minúscula, con el mismo formato. Las notas
     //    en letra menor que quedan en medio (afiliaciones, notas al pie) se dejan
     //    después del párrafo unido.
@@ -1168,10 +1286,24 @@ impl Render<'_> {
             .as_ref()
             .map(|v| format!("![Vista de la página {p}](../{v})\n"))
             .unwrap_or_default();
-        let note = match page.class {
-            Class::Scanned => "> Página escaneada sin capa de texto: su contenido solo está en la imagen; no se aplicó OCR.".to_string(),
-            Class::ScannedOcr => "> Página escaneada con una capa de texto de OCR previo: el texto que sigue procede de esa capa y su exactitud no se ha verificado.".to_string(),
-            Class::Visual => "> Página sin texto con contenido gráfico: se conserva su vista.".to_string(),
+        let note = match (page.class, &page.ocr) {
+            (Class::Scanned, None) => "> Página escaneada sin capa de texto: su contenido solo está en la imagen; no se aplicó OCR.".to_string(),
+            (Class::Scanned, Some(Ocr::Skipped(Budget::Pages))) => "> Página escaneada sin capa de texto: su contenido solo está en la imagen; no se aplicó OCR porque el documento supera el límite de páginas con OCR.".to_string(),
+            (Class::Scanned, Some(Ocr::Skipped(Budget::Time))) => "> Página escaneada sin capa de texto: su contenido solo está en la imagen; no se aplicó OCR porque se agotó el tiempo reservado al OCR.".to_string(),
+            (Class::Scanned, Some(Ocr::Empty)) => "> Página escaneada sin capa de texto: el OCR no reconoció texto; su contenido solo está en la imagen.".to_string(),
+            (Class::Scanned, Some(_)) => "> Página escaneada sin capa de texto: el OCR falló; su contenido solo está en la imagen.".to_string(),
+            (Class::Ocr, Some(Ocr::Done { confidence, low_lines, .. })) => {
+                let mut note = format!(
+                    "> Página escaneada sin capa de texto: el texto que sigue se obtuvo con OCR local (confianza media {}) y su exactitud no se ha verificado; la vista de la página es la referencia.",
+                    percent(*confidence)
+                );
+                if *low_lines > 0 {
+                    note.push_str(&format!(" {low_lines} línea(s) tienen confianza baja."));
+                }
+                note
+            }
+            (Class::ScannedOcr, _) => "> Página escaneada con una capa de texto de OCR previo: el texto que sigue procede de esa capa y su exactitud no se ha verificado.".to_string(),
+            (Class::Visual, _) => "> Página sin texto con contenido gráfico: se conserva su vista.".to_string(),
             _ if !page.furniture.is_empty() => format!("_Página {p} sin contenido propio: solo tiene encabezado, pie o número de página._"),
             _ => format!("_Página {p} en blanco._"),
         };
@@ -1326,9 +1458,28 @@ impl Render<'_> {
             description.push(' ');
             description.push_str(&truncate_chars(&line, 160));
         }
-        let draft = range.iter().any(|&i| {
-            matches!(units[i].kind, Kind::PageNote(p) if matches!(ex.pages[p - 1].class, Class::Scanned | Class::ScannedOcr))
-        });
+        // Páginas escaneadas de las que procede texto del concepto y páginas cuya nota
+        // (con la vista) está en él: un concepto con texto de OCR cuya nota quedó en otro
+        // concepto lo señala bajo su título.
+        let mut noted: Vec<usize> = Vec::new();
+        let mut transcribed: Vec<usize> = Vec::new();
+        for &i in &range {
+            match units[i].kind {
+                Kind::PageNote(p) => noted.push(p),
+                _ => transcribed.extend(
+                    (units[i].from..=units[i].to).filter(|&p| ex.pages[p - 1].class.unverified()),
+                ),
+            }
+        }
+        transcribed.sort();
+        transcribed.dedup();
+        let elsewhere: Vec<usize> = transcribed
+            .iter()
+            .copied()
+            .filter(|p| !noted.contains(p))
+            .collect();
+        let draft =
+            !transcribed.is_empty() || noted.iter().any(|&p| ex.pages[p - 1].class.unverified());
         let mut source_spans = vec![pages_span("seccion", pages_from, pages_to)];
         source_spans.extend(spans.iter().map(|(id, a, b)| pages_span(id, *a, *b)));
         let kind = if outline.split.is_some() {
@@ -1345,6 +1496,16 @@ impl Render<'_> {
         if sec.inferred {
             out.push_str("> Encabezado inferido por su formato tipográfico: el PDF no lo marca como encabezado.\n\n");
         }
+        if !elsewhere.is_empty() {
+            let one = elsewhere.len() == 1;
+            out.push_str(&format!(
+                "> El texto de {} {} procede de {} con OCR y su exactitud no se ha verificado; la nota y la vista de {} están en el concepto donde empieza.\n\n",
+                if one { "la" } else { "las" },
+                pages_phrase(&elsewhere).to_lowercase(),
+                if one { "un escaneo transcrito" } else { "escaneos transcritos" },
+                if one { "la página" } else { "cada página" },
+            ));
+        }
         if body.is_empty() {
             out.push_str("Sin texto extraído.\n");
         } else {
@@ -1352,6 +1513,11 @@ impl Render<'_> {
         }
         (fields, out)
     }
+}
+
+/// Porcentaje entero, como «93 %».
+fn percent(x: f32) -> String {
+    format!("{} %", (x * 100.0).round() as i64)
 }
 
 /// Tramo de procedencia de unas páginas físicas.
@@ -1549,11 +1715,93 @@ pub(crate) fn build_bundle(
             .collect()
     };
     let mut issues = Vec::new();
-    let scanned = by_class(Class::Scanned);
+    let scanned_with = |f: &dyn Fn(&Option<Ocr>) -> bool| -> Vec<usize> {
+        ex.pages
+            .iter()
+            .enumerate()
+            .filter(|(_, x)| x.class == Class::Scanned && f(&x.ocr))
+            .map(|(p, _)| p + 1)
+            .collect()
+    };
+    let scanned = scanned_with(&|o| o.is_none());
     if !scanned.is_empty() {
         issues.push(Issue::loss(format!(
             "{}: escaneada sin capa de texto; se adjunta su vista y no se aplicó OCR",
             pages_phrase(&scanned)
+        )));
+    }
+    let skipped = scanned_with(&|o| *o == Some(Ocr::Skipped(Budget::Pages)));
+    if !skipped.is_empty() {
+        issues.push(Issue::loss(format!(
+            "{}: escaneada sin capa de texto; no se aplicó OCR porque el documento supera el límite de páginas con OCR (OKF_OCR_MAX_PAGES); se adjunta su vista",
+            pages_phrase(&skipped)
+        )));
+    }
+    let late = scanned_with(&|o| *o == Some(Ocr::Skipped(Budget::Time)));
+    if !late.is_empty() {
+        issues.push(Issue::loss(format!(
+            "{}: escaneada sin capa de texto; no se aplicó OCR porque se agotó el tiempo reservado al OCR (dos tercios de OKF_CONVERSION_TIMEOUT_S); se adjunta su vista",
+            pages_phrase(&late)
+        )));
+    }
+    let empty = scanned_with(&|o| *o == Some(Ocr::Empty));
+    if !empty.is_empty() {
+        issues.push(Issue::loss(format!(
+            "{}: escaneada sin capa de texto; el OCR no reconoció texto; se adjunta su vista",
+            pages_phrase(&empty)
+        )));
+    }
+    let mut failures: Vec<(String, Vec<usize>)> = Vec::new();
+    for (p, page) in ex.pages.iter().enumerate() {
+        if let (Class::Scanned, Some(Ocr::Failed(e))) = (page.class, &page.ocr) {
+            match failures.iter_mut().find(|(m, _)| m == e) {
+                Some((_, v)) => v.push(p + 1),
+                None => failures.push((e.clone(), vec![p + 1])),
+            }
+        }
+    }
+    for (e, pages) in failures {
+        issues.push(Issue::loss(format!(
+            "{}: escaneada sin capa de texto; el OCR falló ({}); se adjunta su vista",
+            pages_phrase(&pages),
+            e
+        )));
+    }
+    // Páginas con OCR del servicio: con confianza media suficiente, una observación;
+    // con confianza baja, una incidencia.
+    let mut sure: Vec<(usize, f32)> = Vec::new();
+    let mut unsure: Vec<(usize, f32)> = Vec::new();
+    for (p, page) in ex.pages.iter().enumerate() {
+        if let Some(Ocr::Done { confidence, .. }) = page.ocr {
+            if confidence < ocr::LOW_CONFIDENCE {
+                unsure.push((p + 1, confidence));
+            } else {
+                sure.push((p + 1, confidence));
+            }
+        }
+    }
+    let ocr_phrase = |v: &[(usize, f32)]| {
+        let pages: Vec<usize> = v.iter().map(|x| x.0).collect();
+        let (low, high) = v
+            .iter()
+            .fold((f32::MAX, f32::MIN), |(a, b), x| (a.min(x.1), b.max(x.1)));
+        let range = if percent(low) == percent(high) {
+            percent(low)
+        } else {
+            format!("entre {} y {}", percent(low), percent(high))
+        };
+        (pages_phrase(&pages), range)
+    };
+    if !unsure.is_empty() {
+        let (pages, range) = ocr_phrase(&unsure);
+        issues.push(Issue::loss(format!(
+            "{pages}: escaneada sin capa de texto; texto obtenido con OCR local con confianza baja (media {range}); revísese con la vista adjunta"
+        )));
+    }
+    if !sure.is_empty() {
+        let (pages, range) = ocr_phrase(&sure);
+        issues.push(Issue::note(format!(
+            "{pages}: escaneada sin capa de texto; texto obtenido con OCR local (confianza media {range}), sin verificar; se adjunta la vista"
         )));
     }
     if !t.views_failed.is_empty() {
@@ -1756,11 +2004,15 @@ pub(crate) fn build_bundle(
     let headings = outline.headings.iter().flatten().count();
     let summary = [
         format!(
-            "Páginas: {n} (texto digital: {}; mixtas: {}; escaneadas: {}; escaneadas con OCR previo: {}; solo visuales: {}; en blanco: {})",
+            "Páginas: {n} (texto digital: {}; mixtas: {}; escaneadas: {}; escaneadas con OCR previo: {}{}; solo visuales: {}; en blanco: {})",
             count(Class::Digital),
             count(Class::Mixed),
             count(Class::Scanned),
             count(Class::ScannedOcr),
+            match count(Class::Ocr) {
+                0 => String::new(),
+                k => format!("; escaneadas con OCR del servicio: {k}"),
+            },
             count(Class::Visual),
             count(Class::Blank)
         ),
@@ -2356,5 +2608,202 @@ mod tests {
         assert_eq!(furniture_key("Página 3 de 3", 3), "página # de 3");
         assert_eq!(furniture_key("Vol. 3 · 2026", 4), "vol. 3 · 2026");
         assert_eq!(furniture_text("Página 2 de 2", 2), "Página N de 2");
+    }
+
+    /// Configuración con el OCR activo y los modelos de `OKF_OCR_MODELS_DIR` o de
+    /// `models/ocr` (tools/ocr_models.sh). Sin modelos, las pruebas que los necesitan
+    /// se omiten, salvo con `OKF_REQUIRE_OCR_MODELS`, que la CI fija.
+    fn ocr_config() -> Option<Config> {
+        let dir = std::env::var_os("OKF_OCR_MODELS_DIR")
+            .map(std::path::PathBuf::from)
+            .unwrap_or_else(|| "models/ocr".into());
+        if !ocr::MODEL_FILES.iter().all(|f| dir.join(f).is_file()) {
+            assert!(
+                std::env::var_os("OKF_REQUIRE_OCR_MODELS").is_none(),
+                "faltan los modelos de OCR en {}",
+                dir.display()
+            );
+            eprintln!(
+                "modelos de OCR ausentes en {}: prueba omitida",
+                dir.display()
+            );
+            return None;
+        }
+        let mut cfg = Config::default();
+        cfg.ocr.enabled = true;
+        cfg.ocr.models_dir = dir;
+        Some(cfg)
+    }
+
+    /// Palabras de los conceptos de contenido, sin frontmatter, notas ni marcadores.
+    fn content_words(md: &HashMap<String, String>) -> Vec<String> {
+        let mut words = Vec::new();
+        for (name, text) in md {
+            if !name.starts_with("contenido/") || name.ends_with("index.md") {
+                continue;
+            }
+            let body = text.splitn(3, "---").nth(2).unwrap_or_default();
+            for line in body
+                .lines()
+                .filter(|l| !l.starts_with('>') && !l.starts_with("<!--"))
+            {
+                words.extend(
+                    line.to_lowercase()
+                        .split(|c: char| !c.is_alphanumeric())
+                        .filter(|w| !w.is_empty())
+                        .map(str::to_string),
+                );
+            }
+        }
+        words
+    }
+
+    #[test]
+    fn ocr_transcribes_scanned_pages_through_the_common_layout() {
+        let Some(cfg) = ocr_config() else { return };
+        let (state, md, names) = convert_with("examples/pdf/muestras/escaneado_ocr.pdf", &cfg);
+        assert_eq!(state, "complete");
+        // Las vistas se conservan como referencia; el escaneo no se adjunta aparte.
+        assert!(names.contains("assets/pagina-001.png") && names.contains("assets/pagina-002.png"));
+        assert!(!names.iter().any(|n| n.contains("-imagen-")));
+        let report = &md["conversion-report.md"];
+        assert!(
+            report.contains("escaneadas con OCR del servicio: 2"),
+            "{report}"
+        );
+        assert!(report.contains(
+            "- Páginas 1 y 2: escaneada sin capa de texto; texto obtenido con OCR local (confianza media"
+        ));
+        assert!(
+            report.contains("| 1 | escaneo con OCR del servicio |")
+                && report.contains("| 2 | escaneo con OCR del servicio |"),
+            "{report}"
+        );
+        // El texto pasa por la maquetación común: encabezados y pies repetidos,
+        // números de página, encabezados inferidos, listas y secciones.
+        let doc = &md["documento.md"];
+        assert!(doc.contains("Informe técnico — Página N de 2"), "{doc}");
+        assert!(doc.contains("Documento de prueba sin datos reales"));
+        assert_eq!(labels(&md).len(), 2);
+        assert!(doc.contains("1\\. Contexto"));
+        let concepts: Vec<&String> = md
+            .keys()
+            .filter(|k| k.starts_with("contenido/seccion-"))
+            .collect();
+        assert!(concepts.len() >= 2, "{concepts:?}");
+        for c in &concepts {
+            assert!(md[*c].contains("status: \"draft\""), "{c}");
+        }
+        let last = concepts.iter().max().unwrap();
+        assert!(md[*last].contains("> El texto de la página 2 procede de un escaneo transcrito con OCR y su exactitud no se ha verificado; la nota y la vista de la página están en el concepto donde empieza."), "{}", md[*last]);
+        let first = &md["contenido/seccion-001.md"];
+        assert!(first.contains(
+            "> Página escaneada sin capa de texto: el texto que sigue se obtuvo con OCR local (confianza media"
+        ));
+        assert!(first.contains("lo que obliga a programarlas en fines de semana."));
+        let all: String = md.values().cloned().collect();
+        assert!(all.contains("1. El servicio de catálogo guarda la descripción"));
+        // Casi todas las palabras del documento digital del que procede el escaneo.
+        let (_, digital, _) = sample("informe_tecnico");
+        let mut expected: HashMap<String, usize> = HashMap::new();
+        for w in content_words(&digital) {
+            *expected.entry(w).or_default() += 1;
+        }
+        let total: usize = expected.values().sum();
+        let mut found = 0;
+        for w in content_words(&md) {
+            if let Some(n) = expected.get_mut(&w).filter(|n| **n > 0) {
+                *n -= 1;
+                found += 1;
+            }
+        }
+        let recall = found as f32 / total as f32;
+        assert!(
+            recall >= 0.95,
+            "palabras recuperadas: {recall:.3} de {total}"
+        );
+        for w in [
+            "migración",
+            "anonimizada",
+            "reversión",
+            "capacitación",
+            "años",
+        ] {
+            assert!(all.contains(w), "{w}");
+        }
+    }
+
+    #[test]
+    fn ocr_respects_the_page_budget_and_declares_the_rest() {
+        let Some(mut cfg) = ocr_config() else { return };
+        cfg.ocr.max_pages = 1;
+        let (state, md, _) = convert_with("examples/pdf/muestras/escaneado_ocr.pdf", &cfg);
+        assert_eq!(state, "partial");
+        let report = &md["conversion-report.md"];
+        assert!(report.contains(
+            r"- Página 2: escaneada sin capa de texto; no se aplicó OCR porque el documento supera el límite de páginas con OCR (OKF\_OCR\_MAX\_PAGES); se adjunta su vista"
+        ), "{report}");
+        assert!(
+            report.contains("escaneadas: 1;")
+                && report.contains("escaneadas con OCR del servicio: 1")
+        );
+        let all: String = md.values().cloned().collect();
+        assert!(
+            all.contains(
+                "no se aplicó OCR porque el documento supera el límite de páginas con OCR."
+            )
+        );
+    }
+
+    #[test]
+    fn ocr_without_text_in_the_image_keeps_the_scan_as_a_loss() {
+        let Some(cfg) = ocr_config() else { return };
+        let (state, md, _) = convert_with("examples/pdf/muestras/escaneado_mixto.pdf", &cfg);
+        assert_eq!(state, "partial");
+        assert!(md["conversion-report.md"].contains(
+            "- Página 2: escaneada sin capa de texto; el OCR no reconoció texto; se adjunta su vista"
+        ));
+        assert!(
+            md["contenido/texto.md"]
+                .contains("> Página escaneada sin capa de texto: el OCR no reconoció texto")
+        );
+        // El OCR solo actúa sobre escaneos: la página mixta conserva su imagen.
+        assert!(md["contenido/texto.md"].contains("![Imagen de la página 5]"));
+    }
+
+    #[test]
+    fn ocr_stops_before_exhausting_the_conversion_time() {
+        let mut cfg = Config::default();
+        cfg.ocr.enabled = true;
+        cfg.ocr.models_dir = "/nonexistent/okf-ocr".into();
+        cfg.timeout = std::time::Duration::ZERO;
+        let (state, md, _) = convert_with("examples/pdf/muestras/escaneado_ocr.pdf", &cfg);
+        assert_eq!(state, "partial");
+        assert!(md["conversion-report.md"].contains(
+            r"- Páginas 1 y 2: escaneada sin capa de texto; no se aplicó OCR porque se agotó el tiempo reservado al OCR (dos tercios de OKF\_CONVERSION\_TIMEOUT\_S); se adjunta su vista"
+        ), "{}", md["conversion-report.md"]);
+        assert!(md.values().any(|t| t.contains("no se aplicó OCR porque se agotó el tiempo reservado al OCR.")));
+    }
+
+    #[test]
+    fn ocr_that_cannot_load_its_models_leaves_the_scan_as_a_view() {
+        let mut cfg = Config::default();
+        cfg.ocr.enabled = true;
+        cfg.ocr.models_dir = "/nonexistent/okf-ocr".into();
+        let (state, md, names) = convert_with("examples/pdf/muestras/escaneado_ocr.pdf", &cfg);
+        assert_eq!(state, "partial");
+        assert!(names.contains("assets/pagina-001.png"));
+        let report = &md["conversion-report.md"];
+        assert!(report.contains(
+            "- Páginas 1 y 2: escaneada sin capa de texto; el OCR falló (no se pudo cargar el modelo de detección del OCR"
+        ), "{report}");
+        assert!(
+            !report.contains("/nonexistent"),
+            "el informe no expone rutas del sistema"
+        );
+        assert!(
+            md.values()
+                .any(|t| t.contains("> Página escaneada sin capa de texto: el OCR falló"))
+        );
     }
 }

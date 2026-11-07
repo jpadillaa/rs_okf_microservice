@@ -68,7 +68,35 @@ pub struct Config {
     pub zip: crate::ooxml::ZipLimits,
     /// Píxeles máximos de una imagen que el conversor decodifica (`OKF_MAX_IMAGE_PIXELS`).
     pub max_image_pixels: u64,
+    /// OCR local de las páginas PDF escaneadas (`OKF_OCR_*`).
+    pub ocr: OcrSettings,
 }
+
+/// OCR local de las páginas PDF escaneadas; desactivado por defecto.
+#[derive(Clone, Debug)]
+pub struct OcrSettings {
+    /// Aplicar OCR a las páginas escaneadas sin capa de texto (`OKF_OCR_ENABLED`).
+    pub enabled: bool,
+    /// Directorio con `det.onnx`, `rec.onnx` y `dict.txt` (`OKF_OCR_MODELS_DIR`).
+    pub models_dir: PathBuf,
+    /// Páginas máximas con OCR por documento; las demás quedan como vista
+    /// (`OKF_OCR_MAX_PAGES`).
+    pub max_pages: usize,
+    /// Memoria, en MB, que se suma a `OKF_MAX_MEMORY_MB` en la conversión de un PDF
+    /// cuando el OCR está activo (`OKF_OCR_MEMORY_MB`).
+    pub memory_mb: u64,
+}
+impl Default for OcrSettings {
+    fn default() -> Self {
+        OcrSettings {
+            enabled: false,
+            models_dir: PathBuf::from("/usr/local/share/okf/ocr"),
+            max_pages: 40,
+            memory_mb: 256,
+        }
+    }
+}
+
 impl Default for Config {
     fn default() -> Self {
         Config {
@@ -92,6 +120,7 @@ impl Default for Config {
             min_free_mb: 0,
             zip: crate::ooxml::ZipLimits::default(),
             max_image_pixels: 33_554_432,
+            ocr: OcrSettings::default(),
         }
     }
 }
@@ -132,6 +161,15 @@ impl Config {
                 entries: var("OKF_MAX_ZIP_ENTRIES", d.zip.entries)?,
             },
             max_image_pixels: var("OKF_MAX_IMAGE_PIXELS", d.max_image_pixels)?,
+            ocr: OcrSettings {
+                enabled: var("OKF_OCR_ENABLED", d.ocr.enabled)
+                    .map_err(|_| anyhow::anyhow!("OKF_OCR_ENABLED debe ser true o false"))?,
+                models_dir: std::env::var_os("OKF_OCR_MODELS_DIR")
+                    .map(PathBuf::from)
+                    .unwrap_or(d.ocr.models_dir.clone()),
+                max_pages: var("OKF_OCR_MAX_PAGES", d.ocr.max_pages)?,
+                memory_mb: var("OKF_OCR_MEMORY_MB", d.ocr.memory_mb)?,
+            },
             // Plazos internos y descriptores: fijos (arquitectura técnica, §5).
             ..d
         };
@@ -145,7 +183,23 @@ impl Config {
         {
             bail!("OKF_MAX_UPLOAD_MB y los límites OKF_MAX_ZIP_* deben ser mayores que 0")
         }
+        if c.ocr.enabled && c.ocr.max_pages == 0 {
+            bail!(
+                "OKF_OCR_MAX_PAGES debe ser mayor que 0; para no aplicar OCR, OKF_OCR_ENABLED=false"
+            )
+        }
         Ok(c)
+    }
+    /// Memoria máxima, en MB, del proceso que convierte `filename`: la conversión de un
+    /// PDF con OCR activo suma el presupuesto propio del OCR.
+    pub(crate) fn memory_limit_mb(&self, filename: &str) -> u64 {
+        let pdf =
+            crate::format::Format::from_filename(filename) == Some(crate::format::Format::Pdf);
+        if pdf && self.ocr.enabled {
+            self.max_memory_mb.saturating_add(self.ocr.memory_mb)
+        } else {
+            self.max_memory_mb
+        }
     }
     /// Tamaño máximo de un archivo subido, en bytes.
     pub fn max_upload_bytes(&self) -> usize {
@@ -372,13 +426,11 @@ impl Watch<'_> {
             && let Some(mb) = rss_mb(pid).await
         {
             self.peak_mb = self.peak_mb.max(mb);
-            if mb > cfg.max_memory_mb {
+            let limit = cfg.memory_limit_mb(&self.job.filename);
+            if mb > limit {
                 return Ok(Some(Outcome::Failed(
                     FailureKind::Permanent,
-                    format!(
-                        "la conversión superó el límite de memoria de {} MB ({mb} MB)",
-                        cfg.max_memory_mb
-                    ),
+                    format!("la conversión superó el límite de memoria de {limit} MB ({mb} MB)"),
                 )));
             }
         }
@@ -425,7 +477,10 @@ async fn run_child(
         .arg(original)
         .arg(dir)
         .arg(&job.filename)
-        .env("OKF_MAX_MEMORY_MB", a.cfg.max_memory_mb.to_string())
+        .env(
+            "OKF_MAX_MEMORY_MB",
+            a.cfg.memory_limit_mb(&job.filename).to_string(),
+        )
         .env("OKF_MAX_OUTPUT_MB", a.cfg.max_output_mb.to_string())
         .env(
             "OKF_CONVERSION_TIMEOUT_S",
@@ -439,6 +494,9 @@ async fn run_child(
         .env("OKF_MAX_ZIP_TOTAL_MB", a.cfg.zip.total_mb.to_string())
         .env("OKF_MAX_ZIP_ENTRIES", a.cfg.zip.entries.to_string())
         .env("OKF_MAX_IMAGE_PIXELS", a.cfg.max_image_pixels.to_string())
+        .env("OKF_OCR_ENABLED", a.cfg.ocr.enabled.to_string())
+        .env("OKF_OCR_MODELS_DIR", &a.cfg.ocr.models_dir)
+        .env("OKF_OCR_MAX_PAGES", a.cfg.ocr.max_pages.to_string())
         .stdin(Stdio::null())
         .stdout(Stdio::piped())
         .stderr(Stdio::piped())
@@ -504,13 +562,13 @@ async fn run_child(
                 )
             } else if converted
                 .peak_mb
-                .is_some_and(|peak| peak > a.cfg.max_memory_mb)
+                .is_some_and(|peak| peak > a.cfg.memory_limit_mb(&job.filename))
             {
                 Outcome::Failed(
                     FailureKind::Permanent,
                     format!(
                         "la conversión superó el límite de memoria de {} MB (máximo {} MB)",
-                        a.cfg.max_memory_mb,
+                        a.cfg.memory_limit_mb(&job.filename),
                         converted.peak_mb.unwrap()
                     ),
                 )
@@ -1056,6 +1114,10 @@ pub async fn worker(root: PathBuf, poll_ms: u64, once: bool) -> Result<()> {
         bail!("no se puede medir la memoria de los procesos (ni /proc ni ps disponibles)")
     }
     crate::isolation::log_support();
+    if a.cfg.ocr.enabled {
+        crate::pdf::ocr::check_models(&a.cfg.ocr.models_dir)?;
+        info!(dir = %a.cfg.ocr.models_dir.display(), "OCR local activo para las páginas PDF escaneadas");
+    }
     let maintenance = crate::retention::start(&a).await?;
     reconcile(&a).await?;
     let heartbeat = crate::observability::Heartbeat::start(&a).await?;
@@ -1130,6 +1192,23 @@ mod tests {
     }
 
     // Se ejecuta en otro proceso, sin inyectar disparadores en el binario de producción.
+    #[test]
+    fn ocr_memory_budget_applies_only_to_pdf_with_ocr_enabled() {
+        let mut cfg = Config::default();
+        assert_eq!(cfg.memory_limit_mb("a.pdf"), 500);
+        cfg.ocr.enabled = true;
+        assert_eq!(cfg.memory_limit_mb("a.pdf"), 756);
+        assert_eq!(cfg.memory_limit_mb("A.PDF"), 756);
+        assert_eq!(cfg.memory_limit_mb("a.docx"), 500);
+        let err = crate::pdf::ocr::check_models(std::path::Path::new("/nonexistent/okf-ocr"))
+            .unwrap_err()
+            .to_string();
+        assert!(
+            err.contains("OKF_OCR_MODELS_DIR") && err.contains("tools/ocr_models.sh"),
+            "{err}"
+        );
+    }
+
     #[test]
     fn panic_child() {
         if std::env::var_os("RUST_TEST_PANIC_CHILD").is_some() {

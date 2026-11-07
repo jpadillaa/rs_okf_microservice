@@ -2,7 +2,10 @@
 use crate::output::Fields;
 use serde::{Deserialize, Serialize};
 
-pub(crate) const PROFILE: &str = "1.0.0";
+pub(crate) const PROFILE: &str = "1.1.0";
+/// Perfiles anteriores cuyos bundles siguen siendo válidos: 1.1.0 solo añade reglas
+/// para páginas que un bundle 1.0.0 no puede contener (OCR del servicio).
+const PREVIOUS_PROFILES: [&str; 1] = ["1.0.0"];
 pub(crate) const PACKAGE: &str = env!("CARGO_PKG_VERSION");
 pub(crate) const COMMIT: &str = env!("OKF_BUILD_COMMIT");
 
@@ -73,7 +76,8 @@ pub(crate) fn check(
             "versiones del conversor o del perfil ausentes o incoherentes entre documento e informe"
         )
     }
-    if doc.profile_version.as_deref() != Some(PROFILE) {
+    let known = |v: &str| v == PROFILE || PREVIOUS_PROFILES.contains(&v);
+    if !doc.profile_version.as_deref().is_some_and(known) {
         anyhow::bail!("versión del perfil no admitida: {:?}", doc.profile_version)
     }
     let commit = doc.converter_commit.as_deref().unwrap();
@@ -95,6 +99,9 @@ mod tests {
         let mut report = doc.clone();
         report["converter_version"] = "999".into();
         assert!(check(&doc, &report).is_err());
+        let mut previous = doc.clone();
+        previous["profile_version"] = "1.0.0".into();
+        check(&previous, &previous).unwrap();
         let mut future = doc.clone();
         future["profile_version"] = "999".into();
         assert!(check(&future, &future).is_err());

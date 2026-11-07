@@ -54,4 +54,5 @@ ignore = [
     { id = "RUSTSEC-2026-0192", reason = "ttf-parser sin mantenimiento: dependencia del renderizador PPTX (betteroffice-pptx) sin versión alternativa publicada" },
     { id = "RUSTSEC-2026-0206", reason = "rustybuzz sin mantenimiento: dependencia del renderizador PPTX (betteroffice-pptx) sin versión alternativa publicada" },
     { id = "RUSTSEC-2026-0215", reason = "smallstr sin mantenimiento: dependencia del renderizador PPTX (betteroffice-pptx) sin versión alternativa publicada" },
+    { id = "RUSTSEC-2026-0319", reason = "anymap2 sin mantenimiento: llega por liquid, el motor de plantillas de tract-nnef y de la compilación de tract-linalg (OCR local de pdf_oxide); es un aviso de mantenimiento, no una vulnerabilidad, y tract 0.22 no tiene versión sin él" },
 ]

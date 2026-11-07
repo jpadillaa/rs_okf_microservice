@@ -44,6 +44,8 @@ services:
     environment:
       OKF_DATABASE_URL: ${OKF_DATABASE_URL_DOCKER:?configura .env a partir de .env.example}
       OKF_DATA_DIR: /data
+      # Los modelos vienen en la imagen; la ruta de .env es la del binario en el host.
+      OKF_OCR_MODELS_DIR: /usr/local/share/okf/ocr
     depends_on:
       postgres:
         condition: service_healthy

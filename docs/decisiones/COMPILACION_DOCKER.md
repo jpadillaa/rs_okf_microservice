@@ -65,6 +65,18 @@ Verificaciones completadas:
 - Inspección de UID/GID 10001:10001, directorio `/`, fuente TrueType y certificados CA en el runtime.
 - YAML de CI válido; la exportación y restauración de caché GHA entre runners se comprobaron después de publicar, como se detalla a continuación.
 
+## OCR local (6 de noviembre)
+
+El [OCR local](OCR_LOCAL.md) añade a la imagen la etapa `ocr-models`. Descarga los modelos con `ADD --checksum` (revisión y SHA-256 fijados), copia la licencia Apache-2.0 desde la etapa de Debian y fija los permisos (755 el directorio, 644 los archivos) antes de copiarlos al runtime. No se usa `ADD --chmod` en el runtime porque aplicaría el modo también a los directorios padre que crea: `/usr/local` quedó en 644 y el worker no pudo lanzar el proceso hijo («Permission denied»).
+
+Por capas de `docker history` (misma máquina, Linux arm64), frente a la imagen del 4 de noviembre:
+
+- el ejecutable pasa de 31,6 a 44,3 MB, por tract y el código nuevo;
+- la capa de modelos añade 10,4 MB;
+- la imagen local, según `docker image inspect .Size`, pasa de 104,2 a 141,1 MB.
+
+Al añadir tract cambia la receta de `cargo-chef`, así que la primera construcción vuelve a compilar las dependencias. `tools/smoke.sh` termina con una fase de OCR que convierte `escaneado_ocr.pdf` con `OKF_OCR_ENABLED=true` dentro del contenedor y la valida.
+
 ## Verificación de CI y caché remota
 
 La [ejecución de `c4f76d9`](https://github.com/jpadillaa/rs_okf_microservice/actions/runs/41833194408) construyó la imagen sin una caché Docker previa, convirtió y validó los cuatro formatos y exportó 42 objetos de caché, 922 359 565 bytes en total. Su job `test` falló antes de ejecutar pruebas al restaurar la caché Rust antigua y agotar el disco; el fallo motivó la configuración sin símbolos y el prefijo nuevo descritos arriba.

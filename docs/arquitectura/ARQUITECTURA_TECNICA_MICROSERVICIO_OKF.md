@@ -89,7 +89,7 @@ La primera entrega implementó la ruta completa con PPTX; la segunda añadió el
 | `OKF_MAX_BLOCKS` | 50000 | Bloques máximos (párrafos y tablas de primer nivel) por documento DOCX. |
 | `OKF_MAX_CELLS` | 1000000 | Celdas con contenido máximas por libro XLSX. |
 | `OKF_MAX_PAGES` | 2000 | Páginas máximas por documento PDF. |
-| `OKF_CONVERSION_TIMEOUT_S` | 300 | Duración máxima de una conversión. |
+| `OKF_CONVERSION_TIMEOUT_S` | 300 | Duración máxima de una conversión; con el OCR activo, también su presupuesto de tiempo (ver `OKF_OCR_MAX_PAGES`). |
 | `OKF_RETENTION_DAYS` | 0 (desactivada) | Días completos desde la finalización para expirar trabajos `complete`, `partial` o `failed`; sin variable o con 0 se conservan los archivos. |
 | `OKF_SHUTDOWN_GRACE_S` | 30 | Plazo de gracia del worker tras SIGTERM/SIGINT; 0 interrumpe sin espera adicional. |
 | `OKF_MAX_ATTEMPTS` | 3 | Intentos máximos ante fallos transitorios. |
@@ -99,6 +99,11 @@ La primera entrega implementó la ruta completa con PPTX; la segunda añadió el
 | `OKF_MAX_ZIP_ENTRY_MB` | 128 | Tamaño descomprimido máximo de una parte de un paquete OOXML, en MiB. |
 | `OKF_MAX_ZIP_TOTAL_MB` | 512 | Tamaño descomprimido máximo de un paquete OOXML, en MiB. |
 | `OKF_MAX_ZIP_ENTRIES` | 4096 | Partes máximas de un paquete OOXML. |
+| `OKF_OCR_ENABLED` | `false` | `true` aplica el OCR local a las páginas PDF escaneadas sin capa de texto; el adaptador decide qué páginas lo necesitan y la API no cambia. Admite solo `true` o `false`. Con `true`, el worker no arranca si faltan los modelos o no se pueden cargar. |
+| `OKF_OCR_MODELS_DIR` | `/usr/local/share/okf/ocr` (la ruta de la imagen) | Directorio con `det.onnx`, `rec.onnx` y `dict.txt`; `tools/ocr_models.sh` los descarga y verifica para el binario en el host (`models/ocr` en `.env.example`). Compose fija la ruta de la imagen para el worker. Landlock permite leerlo al hijo cuando el OCR está activo. Las pruebas lo usan como origen de los modelos, con `models/ocr` por defecto. |
+| `OKF_OCR_MAX_PAGES` | 40 | Páginas escaneadas que se transcriben como máximo en un documento; las demás quedan como vista e incidencia. Debe ser mayor que 0 con el OCR activo. Además, el OCR no empieza otra página cuando el proceso ha consumido dos tercios de `OKF_CONVERSION_TIMEOUT_S` en tiempo o en CPU (que es también su `RLIMIT_CPU`): las restantes quedan igual, para que la conversión entregue un bundle `partial` en vez de fallar. |
+| `OKF_OCR_MEMORY_MB` | 256 | MB que se suman a `OKF_MAX_MEMORY_MB` (vigilancia de RSS y `RLIMIT_AS`) en la conversión de un PDF con el OCR activo; los demás formatos conservan su límite. |
+| `OKF_REQUIRE_OCR_MODELS` | sin definir | Solo pruebas: su presencia hace fallar las pruebas del OCR si faltan los modelos, en vez de omitirlas. La CI la fija. |
 | `OKF_MAX_IMAGE_PIXELS` | 33554432 | Píxeles máximos de una imagen que el conversor decodifica (imágenes PDF que no se copian como JPEG); una imagen mayor no se adjunta y se declara como pérdida. Las vistas PPTX aplican el presupuesto fijo del renderizador, que es el mismo valor, y declaran igual las imágenes omitidas. |
 
 **Valores fijos.** Algunos plazos internos y un límite no se configuran, porque ningún despliegue necesita ajustarlos y algunos deben coincidir entre la API y los workers: vigencia de la asignación, 60 s, renovada cada tercio; espera antes del primer reintento, 30 s, duplicada en cada intento con tope de una hora; antigüedad máxima del latido, 30 s, renovado cada 10 s; y 256 descriptores abiertos en el conversor (RLIMIT_NOFILE). Están en `Config::default` (`src/worker.rs`); si un despliegue llega a necesitar otro valor, se vuelve a exponer como variable.
@@ -116,7 +121,8 @@ son fallos permanentes de recursos; otras señales siguen siendo transitorias.
 
 En Linux, Landlock (ABI 3, con degradación explícita en kernels anteriores) permite
 leer el original y leer/escribir solamente el directorio del intento. Permite además
-leer los archivos de fuente configurados o de reserva, `/etc/localtime`; no concede ejecución ni creación de enlaces o dispositivos.
+leer los archivos de fuente configurados o de reserva, `/etc/localtime` y, con el OCR
+activo, el directorio de sus modelos; no concede ejecución ni creación de enlaces o dispositivos.
 El worker registra al arrancar si Landlock no está disponible; un error al imponer
 una regla impide convertir. Los descriptores estándar heredados siguen abiertos. El descriptor del original se abre después de los rlimits y antes de restringir rutas, y se conserva durante la lectura; así no necesita reabrirlo después de la restricción. También se comprueba el tamaño del original al leerlo.
 El supervisor accede a PostgreSQL por la red interna de Compose. El hijo aplica
@@ -198,7 +204,7 @@ Aplican los límites `OKF_MAX_ZIP_*` y los rlimits de C4. El original privado co
 en un bundle sigue siendo parte de este: el validador no lo publica ni lo transmite.
 
 Los árboles golden guardan huellas de binarios, no sus bytes; la prueba reconstruye
-los bundles desde los 26 ejemplos y valida tanto sus ZIP como sus directorios,
+los bundles desde los 27 ejemplos y valida tanto sus ZIP como sus directorios,
 además de rechazar alteraciones. Se mantienen las pruebas editoriales específicas
 por formato que usan la misma función de validación.
 

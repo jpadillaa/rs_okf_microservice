@@ -10,7 +10,7 @@ generated:
   at: "<generado>"
 converter_version: "0.1.0"
 converter_commit: "<commit>"
-profile_version: "1.0.0"
+profile_version: "1.1.0"
 source_file:
   path: "references/original.pptx"
   sha256: "b852f4635f872217a9eb6aa8eea3df90f5aec6afe399412ec98dfd1f10a1e5f8"

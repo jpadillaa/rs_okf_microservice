@@ -73,6 +73,7 @@ No son evidencia independiente: se generaron con las mismas bibliotecas que sirv
 | `pdf/muestras/articulo_columnas.pdf` | complete | 530 | 97,74 | 99,62 | 12 | 162 |
 | `pdf/muestras/breve.pdf` | complete | 99 | 100,0 | 100,0 | 0 | 34 |
 | `pdf/muestras/escaneado_mixto.pdf` | partial | 88 | 100,0 | 100,0 | 0 | 137 |
+| `pdf/muestras/escaneado_ocr.pdf` | partial | 0 | — | — | 0 | 69 |
 | `pdf/muestras/informe_tecnico.pdf` | complete | 614 | 99,35 | 99,84 | 4 | 183 |
 | `pptx/multiple.pptx` | complete | 31 | 100,0 | 100,0 | 0 | 50 |
 | `pptx/rich.pptx` | complete | 9 | 100,0 | 100,0 | 0 | 52 |
@@ -102,11 +103,17 @@ Sin `--write-reference` el script solo informa. Con `--json RUTA` guarda tambié
 
 ## 6. Control de regresión en Rust (plan 2, C2)
 
-`cargo test --locked` ejecuta `src/coverage.rs` sobre los 26 documentos de `examples/`.
+`cargo test --locked` ejecuta `src/coverage.rs` sobre los 27 documentos de `examples/`.
 Lee las listas TSV independientes, convierte de nuevo cada documento y cuenta las
 palabras de los mismos archivos y campos que `tools/coverage.py`: NFKC, eliminación
 del guion blando, casefold completo y secuencias Unicode de letras y números. Compara
 multiconjuntos; no usa la métrica más permisiva de reagrupación «Texto (%)».
+
+`escaneado_ocr.pdf` es solo imagen: pdfium no extrae texto y su lista está vacía a
+propósito, declarado con `"empty_reference": true` en los umbrales; cualquier otra lista
+vacía hace fallar la prueba. Esta medición no cubre el OCR, que se mide contra el
+documento digital del que procede la muestra (prueba
+`ocr_transcribes_scanned_pages_through_the_common_layout` y [OCR local](OCR_LOCAL.md)).
 
 `examples/coverage-thresholds.json` guarda la cobertura medida y el mínimo de cada
 documento: la cifra publicada, redondeada a dos decimales, menos **0,50 puntos

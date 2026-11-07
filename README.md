@@ -72,6 +72,22 @@ docker compose up -d --no-deps --force-recreate api
 
 `docker compose restart` no recarga las variables del `.env`. Si ejecutas el binario directamente, detén y vuelve a iniciar `cargo run -- api`. Una variable ya exportada en el entorno del binario tiene prioridad sobre el archivo.
 
+## OCR de PDF escaneados
+
+El OCR local transcribe las páginas PDF escaneadas que no tienen capa de texto. Está apagado por defecto; para activarlo, cambia esta variable en `.env`:
+
+```dotenv
+OKF_OCR_ENABLED=true
+```
+
+Quien sube el archivo no hace nada distinto: el servicio decide qué páginas lo necesitan, y el bundle señala junto al texto y en el informe que procede de OCR, con su confianza. `OKF_OCR_MAX_PAGES` (40) limita las páginas transcritas por documento, y el OCR deja de empezar páginas al consumir dos tercios de `OKF_CONVERSION_TIMEOUT_S` (300 s, unas 12–40 páginas según su densidad): las restantes quedan como vista y el bundle sale `partial`. Para documentos escaneados largos, sube ese plazo. `OKF_OCR_MEMORY_MB` (256) se suma al límite de memoria al convertir un PDF. Lo lee el worker al arrancar: en Docker, recrea el worker con `docker compose up -d --no-deps --force-recreate worker`. La imagen incluye los modelos. Para ejecutar el binario en el host, descárgalos antes en `models/ocr` (la ruta de `OKF_OCR_MODELS_DIR` en `.env.example`):
+
+```bash
+tools/ocr_models.sh
+```
+
+El script verifica el SHA-256 de cada archivo. Con el OCR activo y sin modelos, el worker no arranca. Motor, mediciones y límites: [OCR local](docs/decisiones/OCR_LOCAL.md).
+
 ## Verificación
 
 Con PostgreSQL iniciado y `OKF_TEST_DATABASE_URL` configurada:
@@ -82,5 +98,7 @@ cargo clippy --all-targets --locked -- -D warnings
 cargo test --locked
 cargo deny check
 ```
+
+Las pruebas del OCR usan los modelos de `models/ocr` (o de `OKF_OCR_MODELS_DIR`) y se omiten si faltan; `tools/ocr_models.sh` los descarga. En la CI son obligatorias (`OKF_REQUIRE_OCR_MODELS`).
 
 Las pruebas de persistencia crean esquemas aislados dentro de `okf_test`, nunca usan la base del servicio y no requieren SQLite. La CI levanta PostgreSQL antes de ejecutarlas. Los esquemas de prueba son desechables; se pueden eliminar recreando exclusivamente `okf_test` cuando no haya pruebas en curso.

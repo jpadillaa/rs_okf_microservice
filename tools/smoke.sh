@@ -76,3 +76,19 @@ metrics=$(curl -sf "http://127.0.0.1:$port/metrics")
 for format in pptx docx xlsx pdf; do
     grep -E "^okf_conversions_total\{format=\"$format\",result=\"(complete|partial)\"\} 1$" <<<"$metrics" >/dev/null
 done
+
+# OCR local: con OKF_OCR_ENABLED=true, un PDF escaneado sale con texto, dentro de las
+# restricciones del hijo (Landlock, seccomp y límite de memoria).
+id=$(curl -sf -F "file=@examples/pdf/muestras/escaneado_ocr.pdf" "http://127.0.0.1:$port/jobs" | jq -r .job_id)
+docker run --rm --network "$network" --env-file "$data/service.env" -e OKF_OCR_ENABLED=true \
+    -v "$volume:/data" "$image" worker --once
+job=$(curl -sf "http://127.0.0.1:$port/jobs/$id")
+[[ $(jq -r .status <<<"$job") == complete ]] || { echo "OCR: $job" >&2; exit 1; }
+curl -sf -o "$data/$id.zip" "http://127.0.0.1:$port/jobs/$id/bundle"
+chmod 644 "$data/$id.zip"
+docker run --rm --network none -v "$data:/data:ro" "$image" validate "/data/$id.zip"
+report=$(unzip -p "$data/$id.zip" conversion-report.md)
+grep -q "escaneadas con OCR del servicio: 2" <<<"$report"
+content=$(unzip -p "$data/$id.zip" 'contenido/*.md')
+grep -q "anonimizada" <<<"$content"
+echo "trabajo $id: OCR complete, bundle descargado y validado"

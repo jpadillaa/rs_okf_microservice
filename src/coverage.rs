@@ -72,12 +72,14 @@ fn reference(doc: &Path) -> Counts {
             "palabra repetida: {word}"
         );
     }
-    assert!(!counts.is_empty(), "referencia vacía: {}", path.display());
     counts
 }
 
 fn measure(reference: &Counts, produced: &Counts) -> (f64, Vec<String>) {
     let total: usize = reference.values().sum();
+    if total == 0 {
+        return (100.0, Vec::new());
+    }
     let mut missing = 0;
     let mut details = Vec::new();
     for (word, n) in reference {
@@ -94,6 +96,10 @@ fn measure(reference: &Counts, produced: &Counts) -> (f64, Vec<String>) {
 struct Threshold {
     measured: f64,
     minimum: f64,
+    /// Documento sin capa de texto (un escaneo): su referencia está vacía a propósito.
+    /// Cualquier otra lista vacía es un error.
+    #[serde(default)]
+    empty_reference: bool,
 }
 
 #[test]
@@ -109,8 +115,14 @@ fn coverage_does_not_regress() {
             .get(key)
             .unwrap_or_else(|| panic!("falta umbral: {key}"));
         assert!((t.minimum - (t.measured - 0.5)).abs() < 0.001);
+        let reference = reference(&doc);
+        assert_eq!(
+            reference.is_empty(),
+            t.empty_reference,
+            "{key}: referencia vacía sin declarar, o declarada vacía y con palabras"
+        );
         let (value, missing) = measure(
-            &reference(&doc),
+            &reference,
             &bundle_words(&crate::golden::bundle_files(&doc)),
         );
         if value + 1e-9 < t.minimum {

@@ -13,7 +13,9 @@ chrono = { version = "0.4", default-features = false, features = ["clock"] }
 clap = { version = "4", features = ["derive"] }
 dotenvy = "0.15"
 libc = "0.2"
-pdf_oxide = { version = "0.3.78", features = ["rendering"] }
+# `ocr-tract`: OCR de PaddleOCR en Rust puro (tract), activable con OKF_OCR_ENABLED.
+pdf_oxide = { version = "0.3.78", features = ["rendering", "ocr-tract"] }
+image = { version = "0.25", default-features = false, features = ["png"] }
 quick-xml = "0.41"
 sqlx = { version = "0.9", default-features = false, features = ["runtime-tokio", "tls-rustls-ring-native-roots", "postgres", "migrate", "macros"] }
 rustix = { version = "1", features = ["fs", "process"] }

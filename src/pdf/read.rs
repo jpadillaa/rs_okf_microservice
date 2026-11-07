@@ -111,7 +111,7 @@ pub(crate) fn page_count(doc: &PdfDocument) -> Result<usize> {
 }
 
 /// Caja de la página: origen y tamaño en el espacio de usuario.
-fn media_box(doc: &PdfDocument, index: usize) -> (f32, f32, f32, f32) {
+pub(crate) fn media_box(doc: &PdfDocument, index: usize) -> (f32, f32, f32, f32) {
     match doc.get_page_media_box(index) {
         Ok((x0, y0, x1, y1)) if x1 > x0 && y1 > y0 => (x0, y0, x1, y1),
         _ => (0.0, 0.0, 612.0, 792.0),

@@ -43,7 +43,10 @@ pub(crate) fn apply(cfg: &Config, original: &Path, attempt: &Path) -> Result<std
     // Conserva el descriptor del original autorizado: no depende de reabrirlo tras
     // Landlock; esta ruta se comprueba también en los montajes de Docker Desktop.
     let input = std::fs::File::open(original).context("no se pudo abrir el original")?;
-    restrict_files(original, attempt)?;
+    // Los modelos de OCR se leen después de restringir el acceso, al llegar a la
+    // primera página escaneada.
+    let models = cfg.ocr.enabled.then_some(cfg.ocr.models_dir.as_path());
+    restrict_files(original, attempt, models)?;
     restrict_network()?;
     Ok(input)
 }
@@ -157,7 +160,7 @@ pub(crate) fn log_support() {
 }
 
 #[cfg(target_os = "linux")]
-fn restrict_files(original: &Path, attempt: &Path) -> Result<()> {
+fn restrict_files(original: &Path, attempt: &Path, models: Option<&Path>) -> Result<()> {
     use landlock::{
         ABI, Access, AccessFs, PathBeneath, PathFd, Ruleset, RulesetAttr, RulesetCreatedAttr,
         RulesetStatus, path_beneath_rules,
@@ -187,6 +190,7 @@ fn restrict_files(original: &Path, attempt: &Path) -> Result<()> {
     if let Some(font) = std::env::var_os("OKF_FONT_PATH") {
         readable.push(std::path::PathBuf::from(font));
     }
+    readable.extend(models.map(Path::to_path_buf));
     rules = rules.add_rules(path_beneath_rules(readable, read))?;
     let status = rules.restrict_self()?;
     if status.ruleset != RulesetStatus::FullyEnforced {
@@ -196,7 +200,7 @@ fn restrict_files(original: &Path, attempt: &Path) -> Result<()> {
 }
 
 #[cfg(not(target_os = "linux"))]
-fn restrict_files(_original: &Path, _attempt: &Path) -> Result<()> {
+fn restrict_files(_original: &Path, _attempt: &Path, _models: Option<&Path>) -> Result<()> {
     Ok(())
 }
 
