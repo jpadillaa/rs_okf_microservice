@@ -195,4 +195,6 @@ En orden de prioridad:
 5. **Revisión del renderizado PPTX** cuando aparezcan presentaciones reales con tablas, gráficos o SmartArt, o con picos de memoria cercanos al límite.
 6. **Mejoras de PDF según aparezcan casos**: tablas con reglas y celdas combinadas, uso de la estructura etiquetada, parejas etiqueta–valor.
 
+El [plan 3](../planes/PLAN_3_CONTRATO_DE_SALIDA_PARA_RAG.md), redactado el 8 de noviembre y sin empezar, recoge lo que falta del contrato de salida que pide el pipeline RAG: identificadores explícitos de conversión y de unidad, versiones de un mismo documento, configuración usada, relaciones entre unidades, referencias internas no resueltas, coordenadas en PDF y PowerPoint, permisos recibidos, marca del texto generado y esquema del frontmatter.
+
 **Fuera del alcance actual:** despliegue multinodo, formatos binarios antiguos (`.doc`, `.xls`, `.ppt`) y con macros, e indexación, embeddings o síntesis de conocimiento, que corresponden a consumidores del bundle.

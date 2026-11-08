@@ -22,6 +22,7 @@ Este directorio es el punto de entrada para implementar el conversor de PDF, DOC
 | 5 | `docs/estado/ESTADO_DEL_PROYECTO.md` | [Estado del proyecto](estado/ESTADO_DEL_PROYECTO.md) | Qué está implementado, con qué evidencia de calidad, brechas frente a la arquitectura, comparación con el plan inicial y roadmap pendiente. |
 | 5a | `docs/planes/PLAN_1_RECUPERACION_DEL_PLAN_ORIGINAL.md` | [Plan 1: recuperar del plan original](planes/PLAN_1_RECUPERACION_DEL_PLAN_ORIGINAL.md) | Decisiones del plan inicial que se recuperan (modelo de salida común, referencia de cobertura, imagen reproducible, límites y admisión, registro, corpus, división en capítulos, auditoría de dependencias) y las que se cierran en la documentación. |
 | 5b | `docs/planes/PLAN_2_CALIDAD_Y_ROBUSTEZ.md` | [Plan 2: calidad y robustez](planes/PLAN_2_CALIDAD_Y_ROBUSTEZ.md) | Regresión, entradas hostiles, operación y contrato: bundles de referencia, aislamiento, fuzzing, salud, retención y versiones. |
+| 5c | `docs/planes/PLAN_3_CONTRATO_DE_SALIDA_PARA_RAG.md` | [Plan 3: contrato de salida para el RAG](planes/PLAN_3_CONTRATO_DE_SALIDA_PARA_RAG.md) | Lo que falta del contrato que pide el pipeline RAG: identificadores de conversión y de unidad, versiones del documento, configuración usada, relaciones entre unidades, referencias no resueltas, coordenadas, permisos, texto generado y esquema del frontmatter. |
 
 Los documentos están guardados en las ubicaciones indicadas y se enlazan mediante rutas relativas para que funcionen dentro del repositorio y en Obsidian.
 
