@@ -1,5 +1,6 @@
 ---
 type: "Slide"
+unit_id: "<conversión>/contenido/slide-017.md"
 title: "Diapositiva sin título"
 description: "Diapositiva 17 de s2.pptx. Para su proyecto, seleccionen diversas estrategias y observen cómo varían los resultados en el proceso de recuperación y generación."
 sources:

@@ -1,5 +1,6 @@
 ---
 type: "Slide"
+unit_id: "<conversión>/contenido/slide-006.md"
 title: "La estrategia de chunking"
 description: "Diapositiva 6 de s2.pptx: La estrategia de chunking. Contenido solo visual."
 sources:

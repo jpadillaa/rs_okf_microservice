@@ -1,5 +1,6 @@
 ---
 type: "Source Section"
+unit_id: "085ad28586977b779357bb7218bfb43b4dcdd7a0a0156fe2457fef64d9b24e09/contenido/seccion-007.md"
 title: "Entregables"
 description: "Sección 7 de d2.docx: Entregables. El equipo deberá presentar dos entregables complementarios, un video de sustentación y un informe ejecutivo. Ambos deben estar alineados con la misma propuesta…"
 sources:

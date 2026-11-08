@@ -30,6 +30,7 @@ mod docx;
 mod format;
 #[cfg(test)]
 mod golden;
+mod identity;
 mod isolation;
 mod observability;
 mod omml;
@@ -118,6 +119,10 @@ struct JobStatus {
     error: Option<String>,
     #[serde(flatten)]
     versions: version::Versions,
+    /// Identificador de la conversión publicada (`conversion_id` del bundle), o null
+    /// antes de publicar.
+    #[schema(required)]
+    conversion_id: Option<String>,
 }
 
 async fn app(root: PathBuf) -> Result<App> {
@@ -334,8 +339,8 @@ async fn status(
     Path(id): Path<String>,
 ) -> Result<Json<JobStatus>, (StatusCode, String)> {
     let row = sqlx::query(
-        "SELECT status,attempt,error,converter_version,converter_commit,profile_version \
-        FROM jobs WHERE id=$1",
+        "SELECT status,attempt,error,converter_version,converter_commit,profile_version,\
+        conversion_id FROM jobs WHERE id=$1",
     )
     .bind(&id)
     .fetch_optional(&a.db)
@@ -352,6 +357,7 @@ async fn status(
                 converter_commit: r.try_get(4)?,
                 profile_version: r.try_get(5)?,
             },
+            conversion_id: r.try_get(6)?,
         }))
     })
     .transpose()
@@ -1099,7 +1105,28 @@ mod tests {
         validate_bundle(&good).unwrap();
         let bad = tmp.path().join("bad.zip");
         type Edit<'a> = &'a dyn Fn(&str, String) -> String;
-        let cases: [(&str, Edit); 6] = [
+        // Cambia la primera cifra hexadecimal que sigue a `key`.
+        fn bump(md: String, key: &str) -> String {
+            let i = md.find(key).unwrap() + key.len();
+            let digit = if &md[i..=i] == "0" { "1" } else { "0" };
+            format!("{}{digit}{}", &md[..i], &md[i + 1..])
+        }
+        let cases: [(&str, Edit); 8] = [
+            ("unit_id ausente o distinto", &|n, md| {
+                if n == "contenido/slide-002.md" {
+                    md.replace("/contenido/slide-002.md\"", "/contenido/slide-003.md\"")
+                } else {
+                    md
+                }
+            }),
+            // El mismo identificador alterado en los dos archivos: no se puede recalcular.
+            ("conversion_id no corresponde", &|n, md| {
+                if n == "documento.md" || n == "conversion-report.md" {
+                    bump(md, "\nconversion_id: \"")
+                } else {
+                    md
+                }
+            }),
             ("SHA-256 del informe", &|n, md| {
                 if n == "conversion-report.md" {
                     md.replacen("\nsha256: \"", "\nsha256: \"0", 1)
@@ -1117,10 +1144,7 @@ mod tests {
             // La misma configuración alterada en los dos archivos: la huella no cuadra.
             ("settings_sha256 no corresponde", &|n, md| {
                 if n == "documento.md" || n == "conversion-report.md" {
-                    let key = "view_font_sha256: \"";
-                    let i = md.find(key).unwrap() + key.len();
-                    let digit = if &md[i..=i] == "0" { "1" } else { "0" };
-                    format!("{}{digit}{}", &md[..i], &md[i + 1..])
+                    bump(md, "view_font_sha256: \"")
                 } else {
                     md
                 }
@@ -1493,9 +1517,11 @@ mod version_tests {
         worker::work_one(&a).await.unwrap();
         let state = status(State(a.clone()), Path("v".into())).await.unwrap().0;
         assert_eq!(state.versions, version::Versions::current());
+        let id = state.conversion_id.expect("conversion_id publicado");
+        assert_eq!(id.len(), 64);
         sqlx::query(
             "UPDATE jobs SET status='processing',lease_until=0,converter_version=NULL,\
-            converter_commit=NULL,profile_version=NULL",
+            converter_commit=NULL,profile_version=NULL,conversion_id=NULL",
         )
         .execute(&a.db)
         .await
@@ -1504,5 +1530,6 @@ mod version_tests {
         let state = status(State(a), Path("v".into())).await.unwrap().0;
         assert_eq!(state.status, "complete");
         assert_eq!(state.versions, version::Versions::current());
+        assert_eq!(state.conversion_id.as_deref(), Some(id.as_str()));
     }
 }

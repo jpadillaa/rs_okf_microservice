@@ -1,5 +1,6 @@
 ---
 type: "Source Section"
+unit_id: "a42ed4f41a1be1893de014cf90d674b7ca5c484f6af5abdd20e82387b64c29ce/contenido/seccion-007.md"
 title: "El harness frente al resto de la arquitectura"
 description: "Sección 7 de d3.docx: El harness frente al resto de la arquitectura. La arquitectura mínima presentada en la lectura de agentes describe cinco componentes funcionales: orquestador, modelo de lenguaje, herramientas, memoria y…"
 sources:

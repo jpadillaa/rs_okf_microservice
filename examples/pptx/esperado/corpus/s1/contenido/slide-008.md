@@ -1,5 +1,6 @@
 ---
 type: "Slide"
+unit_id: "<conversión>/contenido/slide-008.md"
 title: "3. El costo depende de qué se procesa"
 description: "Diapositiva 8 de s1.pptx: 3. El costo depende de qué se procesa. USD por 1 millón de tokens · API estándar"
 sources:

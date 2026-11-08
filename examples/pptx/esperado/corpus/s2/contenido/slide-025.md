@@ -1,5 +1,6 @@
 ---
 type: "Slide"
+unit_id: "<conversión>/contenido/slide-025.md"
 title: "El reto de ingeniería de software con las bases de datos vectoriales"
 description: "Diapositiva 25 de s2.pptx: El reto de ingeniería de software con las bases de datos vectoriales. Los metadatos permiten estrechar el espacio de búsqueda,"
 sources:

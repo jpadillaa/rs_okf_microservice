@@ -1,5 +1,6 @@
 ---
 type: "Slide"
+unit_id: "<conversión>/contenido/slide-022.md"
 title: "Fidelidad (Faithfulness) · Componente: Generador"
 description: "Diapositiva 22 de s3.pptx: Fidelidad (Faithfulness) · Componente: Generador. Contenido solo visual."
 sources:

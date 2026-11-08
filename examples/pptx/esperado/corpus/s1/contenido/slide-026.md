@@ -1,5 +1,6 @@
 ---
 type: "Slide"
+unit_id: "<conversión>/contenido/slide-026.md"
 title: "Responsabilidades que se conservan en otros frameworks"
 description: "Diapositiva 26 de s1.pptx: Responsabilidades que se conservan en otros frameworks. LangChain"
 sources:

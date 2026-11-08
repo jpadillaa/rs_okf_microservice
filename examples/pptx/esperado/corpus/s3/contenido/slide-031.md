@@ -1,5 +1,6 @@
 ---
 type: "Slide"
+unit_id: "<conversión>/contenido/slide-031.md"
 title: "Hallucination- Free? Assessing the Reliability of Leading AI Legal Research Tools"
 description: "Diapositiva 31 de s3.pptx: Hallucination- Free? Assessing the Reliability of Leading AI Legal Research Tools. Paper"
 sources:

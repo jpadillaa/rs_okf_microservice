@@ -1,5 +1,6 @@
 ---
 type: "Source Section"
+unit_id: "3d7f81153283dfd28dd45ac709daba75f8f9b8c99757f967e46746e47148c931/contenido/seccion-002.md"
 title: "1. Contexto"
 description: "Sección 2 de informe_tecnico.pdf: 1. Contexto. El sistema actual funciona desde hace ocho años en un servidor propio. Su base de datos crece un veinte por ciento cada año y las copias de seguridad tardan…"
 sources:

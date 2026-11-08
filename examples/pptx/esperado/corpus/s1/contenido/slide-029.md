@@ -1,5 +1,6 @@
 ---
 type: "Slide"
+unit_id: "<conversión>/contenido/slide-029.md"
 title: "Comprobar el diagnóstico y continuar"
 description: "Diapositiva 29 de s1.pptx: Comprobar el diagnóstico y continuar. CASO"
 sources:

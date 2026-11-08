@@ -1,5 +1,6 @@
 ---
 type: "Source Section"
+unit_id: "085ad28586977b779357bb7218bfb43b4dcdd7a0a0156fe2457fef64d9b24e09/contenido/seccion-002.md"
 title: "Contexto de negocio"
 description: "Sección 2 de d2.docx: Contexto de negocio. El desafío inicial no se concentra en el diseño de la plataforma Inteligencia Aumentada, sino en la selección estratégica del modelo de lenguaje y de su…"
 sources:

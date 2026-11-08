@@ -1,5 +1,6 @@
 ---
 type: "Source Section"
+unit_id: "d3d70c5a16999c4b656b676581125344ef3bcca34041c6bb605e4d3be7cdb3d3/contenido/seccion-003.md"
 title: "Cinco atributos que definen a un agente"
 description: "Sección 3 de p4.pdf: Cinco atributos que definen a un agente. Los atributos de un agente no residen exclusivamente en el modelo de lenguaje."
 sources:

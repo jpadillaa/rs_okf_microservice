@@ -1,5 +1,6 @@
 ---
 type: "Slide"
+unit_id: "<conversión>/contenido/slide-010.md"
 title: "5. Recuperar información no garantiza una respuesta respaldada"
 description: "Diapositiva 10 de s1.pptx: 5. Recuperar información no garantiza una respuesta respaldada. Ruido"
 sources:

@@ -55,7 +55,7 @@ docker run --rm --network "$network" --env-file "$data/service.env" -v "$volume:
 for id in "${ids[@]}"; do
     job=$(curl -sf "http://127.0.0.1:$port/jobs/$id")
     status=$(jq -r .status <<<"$job")
-    jq -e '(.converter_version | type == "string") and (.profile_version | type == "string") and (.converter_commit | test("^([0-9a-f]{40}|unknown)$"))' <<<"$job" >/dev/null
+    jq -e '(.converter_version | type == "string") and (.profile_version | type == "string") and (.converter_commit | test("^([0-9a-f]{40}|unknown)$")) and (.conversion_id | test("^[0-9a-f]{64}$"))' <<<"$job" >/dev/null
     case $status in
         complete | partial) ;;
         *) echo "trabajo $id: $status" >&2; curl -s "http://127.0.0.1:$port/jobs/$id" >&2; exit 1 ;;

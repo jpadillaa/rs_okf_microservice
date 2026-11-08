@@ -255,6 +255,9 @@ pub struct Converted {
     pub stages: Stages,
     #[serde(default)]
     pub(crate) versions: crate::version::Versions,
+    /// `conversion_id` del bundle (plan 3, I1).
+    #[serde(default)]
+    pub(crate) conversion_id: Option<String>,
     /// Memoria residente máxima del proceso que convirtió, en MB, si el sistema la da
     /// (`getrusage` en Linux y macOS). El muestreo no ve los picos de menos de 100 ms.
     #[serde(default)]
@@ -284,6 +287,7 @@ fn convert_file(cfg: &Config, input: fs::File, filename: &str, dir: &Path) -> Re
         bundle: built.path,
         stages: built.stages,
         versions: crate::version::Versions::current(),
+        conversion_id: Some(built.conversion_id),
         peak_mb: own_peak_mb(),
     })
 }
@@ -641,21 +645,29 @@ async fn run_local(
     }
 }
 
+/// Estado, identidad del conversor e identificador de conversión de un bundle publicado.
+struct Published {
+    state: String,
+    versions: crate::version::Versions,
+    conversion_id: Option<String>,
+}
+
 /// Estado del bundle publicado de un trabajo, si existe y es válido. Un bundle
 /// inválido (publicación interrumpida) se elimina para que el trabajo se reprocese.
-fn published_state(root: &Path, id: &str) -> Option<(String, crate::version::Versions)> {
+fn published_state(root: &Path, id: &str) -> Option<Published> {
     let dir = root.join("published").join(id);
     let zip = dir.join("bundle.zip");
     if !zip.exists() {
         return None;
     }
-    let state = (|| -> Result<(String, crate::version::Versions)> {
+    let state = (|| -> Result<Published> {
         validate_bundle(&zip)?;
         let mut z = zip::ZipArchive::new(fs::File::open(&zip)?)?;
         let mut report = String::new();
         z.by_name("conversion-report.md")?
             .read_to_string(&mut report)?;
-        let state = frontmatter(&report)?
+        let fm = frontmatter(&report)?;
+        let state = fm
             .get("status")
             .and_then(YamlValue::as_str)
             .map(str::to_string)
@@ -663,10 +675,14 @@ fn published_state(root: &Path, id: &str) -> Option<(String, crate::version::Ver
         if !matches!(state.as_str(), "complete" | "partial") {
             bail!("estado de informe desconocido: {state}")
         }
-        Ok((
+        Ok(Published {
             state,
-            crate::version::Versions::from_report(&frontmatter(&report)?),
-        ))
+            versions: crate::version::Versions::from_report(&fm),
+            conversion_id: fm
+                .get("conversion_id")
+                .and_then(YamlValue::as_str)
+                .map(str::to_owned),
+        })
     })();
     match state {
         Ok(s) => Some(s),
@@ -703,10 +719,15 @@ async fn recover_expired(
     .fetch_all(&mut **tx)
     .await?;
     for (id, attempt) in expired {
-        if let Some((state, versions)) = published_state(root, &id) {
+        if let Some(Published {
+            state,
+            versions,
+            conversion_id,
+        }) = published_state(root, &id)
+        {
             sqlx::query(
                 "UPDATE jobs SET status=$2,bundle=$3,lease_until=NULL,retry_at=NULL,error=NULL,\
-                converter_version=$4,converter_commit=$5,profile_version=$6,\
+                converter_version=$4,converter_commit=$5,profile_version=$6,conversion_id=$8,\
                 finished_at=COALESCE(finished_at,$7) WHERE id=$1",
             )
             .bind(&id)
@@ -716,6 +737,7 @@ async fn recover_expired(
             .bind(&versions.converter_commit)
             .bind(&versions.profile_version)
             .bind(now())
+            .bind(&conversion_id)
             .execute(&mut **tx)
             .await?;
             remove_attempts(root, &id);
@@ -777,7 +799,7 @@ async fn claim(a: &App) -> Result<Option<Job>> {
         sqlx::query(
             "UPDATE jobs SET status='processing',attempt=$2,lease_until=$3,retry_at=NULL,\
             error=NULL,converter_version=$4,converter_commit=$5,profile_version=$6,\
-            finished_at=NULL WHERE id=$1",
+            conversion_id=NULL,finished_at=NULL WHERE id=$1",
         )
         .bind(&job.id)
         .bind(i64::from(job.attempt))
@@ -822,8 +844,8 @@ async fn publish(a: &App, job: &Job, c: &Converted) -> Result<()> {
     fs::rename(&staging, &pubdir)?;
     sqlx::query(
         "UPDATE jobs SET status=$3,bundle=$4,lease_until=NULL,retry_at=NULL,error=NULL,\
-        converter_version=$5,converter_commit=$6,profile_version=$7,finished_at=$8 \
-        WHERE id=$1 AND attempt=$2",
+        converter_version=$5,converter_commit=$6,profile_version=$7,finished_at=$8,\
+        conversion_id=$9 WHERE id=$1 AND attempt=$2",
     )
     .bind(id)
     .bind(i64::from(job.attempt))
@@ -833,6 +855,7 @@ async fn publish(a: &App, job: &Job, c: &Converted) -> Result<()> {
     .bind(&c.versions.converter_commit)
     .bind(&c.versions.profile_version)
     .bind(now())
+    .bind(&c.conversion_id)
     .execute(&mut *tx)
     .await?;
     remove_attempts(&a.root, id);

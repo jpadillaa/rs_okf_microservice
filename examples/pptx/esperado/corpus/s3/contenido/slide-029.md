@@ -1,5 +1,6 @@
 ---
 type: "Slide"
+unit_id: "<conversión>/contenido/slide-029.md"
 title: "Utilización del contexto · Componente: Recuperador"
 description: "Diapositiva 29 de s3.pptx: Utilización del contexto · Componente: Recuperador. Mide en qué medida el LLN ha aprovechado realmente los chunks proporcionados."
 sources:

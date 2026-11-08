@@ -1,5 +1,6 @@
 ---
 type: "Source Section"
+unit_id: "65e574ead417397d01694e1261ccc643cd282e5d26c89a767236a8303854cb16/contenido/seccion-005.md"
 title: "Issues with AI‑assisted writing"
 description: "Sección 5 de p2.pdf: Issues with AI‑assisted writing. The potential benefits of incorporating LLM-based generative AI tools into the academic manuscript writing process has led to studies exploring its…"
 sources:

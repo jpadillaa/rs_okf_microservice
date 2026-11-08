@@ -21,7 +21,7 @@ Tamaños relativos, como en los planes anteriores: **S** (un cambio acotado en u
 | Requisito del pipeline | Situación con el perfil 1.2.0 | Trabajo |
 | --- | --- | --- |
 | Esquema uniforme y versionado | Hecho: modelo de salida común y ensamblador único (`R1`); `profile_version`, `converter_version` y `converter_commit` en `documento.md` y el informe (`C9`). Falta una descripción del frontmatter legible por máquina. | `I9` |
-| Identificadores del documento y sus unidades | Implícitos: la versión se reconoce por `source_file.sha256`, la unidad por su ruta en el bundle y el pasaje por `source_spans[].id`. No hay un campo con el identificador ni una identidad lógica que agrupe las versiones de un documento. | `I1`, `I2` |
+| Identificadores del documento y sus unidades | Implícitos: la versión se reconoce por `source_file.sha256`, la unidad por su ruta en el bundle y el pasaje por `source_spans[].id`. No hay un campo con el identificador ni una identidad lógica que agrupe las versiones de un documento. Los de conversión y de unidad se hicieron después, en el perfil 1.4.0. | `I1`, `I2` |
 | Mismos identificadores con el mismo documento y configuración | Las rutas y los localizadores son deterministas (`C1` lo prueba). La configuración que cambia la salida no se registra, así que la condición no se puede comprobar desde el bundle. | `I3` |
 | Trazabilidad: Excel (hoja y rango) | Hecho: `xlsx_range`. | — |
 | Trazabilidad: DOCX (ruta estructural, sin páginas) | Hecho: `docx_blocks` en orden estructural. | — |
@@ -43,6 +43,8 @@ Tamaños relativos, como en los planes anteriores: **S** (un cambio acotado en u
 
 ### I1. Identificadores explícitos de conversión y de unidad (M)
 
+**Estado:** implementado el 8 de noviembre (perfil 1.4.0) en `src/identity.rs`, sin `converter_commit` en `conversion_id`, como se decidió. `documento.md` y el informe también llevan `unit_id`. El validador recalcula `conversion_id` con la huella real del original, no con la declarada. Véase la [especificación, §2](../especificacion/ESPECIFICACION_OKF.md#2-estructura-común-del-bundle).
+
 **Problema.** El RAG tiene que componer la clave de cada fragmento (huella del original, ruta, localizador) con reglas que no están escritas en el contrato. Dos conversiones del mismo original con distinta configuración producen las mismas rutas con contenido distinto.
 
 **Trabajo.**
@@ -54,7 +56,7 @@ Tamaños relativos, como en los planes anteriores: **S** (un cambio acotado en u
 
 **Aceptación.** Dos conversiones del mismo original con la misma configuración dan los mismos `conversion_id` y `unit_id`; activar el OCR los cambia en un PDF; el validador rechaza un `unit_id` alterado.
 
-**Decisión abierta.** Si `converter_commit` entra en `conversion_id`. Con él, cualquier commit cambia todos los identificadores aunque el bundle sea igual; sin él, un cambio de extracción que no sube el perfil conserva identificadores con contenido distinto. La propuesta es dejarlo fuera y apoyarse en la regla de AGENTS.md: todo cambio de regla sube el perfil.
+**Decisión (8 de noviembre): fuera.** Si `converter_commit` entra en `conversion_id`. Con él, cualquier commit cambia todos los identificadores aunque el bundle sea igual; sin él, un cambio de extracción que no sube el perfil conserva identificadores con contenido distinto. La propuesta es dejarlo fuera y apoyarse en la regla de AGENTS.md: todo cambio de regla sube el perfil.
 
 ### I2. Identidad lógica y versiones del documento (M)
 

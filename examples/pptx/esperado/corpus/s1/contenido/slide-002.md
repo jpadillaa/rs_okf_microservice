@@ -1,5 +1,6 @@
 ---
 type: "Slide"
+unit_id: "<conversión>/contenido/slide-002.md"
 title: "Determinismo hasta donde sea posible, no-determinismo donde sea indispensable"
 description: "Diapositiva 2 de s1.pptx: Determinismo hasta donde sea posible, no-determinismo donde sea indispensable."
 sources:

@@ -180,7 +180,8 @@ Y según el formato del original:
 ### Identidad de cada conversión (plan 2, C9)
 
 `documento.md`, el informe y `GET /jobs/{id}` incluyen `converter_version`,
-`converter_commit` y `profile_version`. Al reclamar se registra la versión que va a
+`converter_commit` y `profile_version`; `GET /jobs/{id}` devuelve además el
+`conversion_id` del bundle publicado (plan 3, I1), o `null` antes de publicar. Al reclamar se registra la versión que va a
 convertir, incluso si falla; al publicar se conserva la identidad informada por el
 hijo. La recuperación de una publicación interrumpida recupera la identidad del
 bundle, no la del worker que reconcilia. Un trabajo aún no intentado o histórico sin
@@ -207,6 +208,22 @@ documento e informe coincidan. Una conversión PDF en la que el OCR agotó su pl
 declara `reproducible: false`. Los golden, que convierten con la configuración por
 defecto, fijan la huella de la fuente PPTX como `<fuente>` y la de su configuración como
 `<huella>`, porque la fuente depende del sistema, como los píxeles de las vistas.
+
+### Identificadores de la conversión y de sus unidades (plan 3, I1)
+
+`src/identity.rs` calcula `conversion_id` a partir del perfil, la huella de la
+configuración y la del original (especificación, §2). El escritor del bundle
+(`BundleWriter`, en `src/output.rs`) lo recibe al crearse y añade a cada concepto su
+`unit_id` detrás de `type`; ningún adaptador lo escribe. El informe, que no pasa por el
+escritor de conceptos, lo añade en el ensamblador. El validador recalcula
+`conversion_id` con la huella real del original incluido y comprueba el `unit_id` de
+cada concepto; los bundles anteriores al perfil 1.4.0 no lo llevan.
+
+El hijo devuelve `conversion_id` con su resultado, el worker lo guarda en la columna
+`conversion_id` de `jobs` (migración `0002`) al publicar, lo borra al reclamar un nuevo
+intento y lo recupera del informe al reconciliar una publicación interrumpida. En los
+golden de PPTX, `conversion_id` depende de la fuente de las vistas y se sustituye por
+`<conversión>` en todo el bundle, también dentro de los `unit_id`.
 
 ### Validación independiente (plan 2, C10)
 

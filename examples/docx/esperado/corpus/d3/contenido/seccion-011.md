@@ -1,5 +1,6 @@
 ---
 type: "Source Section"
+unit_id: "a42ed4f41a1be1893de014cf90d674b7ca5c484f6af5abdd20e82387b64c29ce/contenido/seccion-011.md"
 title: "El harness como plano de control"
 description: "Sección 11 de d3.docx: El harness como plano de control. La confiabilidad de un sistema agéntico no reside exclusivamente en el modelo. Surge de la interacción entre el motor de razonamiento semántico y la…"
 sources:

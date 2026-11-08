@@ -1,5 +1,6 @@
 ---
 type: "Slide"
+unit_id: "<conversión>/contenido/slide-022.md"
 title: "Los metadatos"
 description: "Diapositiva 22 de s2.pptx: Los metadatos. Las bases vectoriales permiten filtrado por metadatos junto con la similitud."
 sources:

@@ -1,5 +1,6 @@
 ---
 type: "Source Section"
+unit_id: "116b9fbc1d4b9e6405f6a1e5ea024cf926e6939ec6d79f9eb0e05ca7e94f59f9/contenido/seccion-003.md"
 title: "2. Resultados"
 description: "Sección 3 de informe_revisado.docx: 2. Resultados. La tabla siguiente presenta las métricas por componente y corpus. Los valores del corpus técnico son menores en todas las métricas, en especial en…"
 sources:

@@ -1,5 +1,6 @@
 ---
 type: "Source Section"
+unit_id: "65e574ead417397d01694e1261ccc643cd282e5d26c89a767236a8303854cb16/contenido/seccion-009.md"
 title: "References"
 description: "Sección 9 de p2.pdf: References. 1. Xu X, Chen Y, Miao J. Opportunities, challenges, and future directions of large language models, including ChatGPT in medical education: a systematic…"
 sources:

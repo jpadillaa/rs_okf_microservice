@@ -93,6 +93,16 @@ impl Fields {
     pub(crate) fn flag(self, key: &str, on: bool) -> Self {
         if on { self.with(key, true) } else { self }
     }
+    /// Inserta un campo detrás de `after`, o al principio si no está.
+    pub(crate) fn insert_after(mut self, after: &str, key: &str, value: impl Into<Yaml>) -> Self {
+        let at = self
+            .0
+            .iter()
+            .position(|(k, _)| k == after)
+            .map_or(0, |i| i + 1);
+        self.0.insert(at, (key.to_string(), value.into()));
+        self
+    }
     pub(crate) fn push(&mut self, key: &str, value: impl Into<Yaml>) {
         self.0.push((key.to_string(), value.into()));
     }
@@ -244,20 +254,23 @@ pub(crate) fn document_fields(
     hash: &str,
     settings: &crate::settings::Settings,
 ) -> Fields {
-    settings
-        .annotate(crate::version::Versions::annotate(concept_fields(
+    crate::identity::annotate(
+        crate::version::Versions::annotate(concept_fields(
             format,
             "Source Document",
             title,
             description,
             generated,
-        )))
-        .with(
-            "source_file",
-            Fields::new()
-                .with("path", format.original_entry())
-                .with("sha256", hash),
-        )
+        )),
+        hash,
+        settings,
+    )
+    .with(
+        "source_file",
+        Fields::new()
+            .with("path", format.original_entry())
+            .with("sha256", hash),
+    )
 }
 
 /// Estado del bundle: `partial` si hay alguna pérdida o incertidumbre sustantiva.
@@ -282,14 +295,22 @@ pub(crate) fn report(
     settings: &crate::settings::Settings,
 ) -> String {
     let state = state(issues);
-    let fields = settings
-        .annotate(crate::version::Versions::annotate(Fields::new()))
-        .with("type", "Conversion Report")
-        .with("title", "Informe de conversión")
-        .with("generated", generated_fields(generated))
-        .with("status", state)
-        .with("format", format.extension())
-        .with("sha256", hash);
+    let id = crate::identity::conversion_id(hash, settings);
+    let fields = crate::identity::annotate(
+        crate::version::Versions::annotate(Fields::new()),
+        hash,
+        settings,
+    )
+    .with("type", "Conversion Report")
+    .with(
+        "unit_id",
+        crate::identity::unit_id(&id, "conversion-report.md"),
+    )
+    .with("title", "Informe de conversión")
+    .with("generated", generated_fields(generated))
+    .with("status", state)
+    .with("format", format.extension())
+    .with("sha256", hash);
     let list = |severity: Severity, empty: &str| -> String {
         let items: String = issues
             .iter()
@@ -340,6 +361,8 @@ pub(crate) struct Built {
     pub(crate) path: PathBuf,
     pub(crate) status: String,
     pub(crate) stages: Stages,
+    /// Identificador de la conversión (plan 3, I1).
+    pub(crate) conversion_id: String,
 }
 
 fn ms(d: Duration) -> u64 {
@@ -354,6 +377,8 @@ pub(crate) struct BundleWriter {
     zip: ZipWriter<fs::File>,
     /// Comienzo del ensamblado: lo anterior a crear el escritor es lectura.
     created: Instant,
+    /// Prefijo del `unit_id` de cada concepto.
+    conversion_id: String,
 }
 
 /// Navegación del bundle: el rótulo del índice de contenido, el título de la lista y sus
@@ -366,7 +391,13 @@ pub(crate) struct Navigation {
 }
 
 impl BundleWriter {
-    pub(crate) fn create(format: Format, attempt: &Path) -> Result<Self> {
+    /// Escritor del bundle del original con huella `hash`, convertido con `settings`.
+    pub(crate) fn create(
+        format: Format,
+        attempt: &Path,
+        hash: &str,
+        settings: &crate::settings::Settings,
+    ) -> Result<Self> {
         let path = attempt.join("bundle.zip");
         let zip = ZipWriter::new(fs::File::create(&path)?);
         Ok(BundleWriter {
@@ -374,6 +405,7 @@ impl BundleWriter {
             path,
             zip,
             created: Instant::now(),
+            conversion_id: crate::identity::conversion_id(hash, settings),
         })
     }
     /// Escritor del ZIP, para los recursos que el adaptador escribe en streaming.
@@ -383,8 +415,13 @@ impl BundleWriter {
     pub(crate) fn file(&mut self, name: &str, data: &[u8]) -> Result<()> {
         write_zip_file(&mut self.zip, name, data)
     }
-    /// Concepto: frontmatter y cuerpo Markdown.
+    /// Concepto: frontmatter, con su `unit_id` detrás de `type`, y cuerpo Markdown.
     pub(crate) fn concept(&mut self, path: &str, fields: &Fields, body: &str) -> Result<()> {
+        let fields = fields.clone().insert_after(
+            "type",
+            "unit_id",
+            crate::identity::unit_id(&self.conversion_id, path),
+        );
         let mut md = fields.frontmatter();
         md.push_str(body);
         self.file(path, md.as_bytes())
@@ -422,6 +459,7 @@ impl BundleWriter {
         Ok(Built {
             path: self.path,
             status: state(issues).into(),
+            conversion_id: self.conversion_id,
             stages: Stages {
                 read_ms: 0,
                 assemble_ms: ms(assembled - self.created),

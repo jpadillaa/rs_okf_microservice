@@ -1,5 +1,6 @@
 ---
 type: "Slide"
+unit_id: "<conversión>/contenido/slide-033.md"
 title: "Cómo se manifiestan los errores"
 description: "Diapositiva 33 de s3.pptx: Cómo se manifiestan los errores. Colapso de entidades legales"
 sources:

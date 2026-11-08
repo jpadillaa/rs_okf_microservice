@@ -1,5 +1,6 @@
 ---
 type: "Source Section"
+unit_id: "d3d70c5a16999c4b656b676581125344ef3bcca34041c6bb605e4d3be7cdb3d3/contenido/seccion-004.md"
 title: "Lo que un agente NO es"
 description: "Sección 4 de p4.pdf: Lo que un agente NO es. La industria ha generado confusión significativa al etiquetar como \"agentes\" a sistemas que no lo son. Gartner denomina a esta práctica \"agent-washing\" y…"
 sources:

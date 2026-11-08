@@ -1,5 +1,6 @@
 ---
 type: "Slide"
+unit_id: "<conversión>/contenido/slide-010.md"
 title: "Fragmentación recursiva por caracteres"
 description: "Diapositiva 10 de s2.pptx: Fragmentación recursiva por caracteres. Contenido solo visual."
 sources:

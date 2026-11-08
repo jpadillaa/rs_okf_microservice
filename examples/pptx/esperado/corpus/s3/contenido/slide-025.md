@@ -1,5 +1,6 @@
 ---
 type: "Slide"
+unit_id: "<conversión>/contenido/slide-025.md"
 title: "Precisión del Contexto · Componente: Recuperador"
 description: "Diapositiva 25 de s3.pptx: Precisión del Contexto · Componente: Recuperador. Evalúa si los fragmentos recuperados son realmente relevantes para la pregunta,"
 sources:

@@ -1,5 +1,6 @@
 ---
 type: "Source Section"
+unit_id: "d3d70c5a16999c4b656b676581125344ef3bcca34041c6bb605e4d3be7cdb3d3/contenido/seccion-002.md"
 title: "¿Qué es un agente? La pregunta que importa"
 description: "Sección 2 de p4.pdf: ¿Qué es un agente? La pregunta que importa. Antes de definir qué es un agente, vale la pena entender por qué necesitamos el concepto."
 sources:

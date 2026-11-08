@@ -1,5 +1,6 @@
 ---
 type: "Slide"
+unit_id: "<conversión>/contenido/slide-001.md"
 title: "Equations and comments"
 description: "Diapositiva 1 de rich.pptx: Equations and comments. E=mc^2+a/b"
 sources:

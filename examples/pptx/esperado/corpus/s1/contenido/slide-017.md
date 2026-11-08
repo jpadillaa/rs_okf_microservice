@@ -1,5 +1,6 @@
 ---
 type: "Slide"
+unit_id: "<conversión>/contenido/slide-017.md"
 title: "Tres responsabilidades, tres salidas"
 description: "Diapositiva 17 de s1.pptx: Tres responsabilidades, tres salidas. Recuperar"
 sources:

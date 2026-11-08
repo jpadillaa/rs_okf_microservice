@@ -1,5 +1,6 @@
 ---
 type: "Source Section"
+unit_id: "92805d0916f824c79fb3f4a371011f1c4da2ed61600425c78f8fc0976617e190/contenido/seccion-003.md"
 title: "COMUNICACIÓN EFECTIVA EN ENTORNOS LABORALES"
 description: "Sección 3 de p1.pdf: COMUNICACIÓN EFECTIVA EN ENTORNOS LABORALES. Aplicar los mínimos gramaticales, ortográficos y de puntuación en la revisión y composición de textos breves de uso laboral, de modo que los productos escritos…"
 sources:

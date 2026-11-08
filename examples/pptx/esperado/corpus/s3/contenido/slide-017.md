@@ -1,5 +1,6 @@
 ---
 type: "Slide"
+unit_id: "<conversión>/contenido/slide-017.md"
 title: "RAGAs: Evaluación por componentes"
 description: "Diapositiva 17 de s3.pptx: RAGAs: Evaluación por componentes. Mide separadamente el rendimiento del recuperador y del generador."
 sources:

@@ -1,5 +1,6 @@
 ---
 type: "Slide"
+unit_id: "<conversión>/contenido/slide-008.md"
 title: "Prácticas de ingenieria de software recomendadas"
 description: "Diapositiva 8 de s3.pptx: Prácticas de ingenieria de software recomendadas. Contenido solo visual."
 sources:

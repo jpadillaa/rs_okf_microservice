@@ -1,5 +1,6 @@
 ---
 type: "Source Section"
+unit_id: "a42ed4f41a1be1893de014cf90d674b7ca5c484f6af5abdd20e82387b64c29ce/contenido/seccion-002.md"
 title: "Introducción - ¿Por qué necesitamos el concepto de harness?"
 description: "Sección 2 de d3.docx: Introducción - ¿Por qué necesitamos el concepto de harness?. Durante los primeros años de los agentes basados en modelos de lenguaje, buena parte de la industria asumió que la calidad de un agente dependía principalmente…"
 sources:

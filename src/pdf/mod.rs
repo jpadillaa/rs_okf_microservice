@@ -1572,7 +1572,8 @@ pub(crate) fn build_bundle(
 ) -> Result<Built> {
     let started = Instant::now();
     let generated = chrono_now();
-    let mut out = BundleWriter::create(Format::Pdf, attempt)?;
+    let settings = Settings::pdf(cfg);
+    let mut out = BundleWriter::create(Format::Pdf, attempt, hash, &settings)?;
     let mut ex = extract(bytes, cfg, out.zip())?;
     let outline = outline(&mut ex, filename);
     let n = ex.pages.len();
@@ -2080,7 +2081,7 @@ pub(crate) fn build_bundle(
     );
     // El plazo del OCR depende del tiempo de ejecución: si dejó páginas sin transcribir,
     // la misma configuración puede dar otro bundle.
-    let settings = Settings::pdf(cfg).time_dependent(
+    let settings = settings.time_dependent(
         ex.pages
             .iter()
             .any(|p| p.ocr == Some(Ocr::Skipped(Budget::Time))),

@@ -1,5 +1,6 @@
 ---
 type: "Source Section"
+unit_id: "65e574ead417397d01694e1261ccc643cd282e5d26c89a767236a8303854cb16/contenido/seccion-004.md"
 title: "What do the journals and publishers say?"
 description: "Sección 4 de p2.pdf: What do the journals and publishers say?. To better understand the scope of recommendations provided by journals and publishers about the use of generative AI in academic writing, we conducted a…"
 sources:

@@ -1,5 +1,6 @@
 ---
 type: "Source Section"
+unit_id: "65e574ead417397d01694e1261ccc643cd282e5d26c89a767236a8303854cb16/contenido/seccion-002.md"
 title: "Abstract"
 description: "Sección 2 de p2.pdf: Abstract. Generative artificial intelligence (AI) tools have been selectively adopted across the academic community to help researchers complete tasks in a more…"
 sources:

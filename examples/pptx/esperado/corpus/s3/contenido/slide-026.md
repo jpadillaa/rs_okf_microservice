@@ -1,5 +1,6 @@
 ---
 type: "Slide"
+unit_id: "<conversión>/contenido/slide-026.md"
 title: "Precisión del contexto · Componente: Recuperador"
 description: "Diapositiva 26 de s3.pptx: Precisión del contexto · Componente: Recuperador. Contenido solo visual."
 sources:

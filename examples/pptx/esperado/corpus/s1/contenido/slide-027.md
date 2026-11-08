@@ -1,5 +1,6 @@
 ---
 type: "Slide"
+unit_id: "<conversión>/contenido/slide-027.md"
 title: "Aplicar el razonamiento al proyecto"
 description: "Diapositiva 27 de s1.pptx: Aplicar el razonamiento al proyecto. 1. Nuestra aplicación debe…"
 sources:

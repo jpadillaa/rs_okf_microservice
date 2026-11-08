@@ -1,5 +1,6 @@
 ---
 type: "Source Section"
+unit_id: "ca8cc75dc57460f16d6c8be863bb96c4650638c87a391ec5762026102659cf5c/contenido/seccion-006.md"
 title: "4. Conclusiones"
 description: "Sección 6 de articulo_columnas.pdf: 4. Conclusiones. Reconstruir el orden de lectura a partir de la posición de las líneas permite convertir documentos en dos columnas sin mezclar su contenido. Las notas al pie y…"
 sources:

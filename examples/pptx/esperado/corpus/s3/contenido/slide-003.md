@@ -1,5 +1,6 @@
 ---
 type: "Slide"
+unit_id: "<conversión>/contenido/slide-003.md"
 title: "El problema de la dimensionalidad de los embeddings"
 description: "Diapositiva 3 de s3.pptx: El problema de la dimensionalidad de los embeddings. No es solo un problema de almacenamiento y de latencia del sistema"
 sources:

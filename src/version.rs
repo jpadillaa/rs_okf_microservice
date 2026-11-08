@@ -2,14 +2,17 @@
 use crate::output::Fields;
 use serde::{Deserialize, Serialize};
 
-pub(crate) const PROFILE: &str = "1.3.0";
+pub(crate) const PROFILE: &str = "1.4.0";
 /// Perfiles anteriores cuyos bundles siguen siendo válidos: 1.1.0 añadió reglas para
 /// páginas que un bundle 1.0.0 no puede contener (OCR del servicio), 1.2.0 solo cambia
-/// qué guiones de fin de línea conserva el texto PDF, que el validador no comprueba, y
-/// 1.3.0 añade la configuración de la conversión, que los anteriores no declaran.
-const PREVIOUS_PROFILES: [&str; 3] = ["1.0.0", "1.1.0", "1.2.0"];
+/// qué guiones de fin de línea conserva el texto PDF, que el validador no comprueba,
+/// 1.3.0 añade la configuración de la conversión y 1.4.0 sus identificadores, que los
+/// anteriores no declaran.
+const PREVIOUS_PROFILES: [&str; 4] = ["1.0.0", "1.1.0", "1.2.0", "1.3.0"];
 /// Perfiles anteriores a `conversion_settings` (plan 3, I3).
 const WITHOUT_SETTINGS: [&str; 3] = ["1.0.0", "1.1.0", "1.2.0"];
+/// Perfiles anteriores a `conversion_id` y `unit_id` (plan 3, I1).
+const WITHOUT_IDS: [&str; 4] = ["1.0.0", "1.1.0", "1.2.0", "1.3.0"];
 pub(crate) const PACKAGE: &str = env!("CARGO_PKG_VERSION");
 pub(crate) const COMMIT: &str = env!("OKF_BUILD_COMMIT");
 
@@ -62,6 +65,14 @@ pub(crate) fn declares_settings(document: &yaml_serde::Value) -> bool {
         .is_some_and(|v| !WITHOUT_SETTINGS.contains(&v))
 }
 
+/// ¿Debe el bundle declarar `conversion_id` y `unit_id`? Desde el perfil 1.4.0.
+pub(crate) fn declares_ids(document: &yaml_serde::Value) -> bool {
+    document
+        .get("profile_version")
+        .and_then(yaml_serde::Value::as_str)
+        .is_some_and(|v| !WITHOUT_IDS.contains(&v))
+}
+
 /// Reconoce el perfil previo al versionado; para bundles versionados, ambos registros
 /// deben coincidir y este binario debe conocer el contrato declarado.
 pub(crate) fn check(
@@ -112,7 +123,7 @@ mod tests {
         let mut report = doc.clone();
         report["converter_version"] = "999".into();
         assert!(check(&doc, &report).is_err());
-        for v in ["1.0.0", "1.1.0", "1.2.0"] {
+        for v in ["1.0.0", "1.1.0", "1.2.0", "1.3.0"] {
             let mut previous = doc.clone();
             previous["profile_version"] = v.into();
             check(&previous, &previous).unwrap();

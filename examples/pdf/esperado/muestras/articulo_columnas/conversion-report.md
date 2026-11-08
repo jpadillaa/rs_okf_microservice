@@ -1,13 +1,15 @@
 ---
 converter_version: "0.1.0"
 converter_commit: "<commit>"
-profile_version: "1.3.0"
+profile_version: "1.4.0"
 conversion_settings:
   max_image_pixels: 33554432
   ocr:
     enabled: false
 settings_sha256: "ad1d7709796a5172b6ad18d538b1bef5780b44279dd787d15ecc82ede959ef16"
+conversion_id: "ca8cc75dc57460f16d6c8be863bb96c4650638c87a391ec5762026102659cf5c"
 type: "Conversion Report"
+unit_id: "ca8cc75dc57460f16d6c8be863bb96c4650638c87a391ec5762026102659cf5c/conversion-report.md"
 title: "Informe de conversión"
 generated:
   by: "process:document-conversion"

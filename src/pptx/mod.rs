@@ -1005,7 +1005,7 @@ pub(crate) fn build_bundle(
     }
     let generated = chrono_now();
     let mut allissues = extraction.issues.clone();
-    let mut out = BundleWriter::create(Format::Pptx, attempt)?;
+    let mut out = BundleWriter::create(Format::Pptx, attempt, hash, &settings)?;
     fs::create_dir_all(attempt.join("assets"))?;
     for s in slides {
         let rendered = ppt

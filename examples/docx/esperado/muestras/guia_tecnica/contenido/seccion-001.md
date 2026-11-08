@@ -1,5 +1,6 @@
 ---
 type: "Source Section"
+unit_id: "1e36f07af86942b9c2c55211a9f808be20174b49acdd770f3774e32865e91ed2/contenido/seccion-001.md"
 title: "Guía técnica de indexación vectorial"
 description: "Inicio de guia_tecnica.docx, antes de la primera sección. Laboratorio 3 · Recuperación densa"
 sources:

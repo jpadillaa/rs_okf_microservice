@@ -1,5 +1,6 @@
 ---
 type: "Slide"
+unit_id: "<conversión>/contenido/slide-013.md"
 title: "Elegir la solución según la tarea"
 description: "Diapositiva 13 de s1.pptx: Elegir la solución según la tarea. NECESIDAD DE INFORMACIÓN"
 sources:

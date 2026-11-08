@@ -1,5 +1,6 @@
 ---
 type: "Slide"
+unit_id: "<conversión>/contenido/slide-021.md"
 title: "Fidelidad (Faithfulness) · Componente: Generador"
 description: "Diapositiva 21 de s3.pptx: Fidelidad (Faithfulness) · Componente: Generador. Evalúa si la respuesta generada es coherente con la información recuperada."
 sources:

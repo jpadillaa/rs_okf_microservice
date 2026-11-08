@@ -1,5 +1,6 @@
 ---
 type: "Slide"
+unit_id: "<conversión>/contenido/slide-020.md"
 title: "Encontrar fragmentos no es conectarlos"
 description: "Diapositiva 20 de s1.pptx: Encontrar fragmentos no es conectarlos. PREGUNTA DE SALTOS MÚLTIPLES"
 sources:

@@ -1,5 +1,6 @@
 ---
 type: "Slide"
+unit_id: "<conversión>/contenido/slide-025.md"
 title: "Construir, controlar, observar y evaluar"
 description: "Diapositiva 25 de s1.pptx: Construir, controlar, observar y evaluar. LangChain"
 sources:

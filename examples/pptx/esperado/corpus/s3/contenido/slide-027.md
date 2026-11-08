@@ -1,5 +1,6 @@
 ---
 type: "Slide"
+unit_id: "<conversión>/contenido/slide-027.md"
 title: "Exhaustividad del Contexto · Componente: Recuperador"
 description: "Diapositiva 27 de s3.pptx: Exhaustividad del Contexto · Componente: Recuperador. Mide hasta qué punto el contexto recuperado contiene toda la información necesaria para responder completamente a la pregunta."
 sources:

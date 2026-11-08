@@ -1,5 +1,6 @@
 ---
 type: "Slide"
+unit_id: "<conversión>/contenido/slide-020.md"
 title: "Indexación y embeddings"
 description: "Diapositiva 20 de s2.pptx: Indexación y embeddings. Contenido solo visual."
 sources:

@@ -137,10 +137,27 @@ pub(crate) fn bundle_files(doc: &Path) -> BTreeMap<String, String> {
     files
 }
 
+/// Archivos normalizados. En PPTX, `conversion_id` depende de la fuente de las vistas
+/// (por su huella de configuración) y se sustituye en todo el bundle, también en los
+/// `unit_id`, por una marca fija.
 fn snapshot(doc: &Path) -> BTreeMap<String, String> {
-    bundle_files(doc)
+    let files = bundle_files(doc);
+    let pptx = Format::from_filename(&doc.to_string_lossy()) == Some(Format::Pptx);
+    let id = pptx.then(|| {
+        crate::bundle::frontmatter(&files["documento.md"]).unwrap()["conversion_id"]
+            .as_str()
+            .unwrap()
+            .to_owned()
+    });
+    files
         .into_iter()
-        .map(|(name, text)| (name, normalize(&text)))
+        .map(|(name, text)| {
+            let text = match &id {
+                Some(id) => text.replace(id.as_str(), "<conversión>"),
+                None => text,
+            };
+            (name, normalize(&text))
+        })
         .collect()
 }
 

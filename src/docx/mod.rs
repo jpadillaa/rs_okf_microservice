@@ -1200,7 +1200,7 @@ pub(crate) fn build_bundle(
         },
         tally: Tally::default(),
     };
-    let mut out = BundleWriter::create(Format::Docx, attempt)?;
+    let mut out = BundleWriter::create(Format::Docx, attempt, hash, &Settings::none())?;
     let mut entries = String::new();
     let mut content_entries = String::new();
     for k in 0..outline.sections.len() {

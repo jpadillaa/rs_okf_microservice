@@ -1,5 +1,6 @@
 ---
 type: "Source Section"
+unit_id: "0c4c13b469b5723105860e02541a8786affa5e84cb2a84a9e89826c89cf4c554/contenido/seccion-003.md"
 title: "Semana 3: Fundamentos de RAG (Pipeline de recuperación)"
 description: "Sección 3 de d1.docx: Semana 3: Fundamentos de RAG (Pipeline de recuperación). Recuperación y generación de respuestas"
 sources:

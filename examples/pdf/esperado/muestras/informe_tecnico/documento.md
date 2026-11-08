@@ -1,5 +1,6 @@
 ---
 type: "Source Document"
+unit_id: "3d7f81153283dfd28dd45ac709daba75f8f9b8c99757f967e46746e47148c931/documento.md"
 title: "Informe técnico de migración"
 description: "Documento fuente informe_tecnico.pdf convertido a conceptos OKF por secciones."
 sources:
@@ -10,12 +11,13 @@ generated:
   at: "<generado>"
 converter_version: "0.1.0"
 converter_commit: "<commit>"
-profile_version: "1.3.0"
+profile_version: "1.4.0"
 conversion_settings:
   max_image_pixels: 33554432
   ocr:
     enabled: false
 settings_sha256: "ad1d7709796a5172b6ad18d538b1bef5780b44279dd787d15ecc82ede959ef16"
+conversion_id: "3d7f81153283dfd28dd45ac709daba75f8f9b8c99757f967e46746e47148c931"
 source_file:
   path: "references/original.pdf"
   sha256: "b741d4551fe678d52919b803e637eb796420e175113f447ec683dca107d098e3"

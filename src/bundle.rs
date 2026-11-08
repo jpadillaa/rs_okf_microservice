@@ -279,6 +279,16 @@ pub(crate) fn validate_bundle(path: &FsPath) -> Result<()> {
     if crate::version::declares_settings(&document) {
         crate::settings::check(format, &document, &report)?;
     }
+    let conversion_id = if crate::version::declares_ids(&document) {
+        // Se recalcula con la huella real del original; la declarada se comprueba
+        // después, frente al original, con su propio mensaje.
+        let mut hasher = Sha256::new();
+        std::io::copy(&mut z.by_name(&format.original_entry())?, &mut hasher)?;
+        let source = hex(&hasher.finalize());
+        Some(crate::identity::check(&document, &report, &source)?)
+    } else {
+        None
+    };
     let mut root = String::new();
     z.by_name("index.md")?.read_to_string(&mut root)?;
     let rootfm = frontmatter(&root)?;
@@ -293,6 +303,9 @@ pub(crate) fn validate_bundle(path: &FsPath) -> Result<()> {
         let reserved = name == "index.md" || name == "contenido/index.md" || name == "log.md";
         if !reserved {
             let fm = frontmatter(&md)?;
+            if let Some(id) = &conversion_id {
+                crate::identity::check_unit(id, name, &fm)?;
+            }
             if fm
                 .get("type")
                 .and_then(YamlValue::as_str)

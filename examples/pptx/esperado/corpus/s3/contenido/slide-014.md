@@ -1,5 +1,6 @@
 ---
 type: "Slide"
+unit_id: "<conversión>/contenido/slide-014.md"
 title: "Evaluar el RAG: Contexto, Fidelidad, Relevancia de la respuesta"
 description: "Diapositiva 14 de s3.pptx: Evaluar el RAG: Contexto, Fidelidad, Relevancia de la respuesta. La arquitectura RAG: componentes interdependientes (recuperador y generador), donde los errores se propagan entre etapas, dificultando el diagnóstico."
 sources:

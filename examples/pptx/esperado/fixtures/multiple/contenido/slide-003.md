@@ -1,5 +1,6 @@
 ---
 type: "Slide"
+unit_id: "<conversión>/contenido/slide-003.md"
 title: "Hidden slide contains table and image"
 description: "Diapositiva 3 de multiple.pptx (oculta): Hidden slide contains table and image."
 sources:

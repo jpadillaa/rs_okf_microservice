@@ -1266,7 +1266,7 @@ pub(crate) fn build_bundle(
         filename,
         generated: &generated,
         z_in,
-        out: BundleWriter::create(Format::Xlsx, attempt)?,
+        out: BundleWriter::create(Format::Xlsx, attempt, hash, &Settings::none())?,
         issues: Vec::new(),
         t: Tally::default(),
         sheet_index: wb

@@ -1,10 +1,12 @@
 ---
 converter_version: "0.1.0"
 converter_commit: "<commit>"
-profile_version: "1.3.0"
+profile_version: "1.4.0"
 conversion_settings: {}
 settings_sha256: "44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a"
+conversion_id: "1e36f07af86942b9c2c55211a9f808be20174b49acdd770f3774e32865e91ed2"
 type: "Conversion Report"
+unit_id: "1e36f07af86942b9c2c55211a9f808be20174b49acdd770f3774e32865e91ed2/conversion-report.md"
 title: "Informe de conversión"
 generated:
   by: "process:document-conversion"

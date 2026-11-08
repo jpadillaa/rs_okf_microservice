@@ -1,5 +1,6 @@
 ---
 type: "Source Section"
+unit_id: "0c4c13b469b5723105860e02541a8786affa5e84cb2a84a9e89826c89cf4c554/contenido/seccion-005.md"
 title: "Semana 5: RAG Avanzado"
 description: "Sección 5 de d1.docx: Semana 5: RAG Avanzado. Técnicas de Re-ranking"
 sources:

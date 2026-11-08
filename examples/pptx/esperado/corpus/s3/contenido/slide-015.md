@@ -1,5 +1,6 @@
 ---
 type: "Slide"
+unit_id: "<conversión>/contenido/slide-015.md"
 title: "Retrieval Augmented Generation Assessment"
 description: "Diapositiva 15 de s3.pptx: Retrieval Augmented Generation Assessment. RAGAs, propone una metodología de evaluación específicamente adaptada a la arquitectura RAG."
 sources:

@@ -1,5 +1,6 @@
 ---
 type: "Source Section"
+unit_id: "116b9fbc1d4b9e6405f6a1e5ea024cf926e6939ec6d79f9eb0e05ca7e94f59f9/contenido/seccion-001.md"
 title: "Informe de evaluación del asistente RAG"
 description: "Inicio de informe_revisado.docx, antes de la primera sección. Versión revisada por el comité académico, octubre de 2026"
 sources:

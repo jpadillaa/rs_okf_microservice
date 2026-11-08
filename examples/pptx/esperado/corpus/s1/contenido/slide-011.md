@@ -1,5 +1,6 @@
 ---
 type: "Slide"
+unit_id: "<conversión>/contenido/slide-011.md"
 title: "Una pregunta breve, varias decisiones"
 description: "Diapositiva 11 de s1.pptx: Una pregunta breve, varias decisiones. Posgrado"
 sources:

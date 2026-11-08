@@ -1,5 +1,6 @@
 ---
 type: "Slide"
+unit_id: "<conversión>/contenido/slide-009.md"
 title: "4. La información vigente puede llegar desde fuentes externas"
 description: "Diapositiva 9 de s1.pptx: 4. La información vigente puede llegar desde fuentes externas. GPT-6.1 Sol"
 sources:
