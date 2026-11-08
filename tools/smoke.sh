@@ -91,4 +91,12 @@ report=$(unzip -p "$data/$id.zip" conversion-report.md)
 grep -q "escaneadas con OCR del servicio: 2" <<<"$report"
 content=$(unzip -p "$data/$id.zip" 'contenido/*.md')
 grep -q "anonimizada" <<<"$content"
+# El hijo lee los modelos para declarar su huella dentro de Landlock (plan 3, I3): cada
+# una es la fijada en tools/ocr_models.sh, la misma que el Dockerfile, y no «ausente».
+document=$(unzip -p "$data/$id.zip" documento.md)
+for file in det.onnx rec.onnx dict.txt; do
+    pinned=$(awk -v f="$file" '$1 == f { print $3 }' tools/ocr_models.sh)
+    grep -qx "    ${file%%.*}_sha256: \"$pinned\"" <<<"$document" ||
+        { echo "OCR: la huella de $file en documento.md no es la fijada ($pinned)" >&2; exit 1; }
+done
 echo "trabajo $id: OCR complete, bundle descargado y validado"
