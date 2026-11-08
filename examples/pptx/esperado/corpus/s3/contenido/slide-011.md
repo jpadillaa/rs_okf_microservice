@@ -1,6 +1,9 @@
 ---
 type: "Slide"
 unit_id: "<conversión>/contenido/slide-011.md"
+parent: "documento.md"
+previous: "contenido/slide-010.md"
+next: "contenido/slide-012.md"
 title: "Diapositiva sin título"
 description: "Diapositiva 11 de s3.pptx. Cómo sabemos que nuestro RAG responde bien?"
 sources:

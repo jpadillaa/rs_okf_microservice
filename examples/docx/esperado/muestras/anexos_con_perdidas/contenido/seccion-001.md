@@ -1,6 +1,8 @@
 ---
 type: "Source Section"
-unit_id: "29aa47fbf925c22fffd098d572b1ad8e2af63308c30c16435d7a48f5b495b924/contenido/seccion-001.md"
+unit_id: "6ad8f9fc9edd9bf1d488336da2aaabfa30728fa5f3afba38872b72c03c75e9a6/contenido/seccion-001.md"
+parent: "documento.md"
+next: "contenido/seccion-002.md"
 title: "Anexo A. Proceso de evaluación"
 description: "Sección 1 de anexos_con_perdidas.docx: Anexo A. Proceso de evaluación. El anexo reúne material de apoyo de la evaluación. Algunos elementos se crearon con herramientas externas y se insertaron en el documento sin convertirlos a…"
 sources:

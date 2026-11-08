@@ -687,8 +687,13 @@ impl Builder<'_> {
             spans,
         );
         let file = format!("{base}.md");
-        self.out
-            .concept(&format!("contenido/{file}"), &fields, &body)?;
+        // Una región grande es hija del concepto de su hoja.
+        self.out.concept_in(
+            &format!("contenido/{file}"),
+            &format!("contenido/{}", Self::sheet_file(n)),
+            &fields,
+            &body,
+        )?;
         Ok(file)
     }
 

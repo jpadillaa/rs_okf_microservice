@@ -1,6 +1,9 @@
 ---
 type: "Slide"
 unit_id: "<conversión>/contenido/slide-032.md"
+parent: "documento.md"
+previous: "contenido/slide-031.md"
+next: "contenido/slide-033.md"
 title: "Cómo se manifiestan los errores"
 description: "Diapositiva 32 de s3.pptx: Cómo se manifiestan los errores. Similitud textual ≠ validez legal"
 sources:

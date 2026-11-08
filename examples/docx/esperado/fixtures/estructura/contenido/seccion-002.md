@@ -1,6 +1,8 @@
 ---
 type: "Source Section"
-unit_id: "68eb08d0165852f6ca223d163d9eaeb456cafc189107352af975610f629e93bd/contenido/seccion-002.md"
+unit_id: "c2c92c4ae3e0f456cb35ccd468b8f37848c3be40635293d238be4b36eaa5f539/contenido/seccion-002.md"
+parent: "documento.md"
+previous: "contenido/seccion-001.md"
 title: "Datos"
 description: "Sección 2 de estructura.docx: Datos. Cifra final de 420 unidades."
 sources:

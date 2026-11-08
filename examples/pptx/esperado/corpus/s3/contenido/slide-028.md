@@ -1,6 +1,9 @@
 ---
 type: "Slide"
 unit_id: "<conversión>/contenido/slide-028.md"
+parent: "documento.md"
+previous: "contenido/slide-027.md"
+next: "contenido/slide-029.md"
 title: "Exhaustividad del contexto · Componente: Recuperador"
 description: "Diapositiva 28 de s3.pptx: Exhaustividad del contexto · Componente: Recuperador. Contenido solo visual."
 sources:

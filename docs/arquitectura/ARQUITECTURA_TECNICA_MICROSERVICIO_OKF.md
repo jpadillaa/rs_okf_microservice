@@ -231,16 +231,35 @@ golden de PPTX, `conversion_id` depende de la fuente de las vistas y se sustituy
 La API acepta `document_key` como campo del formulario, antes o después del archivo. Si
 llega antes y no es admitida, se rechaza sin escribir el original; si llega después, se
 borra lo escrito. La clave se guarda en la columna `document_key` de `jobs` (migración
-`0003`, con un índice por clave y llegada) y el worker la pasa al hijo como
+`0003`) y el worker la pasa al hijo como
 `--document-key=<clave>`: con `=`, una clave que empieza por `-` no se lee como otra
 opción. El hijo la vuelve a comprobar y el ensamblador la escribe en `documento.md` y
 en el informe a través de `Source` (`src/identity.rs`), que acompaña a la huella del
 original en los adaptadores. La clave no se escribe en el registro de diagnóstico ni en
 las métricas; sí aparece en los argumentos del proceso hijo mientras convierte.
 
-`GET /jobs?document_key=…` lista los trabajos de una clave en orden de llegada. El
-servicio no marca ninguno como vigente: el consumidor compara las huellas y decide. La
-consulta usa la función `query` de Axum, que añade `serde_urlencoded`.
+`GET /jobs?document_key=…` lista los trabajos de una clave en orden de llegada, que da
+la columna `arrival` (migración `0004`, una secuencia de PostgreSQL, indexada con la
+clave): `created_at` tiene resolución de segundos y el identificador es aleatorio, así
+que no ordenan dos subidas del mismo segundo. El servicio no marca ninguna versión como
+vigente: el consumidor compara las huellas y decide. La consulta usa la función `query`
+de Axum, que añade `serde_urlencoded`.
+
+### Relaciones entre conceptos (plan 3, I4)
+
+`BundleWriter` (`src/output.rs`) añade `parent`, `previous` y `next` a cada concepto de
+`contenido/`; ningún adaptador los escribe. Los adaptadores le entregan los conceptos en
+orden de lectura, con `concept` (hijos de `documento.md`) o `concept_in` (hijos de otro
+concepto: las regiones grandes de XLSX, que se escriben antes que su hoja). El escritor
+retiene el último concepto de cada padre hasta que llega su siguiente hermano, que da
+su `next`, o hasta cerrar el bundle; así conserva el ensamblado en streaming con un solo
+concepto pendiente por padre.
+
+`src/relations.rs` comprueba las relaciones después de las reglas de cada formato, para
+que un índice desordenado se explique con el mensaje propio del formato: rutas a
+conceptos del bundle con el mismo `parent`, reciprocidad, una sola cadena sin ciclos
+por padre, descendencia de `documento.md` y recorrido en profundidad igual al orden de
+`contenido/index.md`. Los bundles anteriores al perfil 1.6.0 no se comprueban.
 
 ### Validación independiente (plan 2, C10)
 

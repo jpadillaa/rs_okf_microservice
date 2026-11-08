@@ -1,6 +1,9 @@
 ---
 type: "Sheet"
-unit_id: "dbe30f9ef70ca3455573a4aecdf51cb6771acb2089d66a0cb145f765635a448d/contenido/hoja-002.md"
+unit_id: "86458dac66cf63ef115a124499e0f67c97243481557c0ae51373d7d426aa8b1f/contenido/hoja-002.md"
+parent: "documento.md"
+previous: "contenido/hoja-001.md"
+next: "contenido/hoja-003.md"
 title: "Detalle"
 description: "Hoja 2 del libro ventas_trimestrales.xlsx: rango A1:G301 con 1 región."
 sources:

@@ -1,6 +1,9 @@
 ---
 type: "Slide"
 unit_id: "<conversión>/contenido/slide-020.md"
+parent: "documento.md"
+previous: "contenido/slide-019.md"
+next: "contenido/slide-021.md"
 title: "Métricas de Ragas"
 description: "Diapositiva 20 de s3.pptx: Métricas de Ragas. Construcción de aplicaciones basadas en grandes modelos de lenguaje - MISW4411"
 sources:

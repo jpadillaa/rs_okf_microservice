@@ -1,6 +1,9 @@
 ---
 type: "Slide"
 unit_id: "<conversión>/contenido/slide-013.md"
+parent: "documento.md"
+previous: "contenido/slide-012.md"
+next: "contenido/slide-014.md"
 title: "Por qué evaluar el RAG?"
 description: "Diapositiva 13 de s3.pptx: Por qué evaluar el RAG?. Ilusión de funcionamiento (el LLM no suele admitir ignorancia)"
 sources:

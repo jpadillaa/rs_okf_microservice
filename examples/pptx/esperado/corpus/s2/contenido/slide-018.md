@@ -1,6 +1,9 @@
 ---
 type: "Slide"
 unit_id: "<conversión>/contenido/slide-018.md"
+parent: "documento.md"
+previous: "contenido/slide-017.md"
+next: "contenido/slide-019.md"
 title: "Indexación y embeddings"
 description: "Diapositiva 18 de s2.pptx: Indexación y embeddings."
 sources:

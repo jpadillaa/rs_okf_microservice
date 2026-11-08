@@ -1,6 +1,8 @@
 ---
 type: "Slide"
 unit_id: "<conversión>/contenido/slide-027.md"
+parent: "documento.md"
+previous: "contenido/slide-026.md"
 title: "Diapositiva sin título"
 description: "Diapositiva 27 de s2.pptx."
 sources:

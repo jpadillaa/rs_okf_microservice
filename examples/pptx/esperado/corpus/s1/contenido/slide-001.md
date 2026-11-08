@@ -1,6 +1,8 @@
 ---
 type: "Slide"
 unit_id: "<conversión>/contenido/slide-001.md"
+parent: "documento.md"
+next: "contenido/slide-002.md"
 title: "Recursos del curso"
 description: "Diapositiva 1 de s1.pptx: Recursos del curso. https://misw4411-aplicaciones-basadas-en-llms.github.io/ llm-retrieval-engineering-course/"
 sources:

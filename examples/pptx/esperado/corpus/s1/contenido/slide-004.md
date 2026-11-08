@@ -1,6 +1,9 @@
 ---
 type: "Slide"
 unit_id: "<conversión>/contenido/slide-004.md"
+parent: "documento.md"
+previous: "contenido/slide-003.md"
+next: "contenido/slide-005.md"
 title: "Primero la evidencia, después la respuesta"
 description: "Diapositiva 4 de s1.pptx: Primero la evidencia, después la respuesta. Una consulta concreta exige reglas, plazos y excepciones que están en el reglamento"
 sources:

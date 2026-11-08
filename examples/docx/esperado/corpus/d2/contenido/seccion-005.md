@@ -1,6 +1,9 @@
 ---
 type: "Source Section"
-unit_id: "305b91a698b533989af9d781ca7f909b6e8d7d714af6d1a0b7fe55063444e4ed/contenido/seccion-005.md"
+unit_id: "8e781c635c419737a54fb54ebfceec77e4354f94a66f882de7320dd67bfc2c89/contenido/seccion-005.md"
+parent: "documento.md"
+previous: "contenido/seccion-004.md"
+next: "contenido/seccion-006.md"
 title: "Paso No. 3 - Análisis comparativo de costo-beneficio entre APIs de IA generativa y despliegue on-premise"
 description: "Sección 5 de d2.docx: Paso No. 3 - Análisis comparativo de costo-beneficio entre APIs de IA generativa y despliegue on-premise. Con el presupuesto estimado en el paso anterior, se debe proyectar la cantidad de tokens que podrían adquirirse mediante las APIs de OpenAI, Google Gemini y…"
 sources:

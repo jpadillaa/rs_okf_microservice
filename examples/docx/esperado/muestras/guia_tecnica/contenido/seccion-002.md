@@ -1,6 +1,9 @@
 ---
 type: "Source Section"
-unit_id: "bb8ead55422a6f92b60916c49d21b64aa507bc5de3a3d22e322bc38189f42611/contenido/seccion-002.md"
+unit_id: "0895fb23bba4522137a6e84d2610abe97be01c5859b446aabd7763b691954aa1/contenido/seccion-002.md"
+parent: "documento.md"
+previous: "contenido/seccion-001.md"
+next: "contenido/seccion-003.md"
 title: "Fundamentos"
 description: "Sección 2 de guia_tecnica.docx: Fundamentos. La similitud entre la consulta y cada fragmento se mide con el coseno de sus vectores:"
 sources:

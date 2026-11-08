@@ -1,6 +1,9 @@
 ---
 type: "Slide"
 unit_id: "<conversión>/contenido/slide-002.md"
+parent: "documento.md"
+previous: "contenido/slide-001.md"
+next: "contenido/slide-003.md"
 title: "Diapositiva sin título"
 description: "Diapositiva 2 de multiple.pptx. This slide has no title placeholder"
 sources:

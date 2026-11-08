@@ -1,6 +1,6 @@
 ---
 type: "Source Document"
-unit_id: "68eb08d0165852f6ca223d163d9eaeb456cafc189107352af975610f629e93bd/documento.md"
+unit_id: "c2c92c4ae3e0f456cb35ccd468b8f37848c3be40635293d238be4b36eaa5f539/documento.md"
 title: "Informe de prueba"
 description: "Documento fuente estructura.docx convertido a conceptos OKF por secciones."
 sources:
@@ -11,10 +11,10 @@ generated:
   at: "<generado>"
 converter_version: "0.1.0"
 converter_commit: "<commit>"
-profile_version: "1.5.0"
+profile_version: "1.6.0"
 conversion_settings: {}
 settings_sha256: "44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a"
-conversion_id: "68eb08d0165852f6ca223d163d9eaeb456cafc189107352af975610f629e93bd"
+conversion_id: "c2c92c4ae3e0f456cb35ccd468b8f37848c3be40635293d238be4b36eaa5f539"
 source_file:
   path: "references/original.docx"
   sha256: "e885aa60cb14623ef9e080a4e440913cd10a4413a8bdfe19f59d3c3a047f626c"

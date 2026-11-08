@@ -1,6 +1,8 @@
 ---
 type: "Source Section"
-unit_id: "e5f1261cab357cb9227bfc51e134416c5b97caa399eb36275c00fe63fb406d9d/contenido/seccion-007.md"
+unit_id: "da3e8217c83e8f9b9c57013e7120434bd1e45e7856c931f0f4ed185815af1976/contenido/seccion-007.md"
+parent: "documento.md"
+previous: "contenido/seccion-006.md"
 title: "Referencias"
 description: "Sección 7 de articulo_columnas.pdf: Referencias. 1. Ruiz A. Documentos de prueba para conversores. Rev Pruebas Doc. 2025;2(1):1–10."
 sources:

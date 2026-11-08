@@ -1,6 +1,8 @@
 ---
 type: "Source Section"
-unit_id: "b37c469f2c224b3eca3b199cb3eb70d653e8f8705c23d82629c8e4822297084e/contenido/seccion-008.md"
+unit_id: "c269fbb666f1339ef8bf4e9207d15b75a008a0ef6915613b180f4fa6f3b4922f/contenido/seccion-008.md"
+parent: "documento.md"
+previous: "contenido/seccion-007.md"
 title: "Referencias"
 description: "Sección 8 de p4.pdf: Referencias. • Amazon Web Services. \"Amazon Bedrock AgentCore Overview.\" Documentación oficial, 2025."
 sources:

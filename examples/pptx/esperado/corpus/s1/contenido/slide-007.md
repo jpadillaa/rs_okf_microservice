@@ -1,6 +1,9 @@
 ---
 type: "Slide"
 unit_id: "<conversión>/contenido/slide-007.md"
+parent: "documento.md"
+previous: "contenido/slide-006.md"
+next: "contenido/slide-008.md"
 title: "2. La posición de la evidencia puede afectar su uso"
 description: "Diapositiva 7 de s1.pptx: 2. La posición de la evidencia puede afectar su uso. LA MISMA EVIDENCIA, EN TRES POSICIONES"
 sources:

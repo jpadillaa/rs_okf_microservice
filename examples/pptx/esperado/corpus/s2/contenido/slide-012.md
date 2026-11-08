@@ -1,6 +1,9 @@
 ---
 type: "Slide"
 unit_id: "<conversión>/contenido/slide-012.md"
+parent: "documento.md"
+previous: "contenido/slide-011.md"
+next: "contenido/slide-013.md"
 title: "Fragmentación basada en la estructura del documento"
 description: "Diapositiva 12 de s2.pptx: Fragmentación basada en la estructura del documento. Contenido solo visual."
 sources:

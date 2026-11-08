@@ -1,6 +1,9 @@
 ---
 type: "Source Section"
-unit_id: "305b91a698b533989af9d781ca7f909b6e8d7d714af6d1a0b7fe55063444e4ed/contenido/seccion-003.md"
+unit_id: "8e781c635c419737a54fb54ebfceec77e4354f94a66f882de7320dd67bfc2c89/contenido/seccion-003.md"
+parent: "documento.md"
+previous: "contenido/seccion-002.md"
+next: "contenido/seccion-004.md"
 title: "Paso No. 1 – Estimación de infraestructura y Capex para el despliegue on-premise de modelos de lenguaje de código abierto"
 description: "Sección 3 de d2.docx: Paso No. 1 – Estimación de infraestructura y Capex para el despliegue on-premise de modelos de lenguaje de código abierto. Determinar la capacidad y los recursos tecnológicos requeridos para implementar y operar, en infraestructura local, el modelo de código abierto asignado al…"
 sources:

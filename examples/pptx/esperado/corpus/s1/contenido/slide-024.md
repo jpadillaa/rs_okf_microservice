@@ -1,6 +1,9 @@
 ---
 type: "Slide"
 unit_id: "<conversión>/contenido/slide-024.md"
+parent: "documento.md"
+previous: "contenido/slide-023.md"
+next: "contenido/slide-025.md"
 title: "Evaluar por etapa y aceptar con criterios"
 description: "Diapositiva 24 de s1.pptx: Evaluar por etapa y aceptar con criterios. RECUPERACIÓN"
 sources:

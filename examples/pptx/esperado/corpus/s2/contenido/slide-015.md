@@ -1,6 +1,9 @@
 ---
 type: "Slide"
 unit_id: "<conversión>/contenido/slide-015.md"
+parent: "documento.md"
+previous: "contenido/slide-014.md"
+next: "contenido/slide-016.md"
 title: "El reto de ingeniería de software con el chunking"
 description: "Diapositiva 15 de s2.pptx: El reto de ingeniería de software con el chunking. Una fragmentación efectiva busca un equilibrio:"
 sources:

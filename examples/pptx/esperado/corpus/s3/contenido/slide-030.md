@@ -1,6 +1,9 @@
 ---
 type: "Slide"
 unit_id: "<conversión>/contenido/slide-030.md"
+parent: "documento.md"
+previous: "contenido/slide-029.md"
+next: "contenido/slide-031.md"
 title: "Otras métricas"
 description: "Diapositiva 30 de s3.pptx: Otras métricas. Exactitud de la Respuesta (Answer Correctness)"
 sources:

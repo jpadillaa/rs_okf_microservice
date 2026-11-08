@@ -1,6 +1,9 @@
 ---
 type: "Slide"
 unit_id: "<conversión>/contenido/slide-009.md"
+parent: "documento.md"
+previous: "contenido/slide-008.md"
+next: "contenido/slide-010.md"
 title: "Fragmentación por unidades lingüísticas"
 description: "Diapositiva 9 de s2.pptx: Fragmentación por unidades lingüísticas. Contenido solo visual."
 sources:

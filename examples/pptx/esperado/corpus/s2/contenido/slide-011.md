@@ -1,6 +1,9 @@
 ---
 type: "Slide"
 unit_id: "<conversión>/contenido/slide-011.md"
+parent: "documento.md"
+previous: "contenido/slide-010.md"
+next: "contenido/slide-012.md"
 title: "Fragmentación semántica"
 description: "Diapositiva 11 de s2.pptx: Fragmentación semántica. Contenido solo visual."
 sources:

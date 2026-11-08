@@ -1,6 +1,8 @@
 ---
 type: "Slide"
 unit_id: "<conversión>/contenido/slide-001.md"
+parent: "documento.md"
+next: "contenido/slide-002.md"
 title: "A simple OKF test deck"
 description: "Diapositiva 1 de multiple.pptx: A simple OKF test deck. One short paragraph of slide content"
 sources:

@@ -1,6 +1,9 @@
 ---
 type: "Slide"
 unit_id: "<conversión>/contenido/slide-006.md"
+parent: "documento.md"
+previous: "contenido/slide-005.md"
+next: "contenido/slide-007.md"
 title: "1. Historial almacenado ≠ contexto enviado"
 description: "Diapositiva 6 de s1.pptx: 1. Historial almacenado ≠ contexto enviado. ESTADO A"
 sources:

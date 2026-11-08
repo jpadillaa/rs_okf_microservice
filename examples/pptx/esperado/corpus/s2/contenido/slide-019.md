@@ -1,6 +1,9 @@
 ---
 type: "Slide"
 unit_id: "<conversión>/contenido/slide-019.md"
+parent: "documento.md"
+previous: "contenido/slide-018.md"
+next: "contenido/slide-020.md"
 title: "Indexación y embeddings"
 description: "Diapositiva 19 de s2.pptx: Indexación y embeddings. Contenido solo visual."
 sources:

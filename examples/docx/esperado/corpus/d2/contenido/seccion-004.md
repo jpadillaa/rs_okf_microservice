@@ -1,6 +1,9 @@
 ---
 type: "Source Section"
-unit_id: "305b91a698b533989af9d781ca7f909b6e8d7d714af6d1a0b7fe55063444e4ed/contenido/seccion-004.md"
+unit_id: "8e781c635c419737a54fb54ebfceec77e4354f94a66f882de7320dd67bfc2c89/contenido/seccion-004.md"
+parent: "documento.md"
+previous: "contenido/seccion-003.md"
+next: "contenido/seccion-005.md"
 title: "Paso No. 2 – Evaluación comparativa entre licenciamiento SaaS y despliegue local de modelos de IA generativa"
 description: "Sección 4 de d2.docx: Paso No. 2 – Evaluación comparativa entre licenciamiento SaaS y despliegue local de modelos de IA generativa. A partir del presupuesto estimado en el paso anterior, se debe proyectar cuántas licencias de usuario podrían financiarse para un servicio comercial de…"
 sources:

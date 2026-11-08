@@ -1,6 +1,9 @@
 ---
 type: "Slide"
 unit_id: "<conversión>/contenido/slide-024.md"
+parent: "documento.md"
+previous: "contenido/slide-023.md"
+next: "contenido/slide-025.md"
 title: "El reto de ingeniería de software con las bases de datos vectoriales"
 description: "Diapositiva 24 de s2.pptx: El reto de ingeniería de software con las bases de datos vectoriales. En una implementación empresarial, la búsqueda semántica pura rara vez es suficiente."
 sources:

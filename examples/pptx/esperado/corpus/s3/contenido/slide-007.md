@@ -1,6 +1,9 @@
 ---
 type: "Slide"
 unit_id: "<conversión>/contenido/slide-007.md"
+parent: "documento.md"
+previous: "contenido/slide-006.md"
+next: "contenido/slide-008.md"
 title: "Consecuencias"
 description: "Diapositiva 7 de s3.pptx: Consecuencias. Se recuperan textos que “se parecen” a la pregunta, pero que en realidad no contienen la información correcta, lo que termina afectando la generación."
 sources:

@@ -1,6 +1,9 @@
 ---
 type: "Slide"
 unit_id: "<conversión>/contenido/slide-019.md"
+parent: "documento.md"
+previous: "contenido/slide-018.md"
+next: "contenido/slide-020.md"
 title: "Diapositiva sin título"
 description: "Diapositiva 19 de s3.pptx. ¿Podemos confiar en un LLM como juez? ¿Qué riesgos estamos asumiendo?"
 sources:

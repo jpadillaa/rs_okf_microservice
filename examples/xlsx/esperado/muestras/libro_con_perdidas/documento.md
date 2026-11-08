@@ -1,6 +1,6 @@
 ---
 type: "Source Document"
-unit_id: "9751a07d878afbcc7dd637496db3ae21e5b57073b35defb5388a56019c004855/documento.md"
+unit_id: "772126602e53f3664d66cd582c3b5366309811f665ff0a599cdf0c020bde7f83/documento.md"
 title: "libro_con_perdidas"
 description: "Libro libro_con_perdidas.xlsx convertido a conceptos OKF por hojas y regiones."
 sources:
@@ -11,10 +11,10 @@ generated:
   at: "<generado>"
 converter_version: "0.1.0"
 converter_commit: "<commit>"
-profile_version: "1.5.0"
+profile_version: "1.6.0"
 conversion_settings: {}
 settings_sha256: "44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a"
-conversion_id: "9751a07d878afbcc7dd637496db3ae21e5b57073b35defb5388a56019c004855"
+conversion_id: "772126602e53f3664d66cd582c3b5366309811f665ff0a599cdf0c020bde7f83"
 source_file:
   path: "references/original.xlsx"
   sha256: "782106213febbcffae20d3f21c50c284a0b924d9afae2158ffecce866faf62e8"

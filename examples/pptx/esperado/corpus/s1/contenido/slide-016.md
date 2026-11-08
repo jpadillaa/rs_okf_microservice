@@ -1,6 +1,9 @@
 ---
 type: "Slide"
 unit_id: "<conversión>/contenido/slide-016.md"
+parent: "documento.md"
+previous: "contenido/slide-015.md"
+next: "contenido/slide-017.md"
 title: "Preparar las fuentes y atender una consulta"
 description: "Diapositiva 16 de s1.pptx: Preparar las fuentes y atender una consulta. OFFLINE"
 sources:

@@ -1,6 +1,9 @@
 ---
 type: "Slide"
 unit_id: "<conversión>/contenido/slide-009.md"
+parent: "documento.md"
+previous: "contenido/slide-008.md"
+next: "contenido/slide-010.md"
 title: "Prácticas de ingenieria de software recomendadas"
 description: "Diapositiva 9 de s3.pptx: Prácticas de ingenieria de software recomendadas. Contenido solo visual."
 sources:

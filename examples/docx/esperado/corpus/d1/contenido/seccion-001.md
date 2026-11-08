@@ -1,6 +1,8 @@
 ---
 type: "Source Section"
-unit_id: "086287e10f2f91ac8c2099c10f21c37570148199d8cbc729dc70ca0e0444ebde/contenido/seccion-001.md"
+unit_id: "2208249ef9e6e4e9cb26435beb827e0ff4cefee8566aac54547b646c686c8420/contenido/seccion-001.md"
+parent: "documento.md"
+next: "contenido/seccion-002.md"
 title: "Semana 1: Fundamentos, arquitectura y configuración del entorno"
 description: "Sección 1 de d1.docx: Semana 1: Fundamentos, arquitectura y configuración del entorno. Arquitectura de Aplicaciones LLM"
 sources:

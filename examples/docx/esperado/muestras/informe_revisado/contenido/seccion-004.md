@@ -1,6 +1,8 @@
 ---
 type: "Source Section"
-unit_id: "c0a8caa9db3cc59f78a3e00ab0ec47e70b2870d489c7c608d58ef7d53ead4d22/contenido/seccion-004.md"
+unit_id: "48d0b1255157af22ff4858214e52275d2287d4327a51903880b09fcd65ab4fe1/contenido/seccion-004.md"
+parent: "documento.md"
+previous: "contenido/seccion-003.md"
 title: "3. Conclusiones"
 description: "Sección 4 de informe_revisado.docx: 3. Conclusiones. El asistente es apto para el corpus normativo. Para el técnico se recomienda mejorar la fragmentación y añadir reordenamiento antes de su despliegue[nota final…"
 sources:

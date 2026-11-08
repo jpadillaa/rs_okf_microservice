@@ -1,6 +1,9 @@
 ---
 type: "Slide"
 unit_id: "<conversión>/contenido/slide-010.md"
+parent: "documento.md"
+previous: "contenido/slide-009.md"
+next: "contenido/slide-011.md"
 title: "Evaluación del RAG"
 description: "Diapositiva 10 de s3.pptx: Evaluación del RAG. Control de calidad sistemático"
 sources:

@@ -1,6 +1,9 @@
 ---
 type: "Source Section"
-unit_id: "086287e10f2f91ac8c2099c10f21c37570148199d8cbc729dc70ca0e0444ebde/contenido/seccion-002.md"
+unit_id: "2208249ef9e6e4e9cb26435beb827e0ff4cefee8566aac54547b646c686c8420/contenido/seccion-002.md"
+parent: "documento.md"
+previous: "contenido/seccion-001.md"
+next: "contenido/seccion-003.md"
 title: "Semana 2: Fundamentos de RAG (Pipeline de ingesta)"
 description: "Sección 2 de d1.docx: Semana 2: Fundamentos de RAG (Pipeline de ingesta). RAG (Generación Aumentada por Recuperación)"
 sources:

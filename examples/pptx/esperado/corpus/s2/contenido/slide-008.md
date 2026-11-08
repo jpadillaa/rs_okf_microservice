@@ -1,6 +1,9 @@
 ---
 type: "Slide"
 unit_id: "<conversión>/contenido/slide-008.md"
+parent: "documento.md"
+previous: "contenido/slide-007.md"
+next: "contenido/slide-009.md"
 title: "Fragmentación de tamaño fijo"
 description: "Diapositiva 8 de s2.pptx: Fragmentación de tamaño fijo. Contenido solo visual."
 sources:

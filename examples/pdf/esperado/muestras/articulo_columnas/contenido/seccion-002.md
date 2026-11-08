@@ -1,6 +1,9 @@
 ---
 type: "Source Section"
-unit_id: "e5f1261cab357cb9227bfc51e134416c5b97caa399eb36275c00fe63fb406d9d/contenido/seccion-002.md"
+unit_id: "da3e8217c83e8f9b9c57013e7120434bd1e45e7856c931f0f4ed185815af1976/contenido/seccion-002.md"
+parent: "documento.md"
+previous: "contenido/seccion-001.md"
+next: "contenido/seccion-003.md"
 title: "Resumen"
 description: "Sección 2 de articulo_columnas.pdf: Resumen. Este artículo describe un experimento ficticio sobre la conversión de documentos maquetados en dos columnas. Se compararon dos procedimientos de extracción con…"
 sources:

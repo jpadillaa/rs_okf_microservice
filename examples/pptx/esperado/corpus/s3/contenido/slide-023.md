@@ -1,6 +1,9 @@
 ---
 type: "Slide"
 unit_id: "<conversión>/contenido/slide-023.md"
+parent: "documento.md"
+previous: "contenido/slide-022.md"
+next: "contenido/slide-024.md"
 title: "Relevancia de la Respuesta · Componente: Generador"
 description: "Diapositiva 23 de s3.pptx: Relevancia de la Respuesta · Componente: Generador. Esta métrica evalúa cuán pertinente es la respuesta generada para la pregunta original,"
 sources:

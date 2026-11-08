@@ -1,6 +1,9 @@
 ---
 type: "Source Section"
-unit_id: "77f91121bfa3e64fc312a8b8705bb9b624de367643298403fccfd9e11ea1734d/contenido/seccion-009.md"
+unit_id: "4a2e1fcc8e388e6df1808e67b6d09b23fe33a8ac6eb95647e0a37ed650426f41/contenido/seccion-009.md"
+parent: "documento.md"
+previous: "contenido/seccion-008.md"
+next: "contenido/seccion-010.md"
 title: "El doble paradigma"
 description: "Sección 9 de d3.docx: El doble paradigma. Los sistemas agénticos operan bajo una tensión fundamental: el modelo de lenguaje es probabilístico, pero los procesos de negocio necesitan límites y garantías…"
 sources:

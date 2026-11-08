@@ -1,6 +1,9 @@
 ---
 type: "Source Section"
-unit_id: "305b91a698b533989af9d781ca7f909b6e8d7d714af6d1a0b7fe55063444e4ed/contenido/seccion-006.md"
+unit_id: "8e781c635c419737a54fb54ebfceec77e4354f94a66f882de7320dd67bfc2c89/contenido/seccion-006.md"
+parent: "documento.md"
+previous: "contenido/seccion-005.md"
+next: "contenido/seccion-007.md"
 title: "Paso No. 4 - Diseño de una estrategia híbrida de adopvisionamiento institucional de IA generativa"
 description: "Sección 6 de d2.docx: Paso No. 4 - Diseño de una estrategia híbrida de adopvisionamiento institucional de IA generativa. A partir de las estimaciones técnicas y económicas desarrolladas en los pasos anteriores, el equipo debe proponer una arquitectura híbrida para la Universidad…"
 sources:

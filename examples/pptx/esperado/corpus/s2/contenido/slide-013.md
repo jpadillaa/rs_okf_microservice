@@ -1,6 +1,9 @@
 ---
 type: "Slide"
 unit_id: "<conversión>/contenido/slide-013.md"
+parent: "documento.md"
+previous: "contenido/slide-012.md"
+next: "contenido/slide-014.md"
 title: "Agentic Chunking"
 description: "Diapositiva 13 de s2.pptx: Agentic Chunking. Contenido solo visual."
 sources:

@@ -1,6 +1,9 @@
 ---
 type: "Slide"
 unit_id: "<conversión>/contenido/slide-026.md"
+parent: "documento.md"
+previous: "contenido/slide-025.md"
+next: "contenido/slide-027.md"
 title: "Diapositiva sin título"
 description: "Diapositiva 26 de s2.pptx. Contenido solo visual."
 sources:

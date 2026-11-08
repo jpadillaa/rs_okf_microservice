@@ -1,6 +1,7 @@
 ---
 type: "Source Text"
-unit_id: "e2d44f6405cdd8527480a6879d9ed0e6c285883af6c1493b068b10d7896a1f64/contenido/texto.md"
+unit_id: "3310fe139d698c3b0e8caec0c8e3239b3f98eae6066251c6ee1ef73b9f372b7d/contenido/texto.md"
+parent: "documento.md"
 title: "Préstamo de equipos audiovisuales"
 description: "Texto completo de breve.pdf. La biblioteca presta cámaras, micrófonos y trípodes a estudiantes y profesores para actividades académicas. El préstamo dura como máximo tres días hábiles y se…"
 sources:

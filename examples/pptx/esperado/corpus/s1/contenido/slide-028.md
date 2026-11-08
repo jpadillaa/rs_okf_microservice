@@ -1,6 +1,9 @@
 ---
 type: "Slide"
 unit_id: "<conversión>/contenido/slide-028.md"
+parent: "documento.md"
+previous: "contenido/slide-027.md"
+next: "contenido/slide-029.md"
 title: "Preguntas ubicadas en el recorrido"
 description: "Diapositiva 28 de s1.pptx: Preguntas ubicadas en el recorrido. 1. Tarea"
 sources:

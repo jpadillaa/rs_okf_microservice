@@ -1,6 +1,9 @@
 ---
 type: "Slide"
 unit_id: "<conversión>/contenido/slide-004.md"
+parent: "documento.md"
+previous: "contenido/slide-003.md"
+next: "contenido/slide-005.md"
 title: "Pipeline de un RAG"
 description: "Diapositiva 4 de s2.pptx: Pipeline de un RAG. Contenido solo visual."
 sources:

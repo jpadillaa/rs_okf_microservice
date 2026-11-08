@@ -379,7 +379,21 @@ pub(crate) struct BundleWriter {
     created: Instant,
     /// Prefijo del `unit_id` de cada concepto.
     conversion_id: String,
+    /// Último concepto recibido de cada padre, aún sin escribir: se escribe cuando llega
+    /// su siguiente hermano, que da su `next`, o al cerrar el bundle (plan 3, I4).
+    pending: std::collections::BTreeMap<String, Pending>,
 }
+
+/// Concepto que espera a conocer su siguiente hermano.
+struct Pending {
+    path: String,
+    fields: Fields,
+    body: String,
+    previous: Option<String>,
+}
+
+/// Padre de los conceptos de primer nivel.
+pub(crate) const DOCUMENT: &str = "documento.md";
 
 /// Navegación del bundle: el rótulo del índice de contenido, el título de la lista y sus
 /// entradas desde la raíz y desde `contenido/`.
@@ -406,6 +420,7 @@ impl BundleWriter {
             zip,
             created: Instant::now(),
             conversion_id: crate::identity::conversion_id(&source.sha256, settings),
+            pending: Default::default(),
         })
     }
     /// Escritor del ZIP, para los recursos que el adaptador escribe en streaming.
@@ -416,8 +431,55 @@ impl BundleWriter {
         write_zip_file(&mut self.zip, name, data)
     }
     /// Concepto: frontmatter, con su `unit_id` detrás de `type`, y cuerpo Markdown.
+    /// Los conceptos de `contenido/` llevan además `parent`, `previous` y `next`, que el
+    /// escritor deduce del orden en que los recibe.
     pub(crate) fn concept(&mut self, path: &str, fields: &Fields, body: &str) -> Result<()> {
-        let fields = fields.clone().insert_after(
+        self.concept_in(path, DOCUMENT, fields, body)
+    }
+    /// Concepto hijo de `parent` (otro concepto, como la hoja de una región grande), en
+    /// el orden de lectura de sus hermanos.
+    pub(crate) fn concept_in(
+        &mut self,
+        path: &str,
+        parent: &str,
+        fields: &Fields,
+        body: &str,
+    ) -> Result<()> {
+        let previous = match self.pending.remove(parent) {
+            Some(p) => {
+                let name = p.path.clone();
+                self.write_pending(parent, p, Some(path))?;
+                Some(name)
+            }
+            None => None,
+        };
+        self.pending.insert(
+            parent.to_string(),
+            Pending {
+                path: path.to_string(),
+                fields: fields.clone(),
+                body: body.to_string(),
+                previous,
+            },
+        );
+        Ok(())
+    }
+    fn write_pending(&mut self, parent: &str, p: Pending, next: Option<&str>) -> Result<()> {
+        // Queda `type`, `unit_id`, `parent`, `previous` y `next`, estos dos si existen.
+        let mut fields = p.fields.insert_after("type", "parent", parent);
+        let mut last = "parent";
+        if let Some(previous) = p.previous {
+            fields = fields.insert_after(last, "previous", previous);
+            last = "previous";
+        }
+        if let Some(next) = next {
+            fields = fields.insert_after(last, "next", next);
+        }
+        self.write_concept(&p.path, fields, &p.body)
+    }
+    /// Escribe un concepto con su `unit_id` detrás de `type`.
+    fn write_concept(&mut self, path: &str, fields: Fields, body: &str) -> Result<()> {
+        let fields = fields.insert_after(
             "type",
             "unit_id",
             crate::identity::unit_id(&self.conversion_id, path),
@@ -436,9 +498,13 @@ impl BundleWriter {
         report: &str,
         issues: &[Issue],
     ) -> Result<Built> {
+        // Los últimos de cada padre no tienen siguiente.
+        for (parent, p) in std::mem::take(&mut self.pending) {
+            self.write_pending(&parent, p, None)?;
+        }
         let original_entry = self.format.original_entry();
         self.file(&original_entry, original)?;
-        self.concept("documento.md", document.0, document.1)?;
+        self.write_concept(DOCUMENT, document.0.clone(), document.1)?;
         let index = format!(
             "{}# Bundle OKF\n\n- [Documento fuente](documento.md)\n- [{}](contenido/index.md)\n- [Informe de conversión](conversion-report.md)\n\n## {}\n\n{}",
             Fields::new().with("okf_version", "0.2").frontmatter(),

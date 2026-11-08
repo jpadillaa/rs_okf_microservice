@@ -1,6 +1,9 @@
 ---
 type: "Source Section"
-unit_id: "7f1ec1565ae0546dbedc5901964d0df31d4314b85e9047384fe787d63e5f9e08/contenido/seccion-003.md"
+unit_id: "4faddc052f5a59384818e749afcd1057ff4372510e510d576b1570d8c9b407dc/contenido/seccion-003.md"
+parent: "documento.md"
+previous: "contenido/seccion-002.md"
+next: "contenido/seccion-004.md"
 title: "2. Arquitectura"
 description: "Sección 3 de informe_tecnico.pdf: 2. Arquitectura. La nueva plataforma separa la aplicación en tres servicios: catálogo, existencias y reportes. Cada servicio tiene su propia base de datos y se comunica con los…"
 sources:

@@ -38,6 +38,7 @@ mod ooxml;
 mod output;
 mod pdf;
 mod pptx;
+mod relations;
 mod retention;
 mod sections;
 mod settings;
@@ -429,7 +430,7 @@ async fn versions(
     }
     let rows = sqlx::query(
         "SELECT id,status,sha256,conversion_id,created_at FROM jobs WHERE document_key=$1 \
-        ORDER BY created_at,id",
+        ORDER BY arrival",
     )
     .bind(&q.document_key)
     .fetch_all(&a.db)
@@ -1247,7 +1248,14 @@ mod tests {
             let digit = if &md[i..=i] == "0" { "1" } else { "0" };
             format!("{}{digit}{}", &md[..i], &md[i + 1..])
         }
-        let cases: [(&str, Edit); 8] = [
+        let cases: [(&str, Edit); 9] = [
+            ("no son recíprocos", &|n, md| {
+                if n == "contenido/slide-002.md" {
+                    md.replace("next: \"contenido/slide-003.md\"\n", "")
+                } else {
+                    md
+                }
+            }),
             ("unit_id ausente o distinto", &|n, md| {
                 if n == "contenido/slide-002.md" {
                     md.replace("/contenido/slide-002.md\"", "/contenido/slide-003.md\"")

@@ -1,6 +1,9 @@
 ---
 type: "Slide"
 unit_id: "<conversión>/contenido/slide-005.md"
+parent: "documento.md"
+previous: "contenido/slide-004.md"
+next: "contenido/slide-006.md"
 title: "Chunking"
 description: "Diapositiva 5 de s2.pptx: Chunking."
 sources:

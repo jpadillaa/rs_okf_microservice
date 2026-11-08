@@ -1,6 +1,8 @@
 ---
 type: "Source Section"
-unit_id: "68eb08d0165852f6ca223d163d9eaeb456cafc189107352af975610f629e93bd/contenido/seccion-001.md"
+unit_id: "c2c92c4ae3e0f456cb35ccd468b8f37848c3be40635293d238be4b36eaa5f539/contenido/seccion-001.md"
+parent: "documento.md"
+next: "contenido/seccion-002.md"
 title: "Resultados"
 description: "Sección 1 de estructura.docx: Resultados. Texto con negrita y cursiva, un enlace, una nota[nota 1] y la ecuación E=mc^2."
 sources:

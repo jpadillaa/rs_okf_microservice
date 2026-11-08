@@ -1,6 +1,9 @@
 ---
 type: "Slide"
 unit_id: "<conversión>/contenido/slide-005.md"
+parent: "documento.md"
+previous: "contenido/slide-004.md"
+next: "contenido/slide-006.md"
 title: "1. La ventana de contexto es un presupuesto"
 description: "Diapositiva 5 de s1.pptx: 1. La ventana de contexto es un presupuesto. Información disponible para una invocación, medida en tokens"
 sources:

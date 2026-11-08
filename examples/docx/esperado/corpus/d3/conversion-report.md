@@ -1,12 +1,12 @@
 ---
 converter_version: "0.1.0"
 converter_commit: "<commit>"
-profile_version: "1.5.0"
+profile_version: "1.6.0"
 conversion_settings: {}
 settings_sha256: "44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a"
-conversion_id: "77f91121bfa3e64fc312a8b8705bb9b624de367643298403fccfd9e11ea1734d"
+conversion_id: "4a2e1fcc8e388e6df1808e67b6d09b23fe33a8ac6eb95647e0a37ed650426f41"
 type: "Conversion Report"
-unit_id: "77f91121bfa3e64fc312a8b8705bb9b624de367643298403fccfd9e11ea1734d/conversion-report.md"
+unit_id: "4a2e1fcc8e388e6df1808e67b6d09b23fe33a8ac6eb95647e0a37ed650426f41/conversion-report.md"
 title: "Informe de conversión"
 generated:
   by: "process:document-conversion"

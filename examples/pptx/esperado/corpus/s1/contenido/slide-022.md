@@ -1,6 +1,9 @@
 ---
 type: "Slide"
 unit_id: "<conversión>/contenido/slide-022.md"
+parent: "documento.md"
+previous: "contenido/slide-021.md"
+next: "contenido/slide-023.md"
 title: "Comparar una variante con una línea base"
 description: "Diapositiva 22 de s1.pptx: Comparar una variante con una línea base. Mismos casos y criterios"
 sources:

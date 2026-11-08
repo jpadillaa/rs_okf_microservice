@@ -1,6 +1,9 @@
 ---
 type: "Slide"
 unit_id: "<conversión>/contenido/slide-016.md"
+parent: "documento.md"
+previous: "contenido/slide-015.md"
+next: "contenido/slide-017.md"
 title: "RAGAs"
 description: "Diapositiva 16 de s3.pptx: RAGAs. Evaluación “sin referencias”"
 sources:

@@ -1,6 +1,9 @@
 ---
 type: "Source Section"
-unit_id: "7f1ec1565ae0546dbedc5901964d0df31d4314b85e9047384fe787d63e5f9e08/contenido/seccion-004.md"
+unit_id: "4faddc052f5a59384818e749afcd1057ff4372510e510d576b1570d8c9b407dc/contenido/seccion-004.md"
+parent: "documento.md"
+previous: "contenido/seccion-003.md"
+next: "contenido/seccion-005.md"
 title: "3. Plan de migración"
 description: "Sección 4 de informe_tecnico.pdf: 3. Plan de migración. La migración se hará en dos fases para limitar el riesgo. Durante todo el proceso el sistema actual seguirá disponible en modo de solo lectura, de modo que las…"
 sources:

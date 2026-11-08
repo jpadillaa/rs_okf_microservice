@@ -1,6 +1,9 @@
 ---
 type: "Slide"
 unit_id: "<conversión>/contenido/slide-003.md"
+parent: "documento.md"
+previous: "contenido/slide-002.md"
+next: "contenido/slide-004.md"
 title: "Retrieval Augmented Generation"
 description: "Diapositiva 3 de s2.pptx: Retrieval Augmented Generation. Una arquitectura que combina modelos generativos con mecanismos de recuperación de información."
 sources:

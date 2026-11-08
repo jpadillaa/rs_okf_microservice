@@ -1,6 +1,8 @@
 ---
 type: "Source Section"
-unit_id: "6212d3eb9356c8770b81331a71a0e96e3e6a3c0d35c9dc650fb023c54551384a/contenido/seccion-001.md"
+unit_id: "f9f7c42c0d93c8ed9fd16ee2efd84e729f3efae5eba147636d9e82f0e4380234/contenido/seccion-001.md"
+parent: "documento.md"
+next: "contenido/seccion-002.md"
 title: "COMUNICACIÓN EFECTIVA EN ENTORNOS LABORALES"
 description: "Sección 1 de p1.pdf: COMUNICACIÓN EFECTIVA EN ENTORNOS LABORALES. Se aprende a hablar y a escribir, hablando y escribiendo"
 sources:

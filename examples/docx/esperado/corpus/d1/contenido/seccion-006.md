@@ -1,6 +1,9 @@
 ---
 type: "Source Section"
-unit_id: "086287e10f2f91ac8c2099c10f21c37570148199d8cbc729dc70ca0e0444ebde/contenido/seccion-006.md"
+unit_id: "2208249ef9e6e4e9cb26435beb827e0ff4cefee8566aac54547b646c686c8420/contenido/seccion-006.md"
+parent: "documento.md"
+previous: "contenido/seccion-005.md"
+next: "contenido/seccion-007.md"
 title: "Semana 6: RAG Multimodal"
 description: "Sección 6 de d1.docx: Semana 6: RAG Multimodal. Fundamentos de Multimodalidad"
 sources:

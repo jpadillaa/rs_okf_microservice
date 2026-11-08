@@ -1,6 +1,9 @@
 ---
 type: "Slide"
 unit_id: "<conversión>/contenido/slide-024.md"
+parent: "documento.md"
+previous: "contenido/slide-023.md"
+next: "contenido/slide-025.md"
 title: "Relevancia de la Respuesta · Componente: Generador"
 description: "Diapositiva 24 de s3.pptx: Relevancia de la Respuesta · Componente: Generador. Contenido solo visual."
 sources:

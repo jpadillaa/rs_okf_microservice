@@ -1,6 +1,9 @@
 ---
 type: "Slide"
 unit_id: "<conversión>/contenido/slide-003.md"
+parent: "documento.md"
+previous: "contenido/slide-002.md"
+next: "contenido/slide-004.md"
 title: "¿Qué es RAG?"
 description: "Diapositiva 3 de s1.pptx: ¿Qué es RAG?. Recuperar información externa, incorporarla al contexto y generar una respuesta con esa evidencia"
 sources:

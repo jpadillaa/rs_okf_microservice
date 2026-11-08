@@ -1,6 +1,8 @@
 ---
 type: "Slide"
 unit_id: "<conversión>/contenido/slide-034.md"
+parent: "documento.md"
+previous: "contenido/slide-033.md"
 title: "Diapositiva sin título"
 description: "Diapositiva 34 de s3.pptx."
 sources:

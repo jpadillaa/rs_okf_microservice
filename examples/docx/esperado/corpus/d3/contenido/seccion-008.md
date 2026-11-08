@@ -1,6 +1,9 @@
 ---
 type: "Source Section"
-unit_id: "77f91121bfa3e64fc312a8b8705bb9b624de367643298403fccfd9e11ea1734d/contenido/seccion-008.md"
+unit_id: "4a2e1fcc8e388e6df1808e67b6d09b23fe33a8ac6eb95647e0a37ed650426f41/contenido/seccion-008.md"
+parent: "documento.md"
+previous: "contenido/seccion-007.md"
+next: "contenido/seccion-009.md"
 title: "Arquitectura interna del harness"
 description: "Sección 8 de d3.docx: Arquitectura interna del harness. Una forma útil de describir la arquitectura interna del harness es representarla como una estructura de seis componentes. Esta descomposición no debe…"
 sources:

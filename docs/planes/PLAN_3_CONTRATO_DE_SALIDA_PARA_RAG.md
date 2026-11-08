@@ -28,7 +28,7 @@ Tamaños relativos, como en los planes anteriores: **S** (un cambio acotado en u
 | Trazabilidad: PowerPoint (diapositiva y elemento) | Diapositiva, sí (`slide_index`, `slide_id`, `display_label`); elemento, no. | `I6` |
 | Trazabilidad: PDF (página y coordenadas) | Página física por bloque y `page_labels`; coordenadas, no, aunque el lector las tiene. | `I6` |
 | Fidelidad: texto, numeración, orden, tablas, fórmula frente a valor, omisiones | Hecho (§4 y §5 de la especificación; cobertura independiente, `R2` y `C2`). | — |
-| Relaciones padre-hijo válidas | Solo en el Markdown (`index.md`, «Estructura» de `documento.md`, subencabezados); ningún campo explícito. | `I4` |
+| Relaciones padre-hijo válidas | Solo en el Markdown (`index.md`, «Estructura» de `documento.md`, subencabezados); ningún campo explícito. Hecho después en el perfil 1.6.0. | `I4` |
 | Enlaces internos resueltos | Los enlaces emitidos resuelven (el validador lo exige). PPTX enlaza otras diapositivas y XLSX otras hojas. DOCX no enlaza los marcadores internos; PDF no lee sus anotaciones de enlace. | `I5` |
 | Referencias externas identificadas | Hecho para libros externos, imágenes vinculadas y objetos incrustados; los hipervínculos de DOCX, PPTX y XLSX se escriben como enlaces, sin inventario; los de PDF no se leen. | `I5` |
 | Referencias no resueltas marcadas | No: un destino interno que no existe se descarta en silencio en los cuatro formatos. | `I5` |
@@ -92,6 +92,8 @@ Tamaños relativos, como en los planes anteriores: **S** (un cambio acotado en u
 ## 4. Trazabilidad e integridad
 
 ### I4. Relaciones explícitas entre unidades (M)
+
+**Estado:** implementado el 8 de noviembre (perfil 1.6.0) en `src/output.rs` y `src/relations.rs`. OKF v0.2 no tiene campos de relación (solo enlaces en el cuerpo y la jerarquía de directorios, y admite claves adicionales en el frontmatter), así que son extensiones del perfil. Solo los conceptos de `contenido/` las declaran. Al implementarlo apareció un fallo de I2, ya corregido: el listado por clave no conservaba el orden de llegada de dos subidas del mismo segundo (migración `0004`). Véase la [arquitectura técnica](../arquitectura/ARQUITECTURA_TECNICA_MICROSERVICIO_OKF.md#relaciones-entre-conceptos-plan-3-i4).
 
 **Problema.** Para ampliar el contexto de un fragmento, el RAG necesita saber a qué documento pertenece una unidad, cuál es su padre y cuáles la preceden y la siguen. Hoy solo puede deducirlo de los índices Markdown.
 

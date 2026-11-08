@@ -1,6 +1,9 @@
 ---
 type: "Sheet"
-unit_id: "872584ac338a9126a27229e0368046d91ed097e4455df806df55ad35d414df44/contenido/hoja-003.md"
+unit_id: "db8e17a4888217f6856cdf2e9f9796e45aed12ef8b977820c099cd64f015bed5/contenido/hoja-003.md"
+parent: "documento.md"
+previous: "contenido/hoja-002.md"
+next: "contenido/hoja-004.md"
 title: "Formatos"
 description: "Hoja 3 del libro inventario_regiones.xlsx: rango A1:C15 con 1 región."
 sources:

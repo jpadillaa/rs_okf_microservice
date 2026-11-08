@@ -1,6 +1,9 @@
 ---
 type: "Slide"
 unit_id: "<conversión>/contenido/slide-021.md"
+parent: "documento.md"
+previous: "contenido/slide-020.md"
+next: "contenido/slide-022.md"
 title: "Definir qué significa funcionar"
 description: "Diapositiva 21 de s1.pptx: Definir qué significa funcionar. CORPUS"
 sources:

@@ -1,7 +1,7 @@
 # Perfil documental OKF para PDF, DOCX, XLSX y PPTX
 
 **Versión objetivo:** Open Knowledge Format (OKF) v0.2.  
-**Versión del perfil documental:** 1.5.0 (independiente de OKF v0.2).
+**Versión del perfil documental:** 1.6.0 (independiente de OKF v0.2).
 **Alcance:** especificar exclusivamente el bundle de salida. No define API, arquitectura, herramientas ni ejecución del conversor.
 
 Este perfil añade convenciones para convertir documentos a OKF sin perder estructura, contenido ni referencia al original. Las reglas indicadas como **OKF** proceden de la [especificación oficial](https://github.com/GoogleCloudPlatform/open-knowledge-format/blob/main/SPEC.md); las indicadas como **perfil** son requisitos de este proyecto. Un bundle puede cumplir OKF y aun así tener pérdidas de extracción: ambos controles se evalúan por separado.
@@ -15,6 +15,7 @@ Este perfil añade convenciones para convertir documentos a OKF sin perder estru
 | **OKF: procedencia** | `sources[].resource` identifica el material fuente; `generated` identifica al productor y el instante de generación. `verified` solo se usa si el contenido fue confirmado efectivamente contra la fuente. |
 | **Perfil: metadatos** | Todo concepto documental lleva `type`, `title`, `description`, `sources` y `generated`. `status: draft` señala contenido ambiguo o incompleto. El informe lleva `type`, `title` y `generated`. |
 | **Perfil: navegación** | Se generan índices en la raíz y en directorios con varios conceptos. Los enlaces internos emitidos resuelven dentro del bundle; se prefieren rutas relativas a la raíz para enlazar conceptos. |
+| **Perfil: relaciones** | OKF v0.2 expresa las relaciones solo con enlaces en el cuerpo y la jerarquía de directorios. Cada concepto de `contenido/` declara además, como extensiones del frontmatter, `parent` (el concepto que lo contiene: `documento.md`, o el concepto de la hoja para una región grande de XLSX) y, si existen, `previous` y `next` (sus hermanos con el mismo `parent`, en el orden de lectura). Los valores son rutas relativas a la raíz (`contenido/seccion-002.md`). `documento.md`, el informe y los índices no los declaran. |
 
 Las fechas de los campos oficiales usan ISO 8601 con zona horaria explícita. Los campos adicionales `source_file`, `source_spans` y `page_labels`, así como los campos PPTX, DOCX, XLSX y PDF de la §5, **no pertenecen a OKF oficial**. `Attested Computation` tampoco se asigna automáticamente a una fórmula extraída de Excel.
 
@@ -33,7 +34,7 @@ bundle/
 └── conversion-report.md     # Cobertura e incidencias; concepto con type
 ```
 
-**Perfil:** `documento.md` y `conversion-report.md` declaran los mismos `converter_version` (versión del paquete), `converter_commit` (SHA Git de 40 caracteres; `unknown` si la fuente no lo proporciona) y `profile_version` (`1.5.0`). Son extensiones del perfil, no campos oficiales de OKF.
+**Perfil:** `documento.md` y `conversion-report.md` declaran los mismos `converter_version` (versión del paquete), `converter_commit` (SHA Git de 40 caracteres; `unknown` si la fuente no lo proporciona) y `profile_version` (`1.6.0`). Son extensiones del perfil, no campos oficiales de OKF.
 
 **Perfil: configuración de la conversión.** `documento.md` y `conversion-report.md` declaran también, con el mismo valor, la configuración que cambia el contenido del bundle de su formato (`conversion_settings`) y su huella (`settings_sha256`). Dos conversiones del mismo original con el mismo perfil y la misma huella usaron la misma configuración. Los parámetros que solo limitan o rechazan el trabajo no forman parte de ella.
 
@@ -177,7 +178,7 @@ El informe separa dos listas. **Incidencias** son pérdidas o incertidumbres sus
 Un bundle de este perfil se acepta cuando se cumplen **ambos** controles:
 
 1. **Conformidad OKF:** YAML y `type` válidos en todos los conceptos; índices y nombres reservados correctos; `okf_version: "0.2"` en el índice raíz; campos oficiales bien formados; enlaces internos y recursos emitidos resolubles.
-2. **Integridad editorial:** orden y cobertura frente al original; contenido sin duplicaciones introducidas ni omisiones silenciosas; recursos presentes; `source_file`, `sources`, `source_spans`, `page_labels` y marcadores coherentes; incidencias declaradas. Cada bloque citable de un concepto PDF multipágina debe poder localizarse en su página o intervalo preciso.
+2. **Integridad editorial:** orden y cobertura frente al original; contenido sin duplicaciones introducidas ni omisiones silenciosas; recursos presentes; `source_file`, `sources`, `source_spans`, `page_labels`, marcadores y relaciones entre conceptos coherentes; incidencias declaradas. Cada bloque citable de un concepto PDF multipágina debe poder localizarse en su página o intervalo preciso.
 
 El perfil se limita a `.pdf`, `.docx`, `.xlsx` y `.pptx`. Los formatos binarios antiguos `.doc`, `.xls` y `.ppt`, así como los formatos con macros, requieren reglas adicionales y no quedan cubiertos por el nombre comercial del programa.
 
@@ -194,6 +195,12 @@ El perfil se limita a `.pdf`, `.docx`, `.xlsx` y `.pptx`. Los formatos binarios 
 Todo cambio de una regla de esta especificación incrementa `profile_version` en la
 especificación y en `src/version.rs`, con una entrada aquí, en el mismo commit.
 
+- **1.6.0 — 8 de noviembre de 2026:** cada concepto de `contenido/` declara `parent`
+  y, si existen, `previous` y `next` (§1; plan 3, I4). El contenido no cambia. El
+  validador exige que cada relación apunte a un concepto del bundle con el mismo
+  `parent`, que `previous` y `next` sean recíprocos, que los hermanos formen una sola
+  cadena sin ciclos, que todo concepto descienda de `documento.md` y que el recorrido
+  coincida con el orden de `contenido/index.md`; acepta también los bundles 1.0.0 a 1.5.0.
 - **1.5.0 — 8 de noviembre de 2026:** `documento.md` y el informe declaran la
   `document_key` recibida con el original, si existe, para agrupar las versiones de un
   documento (§2; plan 3, I2). Sin clave, los bundles solo cambian en `profile_version` y,

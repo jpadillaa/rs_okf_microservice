@@ -1,6 +1,9 @@
 ---
 type: "Slide"
 unit_id: "<conversión>/contenido/slide-023.md"
+parent: "documento.md"
+previous: "contenido/slide-022.md"
+next: "contenido/slide-024.md"
 title: "Qué muestran los resultados A/B"
 description: "Diapositiva 23 de s1.pptx: Qué muestran los resultados A/B. Regla general"
 sources:

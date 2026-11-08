@@ -1,6 +1,9 @@
 ---
 type: "Slide"
 unit_id: "<conversión>/contenido/slide-002.md"
+parent: "documento.md"
+previous: "contenido/slide-001.md"
+next: "contenido/slide-003.md"
 title: "Semana 2 - RAG"
 description: "Diapositiva 2 de s2.pptx: Semana 2 - RAG."
 sources:

@@ -1,6 +1,9 @@
 ---
 type: "Slide"
 unit_id: "<conversión>/contenido/slide-007.md"
+parent: "documento.md"
+previous: "contenido/slide-006.md"
+next: "contenido/slide-008.md"
 title: "Chunk Size & Chunk Overlap"
 description: "Diapositiva 7 de s2.pptx: Chunk Size & Chunk Overlap. Contenido solo visual."
 sources:

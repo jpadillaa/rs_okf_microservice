@@ -1,6 +1,8 @@
 ---
 type: "Sheet"
-unit_id: "872584ac338a9126a27229e0368046d91ed097e4455df806df55ad35d414df44/contenido/hoja-001.md"
+unit_id: "db8e17a4888217f6856cdf2e9f9796e45aed12ef8b977820c099cd64f015bed5/contenido/hoja-001.md"
+parent: "documento.md"
+next: "contenido/hoja-002.md"
 title: "Almacenes"
 description: "Hoja 1 del libro inventario_regiones.xlsx: rango A1:J20 con 4 regiones."
 sources:

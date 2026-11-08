@@ -1,6 +1,8 @@
 ---
 type: "Source Section"
-unit_id: "77f91121bfa3e64fc312a8b8705bb9b624de367643298403fccfd9e11ea1734d/contenido/seccion-012.md"
+unit_id: "4a2e1fcc8e388e6df1808e67b6d09b23fe33a8ac6eb95647e0a37ed650426f41/contenido/seccion-012.md"
+parent: "documento.md"
+previous: "contenido/seccion-011.md"
 title: "Referencias"
 description: "Sección 12 de d3.docx: Referencias. DataCamp. (2026, 15 de mayo). What is an agent harness? How AI agents get tools, memory, and control. https://www.datacamp.com/blog/agent-harness"
 sources:

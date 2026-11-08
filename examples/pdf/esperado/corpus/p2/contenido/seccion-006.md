@@ -1,6 +1,9 @@
 ---
 type: "Source Section"
-unit_id: "555a7103b3bf90f0c852cf93da9ec9f665b84a1235937e9548416efce617cfaf/contenido/seccion-006.md"
+unit_id: "b256d8792f82e9fce97a08b66792a9f59ca9d1dca9b4b56db88b681a6e56fe25/contenido/seccion-006.md"
+parent: "documento.md"
+previous: "contenido/seccion-005.md"
+next: "contenido/seccion-007.md"
 title: "Author checklist for ethical use of AI generative tools"
 description: "Sección 6 de p2.pdf: Author checklist for ethical use of AI generative tools. The importance of the above exercise is not that it provides an exhaustive list of ethically permissible and impermissible actions. Rather, it showcases the…"
 sources:

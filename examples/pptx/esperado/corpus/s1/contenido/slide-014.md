@@ -1,6 +1,9 @@
 ---
 type: "Slide"
 unit_id: "<conversión>/contenido/slide-014.md"
+parent: "documento.md"
+previous: "contenido/slide-013.md"
+next: "contenido/slide-015.md"
 title: "Cinco condiciones de la evidencia utilizable"
 description: "Diapositiva 14 de s1.pptx: Cinco condiciones de la evidencia utilizable. 1. Pertinencia"
 sources:

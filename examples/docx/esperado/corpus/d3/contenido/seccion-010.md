@@ -1,6 +1,9 @@
 ---
 type: "Source Section"
-unit_id: "77f91121bfa3e64fc312a8b8705bb9b624de367643298403fccfd9e11ea1734d/contenido/seccion-010.md"
+unit_id: "4a2e1fcc8e388e6df1808e67b6d09b23fe33a8ac6eb95647e0a37ed650426f41/contenido/seccion-010.md"
+parent: "documento.md"
+previous: "contenido/seccion-009.md"
+next: "contenido/seccion-011.md"
 title: "Principios para construir un harness"
 description: "Sección 10 de d3.docx: Principios para construir un harness. Diseñar un harness implica desplazar la atención desde la calidad aislada del prompt hacia la confiabilidad del sistema completo. El objetivo no consiste en…"
 sources:

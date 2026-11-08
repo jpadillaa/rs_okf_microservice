@@ -1,6 +1,8 @@
 ---
 type: "Source Section"
-unit_id: "305b91a698b533989af9d781ca7f909b6e8d7d714af6d1a0b7fe55063444e4ed/contenido/seccion-001.md"
+unit_id: "8e781c635c419737a54fb54ebfceec77e4354f94a66f882de7320dd67bfc2c89/contenido/seccion-001.md"
+parent: "documento.md"
+next: "contenido/seccion-002.md"
 title: "Introducción"
 description: "Sección 1 de d2.docx: Introducción. La Universidad de los Andes, reconocida como una de las instituciones educativas líderes de América Latina, enfrenta un desafío estratégico en un contexto de…"
 sources:

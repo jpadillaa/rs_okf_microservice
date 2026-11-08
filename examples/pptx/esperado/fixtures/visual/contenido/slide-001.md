@@ -1,6 +1,7 @@
 ---
 type: "Slide"
 unit_id: "<conversión>/contenido/slide-001.md"
+parent: "documento.md"
 title: "Visual-only diagram"
 description: "Diapositiva 1 de visual.pptx: Visual-only diagram. Contenido solo visual."
 sources:

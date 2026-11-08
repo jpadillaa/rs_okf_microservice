@@ -1,6 +1,9 @@
 ---
 type: "Slide"
 unit_id: "<conversión>/contenido/slide-015.md"
+parent: "documento.md"
+previous: "contenido/slide-014.md"
+next: "contenido/slide-016.md"
 title: "Delimitar un contrato de evidencia"
 description: "Diapositiva 15 de s1.pptx: Delimitar un contrato de evidencia. CAMPO"
 sources:

@@ -1,6 +1,9 @@
 ---
 type: "Slide"
 unit_id: "<conversión>/contenido/slide-004.md"
+parent: "documento.md"
+previous: "contenido/slide-003.md"
+next: "contenido/slide-005.md"
 title: "Diapositiva sin título"
 description: "Diapositiva 4 de s3.pptx. Contenido solo visual."
 sources:

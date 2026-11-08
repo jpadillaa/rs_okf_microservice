@@ -1,6 +1,9 @@
 ---
 type: "Source Section"
-unit_id: "77f91121bfa3e64fc312a8b8705bb9b624de367643298403fccfd9e11ea1734d/contenido/seccion-003.md"
+unit_id: "4a2e1fcc8e388e6df1808e67b6d09b23fe33a8ac6eb95647e0a37ed650426f41/contenido/seccion-003.md"
+parent: "documento.md"
+previous: "contenido/seccion-002.md"
+next: "contenido/seccion-004.md"
 title: "¿Qué es un harness?"
 description: "Sección 3 de d3.docx: ¿Qué es un harness?. Un harness es la capa integral de software en tiempo de ejecución que rodea al modelo de lenguaje y gobierna su interacción con el estado, las herramientas y…"
 sources:

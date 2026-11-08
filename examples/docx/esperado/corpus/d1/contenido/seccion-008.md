@@ -1,6 +1,8 @@
 ---
 type: "Source Section"
-unit_id: "086287e10f2f91ac8c2099c10f21c37570148199d8cbc729dc70ca0e0444ebde/contenido/seccion-008.md"
+unit_id: "2208249ef9e6e4e9cb26435beb827e0ff4cefee8566aac54547b646c686c8420/contenido/seccion-008.md"
+parent: "documento.md"
+previous: "contenido/seccion-007.md"
 title: "Semana 8: Varios"
 description: "Sección 8 de d1.docx: Semana 8: Varios. RAG Agéntico (Agentic RAG):"
 sources:

@@ -218,7 +218,7 @@ const SPAN_MARKER: &str = "<!-- okf-source-span: ";
 
 /// Destinos de los enlaces Markdown de un texto, sin los `<` `>` que admiten paréntesis.
 /// `\](` es texto literal escapado, no un enlace.
-fn link_targets(md: &str) -> Vec<&str> {
+pub(crate) fn link_targets(md: &str) -> Vec<&str> {
     let mut targets = Vec::new();
     let mut pos = 0;
     while let Some(start) = md[pos..].find("](") {
@@ -290,6 +290,8 @@ pub(crate) fn validate_bundle(path: &FsPath) -> Result<()> {
         None
     };
     crate::identity::check_key(&document, &report)?;
+    let relations = crate::version::declares_relations(&document);
+    let mut nodes = Vec::new();
     let mut root = String::new();
     z.by_name("index.md")?.read_to_string(&mut root)?;
     let rootfm = frontmatter(&root)?;
@@ -306,6 +308,9 @@ pub(crate) fn validate_bundle(path: &FsPath) -> Result<()> {
             let fm = frontmatter(&md)?;
             if let Some(id) = &conversion_id {
                 crate::identity::check_unit(id, name, &fm)?;
+            }
+            if relations {
+                nodes.push(crate::relations::node(name, &fm)?);
             }
             if fm
                 .get("type")
@@ -395,7 +400,13 @@ pub(crate) fn validate_bundle(path: &FsPath) -> Result<()> {
     {
         bail!("el recurso {orphan} no está enlazado desde ningún concepto")
     }
-    validate_against_original(&mut z, &names, format)
+    validate_against_original(&mut z, &names, format)?;
+    // Después de las comprobaciones de cada formato, que explican mejor un índice
+    // desordenado.
+    if relations {
+        crate::relations::check(&nodes, &read_text(&mut z, "contenido/index.md")?)?;
+    }
+    Ok(())
 }
 
 /// Integridad frente al original: la huella SHA-256 del informe y de `documento.md`,

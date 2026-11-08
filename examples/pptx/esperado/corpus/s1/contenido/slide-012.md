@@ -1,6 +1,9 @@
 ---
 type: "Slide"
 unit_id: "<conversión>/contenido/slide-012.md"
+parent: "documento.md"
+previous: "contenido/slide-011.md"
+next: "contenido/slide-013.md"
 title: "El recorrido de la clase"
 description: "Diapositiva 12 de s1.pptx: El recorrido de la clase. 1. Tarea"
 sources:

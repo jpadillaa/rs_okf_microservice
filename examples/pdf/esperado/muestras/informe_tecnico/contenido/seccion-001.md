@@ -1,6 +1,8 @@
 ---
 type: "Source Section"
-unit_id: "7f1ec1565ae0546dbedc5901964d0df31d4314b85e9047384fe787d63e5f9e08/contenido/seccion-001.md"
+unit_id: "4faddc052f5a59384818e749afcd1057ff4372510e510d576b1570d8c9b407dc/contenido/seccion-001.md"
+parent: "documento.md"
+next: "contenido/seccion-002.md"
 title: "Informe técnico de migración"
 description: "Inicio de informe_tecnico.pdf, antes de la primera sección. Este informe describe la migración ficticia de un sistema de inventario a una nueva plataforma. Todos los nombres, cifras y fechas son artificiales y solo…"
 sources:

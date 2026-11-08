@@ -1,6 +1,8 @@
 ---
 type: "Sheet"
-unit_id: "9751a07d878afbcc7dd637496db3ae21e5b57073b35defb5388a56019c004855/contenido/hoja-001.md"
+unit_id: "772126602e53f3664d66cd582c3b5366309811f665ff0a599cdf0c020bde7f83/contenido/hoja-001.md"
+parent: "documento.md"
+next: "contenido/hoja-002.md"
 title: "Precios"
 description: "Hoja 1 del libro libro_con_perdidas.xlsx: rango A1:D8 con 3 regiones."
 sources:
