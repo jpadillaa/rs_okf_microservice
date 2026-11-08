@@ -73,8 +73,10 @@ fn is_view(name: &str) -> bool {
     })
 }
 
-/// Sustituye los valores que cambian en cada conversión.
+/// Sustituye los valores que cambian en cada conversión. La fuente de las vistas PPTX
+/// depende del sistema, como sus píxeles; con ella cambia la huella de la configuración.
 fn normalize(text: &str) -> String {
+    let font_dependent = text.contains("\n  view_font_sha256: ");
     let mut out = String::with_capacity(text.len());
     for line in text.split_inclusive('\n') {
         let body = line.trim_end_matches('\n');
@@ -87,6 +89,10 @@ fn normalize(text: &str) -> String {
             out.push_str(&format!("{indent}at: \"<generado>\"{newline}"));
         } else if body.starts_with("converter_commit: ") {
             out.push_str(&format!("converter_commit: \"<commit>\"{newline}"));
+        } else if body.starts_with("  view_font_sha256: ") {
+            out.push_str(&format!("  view_font_sha256: \"<fuente>\"{newline}"));
+        } else if font_dependent && body.starts_with("settings_sha256: ") {
+            out.push_str(&format!("settings_sha256: \"<huella>\"{newline}"));
         } else if body.starts_with("- Duración") && body.ends_with(" ms") {
             let label = body.split(':').next().unwrap();
             out.push_str(&format!("{label}: <duración> ms{newline}"));

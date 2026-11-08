@@ -1,7 +1,7 @@
 # Perfil documental OKF para PDF, DOCX, XLSX y PPTX
 
 **Versión objetivo:** Open Knowledge Format (OKF) v0.2.  
-**Versión del perfil documental:** 1.2.0 (independiente de OKF v0.2).
+**Versión del perfil documental:** 1.3.0 (independiente de OKF v0.2).
 **Alcance:** especificar exclusivamente el bundle de salida. No define API, arquitectura, herramientas ni ejecución del conversor.
 
 Este perfil añade convenciones para convertir documentos a OKF sin perder estructura, contenido ni referencia al original. Las reglas indicadas como **OKF** proceden de la [especificación oficial](https://github.com/GoogleCloudPlatform/open-knowledge-format/blob/main/SPEC.md); las indicadas como **perfil** son requisitos de este proyecto. Un bundle puede cumplir OKF y aun así tener pérdidas de extracción: ambos controles se evalúan por separado.
@@ -33,7 +33,17 @@ bundle/
 └── conversion-report.md     # Cobertura e incidencias; concepto con type
 ```
 
-**Perfil:** `documento.md` y `conversion-report.md` declaran los mismos `converter_version` (versión del paquete), `converter_commit` (SHA Git de 40 caracteres; `unknown` si la fuente no lo proporciona) y `profile_version` (`1.2.0`). Son extensiones del perfil, no campos oficiales de OKF.
+**Perfil:** `documento.md` y `conversion-report.md` declaran los mismos `converter_version` (versión del paquete), `converter_commit` (SHA Git de 40 caracteres; `unknown` si la fuente no lo proporciona) y `profile_version` (`1.3.0`). Son extensiones del perfil, no campos oficiales de OKF.
+
+**Perfil: configuración de la conversión.** `documento.md` y `conversion-report.md` declaran también, con el mismo valor, la configuración que cambia el contenido del bundle de su formato (`conversion_settings`) y su huella (`settings_sha256`). Dos conversiones del mismo original con el mismo perfil y la misma huella usaron la misma configuración. Los parámetros que solo limitan o rechazan el trabajo no forman parte de ella.
+
+| Formato | `conversion_settings` |
+| --- | --- |
+| DOCX, XLSX | Mapa vacío (`{}`): ningún parámetro cambia su bundle. |
+| PPTX | `view_font_sha256`: SHA-256 de la fuente con que se dibujan las vistas. |
+| PDF | `max_image_pixels`: píxeles máximos de una imagen que se decodifica. `ocr.enabled`: si se aplica el OCR local; solo cuando es `true`, `ocr.max_pages` (páginas transcritas como máximo), `ocr.timeout_s` (plazo de conversión del que sale el tiempo reservado al OCR) y `ocr.det_sha256`, `ocr.rec_sha256` y `ocr.dict_sha256` (SHA-256 de cada archivo de los modelos, o `ausente` si no se encontró). |
+
+`settings_sha256` es el SHA-256, en hexadecimal en minúsculas, de `conversion_settings` en forma canónica: JSON compacto, sin espacios, con las claves de cada mapa ordenadas por sus bytes UTF-8, los enteros en decimal y las cadenas con el escape de JSON (la de `{}` es `44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a`). Cuando el resultado depende del tiempo de ejecución, porque el OCR dejó páginas sin transcribir al agotar su plazo, ambos archivos declaran además `reproducible: false`: la misma configuración puede dar otro bundle. El campo no aparece en los demás casos.
 
 **Perfil:** `documento.md`, `conversion-report.md` y el original son obligatorios. `documento.md` registra `source_file.path` como ruta del original relativa a la raíz del bundle y `source_file.sha256` como 64 caracteres hexadecimales de sus bytes; el informe repite esa huella. Los recursos no Markdown son adjuntos, no conceptos OKF. Toda imagen o archivo de datos sustantivo se enlaza desde el concepto correspondiente. Las rutas son únicas y estables; se usa un ordinal cuando importa el orden editorial. Se puede entregar el directorio como ZIP sin alterar su estructura interna.
 
@@ -180,6 +190,12 @@ El perfil se limita a `.pdf`, `.docx`, `.xlsx` y `.pptx`. Los formatos binarios 
 Todo cambio de una regla de esta especificación incrementa `profile_version` en la
 especificación y en `src/version.rs`, con una entrada aquí, en el mismo commit.
 
+- **1.3.0 — 8 de noviembre de 2026:** `documento.md` y el informe declaran la
+  configuración que cambia el contenido del bundle (`conversion_settings`), su huella
+  canónica (`settings_sha256`) y, cuando el plazo del OCR dejó páginas sin transcribir,
+  `reproducible: false` (§2; plan 3, I3). El contenido de los bundles no cambia. El
+  validador recalcula la huella, exige las claves de cada formato y acepta también los
+  bundles 1.0.0, 1.1.0 y 1.2.0, que no declaran configuración.
 - **1.2.0 — 7 de noviembre de 2026:** en PDF, el guion de fin de línea se conserva
   también en direcciones (URL, rutas, correos y dominios) y en series cuya primera parte
   ya lleva guion, cuando el documento no atestigua la palabra unida ni el compuesto.

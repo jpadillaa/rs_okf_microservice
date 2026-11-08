@@ -11,6 +11,7 @@ use crate::bundle::*;
 use crate::format::Format;
 use crate::output::*;
 use crate::sections::*;
+use crate::settings::Settings;
 use crate::worker::{Config, Rejected};
 use anyhow::{Context, Result, bail};
 use layout::{Block, Item, Line, Para, Region, Run};
@@ -2077,7 +2078,22 @@ pub(crate) fn build_bundle(
     let coverage = format!(
         "## Cobertura de páginas\n\nToda página física figura en algún concepto; las páginas sin texto propio llevan una nota (y su vista, si tienen contenido gráfico).\n\n{coverage}\n"
     );
-    let report = report(Format::Pdf, &generated, hash, &issues, &summary, &coverage);
+    // El plazo del OCR depende del tiempo de ejecución: si dejó páginas sin transcribir,
+    // la misma configuración puede dar otro bundle.
+    let settings = Settings::pdf(cfg).time_dependent(
+        ex.pages
+            .iter()
+            .any(|p| p.ocr == Some(Ocr::Skipped(Budget::Time))),
+    );
+    let report = report(
+        Format::Pdf,
+        &generated,
+        hash,
+        &issues,
+        &summary,
+        &coverage,
+        &settings,
+    );
     let mut doc_spans = vec![pages_span("documento", 1u32, n)];
     doc_spans.extend(
         outline
@@ -2107,6 +2123,7 @@ pub(crate) fn build_bundle(
         &format!("Documento fuente {filename} convertido a conceptos OKF por secciones."),
         &generated,
         hash,
+        &settings,
     )
     .with("source_spans", doc_spans)
     .with_opt("page_labels", page_labels);
@@ -2712,6 +2729,16 @@ mod tests {
         // números de página, encabezados inferidos, listas y secciones.
         let doc = &md["documento.md"];
         assert!(doc.contains("Informe técnico — Página N de 2"), "{doc}");
+        // La configuración declara el OCR con su límite, su plazo y la huella de cada
+        // modelo; el plazo no se agotó, así que la conversión es reproducible.
+        let fm = crate::bundle::frontmatter(doc).unwrap();
+        let ocr = &fm["conversion_settings"]["ocr"];
+        assert_eq!(ocr["enabled"].as_bool(), Some(true));
+        assert_eq!(ocr["max_pages"].as_u64(), Some(cfg.ocr.max_pages as u64));
+        for k in ["det_sha256", "rec_sha256", "dict_sha256"] {
+            assert_eq!(ocr[k].as_str().map(str::len), Some(64), "{k}");
+        }
+        assert!(fm.get("reproducible").is_none());
         assert!(doc.contains("Documento de prueba sin datos reales"));
         assert_eq!(labels(&md).len(), 2);
         assert!(doc.contains("1\\. Contexto"));
@@ -2812,6 +2839,14 @@ mod tests {
             r"- Páginas 1 y 2: escaneada sin capa de texto; no se aplicó OCR porque se agotó el tiempo reservado al OCR (dos tercios de OKF\_CONVERSION\_TIMEOUT\_S); se adjunta su vista"
         ), "{}", md["conversion-report.md"]);
         assert!(md.values().any(|t| t.contains("no se aplicó OCR porque se agotó el tiempo reservado al OCR.")));
+        // El resultado depende del tiempo de ejecución: no es reproducible. Sin modelos,
+        // su huella se declara «ausente».
+        for f in ["documento.md", "conversion-report.md"] {
+            let fm = crate::bundle::frontmatter(&md[f]).unwrap();
+            assert_eq!(fm["reproducible"].as_bool(), Some(false), "{f}");
+            let ocr = &fm["conversion_settings"]["ocr"];
+            assert_eq!(ocr["det_sha256"].as_str(), Some("ausente"), "{f}");
+        }
     }
 
     #[test]

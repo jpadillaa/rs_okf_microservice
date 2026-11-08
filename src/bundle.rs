@@ -273,10 +273,12 @@ pub(crate) fn validate_bundle(path: &FsPath) -> Result<()> {
             bail!("bundle no contiene {req}")
         }
     }
-    crate::version::check(
-        &frontmatter(&read_text(&mut z, "documento.md")?)?,
-        &frontmatter(&read_text(&mut z, "conversion-report.md")?)?,
-    )?;
+    let document = frontmatter(&read_text(&mut z, "documento.md")?)?;
+    let report = frontmatter(&read_text(&mut z, "conversion-report.md")?)?;
+    crate::version::check(&document, &report)?;
+    if crate::version::declares_settings(&document) {
+        crate::settings::check(format, &document, &report)?;
+    }
     let mut root = String::new();
     z.by_name("index.md")?.read_to_string(&mut root)?;
     let rootfm = frontmatter(&root)?;

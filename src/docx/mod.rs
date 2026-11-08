@@ -10,6 +10,7 @@ use crate::format::Format;
 use crate::ooxml::*;
 use crate::output::*;
 use crate::sections::*;
+use crate::settings::Settings;
 use crate::worker::{Config, Rejected};
 use anyhow::{Context, Result, bail};
 use read::{Aux, Para, Reader, Table};
@@ -1479,7 +1480,15 @@ pub(crate) fn build_bundle(
             started.elapsed().as_millis()
         ),
     ];
-    let report = report(Format::Docx, &generated, hash, &issues, &summary, "");
+    let report = report(
+        Format::Docx,
+        &generated,
+        hash,
+        &issues,
+        &summary,
+        "",
+        &Settings::none(),
+    );
     let blocks = |id: &str, from: usize, to: usize| {
         span(id, "docx_blocks").with("from", from).with("to", to)
     };
@@ -1491,6 +1500,7 @@ pub(crate) fn build_bundle(
         &format!("Documento fuente {filename} convertido a conceptos OKF por secciones."),
         &generated,
         hash,
+        &Settings::none(),
     )
     .with("source_spans", doc_spans);
     let title_marker = if outline.title_block.is_some() {

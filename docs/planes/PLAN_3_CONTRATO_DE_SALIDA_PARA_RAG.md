@@ -34,7 +34,7 @@ Tamaños relativos, como en los planes anteriores: **S** (un cambio acotado en u
 | Referencias no resueltas marcadas | No: un destino interno que no existe se descarta en silencio en los cuatro formatos. | `I5` |
 | Contenido extraído frente a generado | No se generan resúmenes; lo inferido se marca (`title_inferred`, OCR, `status: draft`). `description` y las notas del conversor no se distinguen de forma uniforme. | `I8` |
 | Versión del conversor | Hecho (`C9`). | — |
-| Configuración utilizada | No se registra. | `I3` |
+| Configuración utilizada | No se registra (hecho después en el perfil 1.3.0). | `I3` |
 | Advertencias de conversión | Hecho: incidencias y observaciones del informe. | — |
 | Permisos recibidos | No: la API solo recibe el archivo; un PDF con contraseña se rechaza. | `I7` |
 | Estado válido, parcial o fallido; cobertura y errores | Hecho: `complete`, `partial` y `failed`; cobertura por unidad en el informe. | — |
@@ -71,6 +71,8 @@ Tamaños relativos, como en los planes anteriores: **S** (un cambio acotado en u
 
 ### I3. Configuración que afecta a la salida (S)
 
+**Estado:** implementado el 8 de noviembre (perfil 1.3.0) en `src/settings.rs`. En DOCX y XLSX ningún parámetro cambia el bundle y la configuración es un mapa vacío; `reproducible: false` es un campo propio, fuera de `conversion_settings`, para que la huella dependa solo de la configuración. Véase la [especificación, §2](../especificacion/ESPECIFICACION_OKF.md#2-estructura-común-del-bundle).
+
 **Problema.** El mismo original da bundles distintos según `OKF_OCR_ENABLED`, `OKF_OCR_MAX_PAGES`, los modelos del OCR, `OKF_MAX_IMAGE_PIXELS` o la fuente del renderizador PPTX (`OKF_FONT_PATH`), y el bundle no lo dice.
 
 **Trabajo.**
@@ -81,7 +83,7 @@ Tamaños relativos, como en los planes anteriores: **S** (un cambio acotado en u
 
 **Aceptación.** Los bundles de referencia muestran la configuración; cambiar una de esas variables cambia `settings_sha256` y no cambiar ninguna lo conserva.
 
-**Riesgo.** Con el OCR activo, una página puede quedar sin transcribir por agotar dos tercios del plazo de conversión, así que la misma configuración no garantiza el mismo bundle. Cuando ocurre, el informe ya lo declara; además, `conversion_settings` lo señalará como conversión no reproducible, para que el consumidor no confíe en ese identificador.
+**Riesgo.** Con el OCR activo, una página puede quedar sin transcribir por agotar dos tercios del plazo de conversión, así que la misma configuración no garantiza el mismo bundle. Cuando ocurre, el informe ya lo declara; además, el bundle declarará la conversión como no reproducible, para que el consumidor no confíe en ese identificador.
 
 ## 4. Trazabilidad e integridad
 

@@ -1,7 +1,12 @@
 ---
 converter_version: "0.1.0"
 converter_commit: "<commit>"
-profile_version: "1.2.0"
+profile_version: "1.3.0"
+conversion_settings:
+  max_image_pixels: 33554432
+  ocr:
+    enabled: false
+settings_sha256: "ad1d7709796a5172b6ad18d538b1bef5780b44279dd787d15ecc82ede959ef16"
 type: "Conversion Report"
 title: "Informe de conversión"
 generated:

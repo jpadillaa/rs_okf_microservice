@@ -39,6 +39,7 @@ mod pdf;
 mod pptx;
 mod retention;
 mod sections;
+mod settings;
 mod shutdown;
 #[cfg(test)]
 #[path = "../tests/support/mod.rs"]
@@ -1098,17 +1099,28 @@ mod tests {
         validate_bundle(&good).unwrap();
         let bad = tmp.path().join("bad.zip");
         type Edit<'a> = &'a dyn Fn(&str, String) -> String;
-        let cases: [(&str, Edit); 5] = [
+        let cases: [(&str, Edit); 6] = [
             ("SHA-256 del informe", &|n, md| {
                 if n == "conversion-report.md" {
-                    md.replacen("sha256: \"", "sha256: \"0", 1)
+                    md.replacen("\nsha256: \"", "\nsha256: \"0", 1)
                 } else {
                     md
                 }
             }),
             ("SHA-256 de documento.md", &|n, md| {
                 if n == "documento.md" {
-                    md.replacen("sha256: \"", "sha256: \"0", 1)
+                    md.replacen("\n  sha256: \"", "\n  sha256: \"0", 1)
+                } else {
+                    md
+                }
+            }),
+            // La misma configuración alterada en los dos archivos: la huella no cuadra.
+            ("settings_sha256 no corresponde", &|n, md| {
+                if n == "documento.md" || n == "conversion-report.md" {
+                    let key = "view_font_sha256: \"";
+                    let i = md.find(key).unwrap() + key.len();
+                    let digit = if &md[i..=i] == "0" { "1" } else { "0" };
+                    format!("{}{digit}{}", &md[..i], &md[i + 1..])
                 } else {
                     md
                 }

@@ -5,6 +5,7 @@ use crate::bundle::*;
 use crate::format::Format;
 use crate::ooxml::*;
 use crate::output::*;
+use crate::settings::Settings;
 use crate::worker::{Config, Rejected};
 use anyhow::{Context, Result, bail};
 use betteroffice_pptx::{Presentation, RenderOptions};
@@ -996,6 +997,7 @@ pub(crate) fn build_bundle(
     let started = Instant::now();
     let mut ppt = Presentation::open(bytes)?;
     let font = render_font()?;
+    let settings = Settings::pptx(&font);
     ppt.register_font("Arial", false, false, &font)?;
     ppt.register_font("Arial", true, false, &font)?;
     if ppt.slides().len() != slides.len() {
@@ -1075,6 +1077,7 @@ pub(crate) fn build_bundle(
         "Presentación fuente convertida a conceptos OKF por diapositiva.",
         &generated,
         hash,
+        &settings,
     );
     let doc = format!(
         "# {}\n\nPresentación de {} diapositivas.\n{design_md}",
@@ -1112,7 +1115,15 @@ pub(crate) fn build_bundle(
             started.elapsed().as_millis()
         ),
     ];
-    let report = report(Format::Pptx, &generated, hash, &allissues, &summary, "");
+    let report = report(
+        Format::Pptx,
+        &generated,
+        hash,
+        &allissues,
+        &summary,
+        "",
+        &settings,
+    );
     out.finish(bytes, (&doc_fields, &doc), &nav, &report, &allissues)
 }
 

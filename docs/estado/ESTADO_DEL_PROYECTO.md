@@ -1,6 +1,6 @@
 # Estado del proyecto
 
-**Corte:** 7 de noviembre de 2026. Servicio con PostgreSQL, Swagger UI configurable, imagen Distroless y OCR local opcional para PDF escaneados. Perfil 1.2.0: el texto PDF conserva los guiones de fin de línea en direcciones y series. Plan 2: C5 sigue pendiente del hallazgo PDF y de dos horas de fuzzing sin fallos nuevos por objetivo.
+**Corte:** 8 de noviembre de 2026. Servicio con PostgreSQL, Swagger UI configurable, imagen Distroless y OCR local opcional para PDF escaneados. Perfil 1.3.0: `documento.md` y el informe declaran la configuración que cambia el bundle y su huella (plan 3, I3). Plan 2: C5 sigue pendiente del hallazgo PDF y de dos horas de fuzzing sin fallos nuevos por objetivo.
 **Alcance:** qué está implementado, con qué evidencia de calidad, cómo se compara con el plan inicial y qué queda pendiente. Los contratos están en la [especificación](../especificacion/ESPECIFICACION_OKF.md), las [arquitecturas](../arquitectura/ARQUITECTURA_TECNICA_MICROSERVICIO_OKF.md) y el [stack](../decisiones/STACK_TECNOLOGICO_MICROSERVICIO_OKF.md); este documento no los modifica y debe actualizarse al cerrar cada entrega.
 
 ## 1. Resumen
@@ -60,7 +60,7 @@ La tabla agrupa las pruebas por lo que cubren; el número de cada grupo lo da `c
 | Salud y métricas (`src/observability.rs`) | Latido ausente/caducado, disco y base no disponibles; métricas de una conversión real y persistencia tras reconectar a PostgreSQL. |
 | Apagado (`tests/shutdown.rs`) | SIGTERM con devolución a la cola sin consumir intento y SIGINT con publicación dentro de la gracia, durante una lectura detenida. |
 | Validador independiente (`src/validate.rs`, CLI) | Los 27 ejemplos como ZIP/directorio, rechazo de alteraciones y enlaces simbólicos, y códigos de salida del comando. |
-| Versionado (`src/version.rs`, consulta y recuperación) | Identidad persistida y recuperada del bundle; rechazo de versiones discordantes o perfiles desconocidos. |
+| Versionado y configuración (`src/version.rs`, `src/settings.rs`, consulta y recuperación) | Identidad persistida y recuperada del bundle; rechazo de versiones discordantes o perfiles desconocidos. Forma canónica de la configuración, huella que cambia con cada parámetro que afecta al bundle y solo con ellos, claves por formato, `reproducible: false` cuando el OCR agota su plazo y rechazo de una configuración alterada. |
 | Concurrencia PostgreSQL (`src/worker.rs`) | Dos pools reclaman sin duplicar; omiten una fila bloqueada, recuperan una asignación vencida y rechazan renovaciones de intentos anteriores. |
 | Configuración (`tests/environment.rs`) | Archivo explícito, prioridad del entorno y rechazo de conexión o archivo inválidos; el worker no arranca con el OCR activo sin modelos ni con un valor inválido de `OKF_OCR_ENABLED`. |
 | Ensamblador y paquetes (`src/output.rs`, `src/ooxml.rs`, `src/sections.rs`, `src/bundle.rs`) | Frontmatter legible por un analizador YAML con cadenas difíciles; límites de expansión ZIP configurables; entradas de índice con corchetes en el título; destinos de enlace entre `<` y `>` seguidos de texto multibyte. |
@@ -195,6 +195,6 @@ En orden de prioridad:
 5. **Revisión del renderizado PPTX** cuando aparezcan presentaciones reales con tablas, gráficos o SmartArt, o con picos de memoria cercanos al límite.
 6. **Mejoras de PDF según aparezcan casos**: tablas con reglas y celdas combinadas, uso de la estructura etiquetada, parejas etiqueta–valor.
 
-El [plan 3](../planes/PLAN_3_CONTRATO_DE_SALIDA_PARA_RAG.md), redactado el 8 de noviembre y sin empezar, recoge lo que falta del contrato de salida que pide el pipeline RAG: identificadores explícitos de conversión y de unidad, versiones de un mismo documento, configuración usada, relaciones entre unidades, referencias internas no resueltas, coordenadas en PDF y PowerPoint, permisos recibidos, marca del texto generado y esquema del frontmatter.
+El [plan 3](../planes/PLAN_3_CONTRATO_DE_SALIDA_PARA_RAG.md), redactado el 8 de noviembre, recoge lo que falta del contrato de salida que pide el pipeline RAG: identificadores explícitos de conversión y de unidad, versiones de un mismo documento, configuración usada, relaciones entre unidades, referencias internas no resueltas, coordenadas en PDF y PowerPoint, permisos recibidos, marca del texto generado y esquema del frontmatter. I3 (configuración usada) está hecho desde el 8 de noviembre; el siguiente es I1.
 
 **Fuera del alcance actual:** despliegue multinodo, formatos binarios antiguos (`.doc`, `.xls`, `.ppt`) y con macros, e indexación, embeddings o síntesis de conocimiento, que corresponden a consumidores del bundle.

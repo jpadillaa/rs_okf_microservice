@@ -10,7 +10,12 @@ generated:
   at: "<generado>"
 converter_version: "0.1.0"
 converter_commit: "<commit>"
-profile_version: "1.2.0"
+profile_version: "1.3.0"
+conversion_settings:
+  max_image_pixels: 33554432
+  ocr:
+    enabled: false
+settings_sha256: "ad1d7709796a5172b6ad18d538b1bef5780b44279dd787d15ecc82ede959ef16"
 source_file:
   path: "references/original.pdf"
   sha256: "097d0fd37a784893f7cbea2e96fa9dedec9b02b8d43a8cec903e0279bedef6cf"

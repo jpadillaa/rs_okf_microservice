@@ -190,6 +190,24 @@ metadatos devuelve `null`. Las migraciones PostgreSQL están embebidas; los regi
 sin Git ni ese argumento registra `unknown`; no inventa un commit. Los golden fijan
 solo ese campo variable como `<commit>` y siguen comparando paquete y perfil.
 
+### Configuración de cada conversión (plan 3, I3)
+
+`src/settings.rs` reúne, por formato, los parámetros que cambian el contenido del
+bundle y el ensamblador los escribe en `documento.md` y en el informe como
+`conversion_settings`, con su huella `settings_sha256` (especificación, §2). En PDF son
+`OKF_MAX_IMAGE_PIXELS` y, con `OKF_OCR_ENABLED=true`, `OKF_OCR_MAX_PAGES`,
+`OKF_CONVERSION_TIMEOUT_S` y la huella de los tres archivos de `OKF_OCR_MODELS_DIR`, que
+el proceso hijo lee en cada conversión de un PDF. En PPTX es la huella de la fuente de
+las vistas (`OKF_FONT_PATH` o la fuente del sistema encontrada). Las demás variables
+solo limitan o rechazan el trabajo, o no afectan al conversor, y no entran.
+
+La huella se calcula sobre el frontmatter ya escrito y leído, con la misma función que
+usa el validador, que la recalcula, comprueba las claves de cada formato y exige que
+documento e informe coincidan. Una conversión PDF en la que el OCR agotó su plazo
+declara `reproducible: false`. Los golden, que convierten con la configuración por
+defecto, fijan la huella de la fuente PPTX como `<fuente>` y la de su configuración como
+`<huella>`, porque la fuente depende del sistema, como los píxeles de las vistas.
+
 ### Validación independiente (plan 2, C10)
 
 `okf-microservice validate <bundle.zip | directorio>` aplica el mismo validador de

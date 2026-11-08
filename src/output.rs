@@ -235,27 +235,29 @@ pub(crate) fn span(id: &str, kind: &str) -> Fields {
         .with("kind", kind)
 }
 
-/// Campos de `documento.md`: los comunes y la huella del original.
+/// Campos de `documento.md`: los comunes, la configuración y la huella del original.
 pub(crate) fn document_fields(
     format: Format,
     title: &str,
     description: &str,
     generated: &str,
     hash: &str,
+    settings: &crate::settings::Settings,
 ) -> Fields {
-    crate::version::Versions::annotate(concept_fields(
-        format,
-        "Source Document",
-        title,
-        description,
-        generated,
-    ))
-    .with(
-        "source_file",
-        Fields::new()
-            .with("path", format.original_entry())
-            .with("sha256", hash),
-    )
+    settings
+        .annotate(crate::version::Versions::annotate(concept_fields(
+            format,
+            "Source Document",
+            title,
+            description,
+            generated,
+        )))
+        .with(
+            "source_file",
+            Fields::new()
+                .with("path", format.original_entry())
+                .with("sha256", hash),
+        )
 }
 
 /// Estado del bundle: `partial` si hay alguna pérdida o incertidumbre sustantiva.
@@ -277,9 +279,11 @@ pub(crate) fn report(
     issues: &[Issue],
     summary: &[String],
     sections: &str,
+    settings: &crate::settings::Settings,
 ) -> String {
     let state = state(issues);
-    let fields = crate::version::Versions::annotate(Fields::new())
+    let fields = settings
+        .annotate(crate::version::Versions::annotate(Fields::new()))
         .with("type", "Conversion Report")
         .with("title", "Informe de conversión")
         .with("generated", generated_fields(generated))

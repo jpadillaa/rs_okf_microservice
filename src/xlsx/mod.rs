@@ -10,6 +10,7 @@ use crate::bundle::*;
 use crate::format::Format;
 use crate::ooxml::*;
 use crate::output::*;
+use crate::settings::Settings;
 use crate::worker::{Config, Rejected};
 use a1::{Rect, cell_name, cells_phrase, col_name, shift_formula};
 use anyhow::{Context, Result, bail};
@@ -1358,7 +1359,15 @@ pub(crate) fn build_bundle(
             started.elapsed().as_millis()
         ),
     ];
-    let report = report(Format::Xlsx, &generated, hash, &issues, &summary, "");
+    let report = report(
+        Format::Xlsx,
+        &generated,
+        hash,
+        &issues,
+        &summary,
+        "",
+        &Settings::none(),
+    );
     // documento.md e índices.
     let mut doc_spans = Vec::new();
     let mut structure = String::new();
@@ -1445,6 +1454,7 @@ pub(crate) fn build_bundle(
         &format!("Libro {filename} convertido a conceptos OKF por hojas y regiones."),
         &generated,
         hash,
+        &Settings::none(),
     );
     if !doc_spans.is_empty() {
         doc_fields.push("source_spans", doc_spans);
