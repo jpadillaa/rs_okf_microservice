@@ -989,7 +989,7 @@ pub(crate) fn render_font() -> Result<Vec<u8>> {
 pub(crate) fn build_bundle(
     bytes: &[u8],
     filename: &str,
-    hash: &str,
+    source: &crate::identity::Source,
     extraction: &Extraction,
     attempt: &FsPath,
 ) -> Result<Built> {
@@ -1005,7 +1005,7 @@ pub(crate) fn build_bundle(
     }
     let generated = chrono_now();
     let mut allissues = extraction.issues.clone();
-    let mut out = BundleWriter::create(Format::Pptx, attempt, hash, &settings)?;
+    let mut out = BundleWriter::create(Format::Pptx, attempt, source, &settings)?;
     fs::create_dir_all(attempt.join("assets"))?;
     for s in slides {
         let rendered = ppt
@@ -1076,7 +1076,7 @@ pub(crate) fn build_bundle(
         filename,
         "Presentación fuente convertida a conceptos OKF por diapositiva.",
         &generated,
-        hash,
+        source,
         &settings,
     );
     let doc = format!(
@@ -1118,7 +1118,7 @@ pub(crate) fn build_bundle(
     let report = report(
         Format::Pptx,
         &generated,
-        hash,
+        source,
         &allissues,
         &summary,
         "",
@@ -1193,11 +1193,11 @@ pub(crate) fn convert(
     cfg: &Config,
     bytes: &[u8],
     filename: &str,
-    hash: &str,
+    source: &crate::identity::Source,
     dir: &FsPath,
 ) -> Result<Built> {
     let extraction = extract(bytes, dir, cfg.max_slides)?;
-    build_bundle(bytes, filename, hash, &extraction, dir)
+    build_bundle(bytes, filename, source, &extraction, dir)
 }
 /// Comprobaciones PPTX del bundle: una vista enlazada por diapositiva, un concepto por
 /// diapositiva del original con su `slide_index` y `slide_id` en el orden de la
@@ -1414,7 +1414,7 @@ mod tests {
         } = build_bundle(
             &bytes,
             "rich.pptx",
-            &hex(&Sha256::digest(&bytes)),
+            &crate::identity::Source::new(&hex(&Sha256::digest(&bytes))),
             &extraction,
             tmp.path(),
         )
@@ -1483,8 +1483,14 @@ mod tests {
         let bytes = w.finish().unwrap().into_inner();
         let tmp = tempfile::tempdir().unwrap();
         let hash = hex(&Sha256::digest(&bytes));
-        let built = convert(&Config::default(), &bytes, "visual.pptx", &hash, tmp.path())
-            .expect("una pérdida no debe impedir la conversión");
+        let built = convert(
+            &Config::default(),
+            &bytes,
+            "visual.pptx",
+            &crate::identity::Source::new(&hash),
+            tmp.path(),
+        )
+        .expect("una pérdida no debe impedir la conversión");
         let mut z = ZipArchive::new(fs::File::open(&built.path).unwrap()).unwrap();
         (
             built.status.to_string(),

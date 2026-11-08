@@ -1,6 +1,6 @@
 ---
 type: "Sheet"
-unit_id: "427623ae5ca17b0cbd49f0d3cfc2b9a03dd56ee460a390112404daec49c42997/contenido/hoja-004.md"
+unit_id: "872584ac338a9126a27229e0368046d91ed097e4455df806df55ad35d414df44/contenido/hoja-004.md"
 title: "Gráfico existencias"
 description: "Hoja 4 del libro inventario_regiones.xlsx, sin celdas con contenido."
 sources:

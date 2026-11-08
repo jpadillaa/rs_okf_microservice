@@ -251,7 +251,7 @@ pub(crate) fn document_fields(
     title: &str,
     description: &str,
     generated: &str,
-    hash: &str,
+    source: &crate::identity::Source,
     settings: &crate::settings::Settings,
 ) -> Fields {
     crate::identity::annotate(
@@ -262,14 +262,14 @@ pub(crate) fn document_fields(
             description,
             generated,
         )),
-        hash,
+        source,
         settings,
     )
     .with(
         "source_file",
         Fields::new()
             .with("path", format.original_entry())
-            .with("sha256", hash),
+            .with("sha256", &source.sha256),
     )
 }
 
@@ -288,17 +288,17 @@ pub(crate) fn state(issues: &[Issue]) -> &'static str {
 pub(crate) fn report(
     format: Format,
     generated: &str,
-    hash: &str,
+    source: &crate::identity::Source,
     issues: &[Issue],
     summary: &[String],
     sections: &str,
     settings: &crate::settings::Settings,
 ) -> String {
     let state = state(issues);
-    let id = crate::identity::conversion_id(hash, settings);
+    let id = crate::identity::conversion_id(&source.sha256, settings);
     let fields = crate::identity::annotate(
         crate::version::Versions::annotate(Fields::new()),
-        hash,
+        source,
         settings,
     )
     .with("type", "Conversion Report")
@@ -310,7 +310,7 @@ pub(crate) fn report(
     .with("generated", generated_fields(generated))
     .with("status", state)
     .with("format", format.extension())
-    .with("sha256", hash);
+    .with("sha256", &source.sha256);
     let list = |severity: Severity, empty: &str| -> String {
         let items: String = issues
             .iter()
@@ -391,11 +391,11 @@ pub(crate) struct Navigation {
 }
 
 impl BundleWriter {
-    /// Escritor del bundle del original con huella `hash`, convertido con `settings`.
+    /// Escritor del bundle del original `source`, convertido con `settings`.
     pub(crate) fn create(
         format: Format,
         attempt: &Path,
-        hash: &str,
+        source: &crate::identity::Source,
         settings: &crate::settings::Settings,
     ) -> Result<Self> {
         let path = attempt.join("bundle.zip");
@@ -405,7 +405,7 @@ impl BundleWriter {
             path,
             zip,
             created: Instant::now(),
-            conversion_id: crate::identity::conversion_id(hash, settings),
+            conversion_id: crate::identity::conversion_id(&source.sha256, settings),
         })
     }
     /// Escritor del ZIP, para los recursos que el adaptador escribe en streaming.

@@ -7,7 +7,7 @@ publish = false
 
 [dependencies]
 anyhow = "1"
-axum = { version = "0.8", default-features = false, features = ["http1", "json", "multipart", "tokio", "tracing"] }
+axum = { version = "0.8", default-features = false, features = ["http1", "json", "multipart", "query", "tokio", "tracing"] }
 betteroffice-pptx = { version = "0.5", features = ["raster"] }
 chrono = { version = "0.4", default-features = false, features = ["clock"] }
 clap = { version = "4", features = ["derive"] }

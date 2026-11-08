@@ -1,6 +1,6 @@
 ---
 type: "Source Section"
-unit_id: "a42ed4f41a1be1893de014cf90d674b7ca5c484f6af5abdd20e82387b64c29ce/contenido/seccion-005.md"
+unit_id: "77f91121bfa3e64fc312a8b8705bb9b624de367643298403fccfd9e11ea1734d/contenido/seccion-005.md"
 title: "Lo que un harness no es"
 description: "Sección 5 de d3.docx: Lo que un harness no es. El término harness se utiliza de manera ambigua en la industria. Con frecuencia se emplea como sinónimo de framework, runtime, sandbox o conjunto de…"
 sources:

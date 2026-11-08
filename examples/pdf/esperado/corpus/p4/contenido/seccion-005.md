@@ -1,6 +1,6 @@
 ---
 type: "Source Section"
-unit_id: "d3d70c5a16999c4b656b676581125344ef3bcca34041c6bb605e4d3be7cdb3d3/contenido/seccion-005.md"
+unit_id: "b37c469f2c224b3eca3b199cb3eb70d653e8f8705c23d82629c8e4822297084e/contenido/seccion-005.md"
 title: "La arquitectura mínima de un sistema agéntico"
 description: "Sección 5 de p4.pdf: La arquitectura mínima de un sistema agéntico. Un modelo de lenguaje puede interpretar objetivos, razonar sobre información y proponer acciones, pero esas capacidades probabilísticas no constituyen por sí…"
 sources:

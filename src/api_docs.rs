@@ -9,6 +9,15 @@ pub(crate) struct Upload {
     /// Un archivo .pdf, .docx, .xlsx o .pptx.
     #[schema(value_type = String, format = Binary)]
     file: Vec<u8>,
+    /// Clave opcional con que el sistema de origen agrupa las versiones de un
+    /// documento: de 1 a 256 caracteres ASCII visibles, sin espacios.
+    #[schema(
+        nullable = false,
+        min_length = 1,
+        max_length = 256,
+        pattern = "^[!-~]+$"
+    )]
+    document_key: Option<String>,
 }
 
 #[derive(utoipa::ToSchema)]
@@ -26,7 +35,7 @@ pub(crate) struct BinaryFile(Vec<u8>);
             3. Usa ese identificador en **GET /jobs/{id}/bundle** para descargar el ZIP.\n\n\
             La API y el worker deben estar iniciados. **GET /health** permite comprobarlo."
     ),
-    paths(crate::submit, crate::status, crate::download, crate::observability::health, crate::observability::metrics),
+    paths(crate::submit, crate::versions, crate::status, crate::download, crate::observability::health, crate::observability::metrics),
     tags(
         (name = "Trabajos", description = "Subir un documento, consultar la conversión y descargar el resultado."),
         (name = "Operación", description = "Salud del servicio y métricas.")
@@ -112,6 +121,7 @@ mod tests {
         assert_eq!(paths.as_object().unwrap().len(), 5);
         for (path, method, code, mime) in [
             ("/jobs", "post", "202", "application/json"),
+            ("/jobs", "get", "200", "application/json"),
             ("/jobs/{id}", "get", "200", "application/json"),
             ("/jobs/{id}/bundle", "get", "200", "application/zip"),
             ("/health", "get", "503", "application/json"),
@@ -124,6 +134,13 @@ mod tests {
         }
         let upload = &doc["components"]["schemas"]["Upload"];
         assert_eq!(upload["required"], serde_json::json!(["file"]));
+        assert_eq!(upload["properties"]["document_key"]["type"], "string");
+        let list = &paths["/jobs"]["get"]["parameters"][0];
+        assert_eq!(
+            (&list["name"], &list["in"]),
+            (&"document_key".into(), &"query".into())
+        );
+        assert_eq!(list["required"], true);
         assert_eq!(upload["properties"]["file"]["type"], "string");
         assert_eq!(upload["properties"]["file"]["format"], "binary");
         let body = &paths["/jobs"]["post"]["requestBody"];

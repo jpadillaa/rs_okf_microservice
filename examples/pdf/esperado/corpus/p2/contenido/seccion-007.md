@@ -1,6 +1,6 @@
 ---
 type: "Source Section"
-unit_id: "65e574ead417397d01694e1261ccc643cd282e5d26c89a767236a8303854cb16/contenido/seccion-007.md"
+unit_id: "555a7103b3bf90f0c852cf93da9ec9f665b84a1235937e9548416efce617cfaf/contenido/seccion-007.md"
 title: "Summary and future directions"
 description: "Sección 7 de p2.pdf: Summary and future directions. As a final note, the concepts discussed in this paper apply solely to ChatGPT and other similar LLM-powered generative AI tools. Artificial intelligence is a…"
 sources:

@@ -56,8 +56,9 @@ Estados: `queued → processing → complete | partial | failed`; el paso 4 ocur
 
 | Operación documentada | Entrada y respuesta |
 | --- | --- |
-| `POST /jobs` | Formulario `multipart/form-data` con archivo `file`; `202` con `job_id` y `queued`. El original se escribe en disco a medida que llega, con su SHA-256 calculado en el mismo paso, sin reunirlo en memoria. Documenta los rechazos `400` (formulario, nombre o archivo vacío), `413` (tamaño), `415`, `429`, `500` y `507`; un rechazo borra lo escrito. |
-| `GET /jobs/{id}` | Identificador del trabajo; `200` con estado, intento, error y versiones; `404` si no existe, `500` si falla la consulta. |
+| `POST /jobs` | Formulario `multipart/form-data` con archivo `file` y, opcional, `document_key` (antes o después del archivo); `202` con `job_id` y `queued`. El original se escribe en disco a medida que llega, con su SHA-256 calculado en el mismo paso, sin reunirlo en memoria. Documenta los rechazos `400` (formulario, nombre, archivo vacío o `document_key` no admitida o repetida), `413` (tamaño), `415`, `429`, `500` y `507`; un rechazo borra lo escrito. |
+| `GET /jobs?document_key=…` | `200` con los trabajos de esa clave en orden de llegada: `job_id`, estado, SHA-256 del original, `conversion_id` (o `null`) y fecha de subida en ISO 8601; lista vacía si no hay ninguno; `400` sin clave o con una no admitida. |
+| `GET /jobs/{id}` | Identificador del trabajo; `200` con estado, intento, error, versiones, `conversion_id` y `document_key`; `404` si no existe, `500` si falla la consulta. |
 | `GET /jobs/{id}/bundle` | `200` con ZIP, `Content-Length` y `Content-Disposition` de descarga para `complete`/`partial`, enviado por partes desde el archivo; `404` si no existe o no está publicado, `410` si expiró y `500` ante un error de lectura. |
 | `GET /health` | `200` o `503` con las comprobaciones de PostgreSQL, almacenamiento y latido del worker. |
 | `GET /metrics` | `200` en texto Prometheus 0.0.4; `500` ante un error de consulta. |
@@ -224,6 +225,22 @@ El hijo devuelve `conversion_id` con su resultado, el worker lo guarda en la col
 intento y lo recupera del informe al reconciliar una publicación interrumpida. En los
 golden de PPTX, `conversion_id` depende de la fuente de las vistas y se sustituye por
 `<conversión>` en todo el bundle, también dentro de los `unit_id`.
+
+### Clave del documento (plan 3, I2)
+
+La API acepta `document_key` como campo del formulario, antes o después del archivo. Si
+llega antes y no es admitida, se rechaza sin escribir el original; si llega después, se
+borra lo escrito. La clave se guarda en la columna `document_key` de `jobs` (migración
+`0003`, con un índice por clave y llegada) y el worker la pasa al hijo como
+`--document-key=<clave>`: con `=`, una clave que empieza por `-` no se lee como otra
+opción. El hijo la vuelve a comprobar y el ensamblador la escribe en `documento.md` y
+en el informe a través de `Source` (`src/identity.rs`), que acompaña a la huella del
+original en los adaptadores. La clave no se escribe en el registro de diagnóstico ni en
+las métricas; sí aparece en los argumentos del proceso hijo mientras convierte.
+
+`GET /jobs?document_key=…` lista los trabajos de una clave en orden de llegada. El
+servicio no marca ninguno como vigente: el consumidor compara las huellas y decide. La
+consulta usa la función `query` de Axum, que añade `serde_urlencoded`.
 
 ### Validación independiente (plan 2, C10)
 

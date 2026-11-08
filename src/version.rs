@@ -2,13 +2,13 @@
 use crate::output::Fields;
 use serde::{Deserialize, Serialize};
 
-pub(crate) const PROFILE: &str = "1.4.0";
+pub(crate) const PROFILE: &str = "1.5.0";
 /// Perfiles anteriores cuyos bundles siguen siendo válidos: 1.1.0 añadió reglas para
 /// páginas que un bundle 1.0.0 no puede contener (OCR del servicio), 1.2.0 solo cambia
 /// qué guiones de fin de línea conserva el texto PDF, que el validador no comprueba,
-/// 1.3.0 añade la configuración de la conversión y 1.4.0 sus identificadores, que los
-/// anteriores no declaran.
-const PREVIOUS_PROFILES: [&str; 4] = ["1.0.0", "1.1.0", "1.2.0", "1.3.0"];
+/// 1.3.0 añade la configuración de la conversión, 1.4.0 sus identificadores y 1.5.0 la
+/// `document_key` opcional, que los anteriores no declaran.
+const PREVIOUS_PROFILES: [&str; 5] = ["1.0.0", "1.1.0", "1.2.0", "1.3.0", "1.4.0"];
 /// Perfiles anteriores a `conversion_settings` (plan 3, I3).
 const WITHOUT_SETTINGS: [&str; 3] = ["1.0.0", "1.1.0", "1.2.0"];
 /// Perfiles anteriores a `conversion_id` y `unit_id` (plan 3, I1).
@@ -123,7 +123,7 @@ mod tests {
         let mut report = doc.clone();
         report["converter_version"] = "999".into();
         assert!(check(&doc, &report).is_err());
-        for v in ["1.0.0", "1.1.0", "1.2.0", "1.3.0"] {
+        for v in ["1.0.0", "1.1.0", "1.2.0", "1.3.0", "1.4.0"] {
             let mut previous = doc.clone();
             previous["profile_version"] = v.into();
             check(&previous, &previous).unwrap();

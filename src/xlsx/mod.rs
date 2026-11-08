@@ -1249,7 +1249,7 @@ impl Builder<'_> {
 pub(crate) fn build_bundle(
     bytes: &[u8],
     filename: &str,
-    hash: &str,
+    source: &crate::identity::Source,
     max_cells: usize,
     attempt: &FsPath,
 ) -> Result<Built> {
@@ -1266,7 +1266,7 @@ pub(crate) fn build_bundle(
         filename,
         generated: &generated,
         z_in,
-        out: BundleWriter::create(Format::Xlsx, attempt, hash, &Settings::none())?,
+        out: BundleWriter::create(Format::Xlsx, attempt, source, &Settings::none())?,
         issues: Vec::new(),
         t: Tally::default(),
         sheet_index: wb
@@ -1362,7 +1362,7 @@ pub(crate) fn build_bundle(
     let report = report(
         Format::Xlsx,
         &generated,
-        hash,
+        source,
         &issues,
         &summary,
         "",
@@ -1453,7 +1453,7 @@ pub(crate) fn build_bundle(
         &title,
         &format!("Libro {filename} convertido a conceptos OKF por hojas y regiones."),
         &generated,
-        hash,
+        source,
         &Settings::none(),
     );
     if !doc_spans.is_empty() {
@@ -1482,10 +1482,10 @@ pub(crate) fn convert(
     cfg: &Config,
     bytes: &[u8],
     filename: &str,
-    hash: &str,
+    source: &crate::identity::Source,
     dir: &FsPath,
 ) -> Result<Built> {
-    build_bundle(bytes, filename, hash, cfg.max_cells, dir)
+    build_bundle(bytes, filename, source, cfg.max_cells, dir)
 }
 
 /// Destinos de los enlaces Markdown que empiezan por `prefix`, en orden.
@@ -1667,7 +1667,7 @@ mod tests {
         } = build_bundle(
             &bytes,
             &name,
-            &hex(&Sha256::digest(&bytes)),
+            &crate::identity::Source::new(&hex(&Sha256::digest(&bytes))),
             1_000_000,
             tmp.path(),
         )

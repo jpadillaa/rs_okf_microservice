@@ -81,7 +81,7 @@ mod tests {
                     &Config::default(),
                     &bytes,
                     filename,
-                    &hex(&Sha256::digest(&bytes)),
+                    &crate::identity::Source::new(&hex(&Sha256::digest(&bytes))),
                     tmp.path(),
                 )
                 .unwrap();

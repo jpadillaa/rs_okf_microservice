@@ -1,6 +1,6 @@
 ---
 type: "Source Section"
-unit_id: "1e36f07af86942b9c2c55211a9f808be20174b49acdd770f3774e32865e91ed2/contenido/seccion-003.md"
+unit_id: "bb8ead55422a6f92b60916c49d21b64aa507bc5de3a3d22e322bc38189f42611/contenido/seccion-003.md"
 title: "Configuración del índice"
 description: "Sección 3 de guia_tecnica.docx: Configuración del índice. Siga estos pasos para crear el índice:"
 sources:

@@ -73,6 +73,25 @@ async fn child_process_is_converted_or_stopped_at_its_limits() {
     assert!(!line.ends_with("peak_mb=0"), "{line}");
     assert!(!log.contains("A simple OKF test deck"));
 
+    // La clave del documento llega al hijo como argumento, aunque empiece por `-`, y al
+    // bundle; no aparece en el registro (plan 3, I2).
+    let key = "-clave:sp/42";
+    std::fs::copy("examples/pptx/simple.pptx", root.join("originals/key.pptx")).unwrap();
+    sqlx::query("INSERT INTO jobs(id,filename,original,sha256,status,created_at,document_key) VALUES('key','simple.pptx','originals/key.pptx','-','queued',0,$1)")
+        .bind(key).execute(&db).await.unwrap();
+    let log = worker_once(root, &[]);
+    assert_eq!(job(&db, "key").await, ("complete".into(), None));
+    let mut z =
+        zip::ZipArchive::new(std::fs::File::open(root.join("published/key/bundle.zip")).unwrap())
+            .unwrap();
+    let mut document = String::new();
+    std::io::Read::read_to_string(&mut z.by_name("documento.md").unwrap(), &mut document).unwrap();
+    assert!(
+        document.contains(&format!("document_key: \"{key}\"")),
+        "{document}"
+    );
+    assert!(!log.contains(key), "{log}");
+
     // Los cuatro formatos deben poder leer sus recursos con el aislamiento activo.
     for (format, source) in [
         ("docx", "examples/docx/breve.docx"),

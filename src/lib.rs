@@ -1,7 +1,7 @@
 use anyhow::Result;
 use axum::{
     Json, Router,
-    extract::{Multipart, Path, State},
+    extract::{Multipart, Path, Query, State},
     http::{HeaderMap, StatusCode, header},
     response::IntoResponse,
     routing::{get, post},
@@ -79,6 +79,9 @@ enum Command {
         original: PathBuf,
         attempt: PathBuf,
         filename: String,
+        /// Clave del documento recibida con el original (plan 3, I2).
+        #[arg(long)]
+        document_key: Option<String>,
     },
     /// Valida conformidad OKF e integridad editorial frente al original incluido.
     Validate { bundle: PathBuf },
@@ -123,6 +126,31 @@ struct JobStatus {
     /// antes de publicar.
     #[schema(required)]
     conversion_id: Option<String>,
+    /// Clave del documento recibida al subirlo, o null si no se envió.
+    #[schema(required)]
+    document_key: Option<String>,
+}
+/// Una versión de un documento: un trabajo con su `document_key`.
+#[derive(Serialize, utoipa::ToSchema)]
+struct DocumentVersion {
+    #[schema(format = "uuid")]
+    job_id: String,
+    /// `queued`, `processing`, `complete`, `partial`, `failed` o `expired`.
+    status: String,
+    /// SHA-256 del original recibido.
+    sha256: String,
+    /// `conversion_id` del bundle publicado, o null si aún no se publicó.
+    #[schema(required)]
+    conversion_id: Option<String>,
+    /// Momento de la subida, en ISO 8601 (UTC).
+    created_at: String,
+}
+#[derive(Deserialize, utoipa::IntoParams)]
+#[into_params(parameter_in = Query)]
+struct VersionsQuery {
+    /// Clave enviada en `document_key` al subir el documento.
+    #[param(min_length = 1, max_length = 256, pattern = "^[!-~]+$")]
+    document_key: String,
 }
 
 async fn app(root: PathBuf) -> Result<App> {
@@ -189,12 +217,13 @@ fn free_space_mb(path: &FsPath) -> std::io::Result<u64> {
 /// Selecciona un PDF, DOCX, XLSX o PPTX en el campo `file`. Se procesa el primer
 /// archivo del formulario. El límite es 100 MiB por defecto, configurable con
 /// `OKF_MAX_UPLOAD_MB`. Guarda el `job_id` de la respuesta para consultar el estado.
+/// El campo opcional `document_key` agrupa las versiones de un mismo documento.
 #[utoipa::path(
     post, path = "/jobs", tag = "Trabajos", operation_id = "crear_trabajo",
     request_body(content = api_docs::Upload, content_type = "multipart/form-data"),
     responses(
         (status = 202, description = "Original conservado y trabajo en cola", body = Accepted),
-        (status = 400, description = "Formulario, nombre no válido o archivo vacío", body = String, content_type = "text/plain"),
+        (status = 400, description = "Formulario, nombre no válido, archivo vacío o document_key no admitida", body = String, content_type = "text/plain"),
         (status = 413, description = "Tamaño por encima del límite", body = String, content_type = "text/plain"),
         (status = 415, description = "Extensión no admitida", body = String, content_type = "text/plain"),
         (status = 429, description = "Cola llena; reintentar más tarde", body = String, content_type = "text/plain"),
@@ -209,9 +238,14 @@ async fn submit(
     admit(&a).await?;
     // Un cuerpo por encima del límite llega como error del multipart, con su `413`.
     let rejected = |e: axum::extract::multipart::MultipartError| (e.status(), e.body_text());
+    // `document_key` puede ir antes o después del archivo; antes, se rechaza sin escribir.
+    let mut key: Option<String> = None;
     let mut field = loop {
         match multipart.next_field().await.map_err(rejected)? {
             Some(field) if field.file_name().is_some() => break field,
+            Some(field) if field.name() == Some("document_key") => {
+                read_key(field, &mut key).await?
+            }
             Some(_) => continue,
             None => {
                 return Err((
@@ -248,6 +282,21 @@ async fn submit(
     // El original se escribe a medida que llega y se calcula su huella en el mismo paso,
     // sin reunir el archivo en memoria. Cualquier rechazo posterior borra lo escrito.
     let stored = store_upload(&a, &mut field, &path).await;
+    drop(field);
+    let stored = match stored {
+        Ok(hash) => {
+            async {
+                while let Some(field) = multipart.next_field().await.map_err(rejected)? {
+                    if field.file_name().is_none() && field.name() == Some("document_key") {
+                        read_key(field, &mut key).await?;
+                    }
+                }
+                Ok(hash)
+            }
+            .await
+        }
+        Err(e) => Err(e),
+    };
     let hash = match stored {
         Ok(hash) => hash,
         Err(e) => {
@@ -256,14 +305,15 @@ async fn submit(
         }
     };
     if let Err(e) = sqlx::query(
-        "INSERT INTO jobs(id,filename,original,sha256,status,created_at) VALUES($1,$2,\
-        $3,$4,'queued',$5)",
+        "INSERT INTO jobs(id,filename,original,sha256,status,created_at,document_key) \
+        VALUES($1,$2,$3,$4,'queued',$5,$6)",
     )
     .bind(&id)
     .bind(&filename)
     .bind(&original_rel)
     .bind(&hash)
     .bind(now())
+    .bind(&key)
     .execute(&a.db)
     .await
     {
@@ -277,6 +327,39 @@ async fn submit(
             status: "queued".into(),
         }),
     ))
+}
+/// Lee el campo `document_key`, como mucho una vez y con la forma admitida (`400` si no).
+async fn read_key(
+    mut field: axum::extract::multipart::Field<'_>,
+    key: &mut Option<String>,
+) -> Result<(), (StatusCode, String)> {
+    let invalid = || {
+        (
+            StatusCode::BAD_REQUEST,
+            format!(
+                "document_key debe tener de 1 a {} caracteres ASCII visibles, sin espacios, y aparecer una sola vez",
+                identity::MAX_KEY_LEN
+            ),
+        )
+    };
+    let mut bytes = Vec::new();
+    while let Some(chunk) = field
+        .chunk()
+        .await
+        .map_err(|e| (e.status(), e.body_text()))?
+    {
+        bytes.extend_from_slice(&chunk);
+        if bytes.len() > identity::MAX_KEY_LEN {
+            return Err(invalid());
+        }
+    }
+    match String::from_utf8(bytes) {
+        Ok(k) if key.is_none() && identity::valid_key(&k) => {
+            *key = Some(k);
+            Ok(())
+        }
+        _ => Err(invalid()),
+    }
 }
 /// Escribe el campo del archivo en `path` por partes y devuelve su SHA-256 en
 /// hexadecimal. Rechaza un archivo vacío (`400`) o mayor que `OKF_MAX_UPLOAD_MB` (`413`).
@@ -320,6 +403,55 @@ async fn store_upload(
 fn internal(e: impl std::fmt::Display) -> (StatusCode, String) {
     (StatusCode::INTERNAL_SERVER_ERROR, e.to_string())
 }
+/// Listar las versiones de un documento
+///
+/// Devuelve los trabajos subidos con esa `document_key`, en orden de llegada, con la
+/// huella de su original y su `conversion_id`. El servicio no decide cuál es la versión
+/// vigente. Una clave sin trabajos devuelve una lista vacía.
+#[utoipa::path(
+    get, path = "/jobs", tag = "Trabajos", operation_id = "listar_versiones",
+    params(VersionsQuery),
+    responses(
+        (status = 200, description = "Trabajos de la clave, en orden de llegada", body = Vec<DocumentVersion>),
+        (status = 400, description = "Falta document_key o no es una clave admitida", body = String, content_type = "text/plain"),
+        (status = 500, description = "Error de persistencia", body = String, content_type = "text/plain")
+    )
+)]
+async fn versions(
+    State(a): State<App>,
+    Query(q): Query<VersionsQuery>,
+) -> Result<Json<Vec<DocumentVersion>>, (StatusCode, String)> {
+    if !identity::valid_key(&q.document_key) {
+        return Err((
+            StatusCode::BAD_REQUEST,
+            "document_key no es una clave admitida".into(),
+        ));
+    }
+    let rows = sqlx::query(
+        "SELECT id,status,sha256,conversion_id,created_at FROM jobs WHERE document_key=$1 \
+        ORDER BY created_at,id",
+    )
+    .bind(&q.document_key)
+    .fetch_all(&a.db)
+    .await
+    .map_err(internal)?;
+    rows.iter()
+        .map(|r| -> Result<_, sqlx::Error> {
+            let created: i64 = r.try_get(4)?;
+            Ok(DocumentVersion {
+                job_id: r.try_get(0)?,
+                status: r.try_get(1)?,
+                sha256: r.try_get(2)?,
+                conversion_id: r.try_get(3)?,
+                created_at: chrono::DateTime::from_timestamp(created, 0)
+                    .unwrap_or_default()
+                    .to_rfc3339_opts(chrono::SecondsFormat::Secs, true),
+            })
+        })
+        .collect::<Result<Vec<_>, _>>()
+        .map(Json)
+        .map_err(internal)
+}
 /// Consultar el estado de un trabajo
 ///
 /// Usa el `job_id` recibido al subir el archivo. Repite la consulta mientras esté
@@ -340,7 +472,7 @@ async fn status(
 ) -> Result<Json<JobStatus>, (StatusCode, String)> {
     let row = sqlx::query(
         "SELECT status,attempt,error,converter_version,converter_commit,profile_version,\
-        conversion_id FROM jobs WHERE id=$1",
+        conversion_id,document_key FROM jobs WHERE id=$1",
     )
     .bind(&id)
     .fetch_optional(&a.db)
@@ -358,6 +490,7 @@ async fn status(
                 profile_version: r.try_get(5)?,
             },
             conversion_id: r.try_get(6)?,
+            document_key: r.try_get(7)?,
         }))
     })
     .transpose()
@@ -451,7 +584,7 @@ fn router(a: App) -> Router {
     let mut router = Router::new()
         .route("/health", get(observability::health))
         .route("/metrics", get(observability::metrics))
-        .route("/jobs", post(submit))
+        .route("/jobs", post(submit).get(versions))
         .route("/jobs/{id}", get(status))
         .route("/jobs/{id}/bundle", get(download));
     if a.cfg.swagger_enabled {
@@ -495,9 +628,10 @@ pub fn run() -> Result<()> {
         original,
         attempt,
         filename,
+        document_key,
     } = cli.command
     {
-        return worker::convert_command(&original, &attempt, &filename);
+        return worker::convert_command(&original, &attempt, &filename, document_key.as_deref());
     }
     tokio::runtime::Builder::new_multi_thread()
         .enable_all()
@@ -506,11 +640,7 @@ pub fn run() -> Result<()> {
             match cli.command {
                 Command::Api { bind } => serve(root, &bind).await,
                 Command::Worker { poll_ms, once } => worker::worker(root, poll_ms, once).await,
-                Command::Convert {
-                    original,
-                    attempt,
-                    filename,
-                } => worker::convert_command(&original, &attempt, &filename),
+                Command::Convert { .. } => unreachable!("convert se ejecuta antes del runtime"),
                 Command::Validate { .. } => unreachable!("validate se ejecuta antes del runtime"),
                 Command::BenchRender { pptx, output } => pptx::bench_render(&pptx, &output),
             }
@@ -528,8 +658,14 @@ pub fn fuzz_input(extension: &str, bytes: &[u8]) {
     ooxml::set_limits(cfg.zip);
     let format = format::Format::from_extension(extension).expect("objetivo de fuzz conocido");
     let tmp = tempfile::tempdir().expect("directorio temporal del fuzzing");
-    let hash = bundle::hex(&Sha256::digest(bytes));
-    let _ = format.convert(&cfg, bytes, &format!("fuzz.{extension}"), &hash, tmp.path());
+    let source = identity::Source::new(&bundle::hex(&Sha256::digest(bytes)));
+    let _ = format.convert(
+        &cfg,
+        bytes,
+        &format!("fuzz.{extension}"),
+        &source,
+        tmp.path(),
+    );
 }
 
 #[cfg(test)]
@@ -838,7 +974,7 @@ mod tests {
         let good = build_bundle(
             &simple,
             "simple.pptx",
-            &hex(&Sha256::digest(&simple)),
+            &crate::identity::Source::new(&hex(&Sha256::digest(&simple))),
             &extraction,
             &attempt,
         )
@@ -968,7 +1104,7 @@ mod tests {
         build_bundle(
             &bytes,
             &format!("{name}.pptx"),
-            &hex(&Sha256::digest(&bytes)),
+            &crate::identity::Source::new(&hex(&Sha256::digest(&bytes))),
             &extraction,
             dir,
         )
@@ -1440,6 +1576,142 @@ mod tests {
             .await
             .unwrap()
             .status()
+    }
+
+    /// Envía `bytes` como `name` con los campos de texto `before` (antes del archivo) y
+    /// `after` (después); devuelve el código y el cuerpo de la respuesta.
+    async fn post_fields(
+        a: &App,
+        name: &str,
+        bytes: &[u8],
+        before: &[(&str, &str)],
+        after: &[(&str, &str)],
+    ) -> (StatusCode, Vec<u8>) {
+        let boundary = "fields-boundary";
+        let text = |fields: &[(&str, &str)]| -> String {
+            fields
+                .iter()
+                .map(|(k, v)| format!("--{boundary}\r\nContent-Disposition: form-data; name=\"{k}\"\r\n\r\n{v}\r\n"))
+                .collect()
+        };
+        let mut body = text(before).into_bytes();
+        body.extend_from_slice(format!("--{boundary}\r\nContent-Disposition: form-data; name=\"file\"; filename=\"{name}\"\r\n\r\n").as_bytes());
+        body.extend_from_slice(bytes);
+        body.extend_from_slice(b"\r\n");
+        body.extend_from_slice(text(after).as_bytes());
+        body.extend_from_slice(format!("--{boundary}--\r\n").as_bytes());
+        let response = router(a.clone())
+            .oneshot(
+                axum::http::Request::builder()
+                    .method("POST")
+                    .uri("/jobs")
+                    .header(
+                        "content-type",
+                        format!("multipart/form-data; boundary={boundary}"),
+                    )
+                    .body(axum::body::Body::from(body))
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        let status = response.status();
+        let body = http_body_util::BodyExt::collect(response.into_body())
+            .await
+            .unwrap()
+            .to_bytes()
+            .to_vec();
+        (status, body)
+    }
+
+    async fn get_json(a: &App, uri: &str) -> (StatusCode, serde_json::Value) {
+        let response = router(a.clone())
+            .oneshot(
+                axum::http::Request::builder()
+                    .uri(uri)
+                    .body(axum::body::Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        let status = response.status();
+        let body = http_body_util::BodyExt::collect(response.into_body())
+            .await
+            .unwrap()
+            .to_bytes();
+        (
+            status,
+            serde_json::from_slice(&body).unwrap_or(serde_json::Value::Null),
+        )
+    }
+
+    #[tokio::test]
+    async fn document_key_groups_the_versions_of_a_document() {
+        let tmp = tempfile::tempdir().unwrap();
+        let a = test_app(tmp.path()).await;
+        let key = "sp:sitios/finanzas/42";
+        let v1 = fs::read("examples/docx/breve.docx").unwrap();
+        let v2 = fs::read("examples/docx/estructura.docx").unwrap();
+        let originals = || fs::read_dir(a.root.join("originals")).unwrap().count();
+        // La clave puede ir antes o después del archivo.
+        let (s1, b1) = post_fields(&a, "informe.docx", &v1, &[("document_key", key)], &[]).await;
+        let (s2, b2) = post_fields(&a, "informe.docx", &v2, &[], &[("document_key", key)]).await;
+        assert_eq!((s1, s2), (StatusCode::ACCEPTED, StatusCode::ACCEPTED));
+        let (s3, _) = post_fields(&a, "otro.docx", &v1, &[], &[]).await;
+        assert_eq!(s3, StatusCode::ACCEPTED);
+        let id1 = serde_json::from_slice::<Accepted>(&b1).unwrap().job_id;
+        let id2 = serde_json::from_slice::<Accepted>(&b2).unwrap().job_id;
+        // Claves no admitidas o repetidas: 400 y ningún original a medio guardar.
+        let before = originals();
+        for (k, first) in [("con espacio", true), ("con espacio", false), ("", false)] {
+            let fields = [("document_key", k)];
+            let (status, _) = if first {
+                post_fields(&a, "x.docx", &v1, &fields, &[]).await
+            } else {
+                post_fields(&a, "x.docx", &v1, &[], &fields).await
+            };
+            assert_eq!(status, StatusCode::BAD_REQUEST, "{k:?}");
+        }
+        let twice = [("document_key", "a"), ("document_key", "b")];
+        assert_eq!(
+            post_fields(&a, "x.docx", &v1, &twice, &[]).await.0,
+            StatusCode::BAD_REQUEST
+        );
+        assert_eq!(originals(), before);
+        while work_one(&a).await.unwrap() {}
+        // Las dos versiones, en orden de llegada, con huellas e identificadores distintos.
+        let (status, list) = get_json(&a, "/jobs?document_key=sp%3Asitios%2Ffinanzas%2F42").await;
+        assert_eq!(status, StatusCode::OK);
+        let list = list.as_array().unwrap();
+        assert_eq!(list.len(), 2, "{list:?}");
+        assert_eq!(list[0]["job_id"], id1.as_str());
+        assert_eq!(list[1]["job_id"], id2.as_str());
+        assert_eq!(list[0]["sha256"], hex(&Sha256::digest(&v1)));
+        assert_eq!(list[1]["sha256"], hex(&Sha256::digest(&v2)));
+        assert_eq!(list[0]["status"], "complete");
+        assert_ne!(list[0]["conversion_id"], list[1]["conversion_id"]);
+        assert!(list[0]["created_at"].as_str().unwrap().ends_with('Z'));
+        let (_, job) = get_json(&a, &format!("/jobs/{id1}")).await;
+        assert_eq!(job["document_key"], key);
+        assert_eq!(job["conversion_id"], list[0]["conversion_id"]);
+        // La clave llega al bundle, en el documento y en el informe.
+        let mut z = zip::ZipArchive::new(
+            fs::File::open(a.root.join(format!("published/{id1}/bundle.zip"))).unwrap(),
+        )
+        .unwrap();
+        for f in ["documento.md", "conversion-report.md"] {
+            let fm = bundle::frontmatter(&bundle::read_text(&mut z, f).unwrap()).unwrap();
+            assert_eq!(fm["document_key"].as_str(), Some(key), "{f}");
+        }
+        // Sin trabajos, una lista vacía; sin clave o con una no admitida, 400.
+        assert_eq!(
+            get_json(&a, "/jobs?document_key=ninguna").await.1,
+            serde_json::json!([])
+        );
+        assert_eq!(get_json(&a, "/jobs").await.0, StatusCode::BAD_REQUEST);
+        assert_eq!(
+            get_json(&a, "/jobs?document_key=a%20b").await.0,
+            StatusCode::BAD_REQUEST
+        );
     }
 
     #[tokio::test]

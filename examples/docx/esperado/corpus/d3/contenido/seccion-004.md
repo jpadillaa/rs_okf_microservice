@@ -1,6 +1,6 @@
 ---
 type: "Source Section"
-unit_id: "a42ed4f41a1be1893de014cf90d674b7ca5c484f6af5abdd20e82387b64c29ce/contenido/seccion-004.md"
+unit_id: "77f91121bfa3e64fc312a8b8705bb9b624de367643298403fccfd9e11ea1734d/contenido/seccion-004.md"
 title: "De dónde viene el término"
 description: "Sección 4 de d3.docx: De dónde viene el término. En la ingeniería de software clásica, un test harness es el andamiaje utilizado para ejecutar una unidad de código bajo condiciones controladas y repetibles.…"
 sources:

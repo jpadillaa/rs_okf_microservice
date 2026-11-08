@@ -1,6 +1,6 @@
 ---
 type: "Source Section"
-unit_id: "65e574ead417397d01694e1261ccc643cd282e5d26c89a767236a8303854cb16/contenido/seccion-001.md"
+unit_id: "555a7103b3bf90f0c852cf93da9ec9f665b84a1235937e9548416efce617cfaf/contenido/seccion-001.md"
 title: "Artificial intelligence‑assisted academic writing: recommendations for ethical use"
 description: "Inicio de p2.pdf, antes de la primera sección. https://doi.org/10.1186/s41077-025-00350-6"
 sources:

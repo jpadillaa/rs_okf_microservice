@@ -289,6 +289,7 @@ pub(crate) fn validate_bundle(path: &FsPath) -> Result<()> {
     } else {
         None
     };
+    crate::identity::check_key(&document, &report)?;
     let mut root = String::new();
     z.by_name("index.md")?.read_to_string(&mut root)?;
     let rootfm = frontmatter(&root)?;

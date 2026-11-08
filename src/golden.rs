@@ -111,7 +111,13 @@ pub(crate) fn bundle_files(doc: &Path) -> BTreeMap<String, String> {
     let tmp = tempfile::tempdir().unwrap();
     let hash = hex(&Sha256::digest(&bytes));
     let built = format
-        .convert(&Config::default(), &bytes, &filename, &hash, tmp.path())
+        .convert(
+            &Config::default(),
+            &bytes,
+            &filename,
+            &crate::identity::Source::new(&hash),
+            tmp.path(),
+        )
         .unwrap_or_else(|e| panic!("{}: {e:#}", doc.display()));
     let mut z = ZipArchive::new(fs::File::open(built.path).unwrap()).unwrap();
     let mut files = BTreeMap::new();

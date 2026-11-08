@@ -1,6 +1,6 @@
 ---
 type: "Source Section"
-unit_id: "ca8cc75dc57460f16d6c8be863bb96c4650638c87a391ec5762026102659cf5c/contenido/seccion-005.md"
+unit_id: "e5f1261cab357cb9227bfc51e134416c5b97caa399eb36275c00fe63fb406d9d/contenido/seccion-005.md"
 title: "3. Resultados"
 description: "Sección 5 de articulo_columnas.pdf: 3. Resultados. El primer procedimiento conservó el orden de lectura en diecisiete de los veinte documentos; el segundo, en todos ellos. Las diferencias se concentraron en las…"
 sources:

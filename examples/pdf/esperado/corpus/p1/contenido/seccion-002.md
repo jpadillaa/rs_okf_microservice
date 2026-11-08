@@ -1,6 +1,6 @@
 ---
 type: "Source Section"
-unit_id: "92805d0916f824c79fb3f4a371011f1c4da2ed61600425c78f8fc0976617e190/contenido/seccion-002.md"
+unit_id: "6212d3eb9356c8770b81331a71a0e96e3e6a3c0d35c9dc650fb023c54551384a/contenido/seccion-002.md"
 title: "COMUNICACIÓN EFECTIVA EN ENTORNOS LABORALES"
 description: "Sección 2 de p1.pdf: COMUNICACIÓN EFECTIVA EN ENTORNOS LABORALES. Fortalecer habilidades para comunicar ideas de forma clara y asertiva en situaciones laborales a partir de la escucha activa y empática con colegas y…"
 sources:

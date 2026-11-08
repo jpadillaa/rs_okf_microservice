@@ -1,6 +1,6 @@
 ---
 type: "Source Section"
-unit_id: "3d7f81153283dfd28dd45ac709daba75f8f9b8c99757f967e46746e47148c931/contenido/seccion-005.md"
+unit_id: "7f1ec1565ae0546dbedc5901964d0df31d4314b85e9047384fe787d63e5f9e08/contenido/seccion-005.md"
 title: "4. Riesgos"
 description: "Sección 5 de informe_tecnico.pdf: 4. Riesgos. El principal riesgo es la pérdida de movimientos registrados durante la copia final. Para mitigarlo, el sistema anterior bloqueará los registros nuevos una…"
 sources:

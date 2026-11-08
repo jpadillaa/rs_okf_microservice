@@ -1,6 +1,6 @@
 ---
 type: "Sheet"
-unit_id: "165f5fdd89a9cd34f0e2d7830d29b21a526611b9bb9773b241f9364bc8e8379e/contenido/hoja-001.md"
+unit_id: "dbe30f9ef70ca3455573a4aecdf51cb6771acb2089d66a0cb145f765635a448d/contenido/hoja-001.md"
 title: "Resumen"
 description: "Hoja 1 del libro ventas_trimestrales.xlsx: rango A1:F12 con 2 regiones."
 sources:

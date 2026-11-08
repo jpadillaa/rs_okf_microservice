@@ -1,6 +1,6 @@
 ---
 type: "Source Section"
-unit_id: "a42ed4f41a1be1893de014cf90d674b7ca5c484f6af5abdd20e82387b64c29ce/contenido/seccion-006.md"
+unit_id: "77f91121bfa3e64fc312a8b8705bb9b624de367643298403fccfd9e11ea1734d/contenido/seccion-006.md"
 title: "Cuándo un sistema puede considerarse un harness"
 description: "Sección 6 de d3.docx: Cuándo un sistema puede considerarse un harness. Académicamente se plantean cuatro condiciones funcionales para distinguir un harness de componentes más limitados, como un SDK, una biblioteca o un plugin."
 sources:

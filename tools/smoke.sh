@@ -79,7 +79,9 @@ done
 
 # OCR local: con OKF_OCR_ENABLED=true, un PDF escaneado sale con texto, dentro de las
 # restricciones del hijo (Landlock, seccomp y límite de memoria).
-id=$(curl -sf -F "file=@examples/pdf/muestras/escaneado_ocr.pdf" "http://127.0.0.1:$port/jobs" | jq -r .job_id)
+# Se sube con una clave de documento, que se lista y llega al bundle (plan 3, I2).
+id=$(curl -sf -F "document_key=smoke:ocr/1" -F "file=@examples/pdf/muestras/escaneado_ocr.pdf" \
+    "http://127.0.0.1:$port/jobs" | jq -r .job_id)
 docker run --rm --network "$network" --env-file "$data/service.env" -e OKF_OCR_ENABLED=true \
     -v "$volume:/data" "$image" worker --once
 job=$(curl -sf "http://127.0.0.1:$port/jobs/$id")
@@ -99,4 +101,8 @@ for file in det.onnx rec.onnx dict.txt; do
     grep -qx "    ${file%%.*}_sha256: \"$pinned\"" <<<"$document" ||
         { echo "OCR: la huella de $file en documento.md no es la fijada ($pinned)" >&2; exit 1; }
 done
+versions=$(curl -sf "http://127.0.0.1:$port/jobs?document_key=smoke%3Aocr%2F1")
+jq -e --arg id "$id" 'length == 1 and .[0].job_id == $id and (.[0].conversion_id | test("^[0-9a-f]{64}$"))' \
+    <<<"$versions" >/dev/null || { echo "versiones: $versions" >&2; exit 1; }
+grep -qx 'document_key: "smoke:ocr/1"' <<<"$document"
 echo "trabajo $id: OCR complete, bundle descargado y validado"

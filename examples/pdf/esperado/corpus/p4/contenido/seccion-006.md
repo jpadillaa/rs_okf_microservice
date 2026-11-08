@@ -1,6 +1,6 @@
 ---
 type: "Source Section"
-unit_id: "d3d70c5a16999c4b656b676581125344ef3bcca34041c6bb605e4d3be7cdb3d3/contenido/seccion-006.md"
+unit_id: "b37c469f2c224b3eca3b199cb3eb70d653e8f8705c23d82629c8e4822297084e/contenido/seccion-006.md"
 title: "El doble paradigma"
 description: "Sección 6 de p4.pdf: El doble paradigma. Los sistemas agénticos corporativos operan bajo una tensión fundamental. El LLM es probabilístico, pero los procesos de negocio requieren controles…"
 sources:

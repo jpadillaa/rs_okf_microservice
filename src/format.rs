@@ -48,15 +48,15 @@ impl Format {
         cfg: &Config,
         bytes: &[u8],
         filename: &str,
-        hash: &str,
+        source: &crate::identity::Source,
         dir: &Path,
     ) -> Result<Built> {
         let started = Instant::now();
         let mut built = match self {
-            Format::Pptx => crate::pptx::convert(cfg, bytes, filename, hash, dir),
-            Format::Docx => crate::docx::convert(cfg, bytes, filename, hash, dir),
-            Format::Xlsx => crate::xlsx::convert(cfg, bytes, filename, hash, dir),
-            Format::Pdf => crate::pdf::convert(cfg, bytes, filename, hash, dir),
+            Format::Pptx => crate::pptx::convert(cfg, bytes, filename, source, dir),
+            Format::Docx => crate::docx::convert(cfg, bytes, filename, source, dir),
+            Format::Xlsx => crate::xlsx::convert(cfg, bytes, filename, source, dir),
+            Format::Pdf => crate::pdf::convert(cfg, bytes, filename, source, dir),
         }?;
         let s = &mut built.stages;
         let total = u64::try_from(started.elapsed().as_millis()).unwrap_or(u64::MAX);

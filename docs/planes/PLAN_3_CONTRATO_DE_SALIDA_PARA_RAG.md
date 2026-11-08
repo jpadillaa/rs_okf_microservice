@@ -21,7 +21,7 @@ Tamaños relativos, como en los planes anteriores: **S** (un cambio acotado en u
 | Requisito del pipeline | Situación con el perfil 1.2.0 | Trabajo |
 | --- | --- | --- |
 | Esquema uniforme y versionado | Hecho: modelo de salida común y ensamblador único (`R1`); `profile_version`, `converter_version` y `converter_commit` en `documento.md` y el informe (`C9`). Falta una descripción del frontmatter legible por máquina. | `I9` |
-| Identificadores del documento y sus unidades | Implícitos: la versión se reconoce por `source_file.sha256`, la unidad por su ruta en el bundle y el pasaje por `source_spans[].id`. No hay un campo con el identificador ni una identidad lógica que agrupe las versiones de un documento. Los de conversión y de unidad se hicieron después, en el perfil 1.4.0. | `I1`, `I2` |
+| Identificadores del documento y sus unidades | Implícitos: la versión se reconoce por `source_file.sha256`, la unidad por su ruta en el bundle y el pasaje por `source_spans[].id`. No hay un campo con el identificador ni una identidad lógica que agrupe las versiones de un documento. Los de conversión y de unidad se hicieron después, en el perfil 1.4.0, y la clave del documento en el 1.5.0. | `I1`, `I2` |
 | Mismos identificadores con el mismo documento y configuración | Las rutas y los localizadores son deterministas (`C1` lo prueba). La configuración que cambia la salida no se registra, así que la condición no se puede comprobar desde el bundle. | `I3` |
 | Trazabilidad: Excel (hoja y rango) | Hecho: `xlsx_range`. | — |
 | Trazabilidad: DOCX (ruta estructural, sin páginas) | Hecho: `docx_blocks` en orden estructural. | — |
@@ -59,6 +59,8 @@ Tamaños relativos, como en los planes anteriores: **S** (un cambio acotado en u
 **Decisión (8 de noviembre): fuera.** Si `converter_commit` entra en `conversion_id`. Con él, cualquier commit cambia todos los identificadores aunque el bundle sea igual; sin él, un cambio de extracción que no sube el perfil conserva identificadores con contenido distinto. La propuesta es dejarlo fuera y apoyarse en la regla de AGENTS.md: todo cambio de regla sube el perfil.
 
 ### I2. Identidad lógica y versiones del documento (M)
+
+**Estado:** implementado el 8 de noviembre (perfil 1.5.0). La clave admite de 1 a 256 caracteres ASCII visibles; puede ir antes o después del archivo en el formulario. Además de `documento.md` y el informe, la consulta de estado y el listado la exponen. Véase la [arquitectura técnica](../arquitectura/ARQUITECTURA_TECNICA_MICROSERVICIO_OKF.md#clave-del-documento-plan-3-i2).
 
 **Problema.** Cada subida es un trabajo nuevo con su original. Nada relaciona dos versiones del mismo documento, y el RAG no puede retirar la anterior al indexar la nueva.
 

@@ -1566,14 +1566,14 @@ fn pages_phrase(ns: &[usize]) -> String {
 pub(crate) fn build_bundle(
     bytes: &[u8],
     filename: &str,
-    hash: &str,
+    source: &crate::identity::Source,
     cfg: &Config,
     attempt: &FsPath,
 ) -> Result<Built> {
     let started = Instant::now();
     let generated = chrono_now();
     let settings = Settings::pdf(cfg);
-    let mut out = BundleWriter::create(Format::Pdf, attempt, hash, &settings)?;
+    let mut out = BundleWriter::create(Format::Pdf, attempt, source, &settings)?;
     let mut ex = extract(bytes, cfg, out.zip())?;
     let outline = outline(&mut ex, filename);
     let n = ex.pages.len();
@@ -2089,7 +2089,7 @@ pub(crate) fn build_bundle(
     let report = report(
         Format::Pdf,
         &generated,
-        hash,
+        source,
         &issues,
         &summary,
         &coverage,
@@ -2123,7 +2123,7 @@ pub(crate) fn build_bundle(
         &outline.title,
         &format!("Documento fuente {filename} convertido a conceptos OKF por secciones."),
         &generated,
-        hash,
+        source,
         &settings,
     )
     .with("source_spans", doc_spans)
@@ -2146,10 +2146,10 @@ pub(crate) fn convert(
     cfg: &Config,
     bytes: &[u8],
     filename: &str,
-    hash: &str,
+    source: &crate::identity::Source,
     dir: &FsPath,
 ) -> Result<Built> {
-    build_bundle(bytes, filename, hash, cfg, dir)
+    build_bundle(bytes, filename, source, cfg, dir)
 }
 
 /// Destinos de los enlaces Markdown que empiezan por `prefix`, en orden.
@@ -2349,7 +2349,14 @@ mod tests {
             path: zip,
             status: state,
             ..
-        } = build_bundle(&bytes, name, &hash, cfg, tmp.path()).unwrap();
+        } = build_bundle(
+            &bytes,
+            name,
+            &crate::identity::Source::new(&hash),
+            cfg,
+            tmp.path(),
+        )
+        .unwrap();
         let mut z = ZipArchive::new(fs::File::open(zip).unwrap()).unwrap();
         let mut md = HashMap::new();
         let mut names = HashSet::new();

@@ -8,10 +8,40 @@
 //!
 //! Cada concepto declara `unit_id`, que es `conversion_id`, una barra y su ruta en el
 //! bundle. Un pasaje se identifica con `unit_id` y su `source_spans[].id`.
+//!
+//! `document_key` (plan 3, I2) es la clave opaca con que el sistema de origen agrupa las
+//! versiones de un documento. El servicio la recibe con el original, la conserva sin
+//! interpretarla y no la usa en `conversion_id`: no cambia el contenido.
 use crate::output::Fields;
 use crate::settings::Settings;
 use anyhow::{Result, bail};
 use yaml_serde::Value as YamlValue;
+
+/// Longitud máxima de `document_key`, en caracteres.
+pub(crate) const MAX_KEY_LEN: usize = 256;
+
+/// ¿Es `key` una `document_key` admitida? De 1 a 256 caracteres ASCII visibles (sin
+/// espacios ni controles); el sistema de origen codifica cualquier otra clave.
+pub(crate) fn valid_key(key: &str) -> bool {
+    (1..=MAX_KEY_LEN).contains(&key.len()) && key.bytes().all(|b| (0x21..=0x7e).contains(&b))
+}
+
+/// Original de una conversión: su huella y, si se recibió, su `document_key`.
+#[derive(Clone, Debug)]
+pub(crate) struct Source {
+    pub(crate) sha256: String,
+    pub(crate) document_key: Option<String>,
+}
+
+impl Source {
+    /// Original sin `document_key`.
+    pub(crate) fn new(sha256: &str) -> Self {
+        Source {
+            sha256: sha256.to_owned(),
+            document_key: None,
+        }
+    }
+}
 
 /// Identificador de una conversión con el perfil actual.
 pub(crate) fn conversion_id(source_sha256: &str, settings: &Settings) -> String {
@@ -31,11 +61,26 @@ pub(crate) fn unit_id(conversion_id: &str, path: &str) -> String {
     format!("{conversion_id}/{path}")
 }
 
-/// Configuración e identificador de la conversión para `documento.md` y el informe.
-pub(crate) fn annotate(fields: Fields, source_sha256: &str, settings: &Settings) -> Fields {
+/// Configuración, identificador de la conversión y, si existe, `document_key` para
+/// `documento.md` y el informe.
+pub(crate) fn annotate(fields: Fields, source: &Source, settings: &Settings) -> Fields {
     settings
         .annotate(fields)
-        .with("conversion_id", conversion_id(source_sha256, settings))
+        .with("conversion_id", conversion_id(&source.sha256, settings))
+        .with_opt("document_key", source.document_key.as_deref())
+}
+
+/// `documento.md` y el informe declaran la misma `document_key`, o ninguno la declara,
+/// y es una clave admitida.
+pub(crate) fn check_key(document: &YamlValue, report: &YamlValue) -> Result<()> {
+    if document.get("document_key") != report.get("document_key") {
+        bail!("document_key difiere entre documento.md y el informe")
+    }
+    match document.get("document_key") {
+        None => Ok(()),
+        Some(k) if k.as_str().is_some_and(valid_key) => Ok(()),
+        Some(_) => bail!("document_key no es una clave admitida"),
+    }
 }
 
 /// `documento.md` y el informe declaran el mismo `conversion_id`, que corresponde a su
@@ -105,5 +150,28 @@ mod tests {
             unit_id(&a, "contenido/texto.md"),
             format!("{a}/contenido/texto.md")
         );
+    }
+
+    #[test]
+    fn document_keys_are_short_visible_ascii_and_must_agree() {
+        for ok in ["a", "sp:sites/finanzas/123", &"x".repeat(MAX_KEY_LEN)] {
+            assert!(valid_key(ok), "{ok}");
+        }
+        for bad in [
+            "",
+            "con espacio",
+            "línea",
+            "tab\t",
+            &"x".repeat(MAX_KEY_LEN + 1),
+        ] {
+            assert!(!valid_key(bad), "{bad}");
+        }
+        let with: YamlValue = yaml_serde::from_str("document_key: \"k-1\"").unwrap();
+        let without: YamlValue = yaml_serde::from_str("type: x").unwrap();
+        check_key(&with, &with).unwrap();
+        check_key(&without, &without).unwrap();
+        assert!(check_key(&with, &without).is_err());
+        let bad: YamlValue = yaml_serde::from_str("document_key: \"a b\"").unwrap();
+        assert!(check_key(&bad, &bad).is_err());
     }
 }

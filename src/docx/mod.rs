@@ -1180,7 +1180,7 @@ impl Render<'_> {
 pub(crate) fn build_bundle(
     bytes: &[u8],
     filename: &str,
-    hash: &str,
+    source: &crate::identity::Source,
     ex: &Extraction,
     attempt: &FsPath,
 ) -> Result<Built> {
@@ -1200,7 +1200,7 @@ pub(crate) fn build_bundle(
         },
         tally: Tally::default(),
     };
-    let mut out = BundleWriter::create(Format::Docx, attempt, hash, &Settings::none())?;
+    let mut out = BundleWriter::create(Format::Docx, attempt, source, &Settings::none())?;
     let mut entries = String::new();
     let mut content_entries = String::new();
     for k in 0..outline.sections.len() {
@@ -1483,7 +1483,7 @@ pub(crate) fn build_bundle(
     let report = report(
         Format::Docx,
         &generated,
-        hash,
+        source,
         &issues,
         &summary,
         "",
@@ -1499,7 +1499,7 @@ pub(crate) fn build_bundle(
         &outline.title,
         &format!("Documento fuente {filename} convertido a conceptos OKF por secciones."),
         &generated,
-        hash,
+        source,
         &Settings::none(),
     )
     .with("source_spans", doc_spans);
@@ -1537,14 +1537,14 @@ pub(crate) fn convert(
     cfg: &Config,
     bytes: &[u8],
     filename: &str,
-    hash: &str,
+    source: &crate::identity::Source,
     dir: &FsPath,
 ) -> Result<Built> {
     let ex = extract(bytes, cfg.max_blocks)?;
     if ex.blocks.is_empty() {
         return Err(Rejected("el documento no tiene bloques de contenido".into()).into());
     }
-    build_bundle(bytes, filename, hash, &ex, dir)
+    build_bundle(bytes, filename, source, &ex, dir)
 }
 
 /// Destinos de los enlaces Markdown que empiezan por `prefix`, en orden.
@@ -1668,7 +1668,7 @@ mod tests {
         } = build_bundle(
             &bytes,
             &name,
-            &hex(&Sha256::digest(&bytes)),
+            &crate::identity::Source::new(&hex(&Sha256::digest(&bytes))),
             &ex,
             tmp.path(),
         )

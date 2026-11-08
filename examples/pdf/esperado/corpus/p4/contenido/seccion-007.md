@@ -1,6 +1,6 @@
 ---
 type: "Source Section"
-unit_id: "d3d70c5a16999c4b656b676581125344ef3bcca34041c6bb605e4d3be7cdb3d3/contenido/seccion-007.md"
+unit_id: "b37c469f2c224b3eca3b199cb3eb70d653e8f8705c23d82629c8e4822297084e/contenido/seccion-007.md"
 title: "El principio de agencia mínima"
 description: "Sección 7 de p4.pdf: El principio de agencia mínima. El concepto más importante para un ingeniero que va a construir agentes no es técnico sino filosófico, aunque tiene consecuencias directas en cada línea de…"
 sources:

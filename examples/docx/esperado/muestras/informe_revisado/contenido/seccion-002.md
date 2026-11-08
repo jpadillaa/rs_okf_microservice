@@ -1,6 +1,6 @@
 ---
 type: "Source Section"
-unit_id: "116b9fbc1d4b9e6405f6a1e5ea024cf926e6939ec6d79f9eb0e05ca7e94f59f9/contenido/seccion-002.md"
+unit_id: "c0a8caa9db3cc59f78a3e00ab0ec47e70b2870d489c7c608d58ef7d53ead4d22/contenido/seccion-002.md"
 title: "1. Introducción"
 description: "Sección 2 de informe_revisado.docx: 1. Introducción. Este informe resume la evaluación del asistente de preguntas sobre los reglamentos y la documentación técnica de la maestría. La evaluación combinó métricas…"
 sources:

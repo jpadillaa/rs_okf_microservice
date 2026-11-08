@@ -265,14 +265,29 @@ pub struct Converted {
 }
 
 /// Convierte un original en el directorio del intento. Es el trabajo del proceso hijo.
-pub fn convert(cfg: &Config, original: &Path, filename: &str, dir: &Path) -> Result<Converted> {
+pub fn convert(
+    cfg: &Config,
+    original: &Path,
+    filename: &str,
+    document_key: Option<&str>,
+    dir: &Path,
+) -> Result<Converted> {
     let input = fs::File::open(original)
         .with_context(|| format!("no se pudo abrir el original {}", original.display()))?;
-    convert_file(cfg, input, filename, dir)
+    convert_file(cfg, input, filename, document_key, dir)
 }
 
-fn convert_file(cfg: &Config, input: fs::File, filename: &str, dir: &Path) -> Result<Converted> {
+fn convert_file(
+    cfg: &Config,
+    input: fs::File,
+    filename: &str,
+    document_key: Option<&str>,
+    dir: &Path,
+) -> Result<Converted> {
     let format = crate::format::require(filename)?;
+    if document_key.is_some_and(|k| !crate::identity::valid_key(k)) {
+        return Err(Rejected("document_key no admitida".into()).into());
+    }
     let mut bytes = Vec::new();
     input
         .take((cfg.max_upload_bytes() as u64).saturating_add(1))
@@ -280,8 +295,11 @@ fn convert_file(cfg: &Config, input: fs::File, filename: &str, dir: &Path) -> Re
     if bytes.len() > cfg.max_upload_bytes() {
         return Err(Rejected("el original supera OKF_MAX_UPLOAD_MB".into()).into());
     }
-    let hash = crate::bundle::hex(&Sha256::digest(&bytes));
-    let built = format.convert(cfg, &bytes, filename, &hash, dir)?;
+    let source = crate::identity::Source {
+        sha256: crate::bundle::hex(&Sha256::digest(&bytes)),
+        document_key: document_key.map(str::to_owned),
+    };
+    let built = format.convert(cfg, &bytes, filename, &source, dir)?;
     Ok(Converted {
         status: built.status,
         bundle: built.path,
@@ -322,11 +340,16 @@ pub(crate) fn install_panic_hook() {
 
 /// Subcomando interno `convert`: escribe el resultado como una línea JSON en la salida
 /// estándar o termina con el código del tipo de fallo y el mensaje en la salida de error.
-pub fn convert_command(original: &Path, dir: &Path, filename: &str) -> Result<()> {
+pub fn convert_command(
+    original: &Path,
+    dir: &Path,
+    filename: &str,
+    document_key: Option<&str>,
+) -> Result<()> {
     install_panic_hook();
     let cfg = Config::from_env()?;
     let result = crate::isolation::apply(&cfg, original, dir)
-        .and_then(|input| convert_file(&cfg, input, filename, dir));
+        .and_then(|input| convert_file(&cfg, input, filename, document_key, dir));
     match result {
         Ok(c) => {
             println!("{}", serde_json::to_string(&c)?);
@@ -347,6 +370,8 @@ struct Job {
     filename: String,
     original: String,
     attempt: u32,
+    /// Clave del documento recibida con el original (plan 3, I2).
+    document_key: Option<String>,
 }
 #[derive(Debug)]
 enum Outcome {
@@ -481,6 +506,12 @@ async fn run_child(
         .arg(original)
         .arg(dir)
         .arg(&job.filename)
+        // Con `=`, una clave que empieza por `-` no se lee como otra opción.
+        .args(
+            job.document_key
+                .iter()
+                .map(|k| format!("--document-key={k}")),
+        )
         .env(
             "OKF_MAX_MEMORY_MB",
             a.cfg.memory_limit_mb(&job.filename).to_string(),
@@ -611,13 +642,16 @@ async fn run_local(
     dir: &Path,
     usage: &mut Usage,
 ) -> Result<Outcome> {
-    let (cfg, original, filename, dir) = (
+    let (cfg, original, filename, key, dir) = (
         (*a.cfg).clone(),
         original.to_path_buf(),
         job.filename.clone(),
+        job.document_key.clone(),
         dir.to_path_buf(),
     );
-    let mut task = tokio::task::spawn_blocking(move || convert(&cfg, &original, &filename, &dir));
+    let mut task = tokio::task::spawn_blocking(move || {
+        convert(&cfg, &original, &filename, key.as_deref(), &dir)
+    });
     let mut watch = Watch {
         a,
         job,
@@ -776,7 +810,7 @@ async fn claim(a: &App) -> Result<Option<Job>> {
     tx.commit().await?;
     let mut tx = a.db.begin().await?;
     let row = sqlx::query(
-        "SELECT id,filename,original,attempt FROM jobs WHERE status='queued' AND \
+        "SELECT id,filename,original,attempt,document_key FROM jobs WHERE status='queued' AND \
         (retry_at IS NULL OR retry_at <= $1) ORDER BY created_at,id LIMIT 1 FOR UPDATE \
         SKIP LOCKED",
     )
@@ -792,6 +826,7 @@ async fn claim(a: &App) -> Result<Option<Job>> {
                 attempt: u32::try_from(r.try_get::<i64, _>(3)?)?
                     .checked_add(1)
                     .context("demasiados intentos")?,
+                document_key: r.try_get(4)?,
             })
         })
         .transpose()?;

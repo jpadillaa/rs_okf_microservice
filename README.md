@@ -40,15 +40,15 @@ docker compose build api
 docker compose up -d --no-build
 ```
 
-La API queda en `http://127.0.0.1:8080` (`POST /jobs`, `GET /jobs/{id}`, `GET /jobs/{id}/bundle`). API y worker aplican las migraciones de esquema al arrancar, con coordinación entre procesos. Ambos comparten el volumen `okf-data`; deben ver los mismos archivos. El worker alcanza PostgreSQL por una red interna y su proceso conversor bloquea sockets con seccomp en Linux, además de los límites y Landlock.
+La API queda en `http://127.0.0.1:8080` (`POST /jobs`, `GET /jobs?document_key=…`, `GET /jobs/{id}`, `GET /jobs/{id}/bundle`). API y worker aplican las migraciones de esquema al arrancar, con coordinación entre procesos. Ambos comparten el volumen `okf-data`; deben ver los mismos archivos. El worker alcanza PostgreSQL por una red interna y su proceso conversor bloquea sockets con seccomp en Linux, además de los límites y Landlock.
 
 API y worker usan la misma imagen `okf-microservice:local`: basta construirla una vez. BuildKit y `cargo-chef` reutilizan las dependencias cuando solo cambia el código. La imagen final usa Distroless Debian 13, conserva las fuentes y certificados y ejecuta el binario sin símbolos como UID 10001; no incluye shell ni gestor de paquetes. Para una revisión ya confirmada en Git, añade `--build-arg OKF_BUILD_COMMIT="$(git rev-parse HEAD)"` a `docker compose build`; sin argumento registra `unknown`. Consulta [Compilación y empaquetado Docker](docs/decisiones/COMPILACION_DOCKER.md) para las capas, cachés y mediciones.
 
 ## Probar los endpoints con Swagger UI
 
-Con el servicio iniciado, abre [Swagger UI](http://127.0.0.1:8080/docs/). La interfaz incluye los cinco endpoints, sus parámetros, respuestas y errores. **Try it out** está activado; expande una operación y pulsa **Execute** para enviar la petición.
+Con el servicio iniciado, abre [Swagger UI](http://127.0.0.1:8080/docs/). La interfaz incluye las seis operaciones, sus parámetros, respuestas y errores. **Try it out** está activado; expande una operación y pulsa **Execute** para enviar la petición.
 
-1. En `POST /jobs`, selecciona un `.pdf`, `.docx`, `.xlsx` o `.pptx` en `file` (por ejemplo, `examples/docx/breve.docx`) y pulsa **Execute**. La respuesta `202` contiene el `job_id`.
+1. En `POST /jobs`, selecciona un `.pdf`, `.docx`, `.xlsx` o `.pptx` en `file` (por ejemplo, `examples/docx/breve.docx`) y pulsa **Execute**. La respuesta `202` contiene el `job_id`. El campo opcional `document_key` agrupa las versiones de un mismo documento, que `GET /jobs` lista con esa clave.
 2. Copia ese identificador en `id` de `GET /jobs/{id}`. Ejecuta de nuevo mientras el estado sea `queued` o `processing`.
 3. Cuando sea `complete` o `partial`, ejecuta `GET /jobs/{id}/bundle` con el mismo `id` y guarda el ZIP desde **Download file**.
 

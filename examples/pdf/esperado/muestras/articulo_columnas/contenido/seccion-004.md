@@ -1,6 +1,6 @@
 ---
 type: "Source Section"
-unit_id: "ca8cc75dc57460f16d6c8be863bb96c4650638c87a391ec5762026102659cf5c/contenido/seccion-004.md"
+unit_id: "e5f1261cab357cb9227bfc51e134416c5b97caa399eb36275c00fe63fb406d9d/contenido/seccion-004.md"
 title: "2. Método"
 description: "Sección 4 de articulo_columnas.pdf: 2. Método. Se prepararon veinte documentos artificiales con columnas, tablas, figuras y notas al pie. Cada documento se convirtió con los dos procedimientos y un revisor…"
 sources:
