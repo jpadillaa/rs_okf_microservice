@@ -2,7 +2,7 @@
 
 **Tus documentos, organizados en un paquete que puedes leer, revisar y reutilizar.**
 
-Este repositorio convierte archivos PDF, Word, Excel y PowerPoint en un **ZIP con texto organizado, recursos, el documento original y un informe de conversión**. Cada parte conserva referencias a su origen para poder volver al documento del que salió.
+El servicio convierte archivos PDF, Word, Excel y PowerPoint en un **ZIP con texto organizado, recursos, el documento original y un informe de conversión**. Las referencias de cada parte permiten volver al documento original.
 
 ```mermaid
 flowchart LR
@@ -21,7 +21,7 @@ flowchart LR
 
 **OKF** significa *Open Knowledge Format*. Aquí llamamos **bundle** al paquete de archivos que sigue ese formato. El texto se guarda en **Markdown** (`.md`): archivos de texto con títulos, listas, tablas y enlaces.
 
-Puedes leer el resultado directamente o entregarlo a otro sistema de búsqueda o a un asistente de IA. La indexación y las respuestas a preguntas corresponden a ese otro sistema.
+Puedes leer el resultado directamente o entregarlo a un sistema de búsqueda o a un asistente de IA. Ese sistema se encarga de indexar el contenido y responder preguntas.
 
 **Elige por dónde empezar:** [ver el resultado](#qué-vas-a-recibir) · [ponerlo en marcha](#servicio-completo-con-docker) · [convertir tu primer archivo](#probar-los-endpoints-con-swagger-ui) · [consultar la documentación técnica](docs/README.md).
 
@@ -49,16 +49,16 @@ flowchart LR
     style d2_zip fill:#F5F3FF,stroke:#7C3AED,color:#4C1D95,stroke-width:2px;
 ```
 
-La organización se adapta al archivo que envías:
+La organización depende del formato del archivo que envías:
 
 | Si subes… | Encontrarás… | Ten en cuenta… |
 | --- | --- | --- |
-| 📄 **PDF** | Texto por secciones, referencias a páginas y recursos extraídos. | Los escaneos sin capa de texto necesitan activar el OCR. |
+| 📄 **PDF** | Texto por secciones, referencias a páginas y recursos extraídos. | Para transcribir escaneos sin capa de texto, activa el OCR. |
 | 📝 **Word · DOCX** | Secciones con títulos, listas, tablas, imágenes y notas. | Las referencias señalan bloques del documento, no páginas de Word. |
-| 📊 **Excel · XLSX** | Hojas y regiones de datos; las grandes incluyen archivos CSV y, cuando corresponde, detalle por celda. | Conserva las fórmulas y sus valores guardados; no recalcula el libro. |
+| 📊 **Excel · XLSX** | Hojas y regiones de datos; las regiones grandes incluyen archivos CSV y, cuando corresponde, detalle por celda. | Conserva las fórmulas y sus valores guardados; no recalcula el libro. |
 | 🖼️ **PowerPoint · PPTX** | Una parte por diapositiva, con texto, notas y una vista PNG. | Las vistas son estáticas; las animaciones no se reproducen. |
 
-El contenido se extrae y organiza sin resumirlo. Las notas que añade el conversor se distinguen del texto original. Si detecta pérdidas o incertidumbre, las declara en el informe.
+El conversor extrae y organiza el contenido sin resumirlo. Sus notas se distinguen del texto original. Si detecta pérdidas o incertidumbre, las declara en el informe.
 
 Puedes explorar [los documentos de ejemplo](examples/) y sus carpetas `esperado/` para ver resultados de referencia. Las reglas completas están en la [especificación del bundle](docs/especificacion/ESPECIFICACION_OKF.md).
 
@@ -82,7 +82,9 @@ flowchart LR
     linkStyle default stroke:#64748B,stroke-width:2px;
 ```
 
-Al aceptar el archivo, la API entrega un **`job_id`**, el número de seguimiento de esa conversión. Con él consultas el estado y descargas el resultado. Cada worker procesa un trabajo a la vez; el trabajo y los archivos se conservan entre reinicios.
+Al aceptar el archivo, la API entrega un **`job_id`**, el código de seguimiento de esa conversión. Con él consultas el estado y descargas el resultado.
+
+Cada worker procesa un trabajo a la vez. El trabajo y sus archivos se conservan entre reinicios.
 
 ### Cómo interpretar el estado
 
@@ -163,7 +165,7 @@ flowchart LR
 
 Comprueba que están activos con `docker compose ps`. Después abre [la salud del servicio](http://127.0.0.1:8080/health): `status: "ok"` indica que la base, el almacenamiento y el worker responden.
 
-Esta configuración está pensada para un solo equipo y escucha en `127.0.0.1`. Para dar acceso desde otra red, necesitas una puerta de entrada que autentique a los usuarios: el servicio no incluye autenticación propia.
+El acceso al servicio se limita a `127.0.0.1` en esta configuración, pensada para un solo equipo. Para dar acceso desde otra red, necesitas una puerta de entrada que autentique a los usuarios: el servicio no incluye autenticación propia.
 
 <details>
 <summary><strong>Detalles del despliegue: imagen, aislamiento y actualización</strong></summary>
@@ -172,7 +174,7 @@ API y worker usan la misma imagen `okf-microservice:local`; basta construirla un
 
 La imagen final usa Distroless Debian 13, con fuentes, certificados y modelos OCR incluidos. Ejecuta el binario sin símbolos como UID 10001 y no contiene shell ni gestor de paquetes. Las imágenes base están fijadas por digest, que identifica su contenido exacto.
 
-El worker accede a PostgreSQL por una red interna. Cada conversión corre en un proceso separado y con límites de memoria y tiempo. En Linux, seccomp bloquea sus conexiones de red y Landlock restringe las rutas a las que puede acceder.
+El worker accede a PostgreSQL por una red interna. Cada conversión se ejecuta en un proceso separado, con límites de memoria y tiempo. En Linux, seccomp bloquea las conexiones de red del proceso de conversión y Landlock restringe las rutas a las que este puede acceder.
 
 Para registrar qué revisión de Git produjo la imagen, construye una revisión ya confirmada con:
 
@@ -193,7 +195,7 @@ Consulta [Compilación y empaquetado Docker](docs/decisiones/COMPILACION_DOCKER.
 
 ## Probar los endpoints con Swagger UI
 
-**Swagger UI es la pantalla de pruebas de la API.** Abre [http://127.0.0.1:8080/docs/](http://127.0.0.1:8080/docs/) con el servicio iniciado. Cada *endpoint* es una dirección que realiza una operación, como subir o descargar un archivo.
+**Swagger UI es la pantalla de pruebas de la API.** Abre [http://127.0.0.1:8080/docs/](http://127.0.0.1:8080/docs/) con el servicio iniciado. Cada *endpoint* es una dirección de la API que permite realizar una operación, como subir o descargar un archivo.
 
 ```mermaid
 flowchart LR
@@ -231,7 +233,7 @@ En la subida puedes añadir:
 - **`document_key`:** una clave que agrupa versiones del mismo documento, por ejemplo `manual-equipo`. El servicio lista sus trabajos en orden de llegada; no elige cuál es la versión vigente.
 - **`access`:** permisos procedentes de otro sistema, escritos como JSON. El servicio los conserva en el resultado; no los aplica como control de acceso a la API.
 
-`GET /health` devuelve `503` si alguna comprobación falla, incluido un worker inactivo. `GET /metrics` entrega datos en formato Prometheus, una herramienta de monitorización.
+`GET /health` devuelve `503` si alguna comprobación falla, por ejemplo, si el worker está inactivo. `GET /metrics` entrega métricas en el formato de Prometheus, una herramienta de monitorización.
 
 El contrato [OpenAPI JSON](http://127.0.0.1:8080/api-docs/openapi.json) se genera desde el código. Swagger sirve todos sus recursos desde el propio binario, sin CDN ni validador externo; las peticiones van al mismo servicio que muestra la interfaz.
 
@@ -256,7 +258,7 @@ docker compose up -d --no-deps --force-recreate api
 
 ## OCR de PDF escaneados
 
-Un escaneo contiene una imagen de las letras. **OCR** es el reconocimiento que intenta convertir esas letras en texto. Se ejecuta localmente y está **apagado por defecto**.
+Un escaneo contiene una imagen de las letras. El **OCR** intenta reconocerlas y convertirlas en texto. Se ejecuta localmente y está **apagado por defecto**.
 
 ```mermaid
 flowchart TD
@@ -289,7 +291,7 @@ Después recrea el worker; la imagen Docker ya incluye los modelos que necesita:
 docker compose up -d --no-deps --force-recreate worker
 ```
 
-**Subes el PDF de la misma manera.** El servicio selecciona las páginas sin capa de texto que contienen una imagen grande; no aplica OCR a las páginas mixtas con texto digital. El resultado indica qué texto procede de OCR y su confianza. Las páginas que no logra transcribir dejan el resultado en `partial`; una confianza baja también puede producir ese estado.
+**Subes el PDF de la misma manera.** El servicio selecciona las páginas sin capa de texto que contienen una imagen grande; no aplica OCR a las páginas mixtas con texto digital. El resultado identifica el texto obtenido por OCR e indica la confianza del reconocimiento. Si el servicio no logra transcribir una página, el resultado queda en `partial`; una confianza baja también puede producir ese estado.
 
 <details>
 <summary><strong>Límites del OCR y ejecución fuera de Docker</strong></summary>
@@ -302,7 +304,7 @@ docker compose up -d --no-deps --force-recreate worker
 
 Con el plazo inicial, el rendimiento medido permite unas 12–40 páginas, según su densidad. Para escaneos largos puede ser necesario ampliar el plazo. Si se agota el presupuesto, las páginas restantes quedan como vistas y el bundle sale `partial`.
 
-Para ejecutar el binario en el equipo, descarga antes los modelos:
+Para usar OCR al ejecutar el binario en tu equipo, descarga antes los modelos:
 
 ```bash
 tools/ocr_models.sh
@@ -327,7 +329,7 @@ El OCR está orientado a texto impreso en alfabeto latino. Sus mediciones, ajust
 
 ## PostgreSQL de prueba y configuración
 
-La ruta Docker anterior usa la configuración de desarrollo incluida en `.env.example`. Abre los siguientes apartados si necesitas cambiar la conexión o trabajar con Rust directamente.
+La instalación con Docker usa la configuración de desarrollo incluida en `.env.example`. Abre los siguientes apartados si necesitas cambiar la conexión o trabajar con Rust directamente.
 
 <details>
 <summary><strong>Conexiones, credenciales de desarrollo y archivo .env</strong></summary>
@@ -359,13 +361,13 @@ El binario lee `.env` del directorio actual antes de crear hilos. Las variables 
 <details>
 <summary><strong>Ejecutar API y worker con Rust en tu equipo</strong></summary>
 
-Necesitas Rust 1.99 o posterior y una fuente TrueType para las vistas PPTX. Puedes indicar la fuente con `OKF_FONT_PATH`. Prepara `.env` como en la ruta Docker e inicia solo la base:
+Necesitas Rust 1.99 o posterior y una fuente TrueType para las vistas PPTX. Puedes indicar la fuente con `OKF_FONT_PATH`. Prepara `.env` como en la instalación con Docker e inicia solo la base:
 
 ```bash
 docker compose up -d --wait postgres
 ```
 
-Si ya tienes API y worker de Compose activos, detenlos antes de usar esta ruta para evitar conflictos con los procesos locales:
+Si ya tienes API y worker de Compose activos, detenlos antes de iniciar los procesos locales para evitar conflictos:
 
 ```bash
 docker compose stop api worker
@@ -401,7 +403,7 @@ El proyecto compara sus conversiones con resultados de referencia y mide cuánto
 <details>
 <summary><strong>Ejecutar las comprobaciones de desarrollo</strong></summary>
 
-Con Rust, PostgreSQL iniciado y `OKF_TEST_DATABASE_URL` configurada:
+Con Rust instalado, PostgreSQL en ejecución y `OKF_TEST_DATABASE_URL` configurada:
 
 ```bash
 cargo fmt
@@ -412,7 +414,7 @@ cargo deny check
 
 `cargo deny` es una herramienta adicional de auditoría de dependencias; debe estar instalada para ejecutar el último comando.
 
-Las pruebas del OCR usan los modelos de `models/ocr` o de `OKF_OCR_MODELS_DIR`. Se omiten si faltan; `tools/ocr_models.sh` los descarga. Para exigirlas también en local:
+Las pruebas del OCR usan los modelos de `models/ocr` o de `OKF_OCR_MODELS_DIR`. Estas pruebas se omiten si faltan los modelos; `tools/ocr_models.sh` los descarga. Para exigirlas también en tu equipo:
 
 ```bash
 OKF_REQUIRE_OCR_MODELS=1 cargo test --locked
