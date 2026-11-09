@@ -80,7 +80,8 @@ done
 # OCR local: con OKF_OCR_ENABLED=true, un PDF escaneado sale con texto, dentro de las
 # restricciones del hijo (Landlock, seccomp y límite de memoria).
 # Se sube con una clave de documento, que se lista y llega al bundle (plan 3, I2).
-id=$(curl -sf -F "document_key=smoke:ocr/1" -F "file=@examples/pdf/muestras/escaneado_ocr.pdf" \
+id=$(curl -sf -F "document_key=smoke:ocr/1" -F 'access={"grupos": ["smoke"]}' \
+    -F "file=@examples/pdf/muestras/escaneado_ocr.pdf" \
     "http://127.0.0.1:$port/jobs" | jq -r .job_id)
 docker run --rm --network "$network" --env-file "$data/service.env" -e OKF_OCR_ENABLED=true \
     -v "$volume:/data" "$image" worker --once
@@ -105,4 +106,7 @@ versions=$(curl -sf "http://127.0.0.1:$port/jobs?document_key=smoke%3Aocr%2F1")
 jq -e --arg id "$id" 'length == 1 and .[0].job_id == $id and (.[0].conversion_id | test("^[0-9a-f]{64}$"))' \
     <<<"$versions" >/dev/null || { echo "versiones: $versions" >&2; exit 1; }
 grep -qx 'document_key: "smoke:ocr/1"' <<<"$document"
+# Los permisos llegan al hijo en un archivo del intento, legible con Landlock (plan 3, I7).
+grep -qxF 'access: "{\"grupos\": [\"smoke\"]}"' <<<"$document" ||
+    { echo "access no llegó al bundle:" >&2; grep -n '^access\|^document_key' <<<"$document" >&2; exit 1; }
 echo "trabajo $id: OCR complete, bundle descargado y validado"

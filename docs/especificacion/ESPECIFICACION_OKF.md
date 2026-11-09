@@ -1,7 +1,7 @@
 # Perfil documental OKF para PDF, DOCX, XLSX y PPTX
 
 **Versión objetivo:** Open Knowledge Format (OKF) v0.2.  
-**Versión del perfil documental:** 1.9.0 (independiente de OKF v0.2).
+**Versión del perfil documental:** 1.10.0 (independiente de OKF v0.2).
 **Alcance:** especificar exclusivamente el bundle de salida. No define API, arquitectura, herramientas ni ejecución del conversor.
 
 Este perfil añade convenciones para convertir documentos a OKF sin perder estructura, contenido ni referencia al original. Las reglas indicadas como **OKF** proceden de la [especificación oficial](https://github.com/GoogleCloudPlatform/open-knowledge-format/blob/main/SPEC.md); las indicadas como **perfil** son requisitos de este proyecto. Un bundle puede cumplir OKF y aun así tener pérdidas de extracción: ambos controles se evalúan por separado.
@@ -34,7 +34,7 @@ bundle/
 └── conversion-report.md     # Cobertura e incidencias; concepto con type
 ```
 
-**Perfil:** `documento.md` y `conversion-report.md` declaran los mismos `converter_version` (versión del paquete), `converter_commit` (SHA Git de 40 caracteres; `unknown` si la fuente no lo proporciona) y `profile_version` (`1.9.0`). Son extensiones del perfil, no campos oficiales de OKF.
+**Perfil:** `documento.md` y `conversion-report.md` declaran los mismos `converter_version` (versión del paquete), `converter_commit` (SHA Git de 40 caracteres; `unknown` si la fuente no lo proporciona) y `profile_version` (`1.10.0`). Son extensiones del perfil, no campos oficiales de OKF.
 
 **Perfil: configuración de la conversión.** `documento.md` y `conversion-report.md` declaran también, con el mismo valor, la configuración que cambia el contenido del bundle de su formato (`conversion_settings`) y su huella (`settings_sha256`). Dos conversiones del mismo original con el mismo perfil y la misma huella usaron la misma configuración. Los parámetros que solo limitan o rechazan el trabajo no forman parte de ella.
 
@@ -49,6 +49,8 @@ bundle/
 **Perfil: identificadores.** `documento.md` y `conversion-report.md` declaran el mismo `conversion_id`: el SHA-256, en hexadecimal en minúsculas, de `{"profile_version":…,"settings_sha256":…,"source_sha256":…}` en la forma canónica anterior, con la versión del perfil, la huella de la configuración y la huella del original. Todo concepto, incluidos `documento.md` y el informe, declara `unit_id`: `conversion_id`, una barra y su ruta en el bundle (`<conversion_id>/contenido/seccion-003.md`). Un pasaje se identifica con el `unit_id` de su concepto y su `source_spans[].id`. Convertir el mismo original con el mismo perfil y la misma configuración da los mismos identificadores, salvo que la conversión declare `reproducible: false`; cambiar cualquiera de los tres los cambia todos. La versión y el commit del conversor no intervienen: una corrección que cambia el contenido sin cambiar una regla de este perfil conserva los identificadores, y quien necesite distinguirla compara `converter_commit`.
 
 **Perfil: clave del documento.** Si el original llegó con una clave del sistema de origen que agrupa las versiones de un mismo documento, `documento.md` y `conversion-report.md` la declaran, con el mismo valor, en `document_key`: de 1 a 256 caracteres ASCII visibles, sin espacios (el sistema de origen codifica cualquier otra clave). Sin clave, el campo no aparece. La clave se conserva sin interpretarla y no interviene en `conversion_id`: dos versiones con la misma clave y distinto original tienen identificadores distintos, y el mismo original con otra clave tiene los mismos. Este perfil no decide cuál es la versión vigente.
+
+**Perfil: permisos recibidos.** Si el original llegó con permisos del sistema de origen, `documento.md` y `conversion-report.md` los declaran, con el mismo valor, en `access`: una cadena con el JSON tal como se recibió, sin interpretarlo, reescribirlo ni ampliarlo. Sin permisos, el campo no aparece. Las restricciones que declara el propio original se registran como observación y no se aplican: un PDF cifrado que se abre sin contraseña y cuyos permisos no autorizan copiar, extraer para accesibilidad, imprimir o modificar; un DOCX con protección de edición (`w:documentProtection` aplicada) o contra escritura; un XLSX con la estructura del libro protegida o con hojas protegidas. El documento se convierte igualmente. Los permisos que valen para el bundle son los recibidos en `access`.
 
 **Perfil:** `documento.md`, `conversion-report.md` y el original son obligatorios. `documento.md` registra `source_file.path` como ruta del original relativa a la raíz del bundle y `source_file.sha256` como 64 caracteres hexadecimales de sus bytes; el informe repite esa huella. Los recursos no Markdown son adjuntos, no conceptos OKF. Toda imagen o archivo de datos sustantivo se enlaza desde el concepto correspondiente. Las rutas son únicas y estables; se usa un ordinal cuando importa el orden editorial. Se puede entregar el directorio como ZIP sin alterar su estructura interna.
 
@@ -204,6 +206,12 @@ El perfil se limita a `.pdf`, `.docx`, `.xlsx` y `.pptx`. Los formatos binarios 
 Todo cambio de una regla de esta especificación incrementa `profile_version` en la
 especificación y en `src/version.rs`, con una entrada aquí, en el mismo commit.
 
+- **1.10.0 — 8 de noviembre de 2026:** `documento.md` y el informe declaran los permisos
+  recibidos con el original (`access`), y el informe registra como observación las
+  restricciones que declara el propio original, que no se aplican (§2; plan 3, I7). Sin
+  permisos ni restricciones, los bundles solo cambian en `profile_version` y, con ella, en
+  `conversion_id` y `unit_id`. El validador exige que documento e informe declaren el
+  mismo `access` y que sea JSON válido; acepta también los bundles 1.0.0 a 1.9.0.
 - **1.9.0 — 8 de noviembre de 2026:** las notas que escribe el conversor en el cuerpo
   van precedidas de `<!-- okf-generated -->`, y la especificación declara qué otro texto
   es generado (§4; plan 3, I8). Los bundles de referencia ganan 112 marcadores y no

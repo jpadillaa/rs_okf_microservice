@@ -56,6 +56,8 @@ pub(crate) struct Extraction {
     alt_chunks: Vec<usize>,
     /// Bloque (desde 0) de cada marcador del cuerpo, destino de los enlaces internos.
     bookmarks: HashMap<String, usize>,
+    /// Protección que declara el documento (plan 3, I7).
+    restrictions: Vec<String>,
 }
 
 /// Número de bloques del cuerpo de un DOCX: la base de los localizadores.
@@ -166,6 +168,25 @@ pub(crate) fn extract(bytes: &[u8], max_blocks: usize) -> Result<Extraction> {
             smartart_texts.insert(d.clone(), smartart_text(&root));
         }
     }
+    // Protección del documento (plan 3, I7): se declara y no se aplica.
+    let mut restrictions = Vec::new();
+    for path in related(&doc_rels, &main, "/settings") {
+        let Some(settings) = parse_entry(&mut z, &path) else {
+            continue;
+        };
+        if let Some(p) = settings.find(b"documentProtection")
+            && p.attr(b"enforcement")
+                .is_some_and(|e| matches!(e, "1" | "true" | "on"))
+        {
+            restrictions.push(format!(
+                "el documento restringe la edición ({})",
+                p.attr(b"edit").unwrap_or("sin tipo")
+            ));
+        }
+        if settings.find(b"writeProtection").is_some() {
+            restrictions.push("el documento está protegido contra escritura".into());
+        }
+    }
     let core_title = parse_entry(&mut z, "docProps/core.xml")
         .and_then(|root| root.find(b"title").map(read::node_text))
         .map(|t| t.split_whitespace().collect::<Vec<_>>().join(" "))
@@ -184,6 +205,7 @@ pub(crate) fn extract(bytes: &[u8], max_blocks: usize) -> Result<Extraction> {
         core_title,
         alt_chunks,
         bookmarks: std::mem::take(&mut reader.bookmarks),
+        restrictions,
     })
 }
 
@@ -1362,7 +1384,7 @@ pub(crate) fn build_bundle(
         .filter(|b| matches!(b, Block::Table(_)))
         .count();
     let t = &r.tally;
-    let mut issues = Vec::new();
+    let mut issues: Vec<Issue> = restrictions_note(&ex.restrictions).into_iter().collect();
     let mut grouped = |ns: &[usize], severity: Severity, text: &str| {
         if !ns.is_empty() {
             issues.push(Issue {
@@ -1763,6 +1785,43 @@ mod tests {
     }
 
     /// `guia_tecnica.docx` con su `document.xml` modificado por `edit`, escrito en `dir`.
+    #[test]
+    fn document_protection_is_declared_and_not_applied() {
+        use std::io::{Read, Write};
+        let tmp = tempfile::tempdir().unwrap();
+        let path = tmp.path().join("protegido.docx");
+        let mut src =
+            ZipArchive::new(fs::File::open("examples/docx/muestras/guia_tecnica.docx").unwrap())
+                .unwrap();
+        let mut dst = zip::ZipWriter::new(fs::File::create(&path).unwrap());
+        for i in 0..src.len() {
+            let mut e = src.by_index(i).unwrap();
+            let name = e.name().to_string();
+            let mut data = Vec::new();
+            e.read_to_end(&mut data).unwrap();
+            if name == "word/settings.xml" {
+                data = String::from_utf8(data)
+                    .unwrap()
+                    .replacen(
+                        "<w:defaultTabStop",
+                        "<w:documentProtection w:edit=\"readOnly\" w:enforcement=\"1\"/><w:defaultTabStop",
+                        1,
+                    )
+                    .into_bytes();
+                assert!(String::from_utf8_lossy(&data).contains("documentProtection"));
+            }
+            dst.start_file(name, zip::write::SimpleFileOptions::default())
+                .unwrap();
+            dst.write_all(&data).unwrap();
+        }
+        dst.finish().unwrap();
+        let (_, state, md) = convert_example(path.to_str().unwrap());
+        assert_eq!(state, "complete");
+        assert!(md["conversion-report.md"].contains(
+            "El original declara restricciones: el documento restringe la edición (readOnly); el conversor no las aplica"
+        ));
+    }
+
     fn edited_guide(dir: &FsPath, edit: impl Fn(String) -> String) -> String {
         use std::io::{Read, Write};
         let mut src =

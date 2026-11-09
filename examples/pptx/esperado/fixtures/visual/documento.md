@@ -11,7 +11,7 @@ generated:
   at: "<generado>"
 converter_version: "0.1.0"
 converter_commit: "<commit>"
-profile_version: "1.9.0"
+profile_version: "1.10.0"
 conversion_settings:
   view_font_sha256: "<fuente>"
 settings_sha256: "<huella>"

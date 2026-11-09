@@ -2,17 +2,17 @@
 use crate::output::Fields;
 use serde::{Deserialize, Serialize};
 
-pub(crate) const PROFILE: &str = "1.9.0";
+pub(crate) const PROFILE: &str = "1.10.0";
 /// Perfiles anteriores cuyos bundles siguen siendo válidos: 1.1.0 añadió reglas para
 /// páginas que un bundle 1.0.0 no puede contener (OCR del servicio), 1.2.0 solo cambia
 /// qué guiones de fin de línea conserva el texto PDF, que el validador no comprueba,
 /// 1.3.0 añade la configuración de la conversión, 1.4.0 sus identificadores, 1.5.0 la
 /// `document_key` opcional, 1.6.0 las relaciones entre conceptos, 1.7.0 las referencias
 /// internas resueltas o marcadas y el inventario de externas, 1.8.0 las cajas PDF y
-/// los localizadores de forma PPTX, y 1.9.0 el marcador del texto generado, que los
-/// anteriores no declaran.
-const PREVIOUS_PROFILES: [&str; 9] = [
-    "1.0.0", "1.1.0", "1.2.0", "1.3.0", "1.4.0", "1.5.0", "1.6.0", "1.7.0", "1.8.0",
+/// los localizadores de forma PPTX, 1.9.0 el marcador del texto generado y 1.10.0 los
+/// permisos recibidos (`access`), que los anteriores no declaran.
+const PREVIOUS_PROFILES: [&str; 10] = [
+    "1.0.0", "1.1.0", "1.2.0", "1.3.0", "1.4.0", "1.5.0", "1.6.0", "1.7.0", "1.8.0", "1.9.0",
 ];
 /// Perfiles anteriores a `conversion_settings` (plan 3, I3).
 const WITHOUT_SETTINGS: [&str; 3] = ["1.0.0", "1.1.0", "1.2.0"];
@@ -140,6 +140,7 @@ mod tests {
         assert!(check(&doc, &report).is_err());
         for v in [
             "1.0.0", "1.1.0", "1.2.0", "1.3.0", "1.4.0", "1.5.0", "1.6.0", "1.7.0", "1.8.0",
+            "1.9.0",
         ] {
             let mut previous = doc.clone();
             previous["profile_version"] = v.into();

@@ -56,9 +56,9 @@ Estados: `queued → processing → complete | partial | failed`; el paso 4 ocur
 
 | Operación documentada | Entrada y respuesta |
 | --- | --- |
-| `POST /jobs` | Formulario `multipart/form-data` con archivo `file` y, opcional, `document_key` (antes o después del archivo); `202` con `job_id` y `queued`. El original se escribe en disco a medida que llega, con su SHA-256 calculado en el mismo paso, sin reunirlo en memoria. Documenta los rechazos `400` (formulario, nombre, archivo vacío o `document_key` no admitida o repetida), `413` (tamaño), `415`, `429`, `500` y `507`; un rechazo borra lo escrito. |
+| `POST /jobs` | Formulario `multipart/form-data` con archivo `file` y, opcionales, `document_key` y `access` (antes o después del archivo); `202` con `job_id` y `queued`. El original se escribe en disco a medida que llega, con su SHA-256 calculado en el mismo paso, sin reunirlo en memoria. Documenta los rechazos `400` (formulario, nombre, archivo vacío, `document_key` no admitida o `access` que no es JSON, supera `OKF_MAX_ACCESS_BYTES` o se repite), `413` (tamaño), `415`, `429`, `500` y `507`; un rechazo borra lo escrito. |
 | `GET /jobs?document_key=…` | `200` con los trabajos de esa clave en orden de llegada: `job_id`, estado, SHA-256 del original, `conversion_id` (o `null`) y fecha de subida en ISO 8601; lista vacía si no hay ninguno; `400` sin clave o con una no admitida. |
-| `GET /jobs/{id}` | Identificador del trabajo; `200` con estado, intento, error, versiones, `conversion_id` y `document_key`; `404` si no existe, `500` si falla la consulta. |
+| `GET /jobs/{id}` | Identificador del trabajo; `200` con estado, intento, error, versiones, `conversion_id`, `document_key` y `access`; `404` si no existe, `500` si falla la consulta. |
 | `GET /jobs/{id}/bundle` | `200` con ZIP, `Content-Length` y `Content-Disposition` de descarga para `complete`/`partial`, enviado por partes desde el archivo; `404` si no existe o no está publicado, `410` si expiró y `500` ante un error de lectura. |
 | `GET /health` | `200` o `503` con las comprobaciones de PostgreSQL, almacenamiento y latido del worker. |
 | `GET /metrics` | `200` en texto Prometheus 0.0.4; `500` ante un error de consulta. |
@@ -106,6 +106,7 @@ La primera entrega implementó la ruta completa con PPTX; la segunda añadió el
 | `OKF_OCR_MEMORY_MB` | 256 | MB que se suman a `OKF_MAX_MEMORY_MB` (vigilancia de RSS y `RLIMIT_AS`) en la conversión de un PDF con el OCR activo; los demás formatos conservan su límite. |
 | `OKF_REQUIRE_OCR_MODELS` | sin definir | Solo pruebas: su presencia hace fallar las pruebas del OCR si faltan los modelos, en vez de omitirlas. La CI la fija. |
 | `OKF_MAX_IMAGE_PIXELS` | 33554432 | Píxeles máximos de una imagen que el conversor decodifica (imágenes PDF que no se copian como JPEG); una imagen mayor no se adjunta y se declara como pérdida. Las vistas PPTX aplican el presupuesto fijo del renderizador, que es el mismo valor, y declaran igual las imágenes omitidas. |
+| `OKF_MAX_ACCESS_BYTES` | 16384 | Tamaño máximo, en bytes, del campo `access` de una subida; uno mayor, mal formado o repetido recibe `400`. |
 
 **Valores fijos.** Algunos plazos internos y un límite no se configuran, porque ningún despliegue necesita ajustarlos y algunos deben coincidir entre la API y los workers: vigencia de la asignación, 60 s, renovada cada tercio; espera antes del primer reintento, 30 s, duplicada en cada intento con tope de una hora; antigüedad máxima del latido, 30 s, renovado cada 10 s; y 256 descriptores abiertos en el conversor (RLIMIT_NOFILE). Están en `Config::default` (`src/worker.rs`); si un despliegue llega a necesitar otro valor, se vuelve a exponer como variable.
 
@@ -331,6 +332,25 @@ bloque. El validador PDF reconoce las notas iniciales de un concepto por lo que 
 marcador. La prueba `removing_generated_notes_loses_no_original_words`
 (`src/coverage.rs`) quita cada marcador y su bloque de los 27 ejemplos y comprueba que
 la cobertura frente a la referencia independiente no cambia.
+
+### Permisos recibidos (plan 3, I7)
+
+La API acepta `access`, un JSON opaco de hasta `OKF_MAX_ACCESS_BYTES`, como campo del
+formulario. Se guarda tal como llega en la columna `access` de `jobs` (migración `0005`)
+y la consulta de estado lo devuelve como cadena. El worker no lo pasa en los argumentos
+del hijo, que cualquier usuario del sistema ve: lo escribe en `access.json`, dentro del
+directorio del intento, que Landlock deja leer al hijo, y le pasa `--access-file`. El hijo
+lo vuelve a comprobar y el ensamblador lo copia en `documento.md` y en el informe a
+través de `Source`. No se escribe en el registro de diagnóstico ni en las métricas.
+El servicio no autentica ni aplica permisos: hacer respetar `access` en la descarga es
+tarea del proxy que está delante y del consumidor.
+
+Las restricciones del propio original se declaran como observación con
+`restrictions_note` (`src/bundle.rs`). En PDF, `read::restrictions` lee los permisos
+(`/P`) de un documento cifrado que se abrió con la contraseña vacía. En DOCX, el lector
+mira `w:documentProtection` aplicada y `w:writeProtection` de `word/settings.xml`. En
+XLSX, `workbookProtection` del libro y, durante la lectura en streaming de cada hoja,
+su `sheetProtection`.
 
 ### Validación independiente (plan 2, C10)
 

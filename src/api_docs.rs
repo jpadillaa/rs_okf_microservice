@@ -18,6 +18,10 @@ pub(crate) struct Upload {
         pattern = "^[!-~]+$"
     )]
     document_key: Option<String>,
+    /// Permisos opcionales del sistema de origen: un JSON que el servicio conserva sin
+    /// interpretar ni ampliar, de hasta `OKF_MAX_ACCESS_BYTES` (16 KiB por defecto).
+    #[schema(nullable = false)]
+    access: Option<String>,
 }
 
 #[derive(utoipa::ToSchema)]
@@ -135,6 +139,7 @@ mod tests {
         let upload = &doc["components"]["schemas"]["Upload"];
         assert_eq!(upload["required"], serde_json::json!(["file"]));
         assert_eq!(upload["properties"]["document_key"]["type"], "string");
+        assert_eq!(upload["properties"]["access"]["type"], "string");
         let list = &paths["/jobs"]["get"]["parameters"][0];
         assert_eq!(
             (&list["name"], &list["in"]),

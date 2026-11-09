@@ -92,6 +92,25 @@ async fn child_process_is_converted_or_stopped_at_its_limits() {
     );
     assert!(!log.contains(key), "{log}");
 
+    // Los permisos llegan al hijo en un archivo del intento, no en sus argumentos, y al
+    // bundle sin cambios (plan 3, I7).
+    let access = r#"{"grupos": ["finanzas"]}"#;
+    std::fs::copy("examples/pptx/simple.pptx", root.join("originals/acc.pptx")).unwrap();
+    sqlx::query("INSERT INTO jobs(id,filename,original,sha256,status,created_at,access) VALUES('acc','simple.pptx','originals/acc.pptx','-','queued',0,$1)")
+        .bind(access).execute(&db).await.unwrap();
+    let log = worker_once(root, &[]);
+    assert_eq!(job(&db, "acc").await, ("complete".into(), None));
+    let mut z =
+        zip::ZipArchive::new(std::fs::File::open(root.join("published/acc/bundle.zip")).unwrap())
+            .unwrap();
+    let mut document = String::new();
+    std::io::Read::read_to_string(&mut z.by_name("documento.md").unwrap(), &mut document).unwrap();
+    assert!(
+        document.contains(r#"access: "{\"grupos\": [\"finanzas\"]}""#),
+        "{document}"
+    );
+    assert!(!log.contains("finanzas"), "{log}");
+
     // Los cuatro formatos deben poder leer sus recursos con el aislamiento activo.
     for (format, source) in [
         ("docx", "examples/docx/breve.docx"),

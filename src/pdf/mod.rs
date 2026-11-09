@@ -209,6 +209,8 @@ pub(crate) struct Tally {
 }
 
 pub(crate) struct Extraction {
+    /// Lo que los permisos del PDF no autorizan (plan 3, I7).
+    pub(crate) restrictions: Vec<String>,
     pub(crate) pages: Vec<PageInfo>,
     pub(crate) units: Vec<Unit>,
     pub(crate) furniture: Vec<Furniture>,
@@ -380,6 +382,7 @@ pub(crate) fn extract(
         .into());
     }
     let info = read::info(&first);
+    let restrictions = read::restrictions(&first);
     let bookmarks = read::bookmarks(&first);
     let internal_labels = read::internal_labels(&first, n);
     // Un documento grande se reabre en cada página y no se conserva el primero.
@@ -968,6 +971,7 @@ pub(crate) fn extract(
     }
     tally.images = written.len() - furniture_images.len();
     Ok(Extraction {
+        restrictions,
         pages,
         units: merged,
         furniture,
@@ -1908,7 +1912,7 @@ pub(crate) fn build_bundle(
     if in_document > 0 {
         unresolved.push(format!("documento.md ({in_document})"));
     }
-    let mut issues = Vec::new();
+    let mut issues: Vec<Issue> = restrictions_note(&ex.restrictions).into_iter().collect();
     if !unresolved.is_empty() {
         issues.push(Issue::note(format!(
             "Enlaces internos sin destino en {}; se conserva su texto con la marca {UNRESOLVED_TEXT}",
@@ -2546,6 +2550,43 @@ mod tests {
     /// los nombres de todas las entradas del bundle.
     fn convert_example(path: &str) -> (String, HashMap<String, String>, HashSet<String>) {
         convert_with(path, &Config::default())
+    }
+
+    #[test]
+    fn a_pdf_that_forbids_copying_is_converted_and_its_restrictions_declared() {
+        use pdf_oxide::editor::{DocumentEditor, SaveOptions};
+        use pdf_oxide::editor::{EncryptionAlgorithm, EncryptionConfig, Permissions};
+        // Cifrado con contraseña de usuario vacía: se abre sin pedirla, pero sus
+        // permisos prohíben copiar e imprimir.
+        let plain = fs::read("examples/pdf/muestras/breve.pdf").unwrap();
+        let mut editor = DocumentEditor::from_bytes(plain).unwrap();
+        let permissions = Permissions {
+            print: false,
+            print_high_quality: false,
+            modify: true,
+            copy: false,
+            annotate: true,
+            fill_forms: true,
+            accessibility: true,
+            assemble: true,
+        };
+        let config = EncryptionConfig::new("", "propietario")
+            .with_algorithm(EncryptionAlgorithm::Aes256)
+            .with_permissions(permissions);
+        let locked = editor
+            .save_to_bytes_with_options(SaveOptions::with_encryption(config))
+            .unwrap();
+        let tmp = tempfile::tempdir().unwrap();
+        let path = tmp.path().join("protegido.pdf");
+        fs::write(&path, locked).unwrap();
+        let (state, md, _) = convert_with(path.to_str().unwrap(), &Config::default());
+        assert_eq!(state, "complete");
+        let report = &md["conversion-report.md"];
+        assert!(
+            report.contains("El original declara restricciones: el PDF no permite copiar texto y gráficos; el PDF no permite imprimir; el conversor no las aplica"),
+            "{report}"
+        );
+        assert!(md["contenido/texto.md"].contains("reservas"));
     }
 
     fn convert_with(

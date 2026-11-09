@@ -1,6 +1,6 @@
 ---
 type: "Source Document"
-unit_id: "539e5048c3b74a9fcb1672e41b60db44e52a40f56f16f83bfda043e08c18d780/documento.md"
+unit_id: "c2bbd698eaa9d3b52b913ca8c3b129436d193aed3152d199673afd2fc6ddc571/documento.md"
 title: "Manual de operación del laboratorio"
 description: "Documento fuente formato_directo.docx convertido a conceptos OKF por secciones."
 sources:
@@ -11,10 +11,10 @@ generated:
   at: "<generado>"
 converter_version: "0.1.0"
 converter_commit: "<commit>"
-profile_version: "1.9.0"
+profile_version: "1.10.0"
 conversion_settings: {}
 settings_sha256: "44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a"
-conversion_id: "539e5048c3b74a9fcb1672e41b60db44e52a40f56f16f83bfda043e08c18d780"
+conversion_id: "c2bbd698eaa9d3b52b913ca8c3b129436d193aed3152d199673afd2fc6ddc571"
 source_file:
   path: "references/original.docx"
   sha256: "069f7c644fc5132671bdc2fc2f8262bf2aa92232e63645cf819dc88f3a44f6f5"

@@ -68,6 +68,8 @@ pub struct Config {
     pub zip: crate::ooxml::ZipLimits,
     /// Píxeles máximos de una imagen que el conversor decodifica (`OKF_MAX_IMAGE_PIXELS`).
     pub max_image_pixels: u64,
+    /// Tamaño máximo del campo `access` de una subida, en bytes (`OKF_MAX_ACCESS_BYTES`).
+    pub max_access_bytes: usize,
     /// OCR local de las páginas PDF escaneadas (`OKF_OCR_*`).
     pub ocr: OcrSettings,
 }
@@ -120,6 +122,7 @@ impl Default for Config {
             min_free_mb: 0,
             zip: crate::ooxml::ZipLimits::default(),
             max_image_pixels: 33_554_432,
+            max_access_bytes: 16_384,
             ocr: OcrSettings::default(),
         }
     }
@@ -161,6 +164,7 @@ impl Config {
                 entries: var("OKF_MAX_ZIP_ENTRIES", d.zip.entries)?,
             },
             max_image_pixels: var("OKF_MAX_IMAGE_PIXELS", d.max_image_pixels)?,
+            max_access_bytes: var("OKF_MAX_ACCESS_BYTES", d.max_access_bytes)?,
             ocr: OcrSettings {
                 enabled: var("OKF_OCR_ENABLED", d.ocr.enabled)
                     .map_err(|_| anyhow::anyhow!("OKF_OCR_ENABLED debe ser true o false"))?,
@@ -269,24 +273,43 @@ pub fn convert(
     cfg: &Config,
     original: &Path,
     filename: &str,
-    document_key: Option<&str>,
+    received: &Received,
     dir: &Path,
 ) -> Result<Converted> {
     let input = fs::File::open(original)
         .with_context(|| format!("no se pudo abrir el original {}", original.display()))?;
-    convert_file(cfg, input, filename, document_key, dir)
+    convert_file(cfg, input, filename, received, dir)
+}
+
+/// Datos recibidos con el original que el bundle conserva sin interpretar (plan 3, I2 e
+/// I7).
+#[derive(Clone, Debug, Default)]
+pub struct Received {
+    pub document_key: Option<String>,
+    pub access: Option<String>,
 }
 
 fn convert_file(
     cfg: &Config,
     input: fs::File,
     filename: &str,
-    document_key: Option<&str>,
+    received: &Received,
     dir: &Path,
 ) -> Result<Converted> {
     let format = crate::format::require(filename)?;
-    if document_key.is_some_and(|k| !crate::identity::valid_key(k)) {
+    if received
+        .document_key
+        .as_deref()
+        .is_some_and(|k| !crate::identity::valid_key(k))
+    {
         return Err(Rejected("document_key no admitida".into()).into());
+    }
+    if received
+        .access
+        .as_deref()
+        .is_some_and(|a| !crate::identity::valid_access(a))
+    {
+        return Err(Rejected("access no es un JSON válido".into()).into());
     }
     let mut bytes = Vec::new();
     input
@@ -297,7 +320,8 @@ fn convert_file(
     }
     let source = crate::identity::Source {
         sha256: crate::bundle::hex(&Sha256::digest(&bytes)),
-        document_key: document_key.map(str::to_owned),
+        document_key: received.document_key.clone(),
+        access: received.access.clone(),
     };
     let built = format.convert(cfg, &bytes, filename, &source, dir)?;
     Ok(Converted {
@@ -345,11 +369,23 @@ pub fn convert_command(
     dir: &Path,
     filename: &str,
     document_key: Option<&str>,
+    access_file: Option<&Path>,
 ) -> Result<()> {
     install_panic_hook();
     let cfg = Config::from_env()?;
-    let result = crate::isolation::apply(&cfg, original, dir)
-        .and_then(|input| convert_file(&cfg, input, filename, document_key, dir));
+    let result = crate::isolation::apply(&cfg, original, dir).and_then(|input| {
+        // El archivo de permisos está en el directorio del intento, legible tras el
+        // aislamiento.
+        let access = access_file
+            .map(fs::read_to_string)
+            .transpose()
+            .context("no se pudo leer el archivo de permisos")?;
+        let received = Received {
+            document_key: document_key.map(str::to_owned),
+            access,
+        };
+        convert_file(&cfg, input, filename, &received, dir)
+    });
     match result {
         Ok(c) => {
             println!("{}", serde_json::to_string(&c)?);
@@ -370,8 +406,8 @@ struct Job {
     filename: String,
     original: String,
     attempt: u32,
-    /// Clave del documento recibida con el original (plan 3, I2).
-    document_key: Option<String>,
+    /// Clave del documento y permisos recibidos con el original (plan 3, I2 e I7).
+    received: Received,
 }
 #[derive(Debug)]
 enum Outcome {
@@ -494,6 +530,14 @@ async fn run_child(
     dir: &Path,
     usage: &mut Usage,
 ) -> Result<Outcome> {
+    let access_file = match &job.received.access {
+        Some(access) => {
+            let f = dir.join("access.json");
+            fs::write(&f, access)?;
+            Some(f)
+        }
+        None => None,
+    };
     let mut command = tokio::process::Command::new(exe);
     command.env_clear();
     for key in ["PATH", "TMPDIR", "TMP", "TEMP", "OKF_FONT_PATH", "RUST_LOG"] {
@@ -508,9 +552,17 @@ async fn run_child(
         .arg(&job.filename)
         // Con `=`, una clave que empieza por `-` no se lee como otra opción.
         .args(
-            job.document_key
+            job.received
+                .document_key
                 .iter()
                 .map(|k| format!("--document-key={k}")),
+        )
+        // Los permisos van en un archivo y no en los argumentos, que cualquier usuario
+        // del sistema ve.
+        .args(
+            access_file
+                .iter()
+                .map(|f| format!("--access-file={}", f.display())),
         )
         .env(
             "OKF_MAX_MEMORY_MB",
@@ -642,16 +694,15 @@ async fn run_local(
     dir: &Path,
     usage: &mut Usage,
 ) -> Result<Outcome> {
-    let (cfg, original, filename, key, dir) = (
+    let (cfg, original, filename, received, dir) = (
         (*a.cfg).clone(),
         original.to_path_buf(),
         job.filename.clone(),
-        job.document_key.clone(),
+        job.received.clone(),
         dir.to_path_buf(),
     );
-    let mut task = tokio::task::spawn_blocking(move || {
-        convert(&cfg, &original, &filename, key.as_deref(), &dir)
-    });
+    let mut task =
+        tokio::task::spawn_blocking(move || convert(&cfg, &original, &filename, &received, &dir));
     let mut watch = Watch {
         a,
         job,
@@ -810,7 +861,7 @@ async fn claim(a: &App) -> Result<Option<Job>> {
     tx.commit().await?;
     let mut tx = a.db.begin().await?;
     let row = sqlx::query(
-        "SELECT id,filename,original,attempt,document_key FROM jobs WHERE status='queued' AND \
+        "SELECT id,filename,original,attempt,document_key,access FROM jobs WHERE status='queued' AND \
         (retry_at IS NULL OR retry_at <= $1) ORDER BY created_at,id LIMIT 1 FOR UPDATE \
         SKIP LOCKED",
     )
@@ -826,7 +877,10 @@ async fn claim(a: &App) -> Result<Option<Job>> {
                 attempt: u32::try_from(r.try_get::<i64, _>(3)?)?
                     .checked_add(1)
                     .context("demasiados intentos")?,
-                document_key: r.try_get(4)?,
+                received: Received {
+                    document_key: r.try_get(4)?,
+                    access: r.try_get(5)?,
+                },
             })
         })
         .transpose()?;

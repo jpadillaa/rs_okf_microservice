@@ -36,7 +36,7 @@ Tamaños relativos, como en los planes anteriores: **S** (un cambio acotado en u
 | Versión del conversor | Hecho (`C9`). | — |
 | Configuración utilizada | No se registra (hecho después en el perfil 1.3.0). | `I3` |
 | Advertencias de conversión | Hecho: incidencias y observaciones del informe. | — |
-| Permisos recibidos | No: la API solo recibe el archivo; un PDF con contraseña se rechaza. | `I7` |
+| Permisos recibidos | No: la API solo recibe el archivo; un PDF con contraseña se rechaza. Hecho después en el perfil 1.10.0. | `I7` |
 | Estado válido, parcial o fallido; cobertura y errores | Hecho: `complete`, `partial` y `failed`; cobertura por unidad en el informe. | — |
 
 ## 3. Identidad
@@ -142,6 +142,8 @@ Tamaños relativos, como en los planes anteriores: **S** (un cambio acotado en u
 
 ### I7. Permisos recibidos (M)
 
+**Estado:** implementado el 8 de noviembre (perfil 1.10.0). `access` llega al hijo en un archivo del intento y no en sus argumentos, que cualquier usuario del sistema ve. Su tamaño máximo se configura con `OKF_MAX_ACCESS_BYTES` (16 KiB por defecto). Un PDF cifrado de prueba, fabricado en memoria con el editor de `pdf_oxide`, comprueba que se lean sus permisos. Véase la [arquitectura técnica](../arquitectura/ARQUITECTURA_TECNICA_MICROSERVICIO_OKF.md#permisos-recibidos-plan-3-i7).
+
 **Problema.** Si el sistema de origen restringe quién puede ver un documento, el RAG necesita esa restricción en cada fragmento. Hoy no hay dónde recibirla ni conservarla.
 
 **Trabajo.**
@@ -153,7 +155,7 @@ Tamaños relativos, como en los planes anteriores: **S** (un cambio acotado en u
 
 **Aceptación.** El valor recibido aparece byte a byte en el bundle; uno demasiado grande o mal formado responde `400`; un PDF con restricciones de copia se convierte con su observación.
 
-**Decisión abierta.** Si un PDF que prohíbe la extracción de texto debe convertirse con una observación o rechazarse como fallo permanente.
+**Decisión (8 de noviembre): convertirlo y declararlo.** Si un PDF que prohíbe la extracción de texto debe convertirse con una observación o rechazarse como fallo permanente.
 
 ### I8. Contenido generado por el conversor (S)
 

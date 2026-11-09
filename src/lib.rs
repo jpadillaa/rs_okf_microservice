@@ -83,6 +83,9 @@ enum Command {
         /// Clave del documento recibida con el original (plan 3, I2).
         #[arg(long)]
         document_key: Option<String>,
+        /// Archivo con los permisos recibidos con el original (plan 3, I7).
+        #[arg(long)]
+        access_file: Option<PathBuf>,
     },
     /// Valida conformidad OKF e integridad editorial frente al original incluido.
     Validate { bundle: PathBuf },
@@ -130,6 +133,9 @@ struct JobStatus {
     /// Clave del documento recibida al subirlo, o null si no se envió.
     #[schema(required)]
     document_key: Option<String>,
+    /// Permisos recibidos al subirlo (el JSON tal como llegó), o null si no se enviaron.
+    #[schema(required)]
+    access: Option<String>,
 }
 /// Una versión de un documento: un trabajo con su `document_key`.
 #[derive(Serialize, utoipa::ToSchema)]
@@ -239,13 +245,19 @@ async fn submit(
     admit(&a).await?;
     // Un cuerpo por encima del límite llega como error del multipart, con su `413`.
     let rejected = |e: axum::extract::multipart::MultipartError| (e.status(), e.body_text());
-    // `document_key` puede ir antes o después del archivo; antes, se rechaza sin escribir.
+    // `document_key` y `access` pueden ir antes o después del archivo; antes, se rechazan
+    // sin escribir.
     let mut key: Option<String> = None;
+    let mut access: Option<String> = None;
+    let access_limit = a.cfg.max_access_bytes;
     let mut field = loop {
         match multipart.next_field().await.map_err(rejected)? {
             Some(field) if field.file_name().is_some() => break field,
             Some(field) if field.name() == Some("document_key") => {
                 read_key(field, &mut key).await?
+            }
+            Some(field) if field.name() == Some("access") => {
+                read_access(field, &mut access, access_limit).await?
             }
             Some(_) => continue,
             None => {
@@ -288,8 +300,11 @@ async fn submit(
         Ok(hash) => {
             async {
                 while let Some(field) = multipart.next_field().await.map_err(rejected)? {
-                    if field.file_name().is_none() && field.name() == Some("document_key") {
-                        read_key(field, &mut key).await?;
+                    match field.name() {
+                        _ if field.file_name().is_some() => {}
+                        Some("document_key") => read_key(field, &mut key).await?,
+                        Some("access") => read_access(field, &mut access, access_limit).await?,
+                        _ => {}
                     }
                 }
                 Ok(hash)
@@ -306,8 +321,8 @@ async fn submit(
         }
     };
     if let Err(e) = sqlx::query(
-        "INSERT INTO jobs(id,filename,original,sha256,status,created_at,document_key) \
-        VALUES($1,$2,$3,$4,'queued',$5,$6)",
+        "INSERT INTO jobs(id,filename,original,sha256,status,created_at,document_key,access) \
+        VALUES($1,$2,$3,$4,'queued',$5,$6,$7)",
     )
     .bind(&id)
     .bind(&filename)
@@ -315,6 +330,7 @@ async fn submit(
     .bind(&hash)
     .bind(now())
     .bind(&key)
+    .bind(&access)
     .execute(&a.db)
     .await
     {
@@ -357,6 +373,40 @@ async fn read_key(
     match String::from_utf8(bytes) {
         Ok(k) if key.is_none() && identity::valid_key(&k) => {
             *key = Some(k);
+            Ok(())
+        }
+        _ => Err(invalid()),
+    }
+}
+/// Lee el campo `access`: un JSON de hasta `limit` bytes, como mucho una vez (`400` si
+/// no). Se conserva tal como llega.
+async fn read_access(
+    mut field: axum::extract::multipart::Field<'_>,
+    access: &mut Option<String>,
+    limit: usize,
+) -> Result<(), (StatusCode, String)> {
+    let invalid = || {
+        (
+            StatusCode::BAD_REQUEST,
+            format!(
+                "access debe ser un JSON de hasta {limit} bytes (OKF_MAX_ACCESS_BYTES) y aparecer una sola vez"
+            ),
+        )
+    };
+    let mut bytes = Vec::new();
+    while let Some(chunk) = field
+        .chunk()
+        .await
+        .map_err(|e| (e.status(), e.body_text()))?
+    {
+        bytes.extend_from_slice(&chunk);
+        if bytes.len() > limit {
+            return Err(invalid());
+        }
+    }
+    match String::from_utf8(bytes) {
+        Ok(a) if access.is_none() && identity::valid_access(&a) => {
+            *access = Some(a);
             Ok(())
         }
         _ => Err(invalid()),
@@ -473,7 +523,7 @@ async fn status(
 ) -> Result<Json<JobStatus>, (StatusCode, String)> {
     let row = sqlx::query(
         "SELECT status,attempt,error,converter_version,converter_commit,profile_version,\
-        conversion_id,document_key FROM jobs WHERE id=$1",
+        conversion_id,document_key,access FROM jobs WHERE id=$1",
     )
     .bind(&id)
     .fetch_optional(&a.db)
@@ -492,6 +542,7 @@ async fn status(
             },
             conversion_id: r.try_get(6)?,
             document_key: r.try_get(7)?,
+            access: r.try_get(8)?,
         }))
     })
     .transpose()
@@ -630,9 +681,16 @@ pub fn run() -> Result<()> {
         attempt,
         filename,
         document_key,
+        access_file,
     } = cli.command
     {
-        return worker::convert_command(&original, &attempt, &filename, document_key.as_deref());
+        return worker::convert_command(
+            &original,
+            &attempt,
+            &filename,
+            document_key.as_deref(),
+            access_file.as_deref(),
+        );
     }
     tokio::runtime::Builder::new_multi_thread()
         .enable_all()
@@ -1248,7 +1306,14 @@ mod tests {
             let digit = if &md[i..=i] == "0" { "1" } else { "0" };
             format!("{}{digit}{}", &md[..i], &md[i + 1..])
         }
-        let cases: [(&str, Edit); 13] = [
+        let cases: [(&str, Edit); 14] = [
+            ("access no es un JSON válido", &|n, md| {
+                if n == "documento.md" || n == "conversion-report.md" {
+                    md.replacen("profile_version:", "access: \"{no\"\nprofile_version:", 1)
+                } else {
+                    md
+                }
+            }),
             ("marcador de texto generado sin bloque", &|n, md| {
                 if n == "contenido/slide-002.md" {
                     format!("{md}\n{}\n", output::GENERATED)
@@ -1764,6 +1829,52 @@ mod tests {
             get_json(&a, "/jobs?document_key=a%20b").await.0,
             StatusCode::BAD_REQUEST
         );
+    }
+
+    #[tokio::test]
+    async fn access_is_kept_byte_for_byte_and_never_widened() {
+        let tmp = tempfile::tempdir().unwrap();
+        let mut a = test_app(tmp.path()).await;
+        Arc::make_mut(&mut a.cfg).max_access_bytes = 128;
+        let doc = fs::read("examples/docx/breve.docx").unwrap();
+        // Espacios, orden y acentos tal como llegan: el servicio no reescribe el JSON.
+        let access = r#"{ "grupos": ["finanzas", "auditoría"],  "nivel":"interno" }"#;
+        let (status, body) = post_fields(&a, "breve.docx", &doc, &[], &[("access", access)]).await;
+        assert_eq!(status, StatusCode::ACCEPTED);
+        let id = serde_json::from_slice::<Accepted>(&body).unwrap().job_id;
+        let originals = || fs::read_dir(a.root.join("originals")).unwrap().count();
+        let before = originals();
+        let long = format!("[\"{}\"]", "x".repeat(200));
+        for (value, first) in [
+            ("{no es json", true),
+            ("{no es json", false),
+            (long.as_str(), false),
+        ] {
+            let fields = [("access", value)];
+            let (status, _) = if first {
+                post_fields(&a, "x.docx", &doc, &fields, &[]).await
+            } else {
+                post_fields(&a, "x.docx", &doc, &[], &fields).await
+            };
+            assert_eq!(status, StatusCode::BAD_REQUEST, "{value}");
+        }
+        let twice = [("access", "1"), ("access", "2")];
+        assert_eq!(
+            post_fields(&a, "x.docx", &doc, &twice, &[]).await.0,
+            StatusCode::BAD_REQUEST
+        );
+        assert_eq!(originals(), before);
+        while work_one(&a).await.unwrap() {}
+        let (_, job) = get_json(&a, &format!("/jobs/{id}")).await;
+        assert_eq!(job["access"], access);
+        let mut z = zip::ZipArchive::new(
+            fs::File::open(a.root.join(format!("published/{id}/bundle.zip"))).unwrap(),
+        )
+        .unwrap();
+        for f in ["documento.md", "conversion-report.md"] {
+            let fm = bundle::frontmatter(&bundle::read_text(&mut z, f).unwrap()).unwrap();
+            assert_eq!(fm["access"].as_str(), Some(access), "{f}");
+        }
     }
 
     #[tokio::test]

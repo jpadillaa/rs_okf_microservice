@@ -26,11 +26,19 @@ pub(crate) fn valid_key(key: &str) -> bool {
     (1..=MAX_KEY_LEN).contains(&key.len()) && key.bytes().all(|b| (0x21..=0x7e).contains(&b))
 }
 
-/// Original de una conversión: su huella y, si se recibió, su `document_key`.
+/// Original de una conversión: su huella y, si se recibieron, su `document_key` y sus
+/// permisos (`access`, plan 3, I7).
 #[derive(Clone, Debug)]
 pub(crate) struct Source {
     pub(crate) sha256: String,
     pub(crate) document_key: Option<String>,
+    /// JSON recibido con el original, sin interpretar ni reescribir.
+    pub(crate) access: Option<String>,
+}
+
+/// ¿Es `access` un JSON válido? El servicio no interpreta su contenido.
+pub(crate) fn valid_access(access: &str) -> bool {
+    serde_json::from_str::<serde::de::IgnoredAny>(access).is_ok()
 }
 
 impl Source {
@@ -39,6 +47,7 @@ impl Source {
         Source {
             sha256: sha256.to_owned(),
             document_key: None,
+            access: None,
         }
     }
 }
@@ -68,13 +77,21 @@ pub(crate) fn annotate(fields: Fields, source: &Source, settings: &Settings) -> 
         .annotate(fields)
         .with("conversion_id", conversion_id(&source.sha256, settings))
         .with_opt("document_key", source.document_key.as_deref())
+        .with_opt("access", source.access.as_deref())
 }
 
 /// `documento.md` y el informe declaran la misma `document_key`, o ninguno la declara,
 /// y es una clave admitida.
 pub(crate) fn check_key(document: &YamlValue, report: &YamlValue) -> Result<()> {
-    if document.get("document_key") != report.get("document_key") {
-        bail!("document_key difiere entre documento.md y el informe")
+    for k in ["document_key", "access"] {
+        if document.get(k) != report.get(k) {
+            bail!("{k} difiere entre documento.md y el informe")
+        }
+    }
+    if let Some(access) = document.get("access")
+        && !access.as_str().is_some_and(valid_access)
+    {
+        bail!("access no es un JSON válido")
     }
     match document.get("document_key") {
         None => Ok(()),

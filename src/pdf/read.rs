@@ -212,6 +212,27 @@ pub(crate) fn open(bytes: &[u8]) -> Result<PdfDocument> {
     Ok(doc)
 }
 
+/// Restricciones de un PDF cifrado que se abrió con la contraseña vacía: lo que sus
+/// permisos (`/P`) no autorizan.
+pub(crate) fn restrictions(doc: &PdfDocument) -> Vec<String> {
+    if !doc.is_encrypted() {
+        return Vec::new();
+    }
+    let Some(p) = doc.permissions() else {
+        return vec!["PDF cifrado con permisos ilegibles".into()];
+    };
+    [
+        (p.copy, "copiar texto y gráficos"),
+        (p.accessibility, "extraer el texto para accesibilidad"),
+        (p.print_low_res, "imprimir"),
+        (p.modify, "modificar"),
+    ]
+    .iter()
+    .filter(|(allowed, _)| !allowed)
+    .map(|(_, what)| format!("el PDF no permite {what}"))
+    .collect()
+}
+
 pub(crate) fn page_count(doc: &PdfDocument) -> Result<usize> {
     doc.page_count()
         .map_err(|e| Rejected(format!("el PDF no tiene un árbol de páginas legible: {e}")).into())

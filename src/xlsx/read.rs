@@ -450,6 +450,8 @@ pub(crate) struct Sheet {
     pub(crate) tables: Vec<String>,
     /// ProgID de cada objeto incrustado (OLE).
     pub(crate) objects: Vec<String>,
+    /// La hoja está protegida (`sheetProtection` con `sheet` activo; plan 3, I7).
+    pub(crate) protected: bool,
 }
 
 impl Sheet {
@@ -624,6 +626,9 @@ pub(crate) fn sheet(
                     b"is" if cur.is_some() => has_inline = true,
                     b"t" if has_inline => text_target = 3,
                     b"rPh" => in_phonetic = true,
+                    b"sheetProtection" => {
+                        sh.protected = attr(e, b"sheet").is_some_and(|v| v == "1" || v == "true");
+                    }
                     b"mergeCell" => {
                         if let Some(r) = attr(e, b"ref").and_then(|v| Rect::parse(&v)) {
                             sh.merges.push(r);

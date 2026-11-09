@@ -892,6 +892,12 @@ impl Builder<'_> {
                     }
                 })?;
                 self.budget = budget;
+                if sh.protected {
+                    self.issues.extend(restrictions_note(&[format!(
+                        "la hoja «{}» está protegida",
+                        info.name
+                    )]));
+                }
                 self.sheet_cells(
                     n,
                     info,
@@ -1271,6 +1277,21 @@ impl Builder<'_> {
     }
 }
 
+/// Protección de la estructura del libro (plan 3, I7); la de cada hoja se lee con la
+/// hoja. Se declara y no se aplica.
+fn protections(z: &mut ZipArchive<Cursor<&[u8]>>) -> Vec<String> {
+    let on = |n: &crate::xml::Node, k: &[u8]| n.attr(k).is_some_and(|v| matches!(v, "1" | "true"));
+    let mut out = Vec::new();
+    let main = crate::ooxml::main_part(z).unwrap_or_else(|| "xl/workbook.xml".into());
+    if let Some(root) = crate::ooxml::parse_entry(z, &main)
+        && let Some(p) = root.find(b"workbookProtection")
+        && (on(p, b"lockStructure") || on(p, b"lockWindows"))
+    {
+        out.push("el libro protege su estructura".to_string());
+    }
+    out
+}
+
 /// Extrae el libro y ensambla el bundle.
 pub(crate) fn build_bundle(
     bytes: &[u8],
@@ -1287,13 +1308,14 @@ pub(crate) fn build_bundle(
     if wb.sheets.is_empty() {
         return Err(Rejected("el libro no tiene hojas".into()).into());
     }
+    let restrictions = protections(&mut z_in);
     let mut b = Builder {
         wb: &wb,
         filename,
         generated: &generated,
         z_in,
         out: BundleWriter::create(Format::Xlsx, attempt, source, &Settings::none())?,
-        issues: Vec::new(),
+        issues: restrictions_note(&restrictions).into_iter().collect(),
         t: Tally::default(),
         sheet_index: wb
             .sheets
@@ -1716,6 +1738,53 @@ mod tests {
             md["conversion-report.md"]
                 .contains("Hoja «Resumen»: 1 hipervínculo(s) interno(s) sin destino")
         );
+    }
+
+    #[test]
+    fn workbook_and_sheet_protection_are_declared_and_not_applied() {
+        use std::io::{Read, Write};
+        let tmp = tempfile::tempdir().unwrap();
+        let path = tmp.path().join("ventas_protegidas.xlsx");
+        let mut src = ZipArchive::new(
+            fs::File::open("examples/xlsx/muestras/ventas_trimestrales.xlsx").unwrap(),
+        )
+        .unwrap();
+        let mut dst = zip::ZipWriter::new(fs::File::create(&path).unwrap());
+        for i in 0..src.len() {
+            let mut e = src.by_index(i).unwrap();
+            let name = e.name().to_string();
+            let mut data = Vec::new();
+            e.read_to_end(&mut data).unwrap();
+            let text = String::from_utf8_lossy(&data).into_owned();
+            if name == "xl/workbook.xml" {
+                data = text
+                    .replacen(
+                        "<sheets>",
+                        "<workbookProtection lockStructure=\"1\"/><sheets>",
+                        1,
+                    )
+                    .into_bytes();
+            } else if name == "xl/worksheets/sheet1.xml" {
+                data = text
+                    .replacen(
+                        "</sheetData>",
+                        "</sheetData><sheetProtection sheet=\"1\"/>",
+                        1,
+                    )
+                    .into_bytes();
+            }
+            dst.start_file(name, zip::write::SimpleFileOptions::default())
+                .unwrap();
+            dst.write_all(&data).unwrap();
+        }
+        dst.finish().unwrap();
+        let (state, md) = convert_example(path.to_str().unwrap());
+        assert_eq!(state, "complete");
+        let report = &md["conversion-report.md"];
+        assert!(report.contains("El original declara restricciones: el libro protege su estructura; el conversor no las aplica"), "{report}");
+        assert!(report.contains("El original declara restricciones: la hoja «Resumen» está protegida; el conversor no las aplica"), "{report}");
+        // El contenido se convierte entero.
+        assert!(md["contenido/hoja-001.md"].contains("Ver detalle por operación"));
     }
 
     fn convert_example(path: &str) -> (String, HashMap<String, String>) {

@@ -199,6 +199,17 @@ pub(crate) fn resolve_links(md: &str, mut f: impl FnMut(&str, &str) -> String) -
     out
 }
 
+/// Observación sobre las restricciones que declara el propio original (plan 3, I7). El
+/// servicio no las aplica: convierte el original y conserva los permisos recibidos.
+pub(crate) fn restrictions_note(what: &[String]) -> Option<Issue> {
+    (!what.is_empty()).then(|| {
+        Issue::note(format!(
+            "El original declara restricciones: {}; el conversor no las aplica: convierte el documento y conserva sin cambios los permisos recibidos con él (access)",
+            what.join("; ")
+        ))
+    })
+}
+
 pub(crate) fn hex(b: &[u8]) -> String {
     b.iter().map(|v| format!("{v:02x}")).collect()
 }

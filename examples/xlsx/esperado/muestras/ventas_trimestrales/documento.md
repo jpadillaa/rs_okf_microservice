@@ -1,6 +1,6 @@
 ---
 type: "Source Document"
-unit_id: "b7f669dd32be4ae848793701c0e0735283ff4a9c8006aece5efe264984894828/documento.md"
+unit_id: "4bfe9f76f576ca4d75bab7f187ebd78d7fd1666fc070b6be8506aae0fb257dbd/documento.md"
 title: "Ventas trimestrales 2026"
 description: "Libro ventas_trimestrales.xlsx convertido a conceptos OKF por hojas y regiones."
 sources:
@@ -11,10 +11,10 @@ generated:
   at: "<generado>"
 converter_version: "0.1.0"
 converter_commit: "<commit>"
-profile_version: "1.9.0"
+profile_version: "1.10.0"
 conversion_settings: {}
 settings_sha256: "44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a"
-conversion_id: "b7f669dd32be4ae848793701c0e0735283ff4a9c8006aece5efe264984894828"
+conversion_id: "4bfe9f76f576ca4d75bab7f187ebd78d7fd1666fc070b6be8506aae0fb257dbd"
 source_file:
   path: "references/original.xlsx"
   sha256: "6a739abe69a60b49b35e16d992c01e57d8b2e1f00f36c9c71c76baf0e4f7b91c"

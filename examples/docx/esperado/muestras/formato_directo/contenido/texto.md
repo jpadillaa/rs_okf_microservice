@@ -1,6 +1,6 @@
 ---
 type: "Source Text"
-unit_id: "539e5048c3b74a9fcb1672e41b60db44e52a40f56f16f83bfda043e08c18d780/contenido/texto.md"
+unit_id: "c2bbd698eaa9d3b52b913ca8c3b129436d193aed3152d199673afd2fc6ddc571/contenido/texto.md"
 parent: "documento.md"
 title: "Manual de operación del laboratorio"
 description: "Texto completo de formato_directo.docx. Este manual describe los procedimientos de seguridad, mantenimiento y registro del laboratorio de cómputo. Se aplica a todo el personal y a los estudiantes que…"
