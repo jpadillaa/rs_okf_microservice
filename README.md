@@ -4,6 +4,26 @@
 
 El servicio convierte archivos PDF, Word, Excel y PowerPoint en un **ZIP con texto organizado, recursos, el documento original y un informe de conversión**. Las referencias de cada parte permiten volver al documento original.
 
+**OKF** significa *Open Knowledge Format*. Aquí llamamos **bundle** al paquete de archivos que sigue ese formato. El texto se guarda en **Markdown** (`.md`): archivos de texto con títulos, listas, tablas y enlaces.
+
+## Un contrato común de salida: las mismas reglas para todos los formatos
+
+El **contrato común de salida** es el acuerdo que dice: **«sin importar si recibimos un PDF, un Word, un Excel o un PowerPoint, entregaremos el resultado siguiendo las mismas reglas»**.
+
+Piensa en cuatro proveedores que envían productos distintos, pero usan el mismo sistema de cajas, etiquetas e inventario. Así, quien recibe el envío sabe dónde encontrar cada cosa. En este proyecto, esa “caja” es el bundle OKF.
+
+El contrato establece cómo indicar:
+
+- **Qué contiene cada parte:** su título, texto, tablas o recursos.
+- **De dónde salió:** la página del PDF, el bloque de Word, las celdas de Excel o la diapositiva.
+- **Cómo identificarla:** a qué conversión y versión del archivo pertenece.
+- **Cómo se relaciona con las demás:** qué la contiene y qué viene antes o después.
+- **Qué problemas hubo:** contenido incompleto, referencias sin destino o elementos que no se pudieron extraer.
+
+Por ejemplo, una tabla de Excel puede señalar «hoja Ventas, celdas A1:D20» y un párrafo de PDF «página 7». El lugar de origen se expresa según cada formato, pero ambos se entregan dentro de una organización común.
+
+**Esto permite que un sistema RAG —que busca información en los documentos para responder preguntas— lea los resultados con las mismas reglas, conserve el contexto y pueda citar el original.** También puede distinguir versiones y conocer las limitaciones de la conversión antes de utilizar el contenido. Las reglas completas están en la [especificación del bundle](docs/especificacion/ESPECIFICACION_OKF.md).
+
 ```mermaid
 flowchart LR
     accTitle: De un documento a un paquete OKF
@@ -19,11 +39,9 @@ flowchart LR
     linkStyle default stroke:#64748B,stroke-width:2px;
 ```
 
-**OKF** significa *Open Knowledge Format*. Aquí llamamos **bundle** al paquete de archivos que sigue ese formato. El texto se guarda en **Markdown** (`.md`): archivos de texto con títulos, listas, tablas y enlaces.
-
 Puedes leer el resultado directamente o entregarlo a un sistema de búsqueda o a un asistente de IA. Ese sistema se encarga de indexar el contenido y responder preguntas.
 
-**Elige por dónde empezar:** [ver el resultado](#qué-vas-a-recibir) · [ponerlo en marcha](#servicio-completo-con-docker) · [convertir tu primer archivo](#probar-los-endpoints-con-swagger-ui) · [consultar la documentación técnica](docs/README.md).
+**Elige por dónde empezar:** [entender el contrato común](#un-contrato-común-de-salida-las-mismas-reglas-para-todos-los-formatos) · [ver el resultado](#qué-vas-a-recibir) · [ponerlo en marcha](#servicio-completo-con-docker) · [convertir tu primer archivo](#probar-los-endpoints-con-swagger-ui) · [consultar la documentación técnica](docs/README.md).
 
 ## Qué vas a recibir
 
