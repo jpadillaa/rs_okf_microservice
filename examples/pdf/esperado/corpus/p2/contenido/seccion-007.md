@@ -1,6 +1,6 @@
 ---
 type: "Source Section"
-unit_id: "b256d8792f82e9fce97a08b66792a9f59ca9d1dca9b4b56db88b681a6e56fe25/contenido/seccion-007.md"
+unit_id: "06130e9dec59648a18894e7924fd7e9d28bcf19c189a7f39a2354196ae9f91a4/contenido/seccion-007.md"
 parent: "documento.md"
 previous: "contenido/seccion-006.md"
 next: "contenido/seccion-008.md"
@@ -33,7 +33,7 @@ source_spans:
 # Summary and future directions
 
 <!-- okf-source-span: p-7 -->
-As a final note, the concepts discussed in this paper apply solely to ChatGPT and other similar LLM-powered generative AI tools. Artificial intelligence is a broad and rapidly evolving set of technologies. As the technology evolves, so will recommendations for ethical use. We hope that the principles we have outlined will remain salient when considering how to ethically engage with these tools as they develop, but revision may be needed. Furthermore, we have not discussed generative AI tools developed specifically for the academic community, such as Scopus AI, which draws data from abstracts, author profiles, articles, books, reviews, and other reliable sources \[24\]. Given that the data sources of academic generative AI tools are notably more reliable and robust, it is possible that the issues of bias and hallucinations may be mitigated in these platforms. Future research should explore the ethical use of academic generative AI tools for supporting the writing process.
+As a final note, the concepts discussed in this paper apply solely to ChatGPT and other similar LLM-powered generative AI tools. Artificial intelligence is a broad and rapidly evolving set of technologies. As the technology evolves, so will recommendations for ethical use. We hope that the principles we have outlined will remain salient when considering how to ethically engage with these tools as they develop, but revision may be needed. Furthermore, we have not discussed generative AI tools developed specifically for the academic community, such as Scopus AI, which draws data from abstracts, author profiles, articles, books, reviews, and other reliable sources \[[24](seccion-009.md)\]. Given that the data sources of academic generative AI tools are notably more reliable and robust, it is possible that the issues of bias and hallucinations may be mitigated in these platforms. Future research should explore the ethical use of academic generative AI tools for supporting the writing process.
 
 <!-- okf-source-span: p-7 -->
 The caution regarding diminishment of human capacity cannot be dispensed with so quickly. Above all, our goal is to further our field by training and promoting researchers able to think deeply about the questions we face and offer

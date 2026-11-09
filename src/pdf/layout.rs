@@ -3,12 +3,14 @@
 //! tablas sencillas e imágenes).
 use super::read::{Glyph, Rect};
 
-/// Tramo de una línea con el mismo énfasis.
+/// Tramo de una línea con el mismo énfasis y el mismo enlace.
 #[derive(Clone, Debug, PartialEq)]
 pub(crate) struct Run {
     pub(crate) text: String,
     pub(crate) bold: bool,
     pub(crate) italic: bool,
+    /// Destino del enlace que lo cubre (ver `Glyph::link`).
+    pub(crate) link: Option<String>,
 }
 
 #[derive(Clone, Debug)]
@@ -260,11 +262,14 @@ fn line_from(glyphs: &[&Glyph]) -> Option<Line> {
         }
         pending_space = false;
         match runs.last_mut() {
-            Some(r) if r.bold == g.bold && r.italic == g.italic => r.text.push(g.c),
+            Some(r) if r.bold == g.bold && r.italic == g.italic && r.link == g.link => {
+                r.text.push(g.c)
+            }
             _ => runs.push(Run {
                 text: g.c.to_string(),
                 bold: g.bold,
                 italic: g.italic,
+                link: g.link.clone(),
             }),
         }
         match sizes.iter_mut().find(|(s, _)| (*s - g.size).abs() < 0.25) {
@@ -660,11 +665,14 @@ impl Para {
                     );
                 }
                 match out.last_mut() {
-                    Some(o) if o.bold == r.bold && o.italic == r.italic => o.text.push_str(&text),
+                    Some(o) if o.bold == r.bold && o.italic == r.italic && o.link == r.link => {
+                        o.text.push_str(&text)
+                    }
                     _ => out.push(Run {
                         text,
                         bold: r.bold,
                         italic: r.italic,
+                        link: r.link.clone(),
                     }),
                 }
             }
@@ -739,6 +747,7 @@ pub(crate) fn join_runs(runs: &[Run]) -> (Vec<Run>, usize) {
                 text,
                 bold: r.bold,
                 italic: r.italic,
+                link: r.link.clone(),
             });
         }
     }
@@ -1061,6 +1070,7 @@ mod tests {
                 mono: false,
                 rotated: false,
                 span: (base * 10.0) as usize + (x as usize) * 100_000,
+                link: None,
             })
             .collect()
     }
@@ -1150,6 +1160,7 @@ mod tests {
                 text: t.into(),
                 bold: false,
                 italic: false,
+                link: None,
             }]
         };
         let (r, n) = join_runs(&runs("health-\ncare y AI-\nassisted\nfin"));

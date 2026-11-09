@@ -1,15 +1,15 @@
 ---
 converter_version: "0.1.0"
 converter_commit: "<commit>"
-profile_version: "1.6.0"
+profile_version: "1.7.0"
 conversion_settings:
   max_image_pixels: 33554432
   ocr:
     enabled: false
 settings_sha256: "ad1d7709796a5172b6ad18d538b1bef5780b44279dd787d15ecc82ede959ef16"
-conversion_id: "da3e8217c83e8f9b9c57013e7120434bd1e45e7856c931f0f4ed185815af1976"
+conversion_id: "8058ce4b27030242d1c6a750669727cecd6c67024c6a89e4254fb23415fd0482"
 type: "Conversion Report"
-unit_id: "da3e8217c83e8f9b9c57013e7120434bd1e45e7856c931f0f4ed185815af1976/conversion-report.md"
+unit_id: "8058ce4b27030242d1c6a750669727cecd6c67024c6a89e4254fb23415fd0482/conversion-report.md"
 title: "Informe de conversión"
 generated:
   by: "process:document-conversion"
@@ -39,6 +39,12 @@ Toda página física figura en algún concepto; las páginas sin texto propio ll
 | 2 | texto digital | seccion-004.md, seccion-005.md |
 | 3 | texto digital | seccion-006.md |
 | 4 | texto digital | seccion-007.md |
+
+## Referencias externas
+
+Destinos fuera del bundle enlazados desde los conceptos, con los conceptos que los enlazan; no se comprueban ni se descargan. Las imágenes vinculadas, los libros externos y los objetos incrustados se declaran en las incidencias.
+
+Sin enlaces externos.
 
 ## Incidencias
 

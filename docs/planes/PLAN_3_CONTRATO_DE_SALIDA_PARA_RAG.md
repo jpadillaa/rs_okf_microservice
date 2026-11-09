@@ -29,9 +29,9 @@ Tamaños relativos, como en los planes anteriores: **S** (un cambio acotado en u
 | Trazabilidad: PDF (página y coordenadas) | Página física por bloque y `page_labels`; coordenadas, no, aunque el lector las tiene. | `I6` |
 | Fidelidad: texto, numeración, orden, tablas, fórmula frente a valor, omisiones | Hecho (§4 y §5 de la especificación; cobertura independiente, `R2` y `C2`). | — |
 | Relaciones padre-hijo válidas | Solo en el Markdown (`index.md`, «Estructura» de `documento.md`, subencabezados); ningún campo explícito. Hecho después en el perfil 1.6.0. | `I4` |
-| Enlaces internos resueltos | Los enlaces emitidos resuelven (el validador lo exige). PPTX enlaza otras diapositivas y XLSX otras hojas. DOCX no enlaza los marcadores internos; PDF no lee sus anotaciones de enlace. | `I5` |
-| Referencias externas identificadas | Hecho para libros externos, imágenes vinculadas y objetos incrustados; los hipervínculos de DOCX, PPTX y XLSX se escriben como enlaces, sin inventario; los de PDF no se leen. | `I5` |
-| Referencias no resueltas marcadas | No: un destino interno que no existe se descarta en silencio en los cuatro formatos. | `I5` |
+| Enlaces internos resueltos | Los enlaces emitidos resuelven (el validador lo exige). PPTX enlaza otras diapositivas y XLSX otras hojas. DOCX no enlaza los marcadores internos; PDF no lee sus anotaciones de enlace. Hecho después en el perfil 1.7.0. | `I5` |
+| Referencias externas identificadas | Hecho para libros externos, imágenes vinculadas y objetos incrustados; los hipervínculos de DOCX, PPTX y XLSX se escriben como enlaces, sin inventario; los de PDF no se leen. Hecho después en el perfil 1.7.0. | `I5` |
+| Referencias no resueltas marcadas | No: un destino interno que no existe se descarta en silencio en los cuatro formatos. Hecho después en el perfil 1.7.0. | `I5` |
 | Contenido extraído frente a generado | No se generan resúmenes; lo inferido se marca (`title_inferred`, OCR, `status: draft`). `description` y las notas del conversor no se distinguen de forma uniforme. | `I8` |
 | Versión del conversor | Hecho (`C9`). | — |
 | Configuración utilizada | No se registra (hecho después en el perfil 1.3.0). | `I3` |
@@ -107,6 +107,8 @@ Tamaños relativos, como en los planes anteriores: **S** (un cambio acotado en u
 **Aceptación.** Las relaciones aparecen en los 27 bundles de referencia; las pruebas del validador rechazan un `next` roto, uno no recíproco y un padre de otro bundle.
 
 ### I5. Referencias internas y externas (M)
+
+**Estado:** implementado el 8 de noviembre (perfil 1.7.0). Los enlaces PDF se prueban con el corpus real: `p2` enlaza sus 57 citas con la sección de referencias y `p1` y `p2` conservan sus URL. Ninguna muestra tiene un destino PDF ausente, así que ese caso solo se prueba al escribir el texto. Las marcas de DOCX, PPTX y XLSX se prueban rompiendo el destino de una muestra en memoria. En el inventario, en lugar de contar marcas, el validador exige que el informe declare las referencias «sin destino» cuando hay alguna marca: cada formato las agrupa a su manera (bloques, diapositivas, hojas o conceptos). Véase la [arquitectura técnica](../arquitectura/ARQUITECTURA_TECNICA_MICROSERVICIO_OKF.md#referencias-internas-y-externas-plan-3-i5).
 
 **Problema.** Una referencia interna sin destino se pierde sin aviso; DOCX y PDF no resuelven las suyas; las referencias externas no tienen inventario.
 

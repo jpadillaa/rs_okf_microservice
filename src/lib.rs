@@ -1248,7 +1248,21 @@ mod tests {
             let digit = if &md[i..=i] == "0" { "1" } else { "0" };
             format!("{}{digit}{}", &md[..i], &md[i + 1..])
         }
-        let cases: [(&str, Edit); 9] = [
+        let cases: [(&str, Edit); 11] = [
+            ("no declaradas en el informe", &|n, md| {
+                if n == "contenido/slide-002.md" {
+                    format!("{md}\nVéase la tabla {}\n", bundle::UNRESOLVED)
+                } else {
+                    md
+                }
+            }),
+            ("enlace interno sin resolver", &|n, md| {
+                if n == "contenido/slide-002.md" {
+                    format!("{md}\n{}\n", bundle::pending_link("7", "tabla"))
+                } else {
+                    md
+                }
+            }),
             ("no son recíprocos", &|n, md| {
                 if n == "contenido/slide-002.md" {
                     md.replace("next: \"contenido/slide-003.md\"\n", "")

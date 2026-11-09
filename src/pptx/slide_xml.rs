@@ -134,6 +134,13 @@ impl ParaBuilder {
         self.plain.push_str(&text);
         let escaped = escape_inline(&text);
         match self.run_link.take() {
+            Some(dest) if !text.trim().is_empty() && dest == crate::bundle::UNRESOLVED_DEST => {
+                self.md.push_str(&format!(
+                    "{} {}",
+                    escaped.replace('\n', " "),
+                    crate::bundle::UNRESOLVED
+                ));
+            }
             Some(dest) if !text.trim().is_empty() => {
                 // Un salto dentro del texto enlazado rompería el enlace Markdown.
                 let label = escaped.replace('\n', " ");
@@ -639,6 +646,15 @@ mod tests {
         assert_eq!(
             shape.paragraphs[0].md,
             "[sitio](https://example.org/a) \\[nota\\]"
+        );
+        // Un enlace a una diapositiva que no existe conserva el texto con la marca.
+        let part = parse_part(&xml, &|_| Some(crate::bundle::UNRESOLVED_DEST.into())).unwrap();
+        let Block::Text(shape) = &part.blocks[0] else {
+            panic!()
+        };
+        assert_eq!(
+            shape.paragraphs[0].md,
+            format!("sitio {} \\[nota\\]", crate::bundle::UNRESOLVED)
         );
         let Block::Picture(pic) = &part.blocks[1] else {
             panic!()

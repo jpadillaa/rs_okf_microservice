@@ -1,12 +1,12 @@
 ---
 converter_version: "0.1.0"
 converter_commit: "<commit>"
-profile_version: "1.6.0"
+profile_version: "1.7.0"
 conversion_settings: {}
 settings_sha256: "44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a"
-conversion_id: "4a2e1fcc8e388e6df1808e67b6d09b23fe33a8ac6eb95647e0a37ed650426f41"
+conversion_id: "51518537e2f22732cd73d59d6a704181324553fae42b4e9ebf4760709741aafc"
 type: "Conversion Report"
-unit_id: "4a2e1fcc8e388e6df1808e67b6d09b23fe33a8ac6eb95647e0a37ed650426f41/conversion-report.md"
+unit_id: "51518537e2f22732cd73d59d6a704181324553fae42b4e9ebf4760709741aafc/conversion-report.md"
 title: "Informe de conversión"
 generated:
   by: "process:document-conversion"
@@ -29,6 +29,18 @@ sha256: "9a68ae57c666128a9b729096d5c2ba1fd100e5edfc46b5fb9a77d3c4b4911fbe"
 - Comentarios de revisión: 0
 - Enlaces: 7
 - Duración de ensamblado: <duración> ms
+
+## Referencias externas
+
+Destinos fuera del bundle enlazados desde los conceptos, con los conceptos que los enlazan; no se comprueban ni se descargan. Las imágenes vinculadas, los libros externos y los objetos incrustados se declaran en las incidencias.
+
+- <https://www.datacamp.com/blog/agent-harness> — contenido/seccion-012.md
+- <https://deepeval.com/blog/what-is-an-eval-harness> — contenido/seccion-012.md
+- <https://www.langchain.com/blog/the-anatomy-of-an-agent-harness> — contenido/seccion-012.md
+- <https://arxiv.org/abs/2606.10106> — contenido/seccion-012.md
+- <https://arxiv.org/abs/2602.22480> — contenido/seccion-012.md
+- <https://www.salesforce.com/agentforce/ai-agents/agent-harness/> — contenido/seccion-012.md
+- <https://towardsdatascience.com/building-an-evaluation-harness-for-production-ai-agents-a-12-metric-framework-from-100-deployments/> — contenido/seccion-012.md
 
 ## Incidencias
 

@@ -1,6 +1,6 @@
 ---
 type: "Source Section"
-unit_id: "0895fb23bba4522137a6e84d2610abe97be01c5859b446aabd7763b691954aa1/contenido/seccion-004.md"
+unit_id: "0618fd6fca7d62a33a79a067c3e3a9024ebb5d4e562519bfda40ceb21713b09f/contenido/seccion-004.md"
 parent: "documento.md"
 previous: "contenido/seccion-003.md"
 title: "Referencias y enlaces"
@@ -42,7 +42,7 @@ source_spans:
 # Referencias y enlaces
 
 <!-- okf-source-span: b-31 -->
-La documentación oficial está en [el sitio del proveedor](https://example.org/docs/indices-vectoriales). Véase también la Figura 1 y el [enunciado del laboratorio](https://example.org/okf/laboratorio3), donde se repite el flujo de la Figura 1.
+La documentación oficial está en [el sitio del proveedor](https://example.org/docs/indices-vectoriales). Véase también la [Figura 1](seccion-002.md) y el [enunciado del laboratorio](https://example.org/okf/laboratorio3), donde se repite el flujo de la [Figura 1](seccion-002.md).
 
 <!-- okf-source-span: b-32 -->
 Responsable del laboratorio: Carolina Pérez Entrega: semana 6

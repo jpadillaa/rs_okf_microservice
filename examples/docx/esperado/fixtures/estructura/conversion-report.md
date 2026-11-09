@@ -1,12 +1,12 @@
 ---
 converter_version: "0.1.0"
 converter_commit: "<commit>"
-profile_version: "1.6.0"
+profile_version: "1.7.0"
 conversion_settings: {}
 settings_sha256: "44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a"
-conversion_id: "c2c92c4ae3e0f456cb35ccd468b8f37848c3be40635293d238be4b36eaa5f539"
+conversion_id: "f1526d05733aa805cac7ac8576988cb825853363ad2467d85270f8f24d8b64af"
 type: "Conversion Report"
-unit_id: "c2c92c4ae3e0f456cb35ccd468b8f37848c3be40635293d238be4b36eaa5f539/conversion-report.md"
+unit_id: "f1526d05733aa805cac7ac8576988cb825853363ad2467d85270f8f24d8b64af/conversion-report.md"
 title: "Informe de conversión"
 generated:
   by: "process:document-conversion"
@@ -29,6 +29,12 @@ sha256: "e885aa60cb14623ef9e080a4e440913cd10a4413a8bdfe19f59d3c3a047f626c"
 - Comentarios de revisión: 1
 - Enlaces: 1
 - Duración de ensamblado: <duración> ms
+
+## Referencias externas
+
+Destinos fuera del bundle enlazados desde los conceptos, con los conceptos que los enlazan; no se comprueban ni se descargan. Las imágenes vinculadas, los libros externos y los objetos incrustados se declaran en las incidencias.
+
+- <https://example.com/okf> — contenido/seccion-001.md
 
 ## Incidencias
 

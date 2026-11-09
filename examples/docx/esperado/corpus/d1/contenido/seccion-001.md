@@ -1,6 +1,6 @@
 ---
 type: "Source Section"
-unit_id: "2208249ef9e6e4e9cb26435beb827e0ff4cefee8566aac54547b646c686c8420/contenido/seccion-001.md"
+unit_id: "5d105c945b6654ad63d58a17f1461d2150929c1b42d6e865a65a4e6db6438b5d/contenido/seccion-001.md"
 parent: "documento.md"
 next: "contenido/seccion-002.md"
 title: "Semana 1: Fundamentos, arquitectura y configuración del entorno"

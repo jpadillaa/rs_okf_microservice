@@ -1,15 +1,15 @@
 ---
 converter_version: "0.1.0"
 converter_commit: "<commit>"
-profile_version: "1.6.0"
+profile_version: "1.7.0"
 conversion_settings:
   max_image_pixels: 33554432
   ocr:
     enabled: false
 settings_sha256: "ad1d7709796a5172b6ad18d538b1bef5780b44279dd787d15ecc82ede959ef16"
-conversion_id: "f9f7c42c0d93c8ed9fd16ee2efd84e729f3efae5eba147636d9e82f0e4380234"
+conversion_id: "844f8dd3be601407224059b21f667b7e32c3ac24acb8e04308e2a18304127a38"
 type: "Conversion Report"
-unit_id: "f9f7c42c0d93c8ed9fd16ee2efd84e729f3efae5eba147636d9e82f0e4380234/conversion-report.md"
+unit_id: "844f8dd3be601407224059b21f667b7e32c3ac24acb8e04308e2a18304127a38/conversion-report.md"
 title: "Informe de conversión"
 generated:
   by: "process:document-conversion"
@@ -54,6 +54,20 @@ Toda página física figura en algún concepto; las páginas sin texto propio ll
 | 47–49 | texto digital | seccion-003.md |
 | 50–52 | mixta (texto e imagen) | seccion-003.md |
 | 53 | texto digital | seccion-003.md |
+
+## Referencias externas
+
+Destinos fuera del bundle enlazados desde los conceptos, con los conceptos que los enlazan; no se comprueban ni se descargan. Las imágenes vinculadas, los libros externos y los objetos incrustados se declaran en las incidencias.
+
+- <https://www.youtube.com/watch?v=XUqrvbsTfck> — contenido/seccion-003.md
+- <https://www.youtube.com/watch?v=nWecIwtN2ho> — contenido/seccion-003.md
+- <https://www.youtube.com/watch?v=bvnwDoaixJs> — contenido/seccion-003.md
+- <https://www.youtube.com/watch?v=uhZzB5hid6M> — contenido/seccion-003.md
+- <https://www.youtube.com/watch?v=G4Gp0hc0TMA> — contenido/seccion-003.md
+- <https://www.youtube.com/watch?v=YlI-e4QJWG0> — contenido/seccion-003.md
+- <https://espanol.bookeau.com/#/login> — contenido/seccion-003.md
+- <https://leo.uniandes.edu.co/> — contenido/seccion-003.md
+- <https://centrodeespanol.uniandes.edu.co/> — contenido/seccion-003.md
 
 ## Incidencias
 

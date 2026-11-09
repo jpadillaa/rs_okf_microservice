@@ -54,6 +54,8 @@ pub(crate) struct Extraction {
     core_title: Option<String>,
     /// Fragmentos importados (`altChunk`): número de bloques que los preceden.
     alt_chunks: Vec<usize>,
+    /// Bloque (desde 0) de cada marcador del cuerpo, destino de los enlaces internos.
+    bookmarks: HashMap<String, usize>,
 }
 
 /// Número de bloques del cuerpo de un DOCX: la base de los localizadores.
@@ -92,7 +94,11 @@ pub(crate) fn extract(bytes: &[u8], max_blocks: usize) -> Result<Extraction> {
     let mut blocks = Vec::new();
     let mut alt_chunks = Vec::new();
     xml::body_elements(&doc, |n, gallery| {
-        if n.is(b"p") {
+        // Un marcador entre bloques señala el bloque siguiente.
+        reader.block = Some(blocks.len());
+        if n.is(b"bookmarkStart") {
+            reader.bookmark(&n);
+        } else if n.is(b"p") {
             let mut p = reader.paragraph(&n);
             p.toc |= gallery == Some("Table of Contents");
             blocks.push(Block::Para(Box::new(p)));
@@ -109,6 +115,7 @@ pub(crate) fn extract(bytes: &[u8], max_blocks: usize) -> Result<Extraction> {
         }
         Ok(())
     })?;
+    reader.block = None;
     drop(doc);
     let notes = |z: &mut ZipArchive<Cursor<&[u8]>>, reader: &mut Reader, suffix: &str| {
         for path in related(&doc_rels, &main, suffix) {
@@ -176,6 +183,7 @@ pub(crate) fn extract(bytes: &[u8], max_blocks: usize) -> Result<Extraction> {
         smartart_texts,
         core_title,
         alt_chunks,
+        bookmarks: std::mem::take(&mut reader.bookmarks),
     })
 }
 
@@ -561,6 +569,8 @@ impl Assets {
 /// Ordinales de los bloques afectados por cada tipo de incidencia u observación.
 #[derive(Default)]
 struct Tally {
+    /// Bloques con enlaces internos sin destino; 0 fuera del cuerpo (plan 3, I5).
+    unresolved_refs: Vec<usize>,
     images: usize,
     decorative: usize,
     metafiles: Vec<usize>,
@@ -1173,7 +1183,43 @@ impl Render<'_> {
             out.push_str(&body);
         }
         out.push_str(&aux);
+        let out = self.resolve_refs(&out, false);
         (fields, out)
+    }
+
+    /// Sustituye los enlaces internos de un texto ya escrito: el que apunta a un marcador
+    /// existente enlaza el concepto que lo contiene; el que no, queda como texto con la
+    /// marca de referencia no resuelta y se cuenta en su bloque (0 si está fuera del
+    /// cuerpo: notas, comentarios). `root` indica si el texto va en `documento.md`.
+    fn resolve_refs(&mut self, md: &str, root: bool) -> String {
+        let (ex, outline) = (self.ex, self.outline);
+        let unresolved = &mut self.tally.unresolved_refs;
+        resolve_links(md, |dest, text| {
+            let (block, name) = dest
+                .split_once(read::INTERNAL)
+                .expect("bloque y marcador del enlace interno");
+            let target = ex.bookmarks.get(name).and_then(|&b| {
+                outline
+                    .sections
+                    .iter()
+                    .position(|s| (s.from..=s.to).contains(&b))
+            });
+            match target {
+                Some(k) => {
+                    let file = outline.file(k);
+                    let href = if root {
+                        format!("contenido/{file}")
+                    } else {
+                        file
+                    };
+                    format!("[{text}]({href})")
+                }
+                None => {
+                    unresolved.push(block.parse().unwrap_or(0));
+                    format!("{text} {UNRESOLVED}")
+                }
+            }
+        })
     }
 }
 
@@ -1289,6 +1335,7 @@ pub(crate) fn build_bundle(
             "\n## Encabezados y pies de página\n\nTexto e imágenes que se repiten en las páginas; no forman parte del flujo del documento.\n\n{furniture}{images}"
         )
     };
+    let furniture_md = r.resolve_refs(&furniture_md, true);
     for (target, path) in &r.assets.files {
         let data = read_entry(&mut z_in, target)?;
         out.file(path, &data)?;
@@ -1310,6 +1357,21 @@ pub(crate) fn build_bundle(
         }
     };
     grouped(&t.smartart, Severity::Loss, ": SmartArt sin texto extraído");
+    let (outside, inside): (Vec<usize>, Vec<usize>) =
+        t.unresolved_refs.iter().partition(|&&b| b == 0);
+    grouped(
+        &inside,
+        Severity::Note,
+        &format!(
+            ": referencia interna sin destino; se conserva su texto con la marca {UNRESOLVED_TEXT}"
+        ),
+    );
+    let outside_note = (!outside.is_empty()).then(|| {
+        Issue::note(format!(
+            "Referencias internas sin destino en notas, comentarios o encabezados y pies: {}; se conserva su texto con la marca {UNRESOLVED_TEXT}",
+            outside.len()
+        ))
+    });
     grouped(
         &t.smartart_text,
         Severity::Note,
@@ -1423,6 +1485,7 @@ pub(crate) fn build_bundle(
             t.decorative
         )));
     }
+    issues.extend(outside_note);
     if t.furniture_texts + t.furniture_images > 0 {
         issues.push(Issue::note(format!(
             "Encabezados y pies de página registrados en documento.md: {} texto(s) y {} imagen(es)",
@@ -1684,6 +1747,65 @@ mod tests {
         (ex, state, md)
     }
 
+    /// `guia_tecnica.docx` con su `document.xml` modificado por `edit`, escrito en `dir`.
+    fn edited_guide(dir: &FsPath, edit: impl Fn(String) -> String) -> String {
+        use std::io::{Read, Write};
+        let mut src =
+            ZipArchive::new(fs::File::open("examples/docx/muestras/guia_tecnica.docx").unwrap())
+                .unwrap();
+        let path = dir.join("guia_editada.docx");
+        let mut dst = zip::ZipWriter::new(fs::File::create(&path).unwrap());
+        for i in 0..src.len() {
+            let mut e = src.by_index(i).unwrap();
+            let name = e.name().to_string();
+            let mut data = Vec::new();
+            e.read_to_end(&mut data).unwrap();
+            if name == "word/document.xml" {
+                data = edit(String::from_utf8(data).unwrap()).into_bytes();
+            }
+            dst.start_file(name, zip::write::SimpleFileOptions::default())
+                .unwrap();
+            dst.write_all(&data).unwrap();
+        }
+        dst.finish().unwrap();
+        path.to_string_lossy().into_owned()
+    }
+
+    #[test]
+    fn internal_links_resolve_to_their_bookmark_or_are_marked() {
+        // Hipervínculo a un marcador y campo REF \h: ambos enlazan el concepto de la figura.
+        let (_, _, md) = convert_example("examples/docx/muestras/guia_tecnica.docx");
+        let f = &md["contenido/seccion-004.md"];
+        assert!(
+            f.contains("Véase también la [Figura 1](seccion-002.md)"),
+            "{f}"
+        );
+        assert!(
+            f.contains("el flujo de la [Figura 1](seccion-002.md)."),
+            "{f}"
+        );
+        assert!(!md["conversion-report.md"].contains("sin destino"));
+        // Sin el marcador, las dos referencias quedan como texto marcado y se declaran.
+        let tmp = tempfile::tempdir().unwrap();
+        let path = edited_guide(tmp.path(), |xml| {
+            xml.replace("w:name=\"_Ref1\"", "w:name=\"_Otro\"")
+        });
+        let (_, state, md) = convert_example(&path);
+        assert_eq!(state, "complete");
+        let f = &md["contenido/seccion-004.md"];
+        assert_eq!(
+            f.matches(&format!("Figura 1 {UNRESOLVED}")).count(),
+            2,
+            "{f}"
+        );
+        assert!(!f.contains("](seccion-002.md)"));
+        let report = &md["conversion-report.md"];
+        assert!(
+            report.contains(": referencia interna sin destino; se conserva su texto con la marca"),
+            "{report}"
+        );
+    }
+
     fn corpus(name: &str) -> (Extraction, String, HashMap<String, String>) {
         let dir =
             std::env::var("OKF_DOCX_CORPUS_DIR").unwrap_or_else(|_| "examples/docx/corpus".into());
@@ -1790,7 +1912,11 @@ mod tests {
             .unwrap();
         assert!(arch.contains("## 1. Orquestador y bucle de ejecución"));
         assert!(md["documento.md"].contains("  - 1\\. Orquestador y bucle de ejecución"));
-        let refs = md.values().find(|m| m.contains("# Referencias")).unwrap();
+        let refs = md
+            .iter()
+            .find(|(k, m)| k.starts_with("contenido/") && m.contains("# Referencias"))
+            .unwrap()
+            .1;
         assert!(
             refs.contains("](https://arxiv.org/abs/2602.22480)"),
             "{refs}"

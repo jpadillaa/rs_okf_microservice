@@ -1,7 +1,7 @@
 # Perfil documental OKF para PDF, DOCX, XLSX y PPTX
 
 **Versión objetivo:** Open Knowledge Format (OKF) v0.2.  
-**Versión del perfil documental:** 1.6.0 (independiente de OKF v0.2).
+**Versión del perfil documental:** 1.7.0 (independiente de OKF v0.2).
 **Alcance:** especificar exclusivamente el bundle de salida. No define API, arquitectura, herramientas ni ejecución del conversor.
 
 Este perfil añade convenciones para convertir documentos a OKF sin perder estructura, contenido ni referencia al original. Las reglas indicadas como **OKF** proceden de la [especificación oficial](https://github.com/GoogleCloudPlatform/open-knowledge-format/blob/main/SPEC.md); las indicadas como **perfil** son requisitos de este proyecto. Un bundle puede cumplir OKF y aun así tener pérdidas de extracción: ambos controles se evalúan por separado.
@@ -34,7 +34,7 @@ bundle/
 └── conversion-report.md     # Cobertura e incidencias; concepto con type
 ```
 
-**Perfil:** `documento.md` y `conversion-report.md` declaran los mismos `converter_version` (versión del paquete), `converter_commit` (SHA Git de 40 caracteres; `unknown` si la fuente no lo proporciona) y `profile_version` (`1.6.0`). Son extensiones del perfil, no campos oficiales de OKF.
+**Perfil:** `documento.md` y `conversion-report.md` declaran los mismos `converter_version` (versión del paquete), `converter_commit` (SHA Git de 40 caracteres; `unknown` si la fuente no lo proporciona) y `profile_version` (`1.7.0`). Son extensiones del perfil, no campos oficiales de OKF.
 
 **Perfil: configuración de la conversión.** `documento.md` y `conversion-report.md` declaran también, con el mismo valor, la configuración que cambia el contenido del bundle de su formato (`conversion_settings`) y su huella (`settings_sha256`). Dos conversiones del mismo original con el mismo perfil y la misma huella usaron la misma configuración. Los parámetros que solo limitan o rechazan el trabajo no forman parte de ella.
 
@@ -98,6 +98,13 @@ La fecha y el actor del ejemplo son ilustrativos; cada salida registra los valor
 - **Continuaciones:** párrafos, tablas y notas que cruzan páginas o secciones se reconcilian si la continuidad es comprobable. Si no lo es, se mantienen las partes separadas y se declara el problema.
 - **Recursos:** figuras y diagramas sustantivos se adjuntan y enlazan cerca de su posición. Una descripción generada no reemplaza la imagen ni se hace pasar por texto extraído; no se inventan pies o textos alternativos.
 - **Incertidumbre:** el OCR, los títulos inferidos, el orden de lectura y cualquier interpretación dudosa se identifican junto al contenido y en el informe. Las referencias internas solo se convierten en enlaces si el destino es inequívoco.
+- **Referencias:** una referencia interna del original enlaza el concepto que contiene su destino:
+  - en DOCX, un hipervínculo a un marcador (`w:anchor`, campo `HYPERLINK \l`) o un campo `REF` con `\h` lleva al concepto que contiene el bloque del marcador;
+  - en PDF, una anotación de enlace a una página (explícita o con nombre) lleva al primer concepto que contiene esa página;
+  - en PPTX, al concepto de la diapositiva;
+  - en XLSX, al concepto de la hoja.
+
+  Una referencia interna cuyo destino no existe (marcador, página, diapositiva u hoja ausentes, o un nombre definido de XLSX) conserva su texto seguido de la marca «\[referencia interna no resuelta\]» y se declara como observación con su ubicación. En PDF, el enlace cubre los caracteres del rectángulo de la anotación, salvo el comienzo de una palabra que el rectángulo alcanza tras cubrir la anterior entera. Los enlaces con un esquema de URI (`https:`, `mailto:`, `file:`…) apuntan fuera del bundle; el informe los enumera en «Referencias externas» con los conceptos que los enlazan.
 
 ## 5. Reglas por formato
 
@@ -171,9 +178,9 @@ En DOCX la paginación que muestra un editor depende de su representación y no 
 
 ## 6. Informe y aceptación
 
-`conversion-report.md` es un concepto OKF, por ejemplo `type: Conversion Report`. Registra formato y SHA-256 del original; inventario frente a unidades representadas; cobertura de páginas, bloques, hojas/regiones o diapositivas; transformaciones (OCR, unión de tablas, deduplicación); recursos; y cada omisión o ambigüedad con ubicación. Su estado propio es `complete` o `partial`: `complete` no significa reproducción visual idéntica ni revisión humana; `partial` identifica pérdida o incertidumbre sustantiva sin ocultarla. El problema también se señala junto al contenido afectado.
+`conversion-report.md` es un concepto OKF, por ejemplo `type: Conversion Report`. Registra formato y SHA-256 del original; inventario frente a unidades representadas; cobertura de páginas, bloques, hojas/regiones o diapositivas; transformaciones (OCR, unión de tablas, deduplicación); recursos; las referencias externas enlazadas, en la sección «Referencias externas», antes de las incidencias; y cada omisión o ambigüedad con ubicación. Su estado propio es `complete` o `partial`: `complete` no significa reproducción visual idéntica ni revisión humana; `partial` identifica pérdida o incertidumbre sustantiva sin ocultarla. El problema también se señala junto al contenido afectado.
 
-El informe separa dos listas. **Incidencias** son pérdidas o incertidumbres sustantivas y determinan `partial`: contenido solo visual sin transcripción, una vista que no muestra texto del original, objetos incrustados, audio o video, SmartArt sin texto extraído, recursos que no pudieron adjuntarse o que el renderizador omitió, imágenes vinculadas a archivos externos, gráficos sin datos, fragmentos importados (`altChunk`); en XLSX, fórmulas sin valor almacenado, vínculos a libros externos y hojas de diálogo o de macros; y, en PDF, páginas escaneadas sin capa de texto ni texto reconocido por el OCR, texto de OCR con confianza media baja, vistas de página que no pudieron generarse, imágenes que no se pudieron decodificar y caracteres sin correspondencia Unicode. **Observaciones** informan sin cambiar el estado: diapositivas sin título, títulos inferidos, animaciones que no ocultan contenido, diapositivas sin contenido propio, texto del diseño registrado en `documento.md`, ecuaciones linealizadas, comentarios de revisión conservados y, en DOCX, encabezados inferidos por formato, listas escritas como texto, revisiones pendientes, texto oculto, cuadros de texto, celdas combinadas, SmartArt representado por su texto, tablas de contenido resumidas y la procedencia del título; en XLSX, hojas, filas y columnas ocultas, celdas combinadas, valores de error, formatos numéricos con significado, formato condicional, tablas dinámicas, gráficos representados por su caché, regiones grandes con concepto propio, fechas convertidas, el recálculo que pide el libro al abrirse y la procedencia del título; en PDF, páginas escaneadas con una capa de OCR previo o transcritas con el OCR del servicio, páginas solo visuales, mixtas o en blanco, páginas leídas en varias columnas, párrafos unidos con su continuación en otra columna o página, palabras partidas unidas, tablas reconstruidas por alineación, texto girado, encabezados inferidos por su tamaño o tomados de los marcadores, encabezados y pies registrados en `documento.md`, números de página impresos, etiquetas internas, imágenes decorativas y la procedencia del título. Una incidencia u observación que afecta a varias diapositivas, bloques, celdas o páginas se informa en una sola línea con su lista.
+El informe separa dos listas. **Incidencias** son pérdidas o incertidumbres sustantivas y determinan `partial`: contenido solo visual sin transcripción, una vista que no muestra texto del original, objetos incrustados, audio o video, SmartArt sin texto extraído, recursos que no pudieron adjuntarse o que el renderizador omitió, imágenes vinculadas a archivos externos, gráficos sin datos, fragmentos importados (`altChunk`); en XLSX, fórmulas sin valor almacenado, vínculos a libros externos y hojas de diálogo o de macros; y, en PDF, páginas escaneadas sin capa de texto ni texto reconocido por el OCR, texto de OCR con confianza media baja, vistas de página que no pudieron generarse, imágenes que no se pudieron decodificar y caracteres sin correspondencia Unicode. **Observaciones** informan sin cambiar el estado: diapositivas sin título, títulos inferidos, animaciones que no ocultan contenido, diapositivas sin contenido propio, texto del diseño registrado en `documento.md`, ecuaciones linealizadas, comentarios de revisión conservados y, en DOCX, encabezados inferidos por formato, listas escritas como texto, revisiones pendientes, texto oculto, cuadros de texto, celdas combinadas, SmartArt representado por su texto, tablas de contenido resumidas y la procedencia del título; en XLSX, hojas, filas y columnas ocultas, celdas combinadas, valores de error, formatos numéricos con significado, formato condicional, tablas dinámicas, gráficos representados por su caché, regiones grandes con concepto propio, fechas convertidas, el recálculo que pide el libro al abrirse y la procedencia del título; en PDF, páginas escaneadas con una capa de OCR previo o transcritas con el OCR del servicio, páginas solo visuales, mixtas o en blanco, páginas leídas en varias columnas, párrafos unidos con su continuación en otra columna o página, palabras partidas unidas, tablas reconstruidas por alineación, texto girado, encabezados inferidos por su tamaño o tomados de los marcadores, encabezados y pies registrados en `documento.md`, números de página impresos, etiquetas internas, imágenes decorativas y la procedencia del título; en todos los formatos, las referencias internas sin destino. Una incidencia u observación que afecta a varias diapositivas, bloques, celdas o páginas se informa en una sola línea con su lista.
 
 Un bundle de este perfil se acepta cuando se cumplen **ambos** controles:
 
@@ -195,6 +202,15 @@ El perfil se limita a `.pdf`, `.docx`, `.xlsx` y `.pptx`. Los formatos binarios 
 Todo cambio de una regla de esta especificación incrementa `profile_version` en la
 especificación y en `src/version.rs`, con una entrada aquí, en el mismo commit.
 
+- **1.7.0 — 8 de noviembre de 2026:** las referencias internas de DOCX (marcadores y
+  campos `REF \h`) y PDF (anotaciones de enlace) enlazan el concepto de su destino, y las
+  URL de las anotaciones PDF se escriben como enlaces; una referencia interna sin
+  destino, en cualquier formato, conserva su texto con la marca «\[referencia interna no
+  resuelta\]» y se declara; el informe enumera las referencias externas (§4 y §6; plan 3,
+  I5). Cambia el contenido de `p1`, `p2` y `guia_tecnica`, sin cambiar la cobertura de
+  palabras. El validador rechaza un enlace interno sin resolver y una marca no declarada,
+  y trata como externo todo destino con esquema de URI; acepta también los bundles
+  1.0.0 a 1.6.0.
 - **1.6.0 — 8 de noviembre de 2026:** cada concepto de `contenido/` declara `parent`
   y, si existen, `previous` y `next` (§1; plan 3, I4). El contenido no cambia. El
   validador exige que cada relación apunte a un concepto del bundle con el mismo

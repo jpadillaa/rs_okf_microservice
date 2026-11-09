@@ -261,6 +261,39 @@ conceptos del bundle con el mismo `parent`, reciprocidad, una sola cadena sin ci
 por padre, descendencia de `documento.md` y recorrido en profundidad igual al orden de
 `contenido/index.md`. Los bundles anteriores al perfil 1.6.0 no se comprueban.
 
+### Referencias internas y externas (plan 3, I5)
+
+Los lectores entregan cada referencia interna con su destino original (marcador DOCX,
+página PDF) y el adaptador la escribe como enlace pendiente: el destino y el texto entre
+caracteres de control que XML no admite (`pending_link` en `src/bundle.rs`), de modo que
+no pueden venir del original. Al terminar cada concepto, cuando ya se sabe qué concepto
+contiene cada bloque o página, `resolve_links` los sustituye por el enlace o por el texto
+con la marca de referencia no resuelta. PPTX y XLSX conocen sus destinos al leer y
+escriben la marca directamente.
+
+- **DOCX:** el lector anota el bloque de cada `w:bookmarkStart` del cuerpo (los que
+  están entre bloques señalan el siguiente). Los enlaces internos cuentan con el bloque
+  en que aparecen, para ubicar los que no se resuelven; los de notas, comentarios,
+  encabezados y pies se agrupan aparte. El recuento «Enlaces» del informe sigue contando
+  solo los externos: los internos de una tabla de contenido resumida no llegan al texto.
+- **PDF:** `read.rs` lee las anotaciones de enlace de cada página. Una URI se conserva;
+  un destino explícito o con nombre (`resolve_named_destination` de `pdf_oxide`) da la
+  página. Cada carácter cuyo centro cae en el rectángulo, con un punto de margen, recibe
+  el destino. El comienzo de una palabra que el rectángulo alcanza tras cubrir entera la
+  anterior se excluye, porque algunos productores alargan el rectángulo. Los tramos
+  (`Run`) conservan el enlace como el énfasis.
+- **PPTX:** un destino dentro de `ppt/slides/` que no es una diapositiva existente es una
+  referencia sin destino. Los demás destinos externos sin esquema web se conservan como
+  texto, como antes.
+- **XLSX:** una ubicación del libro que no es una hoja existente (hoja ausente o nombre
+  definido) es una referencia sin destino, declarada por hoja.
+
+`BundleWriter` reúne los destinos con esquema de URI de cada concepto y `finish` añade al
+informe la sección «Referencias externas» antes de las incidencias. El validador
+rechaza un enlace pendiente que siga en un concepto y un concepto con la marca si el
+informe no declara ninguna referencia «sin destino». `local_target` trata como externo
+todo destino con esquema de URI, para que `file:` o `doi:` no pasen por rutas del bundle.
+
 ### Validación independiente (plan 2, C10)
 
 `okf-microservice validate <bundle.zip | directorio>` aplica el mismo validador de

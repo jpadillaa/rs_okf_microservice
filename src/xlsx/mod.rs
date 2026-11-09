@@ -184,9 +184,13 @@ impl Builder<'_> {
                     .iter()
                     .find(|r| &r.id == id && r.external)
                     .map(|r| r.target.clone()),
-                Link::Internal(loc) => read::location_sheet(loc)
-                    .and_then(|s| self.sheet_index.get(&s))
-                    .map(|&n| Self::sheet_file(n)),
+                // Una ubicación del libro que no es una hoja existente (hoja ausente o
+                // nombre definido) es una referencia interna sin destino (plan 3, I5).
+                Link::Internal(loc) => Some(
+                    read::location_sheet(loc)
+                        .and_then(|s| self.sheet_index.get(&s))
+                        .map_or_else(|| UNRESOLVED_DEST.to_string(), |&n| Self::sheet_file(n)),
+                ),
             };
             let Some(href) = href else { continue };
             let href = if href.contains([' ', '(', ')']) {
@@ -208,6 +212,9 @@ impl Builder<'_> {
             md_cell(c.shown())
         };
         match links.get(&(c.row, c.col)) {
+            Some(href) if !text.is_empty() && href == UNRESOLVED_DEST => {
+                format!("{text} {UNRESOLVED}")
+            }
             Some(href) if !text.is_empty() => format!("[{text}]({href})"),
             _ => text,
         }
@@ -687,6 +694,7 @@ impl Builder<'_> {
             spans,
         );
         let file = format!("{base}.md");
+        self.note_unresolved(&info.name, &body);
         // Una región grande es hija del concepto de su hoja.
         self.out.concept_in(
             &format!("contenido/{file}"),
@@ -937,9 +945,20 @@ impl Builder<'_> {
             !losses.is_empty(),
             spans,
         );
+        self.note_unresolved(&info.name, &body);
         self.out
             .concept(&format!("contenido/{file}"), &fields, &body)?;
         Ok(summary)
+    }
+
+    /// Observación si un concepto de la hoja tiene hipervínculos internos sin destino.
+    fn note_unresolved(&mut self, sheet: &str, body: &str) {
+        let n = body.matches(UNRESOLVED).count();
+        if n > 0 {
+            self.issues.push(Issue::note(format!(
+                "Hoja «{sheet}»: {n} hipervínculo(s) interno(s) sin destino (hoja ausente o nombre definido); se conserva su texto con la marca {UNRESOLVED_TEXT}"
+            )));
+        }
     }
 
     fn budget_limit(&self) -> usize {
@@ -1657,6 +1676,46 @@ mod tests {
     use sha2::{Digest, Sha256};
 
     /// Convierte un XLSX y devuelve el estado y el contenido de texto de cada entrada.
+    #[test]
+    fn a_link_to_a_missing_sheet_is_marked_and_declared() {
+        use std::io::{Read, Write};
+        let (_, md) = convert_example("examples/xlsx/muestras/ventas_trimestrales.xlsx");
+        assert!(md["contenido/hoja-001.md"].contains("[Ver detalle por operación](hoja-002.md)"));
+        let tmp = tempfile::tempdir().unwrap();
+        let path = tmp.path().join("ventas_rotas.xlsx");
+        let mut src = ZipArchive::new(
+            fs::File::open("examples/xlsx/muestras/ventas_trimestrales.xlsx").unwrap(),
+        )
+        .unwrap();
+        let mut dst = zip::ZipWriter::new(fs::File::create(&path).unwrap());
+        for i in 0..src.len() {
+            let mut e = src.by_index(i).unwrap();
+            let name = e.name().to_string();
+            let mut data = Vec::new();
+            e.read_to_end(&mut data).unwrap();
+            if name == "xl/worksheets/sheet1.xml" {
+                data = String::from_utf8(data)
+                    .unwrap()
+                    .replace("location=\"'Detalle'!A1\"", "location=\"'Falta'!A1\"")
+                    .into_bytes();
+            }
+            dst.start_file(name, zip::write::SimpleFileOptions::default())
+                .unwrap();
+            dst.write_all(&data).unwrap();
+        }
+        dst.finish().unwrap();
+        let (_, md) = convert_example(path.to_str().unwrap());
+        let sheet = &md["contenido/hoja-001.md"];
+        assert!(
+            sheet.contains(&format!("Ver detalle por operación {UNRESOLVED}")),
+            "{sheet}"
+        );
+        assert!(
+            md["conversion-report.md"]
+                .contains("Hoja «Resumen»: 1 hipervínculo(s) interno(s) sin destino")
+        );
+    }
+
     fn convert_example(path: &str) -> (String, HashMap<String, String>) {
         let bytes = fs::read(path).unwrap_or_else(|e| panic!("no se pudo leer {path}: {e}"));
         let tmp = tempfile::tempdir().unwrap();

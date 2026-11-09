@@ -382,6 +382,9 @@ pub(crate) struct BundleWriter {
     /// Último concepto recibido de cada padre, aún sin escribir: se escribe cuando llega
     /// su siguiente hermano, que da su `next`, o al cerrar el bundle (plan 3, I4).
     pending: std::collections::BTreeMap<String, Pending>,
+    /// Destinos externos enlazados y los conceptos que los enlazan, en orden de aparición
+    /// (plan 3, I5).
+    external: Vec<(String, Vec<String>)>,
 }
 
 /// Concepto que espera a conocer su siguiente hermano.
@@ -421,6 +424,7 @@ impl BundleWriter {
             created: Instant::now(),
             conversion_id: crate::identity::conversion_id(&source.sha256, settings),
             pending: Default::default(),
+            external: Vec::new(),
         })
     }
     /// Escritor del ZIP, para los recursos que el adaptador escribe en streaming.
@@ -477,8 +481,41 @@ impl BundleWriter {
         }
         self.write_concept(&p.path, fields, &p.body)
     }
+    /// Añade al informe, antes de las incidencias, el inventario de destinos externos.
+    fn with_external(&self, report: &str) -> String {
+        let mut section = String::from(
+            "## Referencias externas\n\nDestinos fuera del bundle enlazados desde los conceptos, con los conceptos que los enlazan; no se comprueban ni se descargan. Las imágenes vinculadas, los libros externos y los objetos incrustados se declaran en las incidencias.\n\n",
+        );
+        if self.external.is_empty() {
+            section.push_str("Sin enlaces externos.\n");
+        }
+        for (target, from) in &self.external {
+            section.push_str(&format!(
+                "- <{}> — {}\n",
+                target.replace(['<', '>'], ""),
+                from.join(", ")
+            ));
+        }
+        section.push('\n');
+        match report.find("## Incidencias") {
+            Some(i) => format!("{}{section}{}", &report[..i], &report[i..]),
+            None => format!("{report}\n{section}"),
+        }
+    }
     /// Escribe un concepto con su `unit_id` detrás de `type`.
     fn write_concept(&mut self, path: &str, fields: Fields, body: &str) -> Result<()> {
+        for target in crate::bundle::link_targets(body) {
+            if !crate::bundle::has_scheme(target) {
+                continue;
+            }
+            match self.external.iter_mut().find(|(t, _)| t == target) {
+                Some((_, from)) if !from.iter().any(|f| f == path) => from.push(path.into()),
+                Some(_) => {}
+                None => self
+                    .external
+                    .push((target.to_string(), vec![path.to_string()])),
+            }
+        }
         let fields = fields.insert_after(
             "type",
             "unit_id",
@@ -518,6 +555,7 @@ impl BundleWriter {
             nav.heading, nav.contents_entries
         );
         self.file("contenido/index.md", contents.as_bytes())?;
+        let report = self.with_external(report);
         self.file("conversion-report.md", report.as_bytes())?;
         self.zip.finish()?;
         let assembled = Instant::now();

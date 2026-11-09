@@ -1,7 +1,7 @@
 ---
 converter_version: "0.1.0"
 converter_commit: "<commit>"
-profile_version: "1.6.0"
+profile_version: "1.7.0"
 conversion_settings:
   view_font_sha256: "<fuente>"
 settings_sha256: "<huella>"
@@ -29,6 +29,12 @@ sha256: "9f6a83313e4d37377c3e3f9f362bda7741d531991ac1a3ce610e9b054ea0af26"
 - Imágenes decorativas visibles solo en las vistas (iconos sin texto alternativo útil, menos del 1 % del área, o fondos): 0
 - Vistas: BetterOffice PPTX Raster (Rust)
 - Duración de ensamblado/renderizado: <duración> ms
+
+## Referencias externas
+
+Destinos fuera del bundle enlazados desde los conceptos, con los conceptos que los enlazan; no se comprueban ni se descargan. Las imágenes vinculadas, los libros externos y los objetos incrustados se declaran en las incidencias.
+
+Sin enlaces externos.
 
 ## Incidencias
 

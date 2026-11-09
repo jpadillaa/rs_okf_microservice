@@ -232,6 +232,13 @@ impl Para {
                 .collect::<Vec<_>>()
                 .join("\n");
             match g.link {
+                // Enlace interno: se resuelve al escribir el concepto (`resolve_refs`).
+                // Destino `bloque INTERNAL marcador`.
+                Some(dest) if !g.text.trim().is_empty() && dest.starts_with(INTERNAL) => out
+                    .push_str(&crate::bundle::pending_link(
+                        &dest[INTERNAL.len()..],
+                        &piece.replace('\n', " "),
+                    )),
                 Some(dest) if !g.text.trim().is_empty() => out.push_str(&format!(
                     "[{}]({})",
                     piece.replace('\n', " "),
@@ -298,6 +305,14 @@ fn emphasize(text: &str, bold: bool, italic: bool) -> String {
     let lead = &text[..text.len() - text.trim_start().len()];
     let trail = &text[text.trim_end().len()..];
     format!("{lead}{mark}{}{mark}{trail}", escape_inline(core))
+}
+
+/// Prefijo de un enlace a un marcador del documento. XML no admite caracteres de control
+/// en el texto, así que estas marcas no pueden venir del original.
+pub(crate) const INTERNAL: &str = "\u{1}";
+
+fn internal_link(name: &str) -> String {
+    format!("{INTERNAL}{name}")
 }
 
 pub(crate) fn link_dest(dest: &str) -> String {
@@ -380,12 +395,28 @@ impl Field {
             .unwrap_or_default()
             .to_uppercase();
         match word.as_str() {
-            "HYPERLINK" if !instr.contains("\\l") => {
+            // `\l` señala un marcador del propio documento (plan 3, I5).
+            "HYPERLINK" if instr.contains("\\l") => {
+                self.link = instr
+                    .split('"')
+                    .nth(1)
+                    .filter(|l| !l.is_empty())
+                    .map(internal_link)
+            }
+            "HYPERLINK" => {
                 self.link = instr
                     .split('"')
                     .nth(1)
                     .map(str::to_string)
                     .filter(|l| !l.is_empty())
+            }
+            // Referencia cruzada con hipervínculo al marcador (`\h`).
+            "REF"
+                if instr
+                    .split_whitespace()
+                    .any(|w| w.eq_ignore_ascii_case("\\h")) =>
+            {
+                self.link = instr.split_whitespace().nth(1).map(internal_link)
             }
             "PAGE" | "SECTIONPAGES" | "PAGEREF" => {
                 self.hide = true;
@@ -461,6 +492,10 @@ pub(crate) struct Reader<'a> {
     /// Identificadores de notas al pie y finales en orden de primera referencia.
     pub(crate) footnote_order: Vec<String>,
     pub(crate) endnote_order: Vec<String>,
+    /// Bloque del cuerpo que se está leyendo (desde 0); `None` fuera del cuerpo.
+    pub(crate) block: Option<usize>,
+    /// Bloque de cada marcador (`w:bookmarkStart`) del cuerpo, por su nombre.
+    pub(crate) bookmarks: HashMap<String, usize>,
 }
 
 impl<'a> Reader<'a> {
@@ -476,6 +511,8 @@ impl<'a> Reader<'a> {
             anchors: HashMap::new(),
             footnote_order: Vec::new(),
             endnote_order: Vec::new(),
+            block: None,
+            bookmarks: HashMap::new(),
         }
     }
     /// Cambia la parte que se lee y sus relaciones; los campos y los rangos de
@@ -505,6 +542,12 @@ impl<'a> Reader<'a> {
         }
     }
 
+    /// Registra el bloque de un marcador del cuerpo; el primero con un nombre gana.
+    pub(crate) fn bookmark(&mut self, n: &Node) {
+        if let (Some(block), Some(name)) = (self.block, n.attr(b"name")) {
+            self.bookmarks.entry(name.to_string()).or_insert(block);
+        }
+    }
     pub(crate) fn paragraph(&mut self, p: &Node) -> Para {
         let ppr = p.child(b"pPr");
         let style = ppr.and_then(|x| x.val(b"pStyle")).map(str::to_string);
@@ -602,13 +645,20 @@ impl<'a> Reader<'a> {
         match n.name.as_slice() {
             b"r" => self.run(n, para, base, link, mode),
             b"hyperlink" => {
-                let target = n.rel(b"id").and_then(|rid| self.rels.get(rid)).map(|t| {
-                    match n.attr(b"anchor") {
+                let target = match n.rel(b"id").and_then(|rid| self.rels.get(rid)) {
+                    Some(t) => Some(match n.attr(b"anchor") {
                         Some(a) => format!("{t}#{a}"),
                         None => t.clone(),
-                    }
-                });
-                if target.is_some() {
+                    }),
+                    // Sin relación, `w:anchor` es un marcador del propio documento.
+                    None => n
+                        .attr(b"anchor")
+                        .filter(|a| !a.is_empty())
+                        .map(internal_link),
+                };
+                // Solo los externos: los internos de una tabla de contenido resumida no
+                // llegan al texto.
+                if target.as_deref().is_some_and(|t| !t.starts_with(INTERNAL)) {
                     para.aux.links += 1;
                 }
                 let l = target.as_deref().or(link);
@@ -655,6 +705,7 @@ impl<'a> Reader<'a> {
                     });
                 }
             }
+            b"bookmarkStart" => self.bookmark(n),
             b"commentRangeStart" => {
                 if let Some(id) = n.attr(b"id") {
                     self.open_comments.push(id.to_string());
@@ -851,7 +902,15 @@ impl<'a> Reader<'a> {
         }
         let link = link
             .map(str::to_string)
-            .or_else(|| self.fields.iter().rev().find_map(|f| f.link.clone()));
+            .or_else(|| self.fields.iter().rev().find_map(|f| f.link.clone()))
+            .map(|l| match l.strip_prefix(INTERNAL) {
+                // El bloque del enlace sirve después para ubicar la referencia.
+                Some(name) => format!(
+                    "{INTERNAL}{}{INTERNAL}{name}",
+                    self.block.map_or(0, |b| b + 1)
+                ),
+                None => l,
+            });
         para.segs.push(Seg {
             text: text.to_string(),
             bold: props.bold == Some(true),

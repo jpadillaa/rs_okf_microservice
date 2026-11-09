@@ -1,15 +1,15 @@
 ---
 converter_version: "0.1.0"
 converter_commit: "<commit>"
-profile_version: "1.6.0"
+profile_version: "1.7.0"
 conversion_settings:
   max_image_pixels: 33554432
   ocr:
     enabled: false
 settings_sha256: "ad1d7709796a5172b6ad18d538b1bef5780b44279dd787d15ecc82ede959ef16"
-conversion_id: "b256d8792f82e9fce97a08b66792a9f59ca9d1dca9b4b56db88b681a6e56fe25"
+conversion_id: "06130e9dec59648a18894e7924fd7e9d28bcf19c189a7f39a2354196ae9f91a4"
 type: "Conversion Report"
-unit_id: "b256d8792f82e9fce97a08b66792a9f59ca9d1dca9b4b56db88b681a6e56fe25/conversion-report.md"
+unit_id: "06130e9dec59648a18894e7924fd7e9d28bcf19c189a7f39a2354196ae9f91a4/conversion-report.md"
 title: "Informe de conversión"
 generated:
   by: "process:document-conversion"
@@ -43,6 +43,20 @@ Toda página física figura en algún concepto; las páginas sin texto propio ll
 | 7 | texto digital | seccion-006.md, seccion-007.md |
 | 8 | texto digital | seccion-007.md, seccion-008.md, seccion-009.md |
 | 9 | texto digital | seccion-009.md |
+
+## Referencias externas
+
+Destinos fuera del bundle enlazados desde los conceptos, con los conceptos que los enlazan; no se comprueban ni se descargan. Las imágenes vinculadas, los libros externos y los objetos incrustados se declaran en las incidencias.
+
+- <http://creativecommons.org/licenses/by/4.0/> — contenido/seccion-003.md
+- <http://creativecommons.org/publicdomain/zero/1.0/> — contenido/seccion-003.md
+- <https://publicationethics.org/guidance/cope-position/authorship-and-ai-tools> — contenido/seccion-009.md
+- <https://www.icmje.org/icmje-recommendations.pdf> — contenido/seccion-009.md
+- <https://bardai.ai/2024/01/10/the-plagiarism-problem-how-generative-ai-models-reproduce-copyrighted-content/> — contenido/seccion-009.md
+- <https://www.datacamp.com/tutorial/how-transformers-work?utm_source=google&utm_medium=paid_search&utm_campaignid=19589720830&utm_adgroupid=157156377071&utm_device=m&utm_keyword=&utm_matchtype=&utm_network=g&utm_adpostion=&utm_creative=684592141199&utm_targetid=dsa-2218886984380&utm_loc_interest_ms=&utm_loc_physical_ms=9191512&utm_content=dsa~tofu~tutorial~machine-learning&accountid=9624585688&utm_campaign=230119_1-sea~dsa~tofu_2-b2c_3-nam_4-prc_5-na_6-na_7-le_8-pdsh-go_9-nb-e_10-na_11-na&gad_source=1> — contenido/seccion-009.md
+- <https://www.grammarly.com/blog/grammarly-vs-competition/grammarly-vs-chatgpt/#:~:text=Here’s%20an%20example%20of%20Grammarly’s,Writing%20Coach%2C%20to%20get%20feedback> — contenido/seccion-009.md
+- <https://www.amperetranslations.com/blog/chatgpt-translation/> — contenido/seccion-009.md
+- <https://www.elsevier.com/products/scopus/scopus-ai> — contenido/seccion-009.md
 
 ## Incidencias
 

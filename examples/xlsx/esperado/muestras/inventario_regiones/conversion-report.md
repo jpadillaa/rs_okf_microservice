@@ -1,12 +1,12 @@
 ---
 converter_version: "0.1.0"
 converter_commit: "<commit>"
-profile_version: "1.6.0"
+profile_version: "1.7.0"
 conversion_settings: {}
 settings_sha256: "44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a"
-conversion_id: "db8e17a4888217f6856cdf2e9f9796e45aed12ef8b977820c099cd64f015bed5"
+conversion_id: "95fb7fdedbeb7ca7db8ea0d464e1488b6681275cfd79c44aac8a63e899586795"
 type: "Conversion Report"
-unit_id: "db8e17a4888217f6856cdf2e9f9796e45aed12ef8b977820c099cd64f015bed5/conversion-report.md"
+unit_id: "95fb7fdedbeb7ca7db8ea0d464e1488b6681275cfd79c44aac8a63e899586795/conversion-report.md"
 title: "Informe de conversión"
 generated:
   by: "process:document-conversion"
@@ -30,6 +30,12 @@ sha256: "9c522156b40fd3386cf9fdf9c237f544387ffa0e46d973d806c7398a34b2715d"
 - Comentarios de revisión: 0
 - Nombres definidos: 0; vínculos externos: 0
 - Duración de ensamblado: <duración> ms
+
+## Referencias externas
+
+Destinos fuera del bundle enlazados desde los conceptos, con los conceptos que los enlazan; no se comprueban ni se descargan. Las imágenes vinculadas, los libros externos y los objetos incrustados se declaran en las incidencias.
+
+Sin enlaces externos.
 
 ## Incidencias
 

@@ -1,6 +1,6 @@
 ---
 type: "Source Document"
-unit_id: "0895fb23bba4522137a6e84d2610abe97be01c5859b446aabd7763b691954aa1/documento.md"
+unit_id: "0618fd6fca7d62a33a79a067c3e3a9024ebb5d4e562519bfda40ceb21713b09f/documento.md"
 title: "Guía técnica de indexación vectorial"
 description: "Documento fuente guia_tecnica.docx convertido a conceptos OKF por secciones."
 sources:
@@ -11,10 +11,10 @@ generated:
   at: "<generado>"
 converter_version: "0.1.0"
 converter_commit: "<commit>"
-profile_version: "1.6.0"
+profile_version: "1.7.0"
 conversion_settings: {}
 settings_sha256: "44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a"
-conversion_id: "0895fb23bba4522137a6e84d2610abe97be01c5859b446aabd7763b691954aa1"
+conversion_id: "0618fd6fca7d62a33a79a067c3e3a9024ebb5d4e562519bfda40ceb21713b09f"
 source_file:
   path: "references/original.docx"
   sha256: "874f50ea21e265b94717ca5cb837e1117f6751f1de506b5327ea94937a2e55b0"

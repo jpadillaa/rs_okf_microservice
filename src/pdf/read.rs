@@ -63,6 +63,112 @@ pub(crate) struct Glyph {
     /// Fragmento de texto de pdf_oxide al que pertenece; un fragmento nunca cruza
     /// líneas.
     pub(crate) span: usize,
+    /// Destino de la anotación de enlace que lo cubre (plan 3, I5): una URL, una página
+    /// del documento (`PAGE_LINK` y su número) o `UNRESOLVED_DEST`.
+    pub(crate) link: Option<String>,
+}
+
+/// Prefijo del destino de un enlace a una página del propio documento.
+pub(crate) const PAGE_LINK: &str = "\u{5}";
+
+/// Destino de una anotación de enlace: URL, página (desde 1) o referencia sin destino.
+/// Los demás (otro archivo, acciones con nombre) no se convierten en enlace.
+fn link_target(doc: &PdfDocument, a: &pdf_oxide::Annotation, pages: usize) -> Option<String> {
+    use pdf_oxide::{LinkAction, LinkDestination};
+    let page = |d: &LinkDestination| -> String {
+        let p = match d {
+            LinkDestination::Explicit { page, .. } => Some(*page as usize),
+            LinkDestination::Named(n) => doc.resolve_named_destination(n).ok().flatten(),
+        };
+        match p.filter(|&p| p < pages) {
+            Some(p) => format!("{PAGE_LINK}{}", p + 1),
+            None => crate::bundle::UNRESOLVED_DEST.to_string(),
+        }
+    };
+    match (&a.action, &a.destination) {
+        (Some(LinkAction::Uri(u)), _) => Some(u.trim().to_string()).filter(|u| !u.is_empty()),
+        (Some(LinkAction::GoTo(d)), _) | (None, Some(d)) => Some(page(d)),
+        _ => None,
+    }
+}
+
+/// Marca los caracteres que cubre cada anotación de enlace de la página.
+fn apply_links(doc: &PdfDocument, index: usize, (mx0, my1): (f32, f32), glyphs: &mut [Glyph]) {
+    let Ok(annotations) = doc.get_annotations(index) else {
+        return;
+    };
+    let pages = doc.page_count().unwrap_or(0);
+    for a in annotations {
+        if a.subtype.as_deref() != Some("Link") {
+            continue;
+        }
+        let (Some([ax0, ay0, ax1, ay1]), Some(target)) = (a.rect, link_target(doc, &a, pages))
+        else {
+            continue;
+        };
+        let (left, right) = (ax0.min(ax1) as f32 - mx0, ax0.max(ax1) as f32 - mx0);
+        let (top, bottom) = (my1 - ay0.max(ay1) as f32, my1 - ay0.min(ay1) as f32);
+        // Centro del carácter, algo por encima de la línea base, con un punto de margen.
+        let inside = |g: &Glyph| {
+            let (cx, cy) = ((g.x0 + g.x1) / 2.0, g.base - 0.3 * g.size);
+            (left - 1.0..=right + 1.0).contains(&cx) && (top - 1.0..=bottom + 1.0).contains(&cy)
+        };
+        let covered: Vec<bool> = glyphs.iter().map(inside).collect();
+        let mut linked = covered.clone();
+        // Algunos productores alargan el rectángulo sobre el comienzo de la palabra que
+        // sigue al enlace: si solo cubre el principio de una palabra y también la palabra
+        // anterior, ese principio no forma parte del enlace.
+        let ranges = words(glyphs);
+        for (w, word) in ranges.iter().enumerate() {
+            let inside_part = word.clone().take_while(|&k| covered[k]).count();
+            let partial = inside_part > 0 && inside_part < word.len();
+            let prefix_only = word.clone().skip(inside_part).all(|k| !covered[k]);
+            let previous_covered = w > 0 && covered[ranges[w - 1].end - 1];
+            if partial && prefix_only && previous_covered {
+                for k in word.clone() {
+                    linked[k] = false;
+                }
+            }
+        }
+        for (g, on) in glyphs.iter_mut().zip(linked) {
+            if on {
+                g.link = Some(target.clone());
+            }
+        }
+    }
+}
+
+/// Palabras de una página: tramos de caracteres seguidos de la misma línea, sin espacios
+/// ni huecos mayores que un tercio del tamaño de letra.
+fn words(glyphs: &[Glyph]) -> Vec<std::ops::Range<usize>> {
+    let mut out = Vec::new();
+    let mut start: Option<usize> = None;
+    for (k, g) in glyphs.iter().enumerate() {
+        let joined = k > 0 && {
+            let p = &glyphs[k - 1];
+            !p.c.is_whitespace()
+                && (p.base - g.base).abs() < 0.5
+                && g.x0 - p.x1 < 0.33 * p.size.min(g.size)
+        };
+        if g.c.is_whitespace() {
+            if let Some(s) = start.take() {
+                out.push(s..k);
+            }
+            continue;
+        }
+        match start {
+            Some(s) if !joined => {
+                out.push(s..k);
+                start = Some(k);
+            }
+            None => start = Some(k),
+            _ => {}
+        }
+    }
+    if let Some(s) = start {
+        out.push(s..glyphs.len());
+    }
+    out
 }
 
 /// Imagen dibujada en la página. Las que no son decorativas llevan la huella de sus
@@ -253,6 +359,7 @@ pub(crate) fn page(doc: &PdfDocument, index: usize) -> Result<Page> {
                 mono: ch.is_monospace,
                 rotated: false,
                 span: span_of[k - 1],
+                link: None,
             });
             k += len - 1;
             continue;
@@ -282,8 +389,10 @@ pub(crate) fn page(doc: &PdfDocument, index: usize) -> Result<Page> {
             rotated: ch.rotation_degrees.abs() > 5.0
                 && (ch.rotation_degrees.abs() - 360.0).abs() > 5.0,
             span: span_of[k - 1],
+            link: None,
         });
     }
+    apply_links(doc, index, (mx0, my1), &mut glyphs);
     let page_rect = Rect {
         x0: 0.0,
         top: 0.0,

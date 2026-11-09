@@ -1,6 +1,6 @@
 ---
 type: "Source Section"
-unit_id: "f9f7c42c0d93c8ed9fd16ee2efd84e729f3efae5eba147636d9e82f0e4380234/contenido/seccion-003.md"
+unit_id: "844f8dd3be601407224059b21f667b7e32c3ac24acb8e04308e2a18304127a38/contenido/seccion-003.md"
 parent: "documento.md"
 previous: "contenido/seccion-002.md"
 title: "COMUNICACIÓN EFECTIVA EN ENTORNOS LABORALES"
@@ -389,13 +389,13 @@ Primera versión
 **Veamos algunos ejemplos**
 
 <!-- okf-source-span: p-50 -->
-Ejemplo1: https://www.youtube.com/watch? v=XUqrvbsTfck Ejemplo 2: https://www.youtube.com/watch? v=nWecIwtN2ho Ejemplo 3: https://www.youtube.com/watch? v=bvnwDoaixJs Ejemplo 4: https://www.youtube.com/watch? v=uhZzB5hid6M Lenguaje corporal:
+Ejemplo1: [https://www.youtube.com/watch? v=XUqrvbsTfck](https://www.youtube.com/watch?v=XUqrvbsTfck) Ejemplo 2: [https://www.youtube.com/watch? v=nWecIwtN2ho](https://www.youtube.com/watch?v=nWecIwtN2ho) Ejemplo 3: [https://www.youtube.com/watch? v=bvnwDoaixJs](https://www.youtube.com/watch?v=bvnwDoaixJs) Ejemplo 4: [https://www.youtube.com/watch? v=uhZzB5hid6M](https://www.youtube.com/watch?v=uhZzB5hid6M) Lenguaje corporal:
 
 <!-- okf-source-span: p-50 -->
-https://www.youtube.com/watch?
+[https://www.youtube.com/watch?](https://www.youtube.com/watch?v=G4Gp0hc0TMA)
 
 <!-- okf-source-span: p-50 -->
-v=G4Gp0hc0TMA Uso de la voz:https://www.youtube.com/watch? v=YlI-e4QJWG0
+[v=G4Gp0hc0TMA](https://www.youtube.com/watch?v=G4Gp0hc0TMA) Uso de la voz:[https://www.youtube.com/watch? v=YlI-e4QJWG0](https://www.youtube.com/watch?v=YlI-e4QJWG0)
 
 <!-- okf-source-span: p-51 -->
 ![Imagen de la página 51](../assets/pagina-042-imagen-01.png)
@@ -434,7 +434,7 @@ Duración máxima: 2 minutos Plano: cuerpo entero o plano superior Grabe su vide
 Recursos
 
 <!-- okf-source-span: p-52 -->
-1\.**Tutorías:** lectura, escritura, investigación y comunicación oral https://espanol.bookeau.com/#/l ogin 2.**Recursos LEO:** lectura, escritura y oralidad https://leo.uniandes.edu.co/ 3.**Centro de Español** https://centrodeespanol.uniande s.edu.co/
+1\.**Tutorías:** lectura, escritura, investigación y comunicación oral [https://espanol.bookeau.com/#/l ogin](https://espanol.bookeau.com/#/login) 2.**Recursos LEO:** lectura, escritura y oralidad [https://leo.uniandes.edu.co/](https://leo.uniandes.edu.co/) 3.**Centro de Español** [https://centrodeespanol.uniande s.edu.co/](https://centrodeespanol.uniandes.edu.co/)
 
 <!-- okf-source-span: p-53 -->
 #### Gracias por su asistencia

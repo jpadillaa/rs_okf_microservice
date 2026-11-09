@@ -247,6 +247,7 @@ fn line_glyphs(text: &str, b: &Bounds, size: f32, span: usize) -> Vec<Glyph> {
             mono: false,
             rotated: false,
             span,
+            link: None,
         })
         .collect()
 }

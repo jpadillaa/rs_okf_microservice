@@ -361,9 +361,13 @@ pub(crate) fn extract(bytes: &[u8], attempt: &FsPath, max_slides: usize) -> Resu
         {
             return Some(target.clone());
         }
-        positions
-            .get(&resolve(part, target))
-            .map(|n| format!("slide-{n:03}.md"))
+        let resolved = resolve(part, target);
+        match positions.get(&resolved) {
+            Some(n) => Some(format!("slide-{n:03}.md")),
+            // Una diapositiva del paquete que no existe: referencia interna sin destino.
+            None if resolved.starts_with("ppt/slides/") => Some(UNRESOLVED_DEST.into()),
+            None => None,
+        }
     };
     let authors = comment_authors(&mut z);
     let mut layout_texts = HashMap::<String, Vec<String>>::new();
@@ -1005,6 +1009,7 @@ pub(crate) fn build_bundle(
     }
     let generated = chrono_now();
     let mut allissues = extraction.issues.clone();
+    let mut unresolved = Vec::new();
     let mut out = BundleWriter::create(Format::Pptx, attempt, source, &settings)?;
     fs::create_dir_all(attempt.join("assets"))?;
     for s in slides {
@@ -1033,7 +1038,16 @@ pub(crate) fn build_bundle(
                 rendered.skipped_images
             ));
         }
+        if md.contains(UNRESOLVED) {
+            unresolved.push(s.idx);
+        }
         out.concept(&format!("contenido/slide-{:03}.md", s.idx), &fields, &md)?;
+    }
+    if !unresolved.is_empty() {
+        allissues.push(Issue::note(format!(
+            "{}: referencia interna sin destino; se conserva su texto con la marca {UNRESOLVED_TEXT}",
+            units_phrase("Diapositiva", "Diapositivas", &unresolved)
+        )));
     }
     for entry in fs::read_dir(attempt.join("assets"))? {
         let e = entry?;

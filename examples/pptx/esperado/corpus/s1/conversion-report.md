@@ -1,7 +1,7 @@
 ---
 converter_version: "0.1.0"
 converter_commit: "<commit>"
-profile_version: "1.6.0"
+profile_version: "1.7.0"
 conversion_settings:
   view_font_sha256: "<fuente>"
 settings_sha256: "<huella>"
@@ -29,6 +29,13 @@ sha256: "a429b7fdb4b417e8f432853066805fff0696f3a8f5467f0fb3675be90fff4028"
 - Imágenes decorativas visibles solo en las vistas (iconos sin texto alternativo útil, menos del 1 % del área, o fondos): 91
 - Vistas: BetterOffice PPTX Raster (Rust)
 - Duración de ensamblado/renderizado: <duración> ms
+
+## Referencias externas
+
+Destinos fuera del bundle enlazados desde los conceptos, con los conceptos que los enlazan; no se comprueban ni se descargan. Las imágenes vinculadas, los libros externos y los objetos incrustados se declaran en las incidencias.
+
+- <https://misw4411-aplicaciones-basadas-en-llms.github.io/llm-retrieval-engineering-course/> — contenido/slide-001.md
+- <https://www.uniandes.edu.co/es/la-universidad/secretaria-general/reglamentos-estudiantiles> — contenido/slide-003.md, contenido/slide-004.md, contenido/slide-011.md
 
 ## Incidencias
 

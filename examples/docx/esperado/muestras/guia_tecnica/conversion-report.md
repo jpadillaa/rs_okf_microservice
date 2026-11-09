@@ -1,12 +1,12 @@
 ---
 converter_version: "0.1.0"
 converter_commit: "<commit>"
-profile_version: "1.6.0"
+profile_version: "1.7.0"
 conversion_settings: {}
 settings_sha256: "44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a"
-conversion_id: "0895fb23bba4522137a6e84d2610abe97be01c5859b446aabd7763b691954aa1"
+conversion_id: "0618fd6fca7d62a33a79a067c3e3a9024ebb5d4e562519bfda40ceb21713b09f"
 type: "Conversion Report"
-unit_id: "0895fb23bba4522137a6e84d2610abe97be01c5859b446aabd7763b691954aa1/conversion-report.md"
+unit_id: "0618fd6fca7d62a33a79a067c3e3a9024ebb5d4e562519bfda40ceb21713b09f/conversion-report.md"
 title: "Informe de conversión"
 generated:
   by: "process:document-conversion"
@@ -29,6 +29,13 @@ sha256: "874f50ea21e265b94717ca5cb837e1117f6751f1de506b5327ea94937a2e55b0"
 - Comentarios de revisión: 0
 - Enlaces: 1
 - Duración de ensamblado: <duración> ms
+
+## Referencias externas
+
+Destinos fuera del bundle enlazados desde los conceptos, con los conceptos que los enlazan; no se comprueban ni se descargan. Las imágenes vinculadas, los libros externos y los objetos incrustados se declaran en las incidencias.
+
+- <https://example.org/docs/indices-vectoriales> — contenido/seccion-004.md
+- <https://example.org/okf/laboratorio3> — contenido/seccion-004.md
 
 ## Incidencias
 

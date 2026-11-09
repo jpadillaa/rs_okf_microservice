@@ -158,6 +158,42 @@ pub(crate) fn escape_line_start(line: &str) -> String {
     line.to_string()
 }
 
+/// Marca que sigue al texto de una referencia interna sin destino (plan 3, I5), tal como
+/// se escribe en Markdown y tal como se lee.
+pub(crate) const UNRESOLVED: &str = "\\[referencia interna no resuelta\\]";
+pub(crate) const UNRESOLVED_TEXT: &str = "«[referencia interna no resuelta]»";
+/// Destino de enlace que un lector entrega para una referencia interna sin destino; el
+/// escritor del Markdown lo sustituye por el texto seguido de `UNRESOLVED`.
+pub(crate) const UNRESOLVED_DEST: &str = "\u{1}";
+/// Enlace interno que se resuelve al escribir el concepto, cuando ya se sabe qué concepto
+/// contiene cada destino: `REF_OPEN destino REF_TEXT texto REF_CLOSE`. XML no admite
+/// estos caracteres de control, de modo que no pueden venir del original.
+pub(crate) const REF_OPEN: char = '\u{2}';
+pub(crate) const REF_TEXT: char = '\u{3}';
+pub(crate) const REF_CLOSE: char = '\u{4}';
+
+/// Enlace interno pendiente de resolver, con el texto ya escrito en Markdown.
+pub(crate) fn pending_link(dest: &str, text: &str) -> String {
+    format!("{REF_OPEN}{dest}{REF_TEXT}{text}{REF_CLOSE}")
+}
+
+/// Sustituye cada enlace interno pendiente por lo que devuelve `f(destino, texto)`.
+pub(crate) fn resolve_links(md: &str, mut f: impl FnMut(&str, &str) -> String) -> String {
+    let mut out = String::with_capacity(md.len());
+    let mut rest = md;
+    while let Some(start) = rest.find(REF_OPEN) {
+        out.push_str(&rest[..start]);
+        let after = &rest[start + REF_OPEN.len_utf8()..];
+        let (Some(t), Some(c)) = (after.find(REF_TEXT), after.find(REF_CLOSE)) else {
+            unreachable!("enlace interno sin cerrar")
+        };
+        out.push_str(&f(&after[..t], &after[t + REF_TEXT.len_utf8()..c]));
+        rest = &after[c + REF_CLOSE.len_utf8()..];
+    }
+    out.push_str(rest);
+    out
+}
+
 pub(crate) fn hex(b: &[u8]) -> String {
     b.iter().map(|v| format!("{v:02x}")).collect()
 }
@@ -180,11 +216,7 @@ pub(crate) fn frontmatter(md: &str) -> Result<YamlValue> {
 /// Ruta normalizada dentro del bundle de un destino de enlace local; `None` para
 /// enlaces externos o anclas del mismo documento.
 pub(crate) fn local_target(entry: &str, target: &str) -> Option<String> {
-    if target.starts_with("http://")
-        || target.starts_with("https://")
-        || target.starts_with("mailto:")
-        || target.is_empty()
-    {
+    if target.is_empty() || has_scheme(target) {
         return None;
     }
     let t = target.split('#').next().unwrap_or("");
@@ -211,6 +243,17 @@ pub(crate) fn local_target(entry: &str, target: &str) -> Option<String> {
         }
     }
     Some(p.join("/"))
+}
+
+/// ¿Empieza el destino por un esquema de URI (`https:`, `mailto:`, `file:`…)? Entonces
+/// apunta fuera del bundle.
+pub(crate) fn has_scheme(target: &str) -> bool {
+    target.split_once(':').is_some_and(|(scheme, _)| {
+        scheme.starts_with(|c: char| c.is_ascii_alphabetic())
+            && scheme
+                .chars()
+                .all(|c| c.is_ascii_alphanumeric() || matches!(c, '+' | '-' | '.'))
+    })
 }
 
 /// Marcador de pasaje del perfil: `<!-- okf-source-span: ID -->`.
@@ -292,6 +335,8 @@ pub(crate) fn validate_bundle(path: &FsPath) -> Result<()> {
     crate::identity::check_key(&document, &report)?;
     let relations = crate::version::declares_relations(&document);
     let mut nodes = Vec::new();
+    // Conceptos con referencias internas marcadas como sin destino (plan 3, I5).
+    let mut marked = Vec::new();
     let mut root = String::new();
     z.by_name("index.md")?.read_to_string(&mut root)?;
     let rootfm = frontmatter(&root)?;
@@ -304,6 +349,12 @@ pub(crate) fn validate_bundle(path: &FsPath) -> Result<()> {
         z.by_name(name)?.read_to_string(&mut md)?;
         let mut span_ids: Vec<String> = Vec::new();
         let reserved = name == "index.md" || name == "contenido/index.md" || name == "log.md";
+        if md.contains(REF_OPEN) && md.contains(REF_TEXT) {
+            bail!("{name}: enlace interno sin resolver")
+        }
+        if md.contains(UNRESOLVED) {
+            marked.push(name.clone());
+        }
         if !reserved {
             let fm = frontmatter(&md)?;
             if let Some(id) = &conversion_id {
@@ -399,6 +450,13 @@ pub(crate) fn validate_bundle(path: &FsPath) -> Result<()> {
         .find(|n| n.starts_with("assets/") && !n.ends_with('/') && !linked.contains(*n))
     {
         bail!("el recurso {orphan} no está enlazado desde ningún concepto")
+    }
+    // Toda referencia marcada como sin destino se declara en el informe.
+    if !marked.is_empty() && !read_text(&mut z, "conversion-report.md")?.contains("sin destino") {
+        bail!(
+            "referencias internas sin destino no declaradas en el informe: {}",
+            marked.join(", ")
+        )
     }
     validate_against_original(&mut z, &names, format)?;
     // Después de las comprobaciones de cada formato, que explican mejor un índice

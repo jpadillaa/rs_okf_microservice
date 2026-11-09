@@ -1265,18 +1265,33 @@ fn runs_md(runs: &[Run]) -> String {
     for r in &runs {
         let text = escape_inline(&r.text);
         let core = text.trim();
-        if core.is_empty() || (!r.bold && !r.italic) {
+        let lead = &text[..text.len() - text.trim_start().len()];
+        let trail = &text[text.trim_end().len()..];
+        if core.is_empty() {
             out.push_str(&text);
             continue;
         }
-        let lead = &text[..text.len() - text.trim_start().len()];
-        let trail = &text[text.trim_end().len()..];
         let mark = match (r.bold, r.italic) {
             (true, true) => "***",
             (true, false) => "**",
-            _ => "*",
+            (false, true) => "*",
+            (false, false) => "",
         };
-        out.push_str(&format!("{lead}{mark}{core}{mark}{trail}"));
+        let core = format!("{mark}{core}{mark}");
+        // Enlaces de las anotaciones (plan 3, I5): los internos se resuelven al escribir
+        // el concepto, cuando se sabe qué concepto contiene cada página.
+        let core = match r.link.as_deref() {
+            None => core,
+            Some(UNRESOLVED_DEST) => format!("{core} {UNRESOLVED}"),
+            Some(d) => match d.strip_prefix(read::PAGE_LINK) {
+                Some(page) => pending_link(page, &core),
+                None if d.contains([' ', '(', ')', '<', '>']) => {
+                    format!("[{core}](<{}>)", d.replace(['<', '>'], ""))
+                }
+                None => format!("[{core}]({d})"),
+            },
+        };
+        out.push_str(&format!("{lead}{core}{trail}"));
     }
     out
 }
@@ -1343,6 +1358,42 @@ impl Render<'_> {
         format!("{view}{note}\n")
     }
 
+    /// Primera y última página del concepto de la sección `k`, sin el título.
+    fn pages(&self, k: usize) -> (usize, usize) {
+        let (sec, units) = (&self.outline.sections[k], &self.ex.units);
+        let range: Vec<usize> = (sec.from..=sec.to.min(units.len().saturating_sub(1)))
+            .filter(|&i| Some(i) != self.outline.title_unit)
+            .collect();
+        let from = range.iter().map(|&i| units[i].from).min().unwrap_or(1);
+        let to = range.iter().map(|&i| units[i].to).max().unwrap_or(from);
+        (from, to)
+    }
+
+    /// Sustituye los enlaces a páginas: enlazan el primer concepto que contiene la página
+    /// (el que la empieza, si dos la comparten); una página sin concepto deja el texto con
+    /// la marca de referencia no resuelta. `root` indica si el texto va en `documento.md`.
+    fn resolve_pages(&self, md: &str, root: bool) -> String {
+        resolve_links(md, |page, text| {
+            let page: usize = page.parse().unwrap_or(0);
+            let k = (0..self.outline.sections.len()).find(|&k| {
+                let (from, to) = self.pages(k);
+                (from..=to).contains(&page)
+            });
+            match k {
+                Some(k) => {
+                    let file = self.outline.file(k);
+                    let href = if root {
+                        format!("contenido/{file}")
+                    } else {
+                        file
+                    };
+                    format!("[{text}]({href})")
+                }
+                None => format!("{text} {UNRESOLVED}"),
+            }
+        })
+    }
+
     /// Frontmatter y cuerpo del concepto de la sección `k`.
     fn concept(&mut self, k: usize, filename: &str, generated: &str) -> (Fields, String) {
         let ex = self.ex;
@@ -1352,12 +1403,7 @@ impl Render<'_> {
         let range: Vec<usize> = (sec.from..=sec.to.min(units.len().saturating_sub(1)))
             .filter(|&i| Some(i) != outline.title_unit)
             .collect();
-        let pages_from = range.iter().map(|&i| units[i].from).min().unwrap_or(1);
-        let pages_to = range
-            .iter()
-            .map(|&i| units[i].to)
-            .max()
-            .unwrap_or(pages_from);
+        let (pages_from, pages_to) = self.pages(k);
         let multi = pages_from != pages_to;
         let mut body = String::new();
         let mut spans: Vec<(String, usize, usize)> = Vec::new();
@@ -1584,9 +1630,16 @@ pub(crate) fn build_bundle(
     };
     let mut entries = String::new();
     let mut content_entries = String::new();
+    // Conceptos con enlaces internos sin destino y cuántos tiene cada uno.
+    let mut unresolved: Vec<String> = Vec::new();
     for k in 0..outline.sections.len() {
         let (fields, md) = r.concept(k, filename, &generated);
+        let md = r.resolve_pages(&md, false);
         let file = outline.file(k);
+        let n = md.matches(UNRESOLVED).count();
+        if n > 0 {
+            unresolved.push(format!("contenido/{file} ({n})"));
+        }
         out.concept(&format!("contenido/{file}"), &fields, &md)?;
         let sec = &outline.sections[k];
         entries.push_str(&index_entry(sec, &format!("contenido/{file}")));
@@ -1745,7 +1798,21 @@ pub(crate) fn build_bundle(
             .map(|(p, _)| p + 1)
             .collect()
     };
+    // Encabezados, pies y demás texto de documento.md, con sus enlaces resueltos.
+    let furniture_md = r.resolve_pages(&furniture_md, true);
+    let doc_extra = r.resolve_pages(&doc_extra, true);
+    let in_document =
+        furniture_md.matches(UNRESOLVED).count() + doc_extra.matches(UNRESOLVED).count();
+    if in_document > 0 {
+        unresolved.push(format!("documento.md ({in_document})"));
+    }
     let mut issues = Vec::new();
+    if !unresolved.is_empty() {
+        issues.push(Issue::note(format!(
+            "Enlaces internos sin destino en {}; se conserva su texto con la marca {UNRESOLVED_TEXT}",
+            unresolved.join(", ")
+        )));
+    }
     let scanned_with = |f: &dyn Fn(&Option<Ocr>) -> bool| -> Vec<usize> {
         ex.pages
             .iter()
@@ -2132,6 +2199,7 @@ pub(crate) fn build_bundle(
         "{title_marker}# {}\n\n{summary}\n\n## Estructura\n\n{structure}{meta_md}{doc_extra}{furniture_md}",
         escape_inline(&outline.title),
     );
+    let doc = r.resolve_pages(&doc, true);
     let nav = Navigation {
         contents_label: "Índice de contenido",
         heading: "Secciones",
@@ -2579,6 +2647,32 @@ mod tests {
     }
 
     #[test]
+    fn link_runs_become_links_page_references_or_marked_text() {
+        let run = |text: &str, link: Option<&str>| Run {
+            text: text.into(),
+            bold: false,
+            italic: false,
+            link: link.map(Into::into),
+        };
+        let md = runs_md(&[
+            run("Véase ", None),
+            run("el sitio", Some("https://example.org/a b")),
+            run(", la ", None),
+            run("tabla 2", Some(&format!("{}7", read::PAGE_LINK))),
+            run(" y la ", None),
+            run("figura 9", Some(UNRESOLVED_DEST)),
+            run(".", None),
+        ]);
+        assert_eq!(
+            md,
+            format!(
+                "Véase [el sitio](<https://example.org/a b>), la {} y la figura 9 {UNRESOLVED}.",
+                pending_link("7", "tabla 2")
+            )
+        );
+    }
+
+    #[test]
     fn corpus_p2_two_column_article_keeps_citations_compounds_and_references() {
         let (state, md, _) = corpus("p2");
         assert_eq!(state, "complete");
@@ -2589,7 +2683,7 @@ mod tests {
             .filter(|(n, _)| n.starts_with("contenido/"))
             .map(|(_, t)| t.as_str())
             .collect();
-        assert!(all.contains("JAMA Network Journals \\[7\\], and the World Association of Medical Editors \\[11\\] have all issued"));
+        assert!(all.contains("JAMA Network Journals \\[[7](seccion-007.md)\\], and the World Association of Medical Editors \\[[11](seccion-007.md)\\] have all issued"));
         assert!(all.contains(
             "text pulled from human-generated content, designed to build coherent responses"
         ));
@@ -2599,7 +2693,7 @@ mod tests {
             )
         );
         assert!(all.contains("12. McNutt MK, Bradford M"));
-        assert!(all.contains("10. Editors ICoMJ. Recommendations for the conduct, reporting, editing, and publication of scholarly work in medical journals 2025. Available from: https://www.icmje.org/icmje-recommendations.pdf."));
+        assert!(all.contains("10. Editors ICoMJ. Recommendations for the conduct, reporting, editing, and publication of scholarly work in medical journals 2025. Available from: [https://www.icmje.org/icmje-recommendations.pdf.](https://www.icmje.org/icmje-recommendations.pdf) Accessed April 4, 2025."));
         assert!(!all.contains("Chat-GPT"));
         assert_eq!(labels(&md).len(), 8);
     }
