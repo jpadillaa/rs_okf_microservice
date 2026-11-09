@@ -352,6 +352,17 @@ mira `w:documentProtection` aplicada y `w:writeProtection` de `word/settings.xml
 XLSX, `workbookProtection` del libro y, durante la lectura en streaming de cada hoja,
 su `sheetProtection`.
 
+### Esquema del frontmatter (plan 3, I9)
+
+`src/schema.rs` (solo pruebas) carga `docs/especificacion/perfil-<versión>.schema.json`
+de la versión actual del perfil y valida con `jsonschema` el frontmatter, leído como
+JSON, de cada `.md` con frontmatter de los 27 bundles de referencia, convertidos de
+nuevo y no normalizados. Otra prueba comprueba que el esquema acepta los campos que
+ningún ejemplo activa (OCR, `reproducible`, `document_key`, `access`) y que rechaza un
+campo desconocido, otra versión del perfil, un campo con otro tipo y una caja con
+coordenadas negativas. `jsonschema` es una dependencia de desarrollo: no llega al
+binario ni a la imagen, ni al fuzzing.
+
 ### Validación independiente (plan 2, C10)
 
 `okf-microservice validate <bundle.zip | directorio>` aplica el mismo validador de

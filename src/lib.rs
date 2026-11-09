@@ -40,6 +40,8 @@ mod pdf;
 mod pptx;
 mod relations;
 mod retention;
+#[cfg(test)]
+mod schema;
 mod sections;
 mod settings;
 mod shutdown;

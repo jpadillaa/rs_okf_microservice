@@ -40,6 +40,7 @@ http-body-util = "0.1"
 caseless = "0.2.2"
 unicode-normalization = "0.1"
 regex = "1"
+jsonschema = { version = "0.61.0", default-features = false }
 
 # Las dependencias (renderizado PPTX, lectura PDF, ZIP) se optimizan también en las
 # pruebas: los bundles de referencia convierten todos los ejemplos y en debug tardan

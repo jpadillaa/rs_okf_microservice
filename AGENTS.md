@@ -7,6 +7,7 @@
 - La documentación se escribe en español. El índice está en [`docs/README.md`](docs/README.md); todo documento nuevo se enlaza desde allí.
 - La especificación, las arquitecturas y el stack describen lo que hace el código. Un cambio de comportamiento actualiza el documento que lo regula en el mismo commit.
 - Todo cambio de una regla de la especificación sube la versión del perfil en `src/version.rs` y en la especificación, con su registro de cambios, en el mismo commit. La versión anterior pasa a `PREVIOUS_PROFILES` si sus bundles siguen siendo válidos, para que el validador no rechace los ya publicados.
+- Cada versión del perfil tiene su esquema del frontmatter en `docs/especificacion/perfil-<versión>.schema.json`. Al subir la versión, copia el esquema anterior con el nombre nuevo y actualiza los campos que se añaden, quitan o cambian, en el mismo commit; la prueba `schema` falla si falta el de la versión actual o si un bundle de referencia no lo cumple. Enlaza el nuevo desde el índice de la documentación.
 - Al cerrar un trabajo de un plan (`docs/planes/`), actualiza el [estado del proyecto](docs/estado/ESTADO_DEL_PROYECTO.md): corte, tablas afectadas y roadmap.
 
 ## Código y verificación

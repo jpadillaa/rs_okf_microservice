@@ -20,7 +20,7 @@ Tamaños relativos, como en los planes anteriores: **S** (un cambio acotado en u
 
 | Requisito del pipeline | Situación con el perfil 1.2.0 | Trabajo |
 | --- | --- | --- |
-| Esquema uniforme y versionado | Hecho: modelo de salida común y ensamblador único (`R1`); `profile_version`, `converter_version` y `converter_commit` en `documento.md` y el informe (`C9`). Falta una descripción del frontmatter legible por máquina. | `I9` |
+| Esquema uniforme y versionado | Hecho: modelo de salida común y ensamblador único (`R1`); `profile_version`, `converter_version` y `converter_commit` en `documento.md` y el informe (`C9`). Falta una descripción del frontmatter legible por máquina. Esquema hecho después, para el perfil 1.10.0. | `I9` |
 | Identificadores del documento y sus unidades | Implícitos: la versión se reconoce por `source_file.sha256`, la unidad por su ruta en el bundle y el pasaje por `source_spans[].id`. No hay un campo con el identificador ni una identidad lógica que agrupe las versiones de un documento. Los de conversión y de unidad se hicieron después, en el perfil 1.4.0, y la clave del documento en el 1.5.0. | `I1`, `I2` |
 | Mismos identificadores con el mismo documento y configuración | Las rutas y los localizadores son deterministas (`C1` lo prueba). La configuración que cambia la salida no se registra, así que la condición no se puede comprobar desde el bundle. | `I3` |
 | Trazabilidad: Excel (hoja y rango) | Hecho: `xlsx_range`. | — |
@@ -173,6 +173,8 @@ Tamaños relativos, como en los planes anteriores: **S** (un cambio acotado en u
 **Aceptación.** Las notas de los bundles de referencia llevan el marcador y una prueba quita el texto marcado de todos ellos sin perder palabras del original.
 
 ### I9. Esquema del frontmatter legible por máquina (S)
+
+**Estado:** implementado el 8 de noviembre, para el perfil 1.10.0, sin subir su versión: el esquema formaliza reglas existentes y no cambia ningún bundle. La validación en Rust usa `jsonschema` como dependencia de desarrollo. Al escribirlo apareció un hecho que la especificación no decía: el `documento.md` de PPTX no lleva `source_spans`, así que el esquema lo admite. La regla de trabajo está en AGENTS.md y la prueba la hace cumplir. Véase la [arquitectura técnica](../arquitectura/ARQUITECTURA_TECNICA_MICROSERVICIO_OKF.md#esquema-del-frontmatter-plan-3-i9).
 
 **Problema.** Los campos y su significado están en la especificación en prosa. El RAG no puede comprobar mecánicamente un bundle ni detectar un campo que cambia de significado.
 
