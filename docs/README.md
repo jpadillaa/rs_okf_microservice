@@ -1,6 +1,6 @@
 # Documentación del microservicio OKF
 
-Para ejecutar peticiones desde el navegador, consulta [Probar los endpoints con Swagger UI](../README.md#probar-los-endpoints-con-swagger-ui).
+Si llegas por primera vez, empieza por la [guía visual del repositorio](../README.md): explica qué recibe, qué entrega, cómo funciona y cómo desplegarlo. Para convertir tu primer archivo desde el navegador, ve a [Probar los endpoints con Swagger UI](../README.md#probar-los-endpoints-con-swagger-ui).
 
 Este directorio es el punto de entrada para implementar el conversor de PDF, DOCX, XLSX y PPTX a bundles OKF v0.2. Los documentos describen el **resultado**, el **comportamiento del servicio** y las **herramientas elegidas**. Léelos en el orden de la tabla antes de escribir código.
 
