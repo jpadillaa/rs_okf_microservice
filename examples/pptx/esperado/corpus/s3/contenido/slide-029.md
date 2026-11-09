@@ -41,6 +41,7 @@ view_hides_text: true
 
 # Utilización del contexto · Componente: Recuperador
 
+<!-- okf-generated -->
 > La vista estática muestra una imagen sobre texto que la animación original presenta en secuencia; el texto se conserva abajo.
 
 ## Contenido

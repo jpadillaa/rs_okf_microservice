@@ -403,6 +403,7 @@ kicker: "¿POR QUÉ CONSIDERAR RAG?"
 
 # 5. Recuperar información no garantiza una respuesta respaldada
 
+<!-- okf-generated -->
 > Título inferido por tamaño y posición del texto; la diapositiva no tiene marcador de título.
 
 ## Contenido

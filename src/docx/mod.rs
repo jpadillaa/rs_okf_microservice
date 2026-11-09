@@ -290,6 +290,9 @@ fn comments(
     (top, thread)
 }
 
+/// Nota de una imagen que falta en el paquete y no tiene texto alternativo.
+const MISSING_IMAGE: &str = "_Imagen ausente del paquete original._";
+
 pub(crate) struct Outline {
     pub(crate) headings: Vec<Option<Heading>>,
     pub(crate) title: String,
@@ -726,13 +729,14 @@ impl Render<'_> {
                     Some(alt) => Some(format!(
                         "_Imagen ausente del paquete original._ Texto alternativo: {alt}"
                     )),
-                    None => Some("_Imagen ausente del paquete original._".into()),
+                    None => Some(MISSING_IMAGE.into()),
                 }
             }
         }
     }
 
-    /// Imágenes, gráficos y cuadros de texto de un bloque, debajo de su texto.
+    /// Imágenes, gráficos y cuadros de texto de un bloque, debajo de su texto. Las notas
+    /// que solo escribe el conversor llevan el marcador de texto generado.
     fn aux_md(&mut self, ordinal: usize, aux: &Aux, indent: &str) -> String {
         let mut out = String::new();
         // Lo que no puede representarse se señala en su posición, además del informe.
@@ -742,23 +746,30 @@ impl Render<'_> {
                     "{indent}> Diagrama SmartArt: {}\n\n",
                     escape_inline(t)
                 )),
-                None => out.push_str(&format!("{indent}_SmartArt sin texto extraído._\n\n")),
+                None => out.push_str(&generated_note(&format!(
+                    "{indent}_SmartArt sin texto extraído._\n\n"
+                ))),
             }
         }
         for prog in &aux.objects {
-            out.push_str(&format!(
+            out.push_str(&generated_note(&format!(
                 "{indent}_Objeto incrustado ({}) sin representación fiel; se muestra su vista previa si existe._\n\n",
                 escape_inline(prog)
-            ));
+            )));
         }
         for _ in 0..aux.linked_images {
-            out.push_str(&format!(
+            out.push_str(&generated_note(&format!(
                 "{indent}_Imagen vinculada a un archivo externo; no está incluida en el paquete._\n\n"
-            ));
+            )));
         }
         for img in &aux.images {
             if let Some(md) = self.image_md(ordinal, img, "imagen", "../") {
-                out.push_str(&format!("{indent}{md}\n\n"));
+                let md = format!("{indent}{md}\n\n");
+                out.push_str(&if md.trim() == MISSING_IMAGE {
+                    generated_note(&md)
+                } else {
+                    md
+                });
             }
         }
         for c in &aux.charts {
@@ -772,7 +783,9 @@ impl Render<'_> {
                 }
                 None => {
                     mark(&mut self.tally.empty_charts, ordinal);
-                    out.push_str(&format!("{indent}_Gráfico sin datos extraíbles._\n\n"));
+                    out.push_str(&generated_note(&format!(
+                        "{indent}_Gráfico sin datos extraíbles._\n\n"
+                    )));
                 }
             }
         }
@@ -960,9 +973,9 @@ impl Render<'_> {
                         }
                         mark(&mut self.tally.toc, i + k + 1);
                     }
-                    body.push_str(&format!(
+                    body.push_str(&generated_note(&format!(
                         "_Tabla de contenido generada por el procesador de texto ({entries} párrafos); no se repite aquí: la estructura del documento está en [documento.md](../documento.md)._\n\n"
-                    ));
+                    )));
                     i = j + 1;
                 }
                 Block::Para(p) if p.code && !p.is_empty() => {
@@ -1126,7 +1139,8 @@ impl Render<'_> {
             aux.push_str(&comments_markdown(&selected));
         }
         if !refs.revisions.is_empty() {
-            aux.push_str("\n## Revisiones pendientes\n\n> Cambios registrados sin aceptar en el original. El texto principal muestra la vista final: incluye las inserciones y omite las eliminaciones.\n\n");
+            aux.push_str("\n## Revisiones pendientes\n\n");
+            aux.push_str(&generated_note("> Cambios registrados sin aceptar en el original. El texto principal muestra la vista final: incluye las inserciones y omite las eliminaciones.\n\n"));
             for (ordinal, kind, text) in &refs.revisions {
                 aux.push_str(&format!(
                     "- Bloque {ordinal} · {kind}: «{}»\n",
@@ -1135,7 +1149,8 @@ impl Render<'_> {
             }
         }
         if !refs.hidden.is_empty() {
-            aux.push_str("\n## Texto oculto\n\n> Texto con formato oculto en el original; no aparece en la vista normal del documento.\n\n");
+            aux.push_str("\n## Texto oculto\n\n");
+            aux.push_str(&generated_note("> Texto con formato oculto en el original; no aparece en la vista normal del documento.\n\n"));
             for (ordinal, text) in &refs.hidden {
                 aux.push_str(&format!("- Bloque {ordinal}: «{}»\n", snippet(text)));
             }
@@ -1175,10 +1190,10 @@ impl Render<'_> {
         let mut out = String::new();
         out.push_str(&format!("# {}\n\n", escape_inline(&sec.title)));
         if sec.inferred {
-            out.push_str("> Encabezado inferido por su formato: el párrafo no tiene estilo de encabezado.\n\n");
+            out.push_str(&generated_note("> Encabezado inferido por su formato: el párrafo no tiene estilo de encabezado.\n\n"));
         }
         if body.is_empty() {
-            out.push_str("Sin texto extraído.\n");
+            out.push_str(&generated_note("Sin texto extraído.\n"));
         } else {
             out.push_str(&body);
         }
@@ -1954,7 +1969,9 @@ mod tests {
         assert!(s2.contains("Cifra final de 420 unidades.\n"), "{s2}");
         assert!(s2.contains("- Bloque 12 · inserción: «420»\n- Bloque 12 · eliminación: «380»"));
         assert!(s2.contains("- Bloque 12: «Nota interna para el equipo.»"));
-        assert!(s2.contains("## Texto oculto\n\n> Texto con formato oculto"));
+        assert!(
+            s2.contains("## Texto oculto\n\n<!-- okf-generated -->\n> Texto con formato oculto")
+        );
         assert!(!all.contains("PAGE"));
         // Un campo de paginación deja un marcador, no un número de página concreto.
         assert!(s2.contains("<!-- okf-source-span: b-13 -->\nPágina \\[página\\]\n"));
@@ -1995,7 +2012,9 @@ mod tests {
         );
         // La tabla de contenido se resume y sus entradas no se repiten.
         let inicio = &md["contenido/seccion-001.md"];
-        assert!(inicio.contains("<!-- okf-source-span: b-3-7 -->\n_Tabla de contenido generada"));
+        assert!(inicio.contains(
+            "<!-- okf-source-span: b-3-7 -->\n<!-- okf-generated -->\n_Tabla de contenido generada"
+        ));
         assert!(!inicio.contains("Alcance"));
         let intro = &md["contenido/seccion-002.md"];
         assert!(intro.contains("## 1.1. Alcance de la evaluación"));

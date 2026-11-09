@@ -124,6 +124,7 @@ kicker: "PREGUNTAS Y CIERRE"
 
 # Preguntas ubicadas en el recorrido
 
+<!-- okf-generated -->
 > Título inferido por tamaño y posición del texto; la diapositiva no tiene marcador de título.
 
 ## Contenido

@@ -1,6 +1,6 @@
 ---
 type: "Source Section"
-unit_id: "58c08425626defcd2fe02d7f717fd4566f454890f2291def211145d6fc32cbac/contenido/seccion-002.md"
+unit_id: "3b1198f5fe9868f966e59f91f06bebfba92abcc3fbe40d649bf317c1d6dceed1/contenido/seccion-002.md"
 parent: "documento.md"
 previous: "contenido/seccion-001.md"
 title: "Datos"
@@ -62,12 +62,14 @@ Página \[página\]
 
 ## Comentarios de revisión
 
+<!-- okf-generated -->
 > Comentarios del archivo original; no forman parte del contenido presentado.
 
 - **Revisora** · 2026-10-30: Confirmar la cifra (sobre «420»)
 
 ## Revisiones pendientes
 
+<!-- okf-generated -->
 > Cambios registrados sin aceptar en el original. El texto principal muestra la vista final: incluye las inserciones y omite las eliminaciones.
 
 - Bloque 12 · inserción: «420»
@@ -75,6 +77,7 @@ Página \[página\]
 
 ## Texto oculto
 
+<!-- okf-generated -->
 > Texto con formato oculto en el original; no aparece en la vista normal del documento.
 
 - Bloque 12: «Nota interna para el equipo.»

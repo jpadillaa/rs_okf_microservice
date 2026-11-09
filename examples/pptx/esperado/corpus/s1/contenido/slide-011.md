@@ -142,6 +142,7 @@ kicker: "SEMANA 1 · DE UNA PREGUNTA A UNA RESPUESTA RESPALDADA"
 
 # Una pregunta breve, varias decisiones
 
+<!-- okf-generated -->
 > Título inferido por tamaño y posición del texto; la diapositiva no tiene marcador de título.
 
 ## Contenido

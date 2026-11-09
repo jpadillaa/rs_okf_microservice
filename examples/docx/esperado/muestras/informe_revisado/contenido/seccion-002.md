@@ -1,6 +1,6 @@
 ---
 type: "Source Section"
-unit_id: "29c43235ebe5c5b3c006ce31a177769a146ef96ce32dd11fe33b9f1160693865/contenido/seccion-002.md"
+unit_id: "fe915c557e62a67e94bc0f8f3fac2dd65f488a83a829acd96b6a35169c106e98/contenido/seccion-002.md"
 parent: "documento.md"
 previous: "contenido/seccion-001.md"
 next: "contenido/seccion-003.md"
@@ -66,12 +66,14 @@ La muestra excluye preguntas en inglés, que representan menos del cinco por cie
 
 ## Comentarios de revisión
 
+<!-- okf-generated -->
 > Comentarios del archivo original; no forman parte del contenido presentado.
 
 - **Marta Díaz** · 2026-10-27: ¿Por qué se excluyen? Conviene justificarlo. (sobre «La muestra excluye preguntas en inglés»)
 
 ## Revisiones pendientes
 
+<!-- okf-generated -->
 > Cambios registrados sin aceptar en el original. El texto principal muestra la vista final: incluye las inserciones y omite las eliminaciones.
 
 - Bloque 10 · inserción: «explícitamente»
@@ -80,6 +82,7 @@ La muestra excluye preguntas en inglés, que representan menos del cinco por cie
 
 ## Texto oculto
 
+<!-- okf-generated -->
 > Texto con formato oculto en el original; no aparece en la vista normal del documento.
 
 - Bloque 14: «Nota interna: repetir el muestreo con el corpus de 2027.»

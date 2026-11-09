@@ -1,6 +1,6 @@
 ---
 type: "Source Section"
-unit_id: "73c432082636d37960f774ac958b10dc8c94b43a0e5bce45e8bef79ea13edfd4/contenido/seccion-001.md"
+unit_id: "6fe4fc748ff3f14b802f9b9d82791ee9cd7cb161f885a5c125475510d3b71d11/contenido/seccion-001.md"
 parent: "documento.md"
 next: "contenido/seccion-002.md"
 title: "Anexo A. Proceso de evaluación"
@@ -59,6 +59,7 @@ El proceso de evaluación se resume en el siguiente diagrama:
 Los datos de costos se adjuntan como hoja de cálculo incrustada:
 
 <!-- okf-source-span: b-7 -->
+<!-- okf-generated -->
 _Objeto incrustado (Excel.Sheet.12) sin representación fiel; se muestra su vista previa si existe._
 
 ![Imagen 1](../assets/imagen-001.png)

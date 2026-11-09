@@ -313,6 +313,7 @@ kicker: "EVALUACIÓN Y COMPARACIÓN A/B"
 
 # Qué muestran los resultados A/B
 
+<!-- okf-generated -->
 > Título inferido por tamaño y posición del texto; la diapositiva no tiene marcador de título.
 
 ## Contenido

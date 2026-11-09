@@ -32,7 +32,7 @@ Tamaños relativos, como en los planes anteriores: **S** (un cambio acotado en u
 | Enlaces internos resueltos | Los enlaces emitidos resuelven (el validador lo exige). PPTX enlaza otras diapositivas y XLSX otras hojas. DOCX no enlaza los marcadores internos; PDF no lee sus anotaciones de enlace. Hecho después en el perfil 1.7.0. | `I5` |
 | Referencias externas identificadas | Hecho para libros externos, imágenes vinculadas y objetos incrustados; los hipervínculos de DOCX, PPTX y XLSX se escriben como enlaces, sin inventario; los de PDF no se leen. Hecho después en el perfil 1.7.0. | `I5` |
 | Referencias no resueltas marcadas | No: un destino interno que no existe se descarta en silencio en los cuatro formatos. Hecho después en el perfil 1.7.0. | `I5` |
-| Contenido extraído frente a generado | No se generan resúmenes; lo inferido se marca (`title_inferred`, OCR, `status: draft`). `description` y las notas del conversor no se distinguen de forma uniforme. | `I8` |
+| Contenido extraído frente a generado | No se generan resúmenes; lo inferido se marca (`title_inferred`, OCR, `status: draft`). `description` y las notas del conversor no se distinguen de forma uniforme. Hecho después en el perfil 1.9.0. | `I8` |
 | Versión del conversor | Hecho (`C9`). | — |
 | Configuración utilizada | No se registra (hecho después en el perfil 1.3.0). | `I3` |
 | Advertencias de conversión | Hecho: incidencias y observaciones del informe. | — |
@@ -156,6 +156,8 @@ Tamaños relativos, como en los planes anteriores: **S** (un cambio acotado en u
 **Decisión abierta.** Si un PDF que prohíbe la extracción de texto debe convertirse con una observación o rechazarse como fallo permanente.
 
 ### I8. Contenido generado por el conversor (S)
+
+**Estado:** implementado el 8 de noviembre (perfil 1.9.0). Se marcan solo las notas que son enteramente del conversor. Una etiqueta seguida de texto del original («Texto alternativo:», «Datos del gráfico:») no se marca, porque al descartarla se perdería ese texto. También se marcan las líneas de resumen de cada hoja XLSX, que el plan no nombraba. En `documento.md` no hay marcas: la especificación declara generados su resumen y las frases que introducen sus secciones. Véase la [arquitectura técnica](../arquitectura/ARQUITECTURA_TECNICA_MICROSERVICIO_OKF.md#texto-generado-por-el-conversor-plan-3-i8).
 
 **Problema.** El conversor no resume, pero escribe texto propio: `description`, el resumen inicial de `documento.md`, las notas de título inferido, de OCR, de página en blanco o de recurso ausente. Para no indexar ese texto como si viniera del original, el RAG necesita reconocerlo sin depender de frases concretas.
 

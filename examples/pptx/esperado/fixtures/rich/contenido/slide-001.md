@@ -56,6 +56,7 @@ source_spans:
 
 ## Comentarios de revisión
 
+<!-- okf-generated -->
 > Comentarios del archivo original; no forman parte del contenido presentado.
 
 - **Revisora** · 2026-10-30: Revisar la cifra de la ecuación

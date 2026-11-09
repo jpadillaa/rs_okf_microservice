@@ -39,6 +39,7 @@ source_spans:
 
 # Hidden slide contains table and image
 
+<!-- okf-generated -->
 > Diapositiva oculta en la presentación original.
 
 ## Contenido

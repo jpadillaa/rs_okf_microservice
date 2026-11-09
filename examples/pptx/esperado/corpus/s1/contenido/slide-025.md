@@ -241,6 +241,7 @@ kicker: "HERRAMIENTAS Y ALTERNATIVAS"
 
 # Construir, controlar, observar y evaluar
 
+<!-- okf-generated -->
 > Título inferido por tamaño y posición del texto; la diapositiva no tiene marcador de título.
 
 ## Contenido

@@ -174,3 +174,60 @@ fn coverage_matches_python_and_detects_lost_text() {
         50.0
     );
 }
+
+/// El Markdown sin las notas del conversor: cada marcador `okf-generated` y el bloque que
+/// lo sigue, hasta la siguiente línea en blanco.
+fn without_generated(md: &str) -> String {
+    let mut out = String::with_capacity(md.len());
+    let mut skipping = false;
+    for line in md.split_inclusive('\n') {
+        if line.trim() == crate::output::GENERATED {
+            skipping = true;
+            continue;
+        }
+        if skipping {
+            if line.trim().is_empty() {
+                skipping = false;
+            } else {
+                continue;
+            }
+        }
+        out.push_str(line);
+    }
+    out
+}
+
+#[test]
+fn removing_generated_notes_loses_no_original_words() {
+    // Plan 3, I8: un consumidor puede descartar el texto marcado como generado sin
+    // perder palabras del original.
+    let mut marked = 0;
+    for doc in crate::golden::documents() {
+        let reference = reference(&doc);
+        let files = crate::golden::bundle_files(&doc);
+        marked += files
+            .values()
+            .map(|t| t.matches(crate::output::GENERATED).count())
+            .sum::<usize>();
+        let stripped: BTreeMap<String, String> = files
+            .iter()
+            .map(|(name, text)| {
+                let text = if name.ends_with(".md") {
+                    without_generated(text)
+                } else {
+                    text.clone()
+                };
+                (name.clone(), text)
+            })
+            .collect();
+        let (before, _) = measure(&reference, &bundle_words(&files));
+        let (after, lost) = measure(&reference, &bundle_words(&stripped));
+        assert!(
+            (before - after).abs() < 1e-9,
+            "{}: {before:.2}% → {after:.2}% al quitar las notas; faltan {}",
+            doc.display(),
+            lost.join(", ")
+        );
+    }
+    assert!(marked > 100, "solo {marked} notas marcadas en los ejemplos");
+}

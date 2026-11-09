@@ -205,6 +205,7 @@ kicker: "ARQUITECTURA Y DIAGNÓSTICO"
 
 # Preparar las fuentes y atender una consulta
 
+<!-- okf-generated -->
 > Título inferido por tamaño y posición del texto; la diapositiva no tiene marcador de título.
 
 ## Contenido

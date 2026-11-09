@@ -1,6 +1,6 @@
 ---
 type: "Source Document"
-unit_id: "a6845f49c746fcd6109a69634ef893d1af308693ca6243d7e012d9de9eefbcae/documento.md"
+unit_id: "6388f0becdbb552c029c12dfd994cfcc8fbd3313ac6a3a993377b50f1c39b85d/documento.md"
 title: "Taller formación en comunicación para colaboradores - completo"
 description: "Documento fuente p1.pdf convertido a conceptos OKF por secciones."
 sources:
@@ -11,13 +11,13 @@ generated:
   at: "<generado>"
 converter_version: "0.1.0"
 converter_commit: "<commit>"
-profile_version: "1.8.0"
+profile_version: "1.9.0"
 conversion_settings:
   max_image_pixels: 33554432
   ocr:
     enabled: false
 settings_sha256: "ad1d7709796a5172b6ad18d538b1bef5780b44279dd787d15ecc82ede959ef16"
-conversion_id: "a6845f49c746fcd6109a69634ef893d1af308693ca6243d7e012d9de9eefbcae"
+conversion_id: "6388f0becdbb552c029c12dfd994cfcc8fbd3313ac6a3a993377b50f1c39b85d"
 source_file:
   path: "references/original.pdf"
   sha256: "d899d9a5395ad0e75fa655b7327936a23bbffbfd9407239809cce77671f76324"

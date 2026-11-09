@@ -1,6 +1,6 @@
 ---
 type: "Source Section"
-unit_id: "f9b1dee2229c6f1e625911e4cd6edf082bf3a7761d0a6ad872c7b4724ec4d123/contenido/seccion-004.md"
+unit_id: "b68ce8e6e1fc70412543b14a19e8d120fd82ffa5d6d4ffe4c3347b5be25b6b76/contenido/seccion-004.md"
 parent: "documento.md"
 previous: "contenido/seccion-003.md"
 next: "contenido/seccion-005.md"
@@ -38,6 +38,7 @@ title_inferred: true
 
 # Paso No. 2 – Evaluación comparativa entre licenciamiento SaaS y despliegue local de modelos de IA generativa
 
+<!-- okf-generated -->
 > Encabezado inferido por su formato: el párrafo no tiene estilo de encabezado.
 
 <!-- okf-source-span: b-25 -->

@@ -160,6 +160,7 @@ kicker: "TAREA Y CONTRATO DE EVIDENCIA"
 
 # Elegir la solución según la tarea
 
+<!-- okf-generated -->
 > Título inferido por tamaño y posición del texto; la diapositiva no tiene marcador de título.
 
 ## Contenido

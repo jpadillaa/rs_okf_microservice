@@ -65,7 +65,12 @@ pub(crate) fn comments_markdown(comments: &[Comment]) -> String {
         }
         out
     }
-    let mut out = "## Comentarios de revisión\n\n> Comentarios del archivo original; no forman parte del contenido presentado.\n\n".to_string();
+    let mut out = format!(
+        "## Comentarios de revisión\n\n{}",
+        crate::output::generated_note(
+            "> Comentarios del archivo original; no forman parte del contenido presentado.\n\n"
+        )
+    );
     for c in comments {
         out.push_str(&line(c, ""));
     }
@@ -441,6 +446,13 @@ pub(crate) fn validate_bundle(path: &FsPath) -> Result<()> {
                 .unwrap_or_default();
             if next.trim().is_empty() || next.starts_with(SPAN_MARKER) {
                 bail!("marcador de pasaje sin bloque a continuación en {name}: {id}")
+            }
+        }
+        // El marcador de texto generado (plan 3, I8) también precede a un bloque.
+        for (i, _) in md.match_indices(crate::output::GENERATED) {
+            let next = md[i..].lines().nth(1).unwrap_or_default().trim();
+            if next.is_empty() || next.starts_with("<!--") {
+                bail!("marcador de texto generado sin bloque a continuación en {name}")
             }
         }
     }

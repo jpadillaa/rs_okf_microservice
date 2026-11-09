@@ -33,6 +33,7 @@ status: "draft"
 
 # Precisión del contexto · Componente: Recuperador
 
+<!-- okf-generated -->
 > Contenido solo visual: lo sustantivo está en la imagen y no tiene transcripción.
 
 ## Contenido

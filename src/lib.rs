@@ -1248,7 +1248,14 @@ mod tests {
             let digit = if &md[i..=i] == "0" { "1" } else { "0" };
             format!("{}{digit}{}", &md[..i], &md[i + 1..])
         }
-        let cases: [(&str, Edit); 12] = [
+        let cases: [(&str, Edit); 13] = [
+            ("marcador de texto generado sin bloque", &|n, md| {
+                if n == "contenido/slide-002.md" {
+                    format!("{md}\n{}\n", output::GENERATED)
+                } else {
+                    md
+                }
+            }),
             ("localizador de forma inválido o repetido", &|n, md| {
                 if n == "contenido/slide-003.md" {
                     md.replace("shape_id: 11\n", "shape_id: 10\n")

@@ -24,6 +24,7 @@ source_spans:
 
 ## Contenido
 
+<!-- okf-generated -->
 Sin texto extraído.
 
 ## Vista visual

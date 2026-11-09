@@ -277,6 +277,7 @@ kicker: "ARQUITECTURA Y DIAGNÓSTICO · EJEMPLO DE EVOLUCIÓN"
 
 # Encontrar fragmentos no es conectarlos
 
+<!-- okf-generated -->
 > Título inferido por tamaño y posición del texto; la diapositiva no tiene marcador de título.
 
 ## Contenido

@@ -304,6 +304,7 @@ kicker: "ARQUITECTURA Y DIAGNÓSTICO"
 
 # Evolucionar según una necesidad observable
 
+<!-- okf-generated -->
 > Título inferido por tamaño y posición del texto; la diapositiva no tiene marcador de título.
 
 ## Contenido

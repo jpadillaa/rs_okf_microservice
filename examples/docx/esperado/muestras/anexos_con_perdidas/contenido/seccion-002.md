@@ -1,6 +1,6 @@
 ---
 type: "Source Section"
-unit_id: "73c432082636d37960f774ac958b10dc8c94b43a0e5bce45e8bef79ea13edfd4/contenido/seccion-002.md"
+unit_id: "6fe4fc748ff3f14b802f9b9d82791ee9cd7cb161f885a5c125475510d3b71d11/contenido/seccion-002.md"
 parent: "documento.md"
 previous: "contenido/seccion-001.md"
 title: "Anexo B. Material externo"
@@ -63,12 +63,14 @@ El anexo reúne material de apoyo de la evaluación. Algunos elementos se crearo
 El diagrama de arquitectura se enlaza desde la carpeta compartida:
 
 <!-- okf-source-span: b-11 -->
+<!-- okf-generated -->
 _Imagen vinculada a un archivo externo; no está incluida en el paquete._
 
 <!-- okf-source-span: b-12 -->
 El gráfico de latencias perdió sus datos al copiarse desde otra aplicación:
 
 <!-- okf-source-span: b-13 -->
+<!-- okf-generated -->
 _Gráfico sin datos extraíbles._
 
 <!-- okf-source-span: b-14 -->

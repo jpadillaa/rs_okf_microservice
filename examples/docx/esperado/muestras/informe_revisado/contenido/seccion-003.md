@@ -1,6 +1,6 @@
 ---
 type: "Source Section"
-unit_id: "29c43235ebe5c5b3c006ce31a177769a146ef96ce32dd11fe33b9f1160693865/contenido/seccion-003.md"
+unit_id: "fe915c557e62a67e94bc0f8f3fac2dd65f488a83a829acd96b6a35169c106e98/contenido/seccion-003.md"
 parent: "documento.md"
 previous: "contenido/seccion-002.md"
 next: "contenido/seccion-004.md"
@@ -109,6 +109,7 @@ Se añadió este párrafo durante la revisión para dejar constancia del cambio 
 
 ## Comentarios de revisión
 
+<!-- okf-generated -->
 > Comentarios del archivo original; no forman parte del contenido presentado.
 
 - **Andrés Ruiz** · 2026-10-27: Indicar la fuente de las tarifas. (sobre «El costo por consulta»)
@@ -116,6 +117,7 @@ Se añadió este párrafo durante la revisión para dejar constancia del cambio 
 
 ## Revisiones pendientes
 
+<!-- okf-generated -->
 > Cambios registrados sin aceptar en el original. El texto principal muestra la vista final: incluye las inserciones y omite las eliminaciones.
 
 - Bloque 21 · traslado (origen): «La latencia media fue de 2,4 segundos.»

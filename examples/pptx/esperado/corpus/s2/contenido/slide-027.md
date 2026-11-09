@@ -24,6 +24,7 @@ status: "draft"
 
 ## Contenido
 
+<!-- okf-generated -->
 Sin texto extraído.
 
 ## Vista visual

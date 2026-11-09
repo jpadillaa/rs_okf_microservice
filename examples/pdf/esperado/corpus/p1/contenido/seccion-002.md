@@ -1,6 +1,6 @@
 ---
 type: "Source Section"
-unit_id: "a6845f49c746fcd6109a69634ef893d1af308693ca6243d7e012d9de9eefbcae/contenido/seccion-002.md"
+unit_id: "6388f0becdbb552c029c12dfd994cfcc8fbd3313ac6a3a993377b50f1c39b85d/contenido/seccion-002.md"
 parent: "documento.md"
 previous: "contenido/seccion-001.md"
 next: "contenido/seccion-003.md"
@@ -1299,6 +1299,7 @@ title_inferred: true
 
 # COMUNICACIÓN EFECTIVA EN ENTORNOS LABORALES
 
+<!-- okf-generated -->
 > Encabezado inferido por su formato tipográfico: el PDF no lo marca como encabezado.
 
 <!-- okf-source-span: u-121 -->

@@ -319,6 +319,19 @@ que cada localizador de forma sea de su diapositiva, se llame `f-<id>`, tenga un
 único y un tamaño no negativo. No exige que la forma esté dentro de la diapositiva,
 porque puede salirse.
 
+### Texto generado por el conversor (plan 3, I8)
+
+Las notas del conversor pasan por `generated_note` (`src/output.rs`), que antepone
+`<!-- okf-generated -->` con la sangría de la nota, para no romper una lista, o se
+escriben con la constante `GENERATED` cuando forman parte de una plantilla, como el
+resumen de cada hoja XLSX o la nota de una página PDF que sigue a su vista. Una nota
+que incluye texto del original, como el texto alternativo de una imagen ausente en
+DOCX, no se marca. El validador común exige que cada marcador vaya seguido de un
+bloque. El validador PDF reconoce las notas iniciales de un concepto por lo que sigue al
+marcador. La prueba `removing_generated_notes_loses_no_original_words`
+(`src/coverage.rs`) quita cada marcador y su bloque de los 27 ejemplos y comprueba que
+la cobertura frente a la referencia independiente no cambia.
+
 ### Validación independiente (plan 2, C10)
 
 `okf-microservice validate <bundle.zip | directorio>` aplica el mismo validador de

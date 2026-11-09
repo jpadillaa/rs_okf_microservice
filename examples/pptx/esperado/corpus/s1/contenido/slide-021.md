@@ -277,6 +277,7 @@ kicker: "EVALUACIÓN Y COMPARACIÓN A/B"
 
 # Definir qué significa funcionar
 
+<!-- okf-generated -->
 > Título inferido por tamaño y posición del texto; la diapositiva no tiene marcador de título.
 
 ## Contenido

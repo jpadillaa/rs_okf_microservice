@@ -1,6 +1,6 @@
 ---
 type: "Sheet"
-unit_id: "038f43036266859576b379ed45d296f22344d81b355c279202a4fc2afcd1f51b/contenido/hoja-001.md"
+unit_id: "63610aec892077f8aa2fb22f8b34d05a3405437549c54043bdea86ad64ffc738/contenido/hoja-001.md"
 parent: "documento.md"
 next: "contenido/hoja-002.md"
 title: "Precios"
@@ -38,6 +38,7 @@ source_spans:
 
 # Precios
 
+<!-- okf-generated -->
 Hoja 1 de 2 · rango con contenido A1:D8 (8 filas × 4 columnas) · 19 celdas con contenido, 10 fórmulas · 3 regiones.
 
 Los valores de las fórmulas son los almacenados en el archivo; el conversor no recalcula.
@@ -79,6 +80,7 @@ Los valores de las fórmulas son los almacenados en el archivo; el conversor no 
 
 ## Imágenes
 
+<!-- okf-generated -->
 _Imagen (anclada en F17) ausente del paquete original._
 
 ## Objetos incrustados

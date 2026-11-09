@@ -331,6 +331,7 @@ kicker: "HERRAMIENTAS Y ALTERNATIVAS"
 
 # Responsabilidades que se conservan en otros frameworks
 
+<!-- okf-generated -->
 > Título inferido por tamaño y posición del texto; la diapositiva no tiene marcador de título.
 
 ## Contenido

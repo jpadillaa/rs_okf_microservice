@@ -33,6 +33,7 @@ status: "draft"
 
 # Relevancia de la Respuesta · Componente: Generador
 
+<!-- okf-generated -->
 > Contenido solo visual: lo sustantivo está en la imagen y no tiene transcripción.
 
 ## Contenido

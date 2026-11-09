@@ -259,6 +259,7 @@ kicker: "¿POR QUÉ CONSIDERAR RAG?"
 
 # 4. La información vigente puede llegar desde fuentes externas
 
+<!-- okf-generated -->
 > Título inferido por tamaño y posición del texto; la diapositiva no tiene marcador de título.
 
 ## Contenido

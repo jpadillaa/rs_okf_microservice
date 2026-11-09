@@ -1,6 +1,6 @@
 ---
 type: "Source Section"
-unit_id: "29c43235ebe5c5b3c006ce31a177769a146ef96ce32dd11fe33b9f1160693865/contenido/seccion-001.md"
+unit_id: "fe915c557e62a67e94bc0f8f3fac2dd65f488a83a829acd96b6a35169c106e98/contenido/seccion-001.md"
 parent: "documento.md"
 next: "contenido/seccion-002.md"
 title: "Informe de evaluación del asistente RAG"
@@ -35,4 +35,5 @@ source_spans:
 *Versión revisada por el comité académico, octubre de 2026*
 
 <!-- okf-source-span: b-3-7 -->
+<!-- okf-generated -->
 _Tabla de contenido generada por el procesador de texto (5 párrafos); no se repite aquí: la estructura del documento está en [documento.md](../documento.md)._

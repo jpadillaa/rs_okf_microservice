@@ -1,6 +1,6 @@
 ---
 type: "Source Text"
-unit_id: "26d8369dd8aa1ead8b6802513f7d82401d0f2d471144f68fd80de96a511073af/contenido/texto.md"
+unit_id: "112d953231296655593e49a8da37cddf1b06e4ab2b4d64bea0e7d134c6b95eff/contenido/texto.md"
 parent: "documento.md"
 title: "Expediente digitalizado"
 description: "Texto completo de escaneado_mixto.pdf. Este expediente reúne una página escrita directamente en el computador, una página escaneada sin reconocimiento de texto, una página en blanco, un diagrama sin…"
@@ -131,13 +131,16 @@ _Texto girado:_ Copia controlada · no imprimir
 
 <!-- okf-source-span: u-5 -->
 ![Vista de la página 2](../assets/pagina-002.png)
+<!-- okf-generated -->
 > Página escaneada sin capa de texto: su contenido solo está en la imagen; no se aplicó OCR.
 
 <!-- okf-source-span: u-6 -->
+<!-- okf-generated -->
 _Página 3 sin contenido propio: solo tiene encabezado, pie o número de página._
 
 <!-- okf-source-span: u-7 -->
 ![Vista de la página 4](../assets/pagina-004.png)
+<!-- okf-generated -->
 > Página sin texto con contenido gráfico: se conserva su vista.
 
 <!-- okf-source-span: u-8 -->

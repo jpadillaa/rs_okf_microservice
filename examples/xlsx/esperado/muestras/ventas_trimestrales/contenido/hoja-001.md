@@ -1,6 +1,6 @@
 ---
 type: "Sheet"
-unit_id: "4f3ac62cc5158cbe3a431b6fc9dae9d530f6af5d4d1030250d7bc4c255c53d99/contenido/hoja-001.md"
+unit_id: "b7f669dd32be4ae848793701c0e0735283ff4a9c8006aece5efe264984894828/contenido/hoja-001.md"
 parent: "documento.md"
 next: "contenido/hoja-002.md"
 title: "Resumen"
@@ -32,6 +32,7 @@ source_spans:
 
 # Resumen
 
+<!-- okf-generated -->
 Hoja 1 de 4 · rango con contenido A1:F12 (12 filas × 6 columnas) · 40 celdas con contenido, 9 fórmulas · 2 regiones.
 
 Los valores de las fórmulas son los almacenados en el archivo; el conversor no recalcula.
@@ -75,6 +76,7 @@ Reglas del original; el resultado visual no se reproduce.
 
 ## Comentarios de revisión
 
+<!-- okf-generated -->
 > Comentarios del archivo original; no forman parte del contenido presentado.
 
 - **Marta Ruiz**: Incluye la venta extraordinaria a la cadena hotelera. (celda B4)

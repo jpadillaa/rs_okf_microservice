@@ -227,6 +227,21 @@ fn emit_item(item: &Yaml, indent: usize, out: &mut String) {
     }
 }
 
+/// Marcador de una nota escrita por el conversor (plan 3, I8): se aplica solo al bloque
+/// siguiente, como `okf-source-span`, para que un consumidor la distinga del texto
+/// extraído.
+pub(crate) const GENERATED: &str = "<!-- okf-generated -->";
+
+/// Nota del conversor precedida de su marcador. Los saltos iniciales quedan antes del
+/// marcador y la sangría se repite en él, para no romper una lista.
+pub(crate) fn generated_note(note: &str) -> String {
+    let rest = note.trim_start_matches('\n');
+    let lead = &note[..note.len() - rest.len()];
+    let body = rest.trim_start_matches(' ');
+    let indent = &rest[..rest.len() - body.len()];
+    format!("{lead}{indent}{GENERATED}\n{rest}")
+}
+
 /// Campos comunes de un concepto y de `documento.md`: tipo, título, descripción, fuente
 /// y generación.
 pub(crate) fn concept_fields(

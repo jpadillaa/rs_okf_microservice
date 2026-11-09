@@ -1,6 +1,6 @@
 ---
 type: "Sheet"
-unit_id: "c637ff2a5689d2efd04fa819a84720acbba1cee78de71483b8748727e64ad183/contenido/hoja-002.md"
+unit_id: "f9176ede955e93d6752d1ebae26c79a17c492a3fa9edfae515d60a9eb574bb7c/contenido/hoja-002.md"
 parent: "documento.md"
 previous: "contenido/hoja-001.md"
 next: "contenido/hoja-003.md"
@@ -28,6 +28,7 @@ source_spans:
 
 # Dinámica
 
+<!-- okf-generated -->
 Hoja 2 de 4 · rango con contenido A1:B6 (6 filas × 2 columnas) · 9 celdas con contenido, 0 fórmulas · 1 región.
 
 ## Tabla dinámica «TablaDinámica1»: Existencias por proveedor (tabla dinámica) (A1:B6)
@@ -39,5 +40,6 @@ Hoja 2 de 4 · rango con contenido A1:B6 (6 filas × 2 columnas) · 9 celdas con
 | 5 | Suministros del Valle | 642 |
 | 6 | Total general | 4683.25 |
 
+<!-- okf-generated -->
 > Tabla dinámica: se muestran sus valores almacenados; su definición (campos, filtros y origen Almacenes!A12:D15) no se reproduce.
 

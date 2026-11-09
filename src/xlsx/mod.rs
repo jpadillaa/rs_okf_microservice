@@ -795,21 +795,21 @@ impl Builder<'_> {
                             ));
                         }
                         Some(t) if *linked => {
-                            images.push_str(&format!(
+                            images.push_str(&generated_note(&format!(
                                 "_Imagen{} vinculada a un archivo externo ({}), no incluida en el paquete._\n\n",
                                 at_f(anchor),
                                 escape_inline(t)
-                            ));
+                            )));
                             losses.push(format!(
                                 "imagen{} vinculada a un archivo externo",
                                 at_f(anchor)
                             ));
                         }
                         _ => {
-                            images.push_str(&format!(
+                            images.push_str(&generated_note(&format!(
                                 "_Imagen{} ausente del paquete original._\n\n",
                                 at_f(anchor)
-                            ));
+                            )));
                             losses.push(format!(
                                 "imagen{} ausente del paquete original",
                                 at_f(anchor)
@@ -849,9 +849,11 @@ impl Builder<'_> {
         let mut losses: Vec<String> = Vec::new();
         let mut notes: Vec<String> = Vec::new();
         let hidden_note = match info.state.as_deref() {
-            Some("veryHidden") => "> Hoja muy oculta en el original (solo visible desde VBA).\n\n",
-            Some(_) => "> Hoja oculta en el original.\n\n",
-            None => "",
+            Some("veryHidden") => {
+                generated_note("> Hoja muy oculta en el original (solo visible desde VBA).\n\n")
+            }
+            Some(_) => generated_note("> Hoja oculta en el original.\n\n"),
+            None => String::new(),
         };
         if info.state.is_some() {
             notes.push("hoja oculta en el original; se representa completa".into());
@@ -868,7 +870,7 @@ impl Builder<'_> {
                     .collect();
                 let (charts, images, _) = self.drawn(n, info, &items, &mut losses)?;
                 body.push_str(&format!(
-                    "Hoja de gráfico {n} de {total}: no tiene celdas, solo un gráfico.\n\n{hidden_note}"
+                    "{GENERATED}\nHoja de gráfico {n} de {total}: no tiene celdas, solo un gráfico.\n\n{hidden_note}"
                 ));
                 if !charts.is_empty() {
                     body.push_str(&format!("## Gráficos\n\n{charts}\n"));
@@ -900,12 +902,12 @@ impl Builder<'_> {
                     &mut spans,
                     &mut losses,
                     &mut notes,
-                    hidden_note,
+                    &hidden_note,
                 )?;
             }
             (SheetKind::Other(kind), _) => {
                 body.push_str(&format!(
-                    "Hoja {n} de {total}.\n\n{hidden_note}_Esta {kind} no está cubierta por el perfil y su contenido no se representa._\n"
+                    "{GENERATED}\nHoja {n} de {total}.\n\n{hidden_note}{GENERATED}\n_Esta {kind} no está cubierta por el perfil y su contenido no se representa._\n"
                 ));
                 losses.push(format!("{kind} no representada"));
             }
@@ -1017,7 +1019,7 @@ impl Builder<'_> {
             Some(u) => {
                 spans.push(range_span("hoja", &info.name, &u));
                 body.push_str(&format!(
-                    "Hoja {n} de {total} · rango con contenido {} ({} × {}) · {} con contenido, {} · {}.\n\n{hidden_note}",
+                    "{GENERATED}\nHoja {n} de {total} · rango con contenido {} ({} × {}) · {} con contenido, {} · {}.\n\n{hidden_note}",
                     u.a1(),
                     plural(u.rows() as usize, "fila", "filas"),
                     plural(u.cols() as usize, "columna", "columnas"),
@@ -1027,7 +1029,7 @@ impl Builder<'_> {
                 ));
             }
             None => body.push_str(&format!(
-                "Hoja {n} de {total}. La hoja no tiene celdas con contenido.\n\n{hidden_note}"
+                "{GENERATED}\nHoja {n} de {total}. La hoja no tiene celdas con contenido.\n\n{hidden_note}"
             )),
         }
         if formulas > 0 {
@@ -1071,20 +1073,20 @@ impl Builder<'_> {
             ));
             match &r.origin {
                 Origin::Pivot(p) => {
-                    body.push_str(&format!(
+                    body.push_str(&generated_note(&format!(
                         "> Tabla dinámica: se muestran sus valores almacenados; su definición (campos, filtros y origen{}) no se reproduce.\n\n",
                         p.source.as_deref().map(|s| format!(" {s}")).unwrap_or_default()
-                    ));
+                    )));
                     notes.push(format!(
                         "tabla dinámica «{}» en {}: se representan sus valores almacenados, no su definición",
                         p.name,
                         p.range.a1()
                     ));
                 }
-                Origin::Table(t) if t.totals_rows > 0 => body.push_str(&format!(
+                Origin::Table(t) if t.totals_rows > 0 => body.push_str(&generated_note(&format!(
                     "> La fila {} es la fila de totales de la tabla.\n\n",
                     t.range.r1
-                )),
+                ))),
                 _ => {}
             }
             let (formulas, groups) = self.formulas_md(sh, r, usize::MAX);
@@ -1470,7 +1472,7 @@ pub(crate) fn build_bundle(
         }
     }
     if wb.recalc_on_load {
-        extra.push_str("\n> El libro pide recalcular al abrirse; los valores almacenados de las fórmulas pueden no estar actualizados.\n");
+        extra.push_str(&generated_note("\n> El libro pide recalcular al abrirse; los valores almacenados de las fórmulas pueden no estar actualizados.\n"));
     }
     let mut doc_fields = document_fields(
         Format::Xlsx,

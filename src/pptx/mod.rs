@@ -856,7 +856,7 @@ pub(crate) fn markdown_slide(s: &Slide, deck: &str, instant: &str) -> (Fields, S
     if let Some(title) = &s.title {
         out.push_str(&format!("# {}\n\n", escape_inline(title)));
         if s.title_inferred {
-            out.push_str("> Título inferido por tamaño y posición del texto; la diapositiva no tiene marcador de título.\n\n");
+            out.push_str(&generated_note("> Título inferido por tamaño y posición del texto; la diapositiva no tiene marcador de título.\n\n"));
         }
     } else {
         out.push_str(&format!(
@@ -865,13 +865,15 @@ pub(crate) fn markdown_slide(s: &Slide, deck: &str, instant: &str) -> (Fields, S
         ));
     }
     if s.hidden {
-        out.push_str("> Diapositiva oculta en la presentación original.\n\n");
+        out.push_str(&generated_note(
+            "> Diapositiva oculta en la presentación original.\n\n",
+        ));
     }
     if s.visual_only {
-        out.push_str("> Contenido solo visual: lo sustantivo está en la imagen y no tiene transcripción.\n\n");
+        out.push_str(&generated_note("> Contenido solo visual: lo sustantivo está en la imagen y no tiene transcripción.\n\n"));
     }
     if s.view_hides_text {
-        out.push_str("> La vista estática muestra una imagen sobre texto que la animación original presenta en secuencia; el texto se conserva abajo.\n\n");
+        out.push_str(&generated_note("> La vista estática muestra una imagen sobre texto que la animación original presenta en secuencia; el texto se conserva abajo.\n\n"));
     }
     out.push_str("## Contenido\n\n");
     let mut in_list = false;
@@ -913,11 +915,11 @@ pub(crate) fn markdown_slide(s: &Slide, deck: &str, instant: &str) -> (Fields, S
             Item::AltText(text) => {
                 out.push_str(&format!("> Texto alternativo: {}\n\n", escape_inline(text)))
             }
-            Item::Loss(text) => out.push_str(&format!("_{text}_\n\n")),
+            Item::Loss(text) => out.push_str(&generated_note(&format!("_{text}_\n\n"))),
         }
     }
     if s.items.is_empty() {
-        out.push_str("Sin texto extraído.\n");
+        out.push_str(&generated_note("Sin texto extraído.\n"));
     }
     while out.ends_with("\n\n") {
         out.pop();
@@ -1081,10 +1083,10 @@ pub(crate) fn build_bundle(
             s.idx, s.idx
         ));
         if rendered.skipped_images > 0 {
-            md.push_str(&format!(
+            md.push_str(&generated_note(&format!(
                 "\n_La vista omite {} imagen(es) que el renderizador no pudo dibujar._\n",
                 rendered.skipped_images
-            ));
+            )));
         }
         if md.contains(UNRESOLVED) {
             unresolved.push(s.idx);

@@ -1,7 +1,7 @@
 # Perfil documental OKF para PDF, DOCX, XLSX y PPTX
 
 **Versión objetivo:** Open Knowledge Format (OKF) v0.2.  
-**Versión del perfil documental:** 1.8.0 (independiente de OKF v0.2).
+**Versión del perfil documental:** 1.9.0 (independiente de OKF v0.2).
 **Alcance:** especificar exclusivamente el bundle de salida. No define API, arquitectura, herramientas ni ejecución del conversor.
 
 Este perfil añade convenciones para convertir documentos a OKF sin perder estructura, contenido ni referencia al original. Las reglas indicadas como **OKF** proceden de la [especificación oficial](https://github.com/GoogleCloudPlatform/open-knowledge-format/blob/main/SPEC.md); las indicadas como **perfil** son requisitos de este proyecto. Un bundle puede cumplir OKF y aun así tener pérdidas de extracción: ambos controles se evalúan por separado.
@@ -34,7 +34,7 @@ bundle/
 └── conversion-report.md     # Cobertura e incidencias; concepto con type
 ```
 
-**Perfil:** `documento.md` y `conversion-report.md` declaran los mismos `converter_version` (versión del paquete), `converter_commit` (SHA Git de 40 caracteres; `unknown` si la fuente no lo proporciona) y `profile_version` (`1.8.0`). Son extensiones del perfil, no campos oficiales de OKF.
+**Perfil:** `documento.md` y `conversion-report.md` declaran los mismos `converter_version` (versión del paquete), `converter_commit` (SHA Git de 40 caracteres; `unknown` si la fuente no lo proporciona) y `profile_version` (`1.9.0`). Son extensiones del perfil, no campos oficiales de OKF.
 
 **Perfil: configuración de la conversión.** `documento.md` y `conversion-report.md` declaran también, con el mismo valor, la configuración que cambia el contenido del bundle de su formato (`conversion_settings`) y su huella (`settings_sha256`). Dos conversiones del mismo original con el mismo perfil y la misma huella usaron la misma configuración. Los parámetros que solo limitan o rechazan el trabajo no forman parte de ella.
 
@@ -98,6 +98,7 @@ La fecha y el actor del ejemplo son ilustrativos; cada salida registra los valor
 - **Texto:** se conserva orden, encabezados, listas, referencias y contenido. Se permite unir líneas partidas por maquetación o palabras divididas inequívocamente. No se resume, parafrasea ni completa contenido ausente.
 - **Continuaciones:** párrafos, tablas y notas que cruzan páginas o secciones se reconcilian si la continuidad es comprobable. Si no lo es, se mantienen las partes separadas y se declara el problema.
 - **Recursos:** figuras y diagramas sustantivos se adjuntan y enlazan cerca de su posición. Una descripción generada no reemplaza la imagen ni se hace pasar por texto extraído; no se inventan pies o textos alternativos.
+- **Texto generado:** cada nota que escribe el conversor en el cuerpo de un concepto (título o encabezado inferido, diapositiva u hoja ocultas, página escaneada, en blanco o sin contenido propio, «Sin texto extraído.», contenido que no pudo representarse, introducciones de las secciones auxiliares, resumen de cada hoja) va precedida de `<!-- okf-generated -->`, que se aplica solo al bloque siguiente, como `okf-source-span`. Un consumidor puede descartar esos bloques sin perder texto del original. No se marcan las etiquetas que acompañan a texto extraído («Texto alternativo:», «Datos del gráfico:», «Texto girado:», «Cuadro de texto»), porque el bloque contiene texto del original. También son texto generado `description`, que combina una frase fija con el título o el comienzo del texto extraído, y en `documento.md` el resumen bajo el título y las frases que introducen sus secciones.
 - **Incertidumbre:** el OCR, los títulos inferidos, el orden de lectura y cualquier interpretación dudosa se identifican junto al contenido y en el informe. Las referencias internas solo se convierten en enlaces si el destino es inequívoco.
 - **Referencias:** una referencia interna del original enlaza el concepto que contiene su destino:
   - en DOCX, un hipervínculo a un marcador (`w:anchor`, campo `HYPERLINK \l`) o un campo `REF` con `\h` lleva al concepto que contiene el bloque del marcador;
@@ -203,6 +204,11 @@ El perfil se limita a `.pdf`, `.docx`, `.xlsx` y `.pptx`. Los formatos binarios 
 Todo cambio de una regla de esta especificación incrementa `profile_version` en la
 especificación y en `src/version.rs`, con una entrada aquí, en el mismo commit.
 
+- **1.9.0 — 8 de noviembre de 2026:** las notas que escribe el conversor en el cuerpo
+  van precedidas de `<!-- okf-generated -->`, y la especificación declara qué otro texto
+  es generado (§4; plan 3, I8). Los bundles de referencia ganan 112 marcadores y no
+  cambian en nada más. El validador exige que cada marcador vaya seguido de un bloque; acepta
+  también los bundles 1.0.0 a 1.8.0.
 - **1.8.0 — 8 de noviembre de 2026:** cada bloque PDF tiene su marcador `u-N` (antes,
   `p-N` por página y solo en conceptos de varias páginas), con una caja por página en
   puntos; cada forma PPTX con contenido tiene un localizador `pptx_shape` con su `id` y

@@ -151,6 +151,7 @@ kicker: "PRINCIPIO DE OPERACIÓN DE RAG"
 
 # Primero la evidencia, después la respuesta
 
+<!-- okf-generated -->
 > Título inferido por tamaño y posición del texto; la diapositiva no tiene marcador de título.
 
 ## Contenido

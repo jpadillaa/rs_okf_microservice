@@ -33,6 +33,7 @@ status: "draft"
 
 # Diapositiva 26 (sin título explícito)
 
+<!-- okf-generated -->
 > Contenido solo visual: lo sustantivo está en la imagen y no tiene transcripción.
 
 ## Contenido

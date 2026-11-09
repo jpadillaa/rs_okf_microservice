@@ -33,6 +33,7 @@ status: "draft"
 
 # Prácticas de ingenieria de software recomendadas
 
+<!-- okf-generated -->
 > Contenido solo visual: lo sustantivo está en la imagen y no tiene transcripción.
 
 ## Contenido

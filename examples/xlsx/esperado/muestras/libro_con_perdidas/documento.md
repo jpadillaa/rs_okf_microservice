@@ -1,6 +1,6 @@
 ---
 type: "Source Document"
-unit_id: "038f43036266859576b379ed45d296f22344d81b355c279202a4fc2afcd1f51b/documento.md"
+unit_id: "63610aec892077f8aa2fb22f8b34d05a3405437549c54043bdea86ad64ffc738/documento.md"
 title: "libro_con_perdidas"
 description: "Libro libro_con_perdidas.xlsx convertido a conceptos OKF por hojas y regiones."
 sources:
@@ -11,10 +11,10 @@ generated:
   at: "<generado>"
 converter_version: "0.1.0"
 converter_commit: "<commit>"
-profile_version: "1.8.0"
+profile_version: "1.9.0"
 conversion_settings: {}
 settings_sha256: "44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a"
-conversion_id: "038f43036266859576b379ed45d296f22344d81b355c279202a4fc2afcd1f51b"
+conversion_id: "63610aec892077f8aa2fb22f8b34d05a3405437549c54043bdea86ad64ffc738"
 source_file:
   path: "references/original.xlsx"
   sha256: "782106213febbcffae20d3f21c50c284a0b924d9afae2158ffecce866faf62e8"
@@ -48,4 +48,5 @@ Libros de los que leen algunas fórmulas; no se incluyen en el bundle.
 
 - [1]: `file:///C:/Compartido/Tarifas/precios_2025.xlsx`
 
+<!-- okf-generated -->
 > El libro pide recalcular al abrirse; los valores almacenados de las fórmulas pueden no estar actualizados.

@@ -1,6 +1,6 @@
 ---
 type: "Source Text"
-unit_id: "51ced1a58ccb470f4fb08f3de67b04cbf1161aeeb7f9a0e9d4cc880837362c8a/contenido/texto.md"
+unit_id: "06b7b867e9b68b412b1f6a15a054de3e9c35f094a711558dca62340f0b33806b/contenido/texto.md"
 parent: "documento.md"
 title: "Informe técnico escaneado"
 description: "Texto completo de escaneado_ocr.pdf."
@@ -45,9 +45,11 @@ status: "draft"
 
 <!-- okf-source-span: u-1 -->
 ![Vista de la página 1](../assets/pagina-001.png)
+<!-- okf-generated -->
 > Página escaneada sin capa de texto: su contenido solo está en la imagen; no se aplicó OCR.
 
 <!-- okf-source-span: u-2 -->
 ![Vista de la página 2](../assets/pagina-002.png)
+<!-- okf-generated -->
 > Página escaneada sin capa de texto: su contenido solo está en la imagen; no se aplicó OCR.
 

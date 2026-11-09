@@ -1,6 +1,6 @@
 ---
 type: "Sheet"
-unit_id: "4f3ac62cc5158cbe3a431b6fc9dae9d530f6af5d4d1030250d7bc4c255c53d99/contenido/hoja-003.md"
+unit_id: "b7f669dd32be4ae848793701c0e0735283ff4a9c8006aece5efe264984894828/contenido/hoja-003.md"
 parent: "documento.md"
 previous: "contenido/hoja-002.md"
 next: "contenido/hoja-004.md"
@@ -29,8 +29,10 @@ source_spans:
 
 # Supuestos
 
+<!-- okf-generated -->
 Hoja 3 de 4 · rango con contenido A1:C4 (4 filas × 3 columnas) · 11 celdas con contenido, 1 fórmula · 1 región.
 
+<!-- okf-generated -->
 > Hoja oculta en el original.
 
 Los valores de las fórmulas son los almacenados en el archivo; el conversor no recalcula.

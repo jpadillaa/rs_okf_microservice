@@ -322,6 +322,7 @@ kicker: "¿POR QUÉ CONSIDERAR RAG?"
 
 # 1. Historial almacenado ≠ contexto enviado
 
+<!-- okf-generated -->
 > Título inferido por tamaño y posición del texto; la diapositiva no tiene marcador de título.
 
 ## Contenido

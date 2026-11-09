@@ -1,6 +1,6 @@
 ---
 type: "Sheet"
-unit_id: "c637ff2a5689d2efd04fa819a84720acbba1cee78de71483b8748727e64ad183/contenido/hoja-001.md"
+unit_id: "f9176ede955e93d6752d1ebae26c79a17c492a3fa9edfae515d60a9eb574bb7c/contenido/hoja-001.md"
 parent: "documento.md"
 next: "contenido/hoja-002.md"
 title: "Almacenes"
@@ -42,6 +42,7 @@ source_spans:
 
 # Almacenes
 
+<!-- okf-generated -->
 Hoja 1 de 4 · rango con contenido A1:J20 (20 filas × 10 columnas) · 46 celdas con contenido, 1 fórmula · 4 regiones.
 
 Los valores de las fórmulas son los almacenados en el archivo; el conversor no recalcula.

@@ -33,6 +33,7 @@ status: "draft"
 
 # Indexación y embeddings
 
+<!-- okf-generated -->
 > Contenido solo visual: lo sustantivo está en la imagen y no tiene transcripción.
 
 ## Contenido

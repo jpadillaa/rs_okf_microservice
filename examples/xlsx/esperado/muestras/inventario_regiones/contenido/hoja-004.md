@@ -1,6 +1,6 @@
 ---
 type: "Sheet"
-unit_id: "c637ff2a5689d2efd04fa819a84720acbba1cee78de71483b8748727e64ad183/contenido/hoja-004.md"
+unit_id: "f9176ede955e93d6752d1ebae26c79a17c492a3fa9edfae515d60a9eb574bb7c/contenido/hoja-004.md"
 parent: "documento.md"
 previous: "contenido/hoja-003.md"
 title: "Gráfico existencias"
@@ -16,6 +16,7 @@ sheet_index: 4
 
 # Gráfico existencias
 
+<!-- okf-generated -->
 Hoja de gráfico 4 de 4: no tiene celdas, solo un gráfico.
 
 ## Gráficos

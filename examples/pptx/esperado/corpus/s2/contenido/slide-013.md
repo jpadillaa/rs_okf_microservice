@@ -33,6 +33,7 @@ status: "draft"
 
 # Agentic Chunking
 
+<!-- okf-generated -->
 > Contenido solo visual: lo sustantivo está en la imagen y no tiene transcripción.
 
 ## Contenido

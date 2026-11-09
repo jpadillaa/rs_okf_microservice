@@ -250,6 +250,7 @@ kicker: "TAREA Y CONTRATO DE EVIDENCIA"
 
 # Delimitar un contrato de evidencia
 
+<!-- okf-generated -->
 > Título inferido por tamaño y posición del texto; la diapositiva no tiene marcador de título.
 
 ## Contenido

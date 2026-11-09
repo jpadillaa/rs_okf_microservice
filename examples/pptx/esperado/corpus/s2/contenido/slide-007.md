@@ -33,6 +33,7 @@ status: "draft"
 
 # Chunk Size & Chunk Overlap
 
+<!-- okf-generated -->
 > Contenido solo visual: lo sustantivo está en la imagen y no tiene transcripción.
 
 ## Contenido

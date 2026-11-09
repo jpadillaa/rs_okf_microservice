@@ -33,6 +33,7 @@ status: "draft"
 
 # Fragmentación basada en la estructura del documento
 
+<!-- okf-generated -->
 > Contenido solo visual: lo sustantivo está en la imagen y no tiene transcripción.
 
 ## Contenido

@@ -25,10 +25,12 @@ kicker: "IDEA CLAVE"
 
 # Determinismo hasta donde sea posible, no-determinismo donde sea indispensable
 
+<!-- okf-generated -->
 > Título inferido por tamaño y posición del texto; la diapositiva no tiene marcador de título.
 
 ## Contenido
 
+<!-- okf-generated -->
 Sin texto extraído.
 
 ## Notas del presentador

@@ -214,6 +214,7 @@ kicker: "EVALUACIÓN Y COMPARACIÓN A/B"
 
 # Comparar una variante con una línea base
 
+<!-- okf-generated -->
 > Título inferido por tamaño y posición del texto; la diapositiva no tiene marcador de título.
 
 ## Contenido

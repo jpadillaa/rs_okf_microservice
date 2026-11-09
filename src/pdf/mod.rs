@@ -1426,10 +1426,13 @@ impl Render<'_> {
             _ if !page.furniture.is_empty() => format!("_Página {p} sin contenido propio: solo tiene encabezado, pie o número de página._"),
             _ => format!("_Página {p} en blanco._"),
         };
+        // La nota es del conversor; la vista, que la precede, es del original.
         if page.class.needs_view() && page.view.is_none() {
-            return format!("{note}\n> No se pudo generar la vista de la página {p}.\n");
+            return format!(
+                "{GENERATED}\n{note}\n> No se pudo generar la vista de la página {p}.\n"
+            );
         }
-        format!("{view}{note}\n")
+        format!("{view}{GENERATED}\n{note}\n")
     }
 
     /// Primera y última página del concepto de la sección `k`, sin el título.
@@ -1642,20 +1645,20 @@ impl Render<'_> {
         let mut out = String::new();
         out.push_str(&format!("# {}\n\n", escape_inline(&sec.title)));
         if sec.inferred {
-            out.push_str("> Encabezado inferido por su formato tipográfico: el PDF no lo marca como encabezado.\n\n");
+            out.push_str(&generated_note("> Encabezado inferido por su formato tipográfico: el PDF no lo marca como encabezado.\n\n"));
         }
         if !elsewhere.is_empty() {
             let one = elsewhere.len() == 1;
-            out.push_str(&format!(
+            out.push_str(&generated_note(&format!(
                 "> El texto de {} {} procede de {} con OCR y su exactitud no se ha verificado; la nota y la vista de {} están en el concepto donde empieza.\n\n",
                 if one { "la" } else { "las" },
                 pages_phrase(&elsewhere).to_lowercase(),
                 if one { "un escaneo transcrito" } else { "escaneos transcritos" },
                 if one { "la página" } else { "cada página" },
-            ));
+            )));
         }
         if body.is_empty() {
-            out.push_str("Sin texto extraído.\n");
+            out.push_str(&generated_note("Sin texto extraído.\n"));
         } else {
             out.push_str(&body);
         }
@@ -2448,10 +2451,12 @@ pub(crate) fn validate(
         let mut used = HashSet::new();
         let mut started = false;
         for chunk in body.split("\n\n").map(str::trim).filter(|c| !c.is_empty()) {
+            // Una nota del conversor se reconoce por lo que sigue a su marcador.
+            let note = chunk.strip_prefix(GENERATED).map_or(chunk, str::trim_start);
             if !started
-                && (chunk.starts_with("# ")
-                    || chunk.starts_with("> ")
-                    || chunk == "Sin texto extraído.")
+                && (note.starts_with("# ")
+                    || note.starts_with("> ")
+                    || note == "Sin texto extraído.")
             {
                 continue;
             }
@@ -2760,9 +2765,11 @@ mod tests {
         assert_eq!(state, "partial");
         let text = &md["contenido/texto.md"];
         assert!(text.contains("status: \"draft\""));
-        assert!(text.contains("<!-- okf-source-span: u-5 -->\n![Vista de la página 2](../assets/pagina-002.png)\n> Página escaneada sin capa de texto"));
-        assert!(text.contains("<!-- okf-source-span: u-6 -->\n_Página 3 sin contenido propio"));
-        assert!(text.contains("<!-- okf-source-span: u-7 -->\n![Vista de la página 4](../assets/pagina-004.png)\n> Página sin texto con contenido gráfico"));
+        assert!(text.contains("<!-- okf-source-span: u-5 -->\n![Vista de la página 2](../assets/pagina-002.png)\n<!-- okf-generated -->\n> Página escaneada sin capa de texto"));
+        assert!(text.contains(
+            "<!-- okf-source-span: u-6 -->\n<!-- okf-generated -->\n_Página 3 sin contenido propio"
+        ));
+        assert!(text.contains("<!-- okf-source-span: u-7 -->\n![Vista de la página 4](../assets/pagina-004.png)\n<!-- okf-generated -->\n> Página sin texto con contenido gráfico"));
         assert!(text.contains("![Imagen de la página 5](../assets/pagina-005-imagen-01.png)"));
         assert!(text.contains("_Texto girado:_ Copia controlada · no imprimir"));
         for asset in [
