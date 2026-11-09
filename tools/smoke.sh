@@ -17,8 +17,9 @@ postgres=okf-smoke-postgres-$RANDOM-$$
 network=okf-smoke-net-$RANDOM-$$
 postgres_image=postgres:17-bookworm@sha256:839fbb5a4942a7758dd93e18b42ea5649807491a0545b5eeeb8f0b8bb11857a5
 cleanup() {
-    docker rm -f "$api" >/dev/null 2>&1 || true
-    docker rm -f "$postgres" >/dev/null 2>&1 || true
+    # `-v` borra también el volumen anónimo que declara la imagen de PostgreSQL.
+    docker rm -fv "$api" >/dev/null 2>&1 || true
+    docker rm -fv "$postgres" >/dev/null 2>&1 || true
     docker network rm "$network" >/dev/null 2>&1 || true
     docker volume rm "$volume" >/dev/null 2>&1 || true
     rm -rf "$data" 2>/dev/null || true
