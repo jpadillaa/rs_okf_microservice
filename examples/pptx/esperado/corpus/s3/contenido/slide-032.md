@@ -18,12 +18,22 @@ source_spans:
     kind: "pptx_slide"
     slide_index: 32
     slide_id: 287
+  - id: "f-469"
+    source_id: "original"
+    kind: "pptx_shape"
+    slide_index: 32
+    shape_id: 469
+    x: 1682650
+    y: 1858175
+    cx: 10106400
+    cy: 4152300
 ---
 
 # Cómo se manifiestan los errores
 
 ## Contenido
 
+<!-- okf-source-span: f-469 -->
 - Similitud textual ≠ validez legal
 - La búsqueda vectorial prioriza cercanía semántica y puede recuperar normas o precedentes derogados u overruling por parecerse al texto de la consulta, aunque ya no sean jurídicamente válidos.
 - Ceguera a jurisdicción y materia

@@ -18,6 +18,24 @@ source_spans:
     kind: "pptx_slide"
     slide_index: 21
     slide_id: 276
+  - id: "f-387"
+    source_id: "original"
+    kind: "pptx_shape"
+    slide_index: 21
+    shape_id: 387
+    x: 1577025
+    y: 2128775
+    cx: 10106400
+    cy: 4317900
+  - id: "f-388"
+    source_id: "original"
+    kind: "pptx_shape"
+    slide_index: 21
+    shape_id: 388
+    x: 3227
+    y: 60250
+    cx: 12185523
+    cy: 6858001
 view_hides_text: true
 ---
 
@@ -27,9 +45,11 @@ view_hides_text: true
 
 ## Contenido
 
+<!-- okf-source-span: f-387 -->
 - Evalúa si la respuesta generada es coherente con la información recuperada.
 - Permite identificar y medir afirmaciones en la respuesta que no están sustentadas en el contenido proporcionado.
 
+<!-- okf-source-span: f-388 -->
 ![Imagen 1 de la diapositiva 21](../assets/slide-021-image-01.png)
 
 ## Notas del presentador

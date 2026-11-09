@@ -18,6 +18,15 @@ source_spans:
     kind: "pptx_slide"
     slide_index: 19
     slide_id: 274
+  - id: "f-374"
+    source_id: "original"
+    kind: "pptx_shape"
+    slide_index: 19
+    shape_id: 374
+    x: 2033525
+    y: 1669555
+    cx: 8677425
+    cy: 4883646
 visual_only: true
 status: "draft"
 ---
@@ -28,6 +37,7 @@ status: "draft"
 
 ## Contenido
 
+<!-- okf-source-span: f-374 -->
 ![Imagen 1 de la diapositiva 19](../assets/slide-019-image-01.png)
 
 ## Vista visual

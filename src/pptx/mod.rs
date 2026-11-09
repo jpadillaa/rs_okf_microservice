@@ -48,6 +48,8 @@ pub(crate) struct Slide {
     /// La vista estática muestra una imagen sobre texto que una animación presenta en secuencia.
     pub(crate) view_hides_text: bool,
     pub(crate) comments: Vec<Comment>,
+    /// Forma de la que sale cada elemento de `items`, en el mismo orden (plan 3, I6).
+    pub(crate) origins: Vec<slide_xml::Origin>,
 }
 
 /// Números de las diapositivas afectadas por cada incidencia que se informa agrupada.
@@ -442,6 +444,7 @@ pub(crate) fn extract(bytes: &[u8], attempt: &FsPath, max_slides: usize) -> Resu
         }
         s.decorative_images += part.background_images;
         let equations = part.equations;
+        let origins = part.origins;
         let mut blocks: Vec<Option<slide_xml::Block>> = part.blocks.into_iter().map(Some).collect();
         // Numeración visible: marcador sldNum o contador "NN / total" en un cuadro de texto.
         for b in blocks.iter_mut() {
@@ -509,7 +512,11 @@ pub(crate) fn extract(bytes: &[u8], attempt: &FsPath, max_slides: usize) -> Resu
         attach_badges(&mut blocks);
         let mut assets = HashMap::<String, String>::new();
         let mut largest_image = 0.0f64;
-        for block in blocks.into_iter().flatten() {
+        for (block, origin) in blocks
+            .into_iter()
+            .zip(origins)
+            .filter_map(|(b, o)| b.map(|b| (b, o)))
+        {
             match block {
                 slide_xml::Block::Text(t) => s.items.push(Item::Text(t.paragraphs)),
                 slide_xml::Block::Table(rows) => s.items.push(Item::Table(table_markdown(&rows))),
@@ -613,6 +620,8 @@ pub(crate) fn extract(bytes: &[u8], attempt: &FsPath, max_slides: usize) -> Resu
                     }
                 }
             }
+            // Los elementos que salen de este bloque llevan su forma.
+            s.origins.resize(s.items.len(), origin);
         }
         for target in smap.values().filter(|t| t.contains("comments/")) {
             if let Ok(b) = read_entry(&mut z, &resolve(&path, target)) {
@@ -786,12 +795,44 @@ pub(crate) fn index_entry(s: &Slide, href: &str) -> String {
     format!("- [{label}]({href}){suffix}\n")
 }
 
+/// Identificador del localizador de una forma.
+fn shape_marker(id: u32) -> String {
+    format!("f-{id}")
+}
+
 /// Frontmatter y cuerpo del concepto de una diapositiva.
 pub(crate) fn markdown_slide(s: &Slide, deck: &str, instant: &str) -> (Fields, String) {
-    let span = span(&format!("slide-{}", s.idx), "pptx_slide")
+    let slide_span = span(&format!("slide-{}", s.idx), "pptx_slide")
         .with("slide_index", s.idx)
         .with_opt("slide_id", s.slide_id)
         .with_opt("display_label", s.visible_label.as_ref());
+    // Un localizador por forma con contenido: su `id` y su rectángulo en EMU.
+    let mut shapes: Vec<Fields> = Vec::new();
+    for (k, o) in s.origins.iter().enumerate() {
+        let Some(id) = o.id else { continue };
+        let first = k == 0 || s.origins[k - 1].id != o.id;
+        let name = shape_marker(id);
+        if first
+            && !shapes
+                .iter()
+                .any(|f| f.get_str("id") == Some(name.as_str()))
+        {
+            let mut f = span(&name, "pptx_shape")
+                .with("slide_index", s.idx)
+                .with("shape_id", id);
+            if let Some(r) = o.rect {
+                f = f
+                    .with("x", r.x)
+                    .with("y", r.y)
+                    .with("cx", r.cx)
+                    .with("cy", r.cy);
+            }
+            shapes.push(f);
+        }
+    }
+    let mut spans = vec![slide_span];
+    spans.extend(shapes);
+    let span = spans;
     let fields = concept_fields(
         Format::Pptx,
         "Slide",
@@ -799,7 +840,7 @@ pub(crate) fn markdown_slide(s: &Slide, deck: &str, instant: &str) -> (Fields, S
         &slide_description(s, deck),
         instant,
     )
-    .with("source_spans", vec![span])
+    .with("source_spans", span)
     .flag("title_inferred", s.title_inferred)
     .with_opt("kicker", s.kicker.as_ref())
     .with_opt("section", s.section.as_ref())
@@ -835,10 +876,17 @@ pub(crate) fn markdown_slide(s: &Slide, deck: &str, instant: &str) -> (Fields, S
     out.push_str("## Contenido\n\n");
     let mut in_list = false;
     let mut image_no = 0;
-    for item in &s.items {
-        if in_list && !matches!(item, Item::Text(_)) {
+    for (k, item) in s.items.iter().enumerate() {
+        // Marcador de la forma antes de su primer elemento; cierra la lista anterior.
+        let shape = s.origins.get(k).and_then(|o| o.id);
+        let new_shape =
+            shape.is_some() && (k == 0 || s.origins.get(k - 1).and_then(|o| o.id) != shape);
+        if in_list && (!matches!(item, Item::Text(_)) || new_shape) {
             out.push('\n');
             in_list = false;
+        }
+        if let (true, Some(id)) = (new_shape, shape) {
+            out.push_str(&format!("<!-- okf-source-span: {} -->\n", shape_marker(id)));
         }
         match item {
             Item::Text(paragraphs) => {
@@ -1260,6 +1308,25 @@ pub(crate) fn validate(
                 n + 1
             )
         }
+        // Localizadores de forma (plan 3, I6): de esta diapositiva, `f-<id>`, un `id` de
+        // forma único y un tamaño no negativo.
+        let mut shapes = std::collections::HashSet::new();
+        for s in fm["source_spans"].as_sequence().into_iter().flatten() {
+            if s.get("kind").and_then(YamlValue::as_str) != Some("pptx_shape") {
+                continue;
+            }
+            let shape = s.get("shape_id").and_then(YamlValue::as_u64);
+            let ok = s.get("slide_index").and_then(YamlValue::as_u64) == Some(n as u64 + 1)
+                && shape.is_some_and(|k| {
+                    s.get("id").and_then(YamlValue::as_str) == Some(format!("f-{k}").as_str())
+                })
+                && ["cx", "cy"]
+                    .iter()
+                    .all(|k| s.get(k).is_none_or(|v| v.as_i64().is_some_and(|v| v >= 0)));
+            if !ok || !shapes.insert(shape) {
+                bail!("{name} tiene un localizador de forma inválido o repetido")
+            }
+        }
     }
     for (index, prefix) in [
         (read_text(z, "index.md")?, "](contenido/slide-"),
@@ -1332,7 +1399,8 @@ mod tests {
             s12[..2],
             ["1. Tarea".to_string(), "2. Evidencia".to_string()]
         );
-        assert!(md.contains("- 1\\. Tarea\n- 2\\. Evidencia"));
+        // Cada tarjeta es una forma: lleva su marcador y su propia lista.
+        assert!(md.contains("<!-- okf-source-span: f-12 -->\n- 1\\. Tarea\n\n<!-- okf-source-span: f-15 -->\n- 2\\. Evidencia"));
         assert!(
             md.contains(
                 "description: \"Diapositiva 12 de s1: El recorrido de la clase. 1. Tarea\""

@@ -1,6 +1,6 @@
 ---
 type: "Source Section"
-unit_id: "06130e9dec59648a18894e7924fd7e9d28bcf19c189a7f39a2354196ae9f91a4/contenido/seccion-001.md"
+unit_id: "4f891a9ae32d16e5ed2dfe73bac2182d2b0e51a1a6cc0304319d736ccaa3e97a/contenido/seccion-001.md"
 parent: "documento.md"
 next: "contenido/seccion-002.md"
 title: "Artificial intelligence‑assisted academic writing: recommendations for ethical use"
@@ -17,15 +17,63 @@ source_spans:
     kind: "pdf_pages"
     from: 1
     to: 1
+  - id: "u-1"
+    source_id: "original"
+    kind: "pdf_pages"
+    from: 1
+    to: 1
+    boxes:
+      - page: 1
+        x0: 56.62
+        top: 43.33
+        x1: 204.80
+        bottom: 51.33
+  - id: "u-2"
+    source_id: "original"
+    kind: "pdf_pages"
+    from: 1
+    to: 1
+    boxes:
+      - page: 1
+        x0: 61.82
+        top: 92.21
+        x1: 129.89
+        bottom: 105.21
+  - id: "u-3"
+    source_id: "original"
+    kind: "pdf_pages"
+    from: 1
+    to: 1
+    boxes:
+      - page: 1
+        x0: 463.29
+        top: 90.62
+        x1: 535.51
+        bottom: 103.62
+  - id: "u-5"
+    source_id: "original"
+    kind: "pdf_pages"
+    from: 1
+    to: 1
+    boxes:
+      - page: 1
+        x0: 56.62
+        top: 180.25
+        x1: 281.65
+        bottom: 191.25
 ---
 
 # Artificial intelligence‑assisted academic writing: recommendations for ethical use
 
+<!-- okf-source-span: u-1 -->
 https://doi.org/10.1186/s41077-025-00350-6
 
+<!-- okf-source-span: u-2 -->
 **COMMENT**
 
+<!-- okf-source-span: u-3 -->
 **Open Access**
 
+<!-- okf-source-span: u-5 -->
 Adam Cheng1\*, Aaron Calhoun2 and Gabriel Reedy3
 

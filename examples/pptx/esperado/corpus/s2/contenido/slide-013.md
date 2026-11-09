@@ -18,6 +18,15 @@ source_spans:
     kind: "pptx_slide"
     slide_index: 13
     slide_id: 268
+  - id: "f-334"
+    source_id: "original"
+    kind: "pptx_shape"
+    slide_index: 13
+    shape_id: 334
+    x: 2033525
+    y: 1465000
+    cx: 9040884
+    cy: 5088201
 visual_only: true
 status: "draft"
 ---
@@ -28,6 +37,7 @@ status: "draft"
 
 ## Contenido
 
+<!-- okf-source-span: f-334 -->
 ![Imagen 1 de la diapositiva 13](../assets/slide-013-image-01.png)
 
 ## Vista visual

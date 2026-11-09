@@ -18,6 +18,15 @@ source_spans:
     kind: "pptx_slide"
     slide_index: 2
     slide_id: 257
+  - id: "f-2"
+    source_id: "original"
+    kind: "pptx_shape"
+    slide_index: 2
+    shape_id: 2
+    x: 457200
+    y: 1650000
+    cx: 8200000
+    cy: 1500000
 status: "draft"
 ---
 
@@ -25,6 +34,7 @@ status: "draft"
 
 ## Contenido
 
+<!-- okf-source-span: f-2 -->
 - This slide has no title placeholder
 
 ## Vista visual

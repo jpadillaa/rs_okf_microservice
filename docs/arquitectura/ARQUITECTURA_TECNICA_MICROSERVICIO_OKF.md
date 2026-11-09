@@ -294,6 +294,31 @@ rechaza un enlace pendiente que siga en un concepto y un concepto con la marca s
 informe no declara ninguna referencia «sin destino». `local_target` trata como externo
 todo destino con esquema de URI, para que `file:` o `doi:` no pasen por rutas del bundle.
 
+### Coordenadas PDF y formas PPTX (plan 3, I6)
+
+Cada unidad PDF guarda su caja en cada página al crearse, a partir del rectángulo que
+la maquetación da a su bloque. Una imagen flotante usa el suyo, una nota de página la
+página entera y el texto girado su línea. Un párrafo que continúa en otra columna o
+página une las cajas. Al dividir un párrafo por el título de un marcador, cada parte
+toma la caja de sus líneas si el párrafo ocupa una sola página; si cruza páginas, las
+dos conservan la del párrafo entero. `Render::marker` escribe el marcador `u-N` de
+cada bloque, recorta las cajas a la página y las escribe con dos decimales
+(`Yaml::Decimal`). Medida con pdfium sobre un párrafo de `articulo_columnas`, la caja
+difiere 0,41 pt como máximo de la tinta de sus caracteres y 0,61 pt de su caja
+tipográfica.
+
+En PPTX, `parse_part` guarda junto a cada bloque su origen (`Origin`): el `id` del
+último `cNvPr` leído y el rectángulo de la forma, con las transformaciones de grupo. Los
+elementos (`Item`) que salen de un bloque heredan su origen. `markdown_slide` escribe un
+localizador `pptx_shape` por forma y su marcador antes del primer elemento, cerrando la
+lista anterior. El título de la diapositiva, que va al frontmatter, no lleva marcador.
+
+`pdf::validate` comprueba que cada caja esté en una página de su localizador, una por
+página, y dentro de la página con medio punto de margen. `pptx::validate` comprueba
+que cada localizador de forma sea de su diapositiva, se llame `f-<id>`, tenga un `id`
+único y un tamaño no negativo. No exige que la forma esté dentro de la diapositiva,
+porque puede salirse.
+
 ### Validación independiente (plan 2, C10)
 
 `okf-microservice validate <bundle.zip | directorio>` aplica el mismo validador de

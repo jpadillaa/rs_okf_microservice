@@ -66,9 +66,19 @@ pub enum Block {
     SmartArt,
 }
 
+/// Forma de la que sale un bloque (plan 3, I6): su `id` de `cNvPr` y su rectángulo en
+/// EMU, si los tiene.
+#[derive(Clone, Copy, Debug, Default, PartialEq)]
+pub struct Origin {
+    pub id: Option<u32>,
+    pub rect: Option<Rect>,
+}
+
 #[derive(Debug, Default)]
 pub struct Part {
     pub blocks: Vec<Block>,
+    /// Forma de cada bloque, en el mismo orden que `blocks`.
+    pub origins: Vec<Origin>,
     pub background_images: usize,
     /// Ecuaciones OMML convertidas a notación lineal.
     pub equations: usize,
@@ -193,6 +203,13 @@ enum Owner {
     Frame,
 }
 
+impl Part {
+    fn push(&mut self, block: Block, id: Option<u32>, rect: Option<Rect>) {
+        self.blocks.push(block);
+        self.origins.push(Origin { id, rect });
+    }
+}
+
 /// Lee una diapositiva o página de notas. `link` traduce el `r:id` de un hipervínculo
 /// a un destino Markdown; devuelve `None` si el destino no puede representarse.
 pub fn parse_part(xml: &str, link: &dyn Fn(&str) -> Option<String>) -> anyhow::Result<Part> {
@@ -203,6 +220,8 @@ pub fn parse_part(xml: &str, link: &dyn Fn(&str) -> Option<String>) -> anyhow::R
     let mut owner = Owner::None;
     let mut rect = Rect::default();
     let mut has_rect = false;
+    // `id` del último `cNvPr`: el de la forma en curso.
+    let mut shape_id: Option<u32> = None;
     let mut shape = TextShape::default();
     let mut shape_link: Option<String> = None;
     let mut picture = Picture::default();
@@ -312,13 +331,14 @@ pub fn parse_part(xml: &str, link: &dyn Fn(&str) -> Option<String>) -> anyhow::R
                     frame_smartart = false;
                 }
                 b"cNvPr" => {
+                    shape_id = attr(&e, b"id").and_then(|v| v.parse().ok());
                     let descr = attr(&e, b"descr").filter(|d| !d.trim().is_empty());
                     match parent {
                         Some(b"nvPicPr") => picture.descr = descr,
                         Some(b"nvSpPr") | Some(b"nvCxnSpPr") => shape_descr = descr,
                         Some(b"nvGrpSpPr") | Some(b"nvGraphicFramePr") => {
                             if let Some(d) = descr {
-                                part.blocks.push(Block::AltText(d));
+                                part.push(Block::AltText(d), shape_id, None);
                             }
                         }
                         _ => {}
@@ -488,7 +508,8 @@ pub fn parse_part(xml: &str, link: &dyn Fn(&str) -> Option<String>) -> anyhow::R
                     }
                     b"tbl" => {
                         if let Some(t) = table.take().filter(|t| !t.is_empty()) {
-                            part.blocks.push(Block::Table(t));
+                            let r = has_rect.then(|| absolute(&groups, rect));
+                            part.push(Block::Table(t), shape_id, r);
                         }
                     }
                     b"sp" | b"cxnSp" if matches!(owner, Owner::Shape) => {
@@ -498,16 +519,18 @@ pub fn parse_part(xml: &str, link: &dyn Fn(&str) -> Option<String>) -> anyhow::R
                         let text = std::mem::take(&mut shape);
                         if let Some(rid) = fill {
                             // Imagen usada como relleno de una forma.
-                            part.blocks.push(Block::Picture(Picture {
+                            let picture = Picture {
                                 rect: text.rect,
                                 rid,
                                 descr: shape_descr.take(),
-                            }));
+                            };
+                            part.push(Block::Picture(picture), shape_id, text.rect);
                         } else if let Some(d) = shape_descr.take() {
-                            part.blocks.push(Block::AltText(d));
+                            part.push(Block::AltText(d), shape_id, text.rect);
                         }
                         if !text.paragraphs.is_empty() {
-                            part.blocks.push(Block::Text(text));
+                            let r = text.rect;
+                            part.push(Block::Text(text), shape_id, r);
                         }
                     }
                     b"pic" if matches!(owner, Owner::Picture) => {
@@ -516,16 +539,18 @@ pub fn parse_part(xml: &str, link: &dyn Fn(&str) -> Option<String>) -> anyhow::R
                             let mut p = std::mem::take(&mut picture);
                             p.rect = has_rect.then(|| absolute(&groups, rect));
                             p.rid = rid;
-                            part.blocks.push(Block::Picture(p));
+                            let r = p.rect;
+                            part.push(Block::Picture(p), shape_id, r);
                         }
                     }
                     b"graphicFrame" => {
                         owner = Owner::None;
+                        let r = has_rect.then(|| absolute(&groups, rect));
                         if let Some(rid) = frame_chart.take() {
-                            part.blocks.push(Block::Chart(rid));
+                            part.push(Block::Chart(rid), shape_id, r);
                         }
                         if frame_smartart {
-                            part.blocks.push(Block::SmartArt);
+                            part.push(Block::SmartArt, shape_id, r);
                         }
                     }
                     _ => {}

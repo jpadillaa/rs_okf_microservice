@@ -25,8 +25,8 @@ Tamaños relativos, como en los planes anteriores: **S** (un cambio acotado en u
 | Mismos identificadores con el mismo documento y configuración | Las rutas y los localizadores son deterministas (`C1` lo prueba). La configuración que cambia la salida no se registra, así que la condición no se puede comprobar desde el bundle. | `I3` |
 | Trazabilidad: Excel (hoja y rango) | Hecho: `xlsx_range`. | — |
 | Trazabilidad: DOCX (ruta estructural, sin páginas) | Hecho: `docx_blocks` en orden estructural. | — |
-| Trazabilidad: PowerPoint (diapositiva y elemento) | Diapositiva, sí (`slide_index`, `slide_id`, `display_label`); elemento, no. | `I6` |
-| Trazabilidad: PDF (página y coordenadas) | Página física por bloque y `page_labels`; coordenadas, no, aunque el lector las tiene. | `I6` |
+| Trazabilidad: PowerPoint (diapositiva y elemento) | Diapositiva, sí (`slide_index`, `slide_id`, `display_label`); elemento, no. Hecho después en el perfil 1.8.0. | `I6` |
+| Trazabilidad: PDF (página y coordenadas) | Página física por bloque y `page_labels`; coordenadas, no, aunque el lector las tiene. Hecho después en el perfil 1.8.0. | `I6` |
 | Fidelidad: texto, numeración, orden, tablas, fórmula frente a valor, omisiones | Hecho (§4 y §5 de la especificación; cobertura independiente, `R2` y `C2`). | — |
 | Relaciones padre-hijo válidas | Solo en el Markdown (`index.md`, «Estructura» de `documento.md`, subencabezados); ningún campo explícito. Hecho después en el perfil 1.6.0. | `I4` |
 | Enlaces internos resueltos | Los enlaces emitidos resuelven (el validador lo exige). PPTX enlaza otras diapositivas y XLSX otras hojas. DOCX no enlaza los marcadores internos; PDF no lee sus anotaciones de enlace. Hecho después en el perfil 1.7.0. | `I5` |
@@ -124,6 +124,8 @@ Tamaños relativos, como en los planes anteriores: **S** (un cambio acotado en u
 **Aceptación.** Muestras nuevas, en DOCX y PDF, con un enlace interno resuelto y uno roto; el destino correcto se enlaza y el roto queda marcado y declarado. Los inventarios de los bundles de referencia coinciden con los enlaces del original.
 
 ### I6. Coordenadas en PDF y elementos en PowerPoint (M)
+
+**Estado:** implementado el 8 de noviembre (perfil 1.8.0). Dar una caja a cada bloque obligó a cambiar los marcadores PDF: los de página (`p-12`), compartidos por los bloques de una página y ausentes en un concepto de una sola página, pasan a ser uno por bloque (`u-N`). Las coordenadas no aplican la rotación de la página (`/Rotate`). Una imagen que se sale de la página se recorta a la parte visible, porque `p1` tiene una a sangre. Las formas PPTX pueden salirse de la diapositiva, así que el validador no exige que estén dentro. La caja de un párrafo coincide con pdfium dentro de 0,61 pt. Los bundles de referencia crecen un 46 % (PDF) y un 73 % (PPTX). Véase la [arquitectura técnica](../arquitectura/ARQUITECTURA_TECNICA_MICROSERVICIO_OKF.md#coordenadas-pdf-y-formas-pptx-plan-3-i6).
 
 **Problema.** El pipeline pide localizar el fragmento dentro de la página o de la diapositiva, por ejemplo para resaltarlo en el original. El lector PDF calcula cajas de caracteres y el lector PPTX conoce la posición y el `id` de cada forma, pero ninguna de las dos cosas llega al bundle.
 

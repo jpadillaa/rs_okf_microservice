@@ -1248,7 +1248,14 @@ mod tests {
             let digit = if &md[i..=i] == "0" { "1" } else { "0" };
             format!("{}{digit}{}", &md[..i], &md[i + 1..])
         }
-        let cases: [(&str, Edit); 11] = [
+        let cases: [(&str, Edit); 12] = [
+            ("localizador de forma inválido o repetido", &|n, md| {
+                if n == "contenido/slide-003.md" {
+                    md.replace("shape_id: 11\n", "shape_id: 10\n")
+                } else {
+                    md
+                }
+            }),
             ("no declaradas en el informe", &|n, md| {
                 if n == "contenido/slide-002.md" {
                     format!("{md}\nVéase la tabla {}\n", bundle::UNRESOLVED)
@@ -1521,7 +1528,7 @@ mod tests {
                 "contenido/seccion-004.md tiene un bloque sin marcador de página",
                 Box::new(only(
                     "contenido/seccion-004.md",
-                    "<!-- okf-source-span: p-1 -->\n",
+                    "<!-- okf-source-span: u-9 -->\n",
                     "",
                 )),
             ),
@@ -1529,8 +1536,8 @@ mod tests {
                 "tiene un localizador de páginas fuera de su sección",
                 Box::new(only(
                     "contenido/seccion-004.md",
-                    "id: \"p-1\"\n    source_id: \"original\"\n    kind: \"pdf_pages\"\n    from: 1\n    to: 1\n",
-                    "id: \"p-1\"\n    source_id: \"original\"\n    kind: \"pdf_pages\"\n    from: 3\n    to: 3\n",
+                    "id: \"u-9\"\n    source_id: \"original\"\n    kind: \"pdf_pages\"\n    from: 1\n    to: 1\n",
+                    "id: \"u-9\"\n    source_id: \"original\"\n    kind: \"pdf_pages\"\n    from: 3\n    to: 3\n",
                 )),
             ),
             (
@@ -1554,11 +1561,27 @@ mod tests {
                 Box::new(only("documento.md", "\"4\": \"3\"", "\"9\": \"3\"")),
             ),
             (
-                "marcador de pasaje sin localizador en contenido/seccion-004.md: p-7",
+                "marcador de pasaje sin localizador en contenido/seccion-004.md: u-77",
                 Box::new(only(
                     "contenido/seccion-004.md",
-                    "okf-source-span: p-1-2 -->",
-                    "okf-source-span: p-7 -->",
+                    "okf-source-span: u-8 -->",
+                    "okf-source-span: u-77 -->",
+                )),
+            ),
+            (
+                "la caja de u-9 en la página 1 sale de la página",
+                Box::new(only(
+                    "contenido/seccion-004.md",
+                    "x1: 173.84\n",
+                    "x1: 9173.84\n",
+                )),
+            ),
+            (
+                "la caja de u-9 en la página 2 no corresponde a sus páginas",
+                Box::new(only(
+                    "contenido/seccion-004.md",
+                    "      - page: 1\n        x0: 56.00\n        top: 782.35\n",
+                    "      - page: 2\n        x0: 56.00\n        top: 782.35\n",
                 )),
             ),
             (

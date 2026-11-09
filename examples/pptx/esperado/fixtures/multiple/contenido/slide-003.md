@@ -17,6 +17,24 @@ source_spans:
     kind: "pptx_slide"
     slide_index: 3
     slide_id: 258
+  - id: "f-10"
+    source_id: "original"
+    kind: "pptx_shape"
+    slide_index: 3
+    shape_id: 10
+    x: 457200
+    y: 1600000
+    cx: 3000000
+    cy: 1000000
+  - id: "f-11"
+    source_id: "original"
+    kind: "pptx_shape"
+    slide_index: 3
+    shape_id: 11
+    x: 4000000
+    y: 2000000
+    cx: 1000000
+    cy: 1000000
 ---
 
 # Hidden slide contains table and image
@@ -25,10 +43,12 @@ source_spans:
 
 ## Contenido
 
+<!-- okf-source-span: f-10 -->
 | Name | Value |
 | --- | --- |
 | alpha | 1 |
 
+<!-- okf-source-span: f-11 -->
 ![Imagen 1 de la diapositiva 3](../assets/slide-003-image-01.png)
 
 ## Vista visual

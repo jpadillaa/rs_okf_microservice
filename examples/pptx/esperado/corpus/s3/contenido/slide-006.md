@@ -18,6 +18,15 @@ source_spans:
     kind: "pptx_slide"
     slide_index: 6
     slide_id: 261
+  - id: "f-282"
+    source_id: "original"
+    kind: "pptx_shape"
+    slide_index: 6
+    shape_id: 282
+    x: 152400
+    y: 152400
+    cx: 11643946
+    cy: 6553202
 visual_only: true
 status: "draft"
 ---
@@ -28,6 +37,7 @@ status: "draft"
 
 ## Contenido
 
+<!-- okf-source-span: f-282 -->
 ![Imagen 1 de la diapositiva 6](../assets/slide-006-image-01.png)
 
 ## Notas del presentador

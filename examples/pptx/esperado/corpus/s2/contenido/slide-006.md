@@ -18,6 +18,15 @@ source_spans:
     kind: "pptx_slide"
     slide_index: 6
     slide_id: 261
+  - id: "f-285"
+    source_id: "original"
+    kind: "pptx_shape"
+    slide_index: 6
+    shape_id: 285
+    x: 2598950
+    y: 1994055
+    cx: 8100840
+    cy: 4559145
 visual_only: true
 status: "draft"
 ---
@@ -28,6 +37,7 @@ status: "draft"
 
 ## Contenido
 
+<!-- okf-source-span: f-285 -->
 ![Imagen 1 de la diapositiva 6](../assets/slide-006-image-01.png)
 
 ## Vista visual

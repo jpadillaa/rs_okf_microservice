@@ -23,6 +23,8 @@ use zip::ZipWriter;
 pub(crate) enum Yaml {
     Str(String),
     Int(i64),
+    /// Número con dos decimales fijos, como las coordenadas (plan 3, I6).
+    Decimal(f64),
     Bool(bool),
     List(Vec<Yaml>),
     Map(Fields),
@@ -41,6 +43,11 @@ impl From<String> for Yaml {
 impl From<&String> for Yaml {
     fn from(s: &String) -> Self {
         Yaml::Str(s.clone())
+    }
+}
+impl From<f32> for Yaml {
+    fn from(n: f32) -> Self {
+        Yaml::Decimal(f64::from(n))
     }
 }
 impl From<bool> for Yaml {
@@ -81,6 +88,16 @@ impl Fields {
     pub(crate) fn with(mut self, key: &str, value: impl Into<Yaml>) -> Self {
         self.0.push((key.to_string(), value.into()));
         self
+    }
+    /// Valor de texto de un campo, si existe.
+    pub(crate) fn get_str(&self, key: &str) -> Option<&str> {
+        self.0
+            .iter()
+            .find(|(k, _)| k == key)
+            .and_then(|(_, v)| match v {
+                Yaml::Str(s) => Some(s.as_str()),
+                _ => None,
+            })
     }
     /// Añade un campo si hay valor.
     pub(crate) fn with_opt(self, key: &str, value: Option<impl Into<Yaml>>) -> Self {
@@ -158,6 +175,9 @@ fn scalar(v: &Yaml) -> Option<String> {
     match v {
         Yaml::Str(s) => Some(quote(s)),
         Yaml::Int(n) => Some(n.to_string()),
+        // Sin «-0.00»: un valor que redondea a cero se escribe «0.00».
+        Yaml::Decimal(n) if n.abs() < 0.005 => Some("0.00".into()),
+        Yaml::Decimal(n) => Some(format!("{n:.2}")),
         Yaml::Bool(b) => Some(b.to_string()),
         Yaml::List(l) if l.is_empty() => Some("[]".into()),
         Yaml::Map(m) if m.0.is_empty() => Some("{}".into()),

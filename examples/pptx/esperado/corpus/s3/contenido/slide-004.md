@@ -18,6 +18,15 @@ source_spans:
     kind: "pptx_slide"
     slide_index: 4
     slide_id: 259
+  - id: "f-270"
+    source_id: "original"
+    kind: "pptx_shape"
+    slide_index: 4
+    shape_id: 270
+    x: 274025
+    y: 152400
+    cx: 11643946
+    cy: 6553202
 visual_only: true
 status: "draft"
 ---
@@ -28,6 +37,7 @@ status: "draft"
 
 ## Contenido
 
+<!-- okf-source-span: f-270 -->
 ![Imagen 1 de la diapositiva 4](../assets/slide-004-image-01.png)
 
 ## Notas del presentador

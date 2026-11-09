@@ -1,6 +1,6 @@
 ---
 type: "Source Section"
-unit_id: "8058ce4b27030242d1c6a750669727cecd6c67024c6a89e4254fb23415fd0482/contenido/seccion-002.md"
+unit_id: "3332d31ccc42065c251db6fdda0d87515824229ff0044d852b55f4dd78f50037/contenido/seccion-002.md"
 parent: "documento.md"
 previous: "contenido/seccion-001.md"
 next: "contenido/seccion-003.md"
@@ -18,9 +18,21 @@ source_spans:
     kind: "pdf_pages"
     from: 1
     to: 1
+  - id: "u-4"
+    source_id: "original"
+    kind: "pdf_pages"
+    from: 1
+    to: 1
+    boxes:
+      - page: 1
+        x0: 56.00
+        top: 176.50
+        x1: 532.26
+        bottom: 211.50
 ---
 
 # Resumen
 
+<!-- okf-source-span: u-4 -->
 Este artículo describe un experimento ficticio sobre la conversión de documentos maquetados en dos columnas. Se compararon dos procedimientos de extracción con un conjunto de materiales creados para la prueba y se midió cuántos párrafos conservaban su orden de lectura original.
 

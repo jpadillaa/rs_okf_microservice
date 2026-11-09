@@ -18,6 +18,24 @@ source_spans:
     kind: "pptx_slide"
     slide_index: 27
     slide_id: 282
+  - id: "f-432"
+    source_id: "original"
+    kind: "pptx_shape"
+    slide_index: 27
+    shape_id: 432
+    x: 1596175
+    y: 2108200
+    cx: 10106400
+    cy: 4203600
+  - id: "f-433"
+    source_id: "original"
+    kind: "pptx_shape"
+    slide_index: 27
+    shape_id: 433
+    x: 0
+    y: 114009
+    cx: 12191998
+    cy: 6629981
 view_hides_text: true
 ---
 
@@ -27,9 +45,11 @@ view_hides_text: true
 
 ## Contenido
 
+<!-- okf-source-span: f-432 -->
 - Mide hasta qué punto el contexto recuperado contiene toda la información necesaria para responder completamente a la pregunta.
 - Esta requiere una respuesta de referencia como punto de referencia para la exhaustividad.
 
+<!-- okf-source-span: f-433 -->
 ![Imagen 1 de la diapositiva 27](../assets/slide-027-image-01.png)
 
 ## Notas del presentador

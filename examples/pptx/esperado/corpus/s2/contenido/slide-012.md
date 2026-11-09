@@ -18,6 +18,15 @@ source_spans:
     kind: "pptx_slide"
     slide_index: 12
     slide_id: 267
+  - id: "f-327"
+    source_id: "original"
+    kind: "pptx_shape"
+    slide_index: 12
+    shape_id: 327
+    x: 3480075
+    y: 1904375
+    cx: 8593649
+    cy: 4836500
 visual_only: true
 status: "draft"
 ---
@@ -28,6 +37,7 @@ status: "draft"
 
 ## Contenido
 
+<!-- okf-source-span: f-327 -->
 ![Imagen 1 de la diapositiva 12](../assets/slide-012-image-01.png)
 
 ## Vista visual

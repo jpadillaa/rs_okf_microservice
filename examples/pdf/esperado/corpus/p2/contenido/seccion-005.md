@@ -1,6 +1,6 @@
 ---
 type: "Source Section"
-unit_id: "06130e9dec59648a18894e7924fd7e9d28bcf19c189a7f39a2354196ae9f91a4/contenido/seccion-005.md"
+unit_id: "4f891a9ae32d16e5ed2dfe73bac2182d2b0e51a1a6cc0304319d736ccaa3e97a/contenido/seccion-005.md"
 parent: "documento.md"
 previous: "contenido/seccion-004.md"
 next: "contenido/seccion-006.md"
@@ -18,87 +18,287 @@ source_spans:
     kind: "pdf_pages"
     from: 3
     to: 6
-  - id: "p-3"
+  - id: "u-24"
     source_id: "original"
     kind: "pdf_pages"
     from: 3
     to: 3
-  - id: "p-4"
+    boxes:
+      - page: 3
+        x0: 56.69
+        top: 388.44
+        x1: 290.57
+        bottom: 530.24
+  - id: "u-25"
+    source_id: "original"
+    kind: "pdf_pages"
+    from: 3
+    to: 3
+    boxes:
+      - page: 3
+        x0: 56.69
+        top: 532.43
+        x1: 290.58
+        bottom: 674.22
+  - id: "u-26"
+    source_id: "original"
+    kind: "pdf_pages"
+    from: 3
+    to: 3
+    boxes:
+      - page: 3
+        x0: 56.69
+        top: 676.41
+        x1: 290.56
+        bottom: 722.23
+  - id: "u-27"
+    source_id: "original"
+    kind: "pdf_pages"
+    from: 3
+    to: 3
+    boxes:
+      - page: 3
+        x0: 304.72
+        top: 88.43
+        x1: 538.61
+        bottom: 302.22
+  - id: "u-28"
+    source_id: "original"
+    kind: "pdf_pages"
+    from: 3
+    to: 3
+    boxes:
+      - page: 3
+        x0: 304.72
+        top: 304.42
+        x1: 538.61
+        bottom: 542.23
+  - id: "u-29"
+    source_id: "original"
+    kind: "pdf_pages"
+    from: 3
+    to: 3
+    boxes:
+      - page: 3
+        x0: 304.72
+        top: 544.42
+        x1: 538.61
+        bottom: 722.23
+  - id: "u-30"
     source_id: "original"
     kind: "pdf_pages"
     from: 4
     to: 4
-  - id: "p-5"
+    boxes:
+      - page: 4
+        x0: 64.69
+        top: 87.69
+        x1: 187.62
+        bottom: 97.49
+  - id: "u-31"
+    source_id: "original"
+    kind: "pdf_pages"
+    from: 4
+    to: 4
+    boxes:
+      - page: 4
+        x0: 56.70
+        top: 87.66
+        x1: 538.60
+        bottom: 169.49
+  - id: "u-32"
+    source_id: "original"
+    kind: "pdf_pages"
+    from: 4
+    to: 4
+    boxes:
+      - page: 4
+        x0: 64.18
+        top: 202.94
+        x1: 531.10
+        bottom: 697.70
+  - id: "u-33"
+    source_id: "original"
+    kind: "pdf_pages"
+    from: 4
+    to: 4
+    boxes:
+      - page: 4
+        x0: 62.69
+        top: 701.80
+        x1: 528.32
+        bottom: 719.80
+  - id: "u-34"
     source_id: "original"
     kind: "pdf_pages"
     from: 5
     to: 5
-  - id: "p-6"
+    boxes:
+      - page: 5
+        x0: 56.69
+        top: 87.69
+        x1: 290.56
+        bottom: 121.48
+  - id: "u-35"
+    source_id: "original"
+    kind: "pdf_pages"
+    from: 5
+    to: 5
+    boxes:
+      - page: 5
+        x0: 56.69
+        top: 87.65
+        x1: 538.58
+        bottom: 445.45
+  - id: "u-36"
+    source_id: "original"
+    kind: "pdf_pages"
+    from: 5
+    to: 5
+    boxes:
+      - page: 5
+        x0: 304.72
+        top: 111.69
+        x1: 538.61
+        bottom: 313.49
+  - id: "u-37"
+    source_id: "original"
+    kind: "pdf_pages"
+    from: 5
+    to: 5
+    boxes:
+      - page: 5
+        x0: 304.72
+        top: 315.69
+        x1: 538.60
+        bottom: 445.48
+  - id: "u-38"
+    source_id: "original"
+    kind: "pdf_pages"
+    from: 5
+    to: 5
+    boxes:
+      - page: 5
+        x0: 64.18
+        top: 472.10
+        x1: 531.10
+        bottom: 707.78
+  - id: "u-39"
+    source_id: "original"
+    kind: "pdf_pages"
+    from: 5
+    to: 5
+    boxes:
+      - page: 5
+        x0: 62.69
+        top: 711.88
+        x1: 220.97
+        bottom: 719.88
+  - id: "u-40"
     source_id: "original"
     kind: "pdf_pages"
     from: 6
     to: 6
+    boxes:
+      - page: 6
+        x0: 56.69
+        top: 87.69
+        x1: 290.58
+        bottom: 361.48
+  - id: "u-41"
+    source_id: "original"
+    kind: "pdf_pages"
+    from: 6
+    to: 6
+    boxes:
+      - page: 6
+        x0: 56.69
+        top: 87.67
+        x1: 538.59
+        bottom: 709.47
+  - id: "u-42"
+    source_id: "original"
+    kind: "pdf_pages"
+    from: 6
+    to: 6
+    boxes:
+      - page: 6
+        x0: 304.72
+        top: 147.67
+        x1: 538.70
+        bottom: 421.49
+  - id: "u-43"
+    source_id: "original"
+    kind: "pdf_pages"
+    from: 6
+    to: 6
+    boxes:
+      - page: 6
+        x0: 304.72
+        top: 423.69
+        x1: 538.61
+        bottom: 721.49
 ---
 
 # Issues with AI‑assisted writing
 
-<!-- okf-source-span: p-3 -->
+<!-- okf-source-span: u-24 -->
 The potential benefits of incorporating LLM-based generative AI tools into the academic manuscript writing process has led to studies exploring its capabilities. As these generative AI tools (e.g. ChatGPT) generally source data from publicly available internet content \[[5](seccion-007.md)\], studies have uncovered important issues which raise legitimate concern about the utility, accuracy, and integrity of AI in writing medical manuscripts. Studies highlight three key challenges with content created by LLM-based generative AI tools: (a) plagiarism \[[5](seccion-007.md), [6](seccion-007.md)\]; (b) fabricated or false information (i.e. ‘AI hallucination’) \[[13](seccion-007.md)–[15](seccion-007.md)\]; and (c) inaccurate or fabricated references \[[13](seccion-007.md)–[17](seccion-007.md)\].
 
-<!-- okf-source-span: p-3 -->
+<!-- okf-source-span: u-25 -->
 Generative AI tools access publicly available data to generate text, which may produce content that closely (or exactly) resembles the original source of information \[[6](seccion-007.md)\]. Similarities in content that are undetected and unedited by researchers raises concern for plagiarism and potential copyright infringement (e.g. use of published figure without attribution or permission) \[[18](seccion-007.md)\]. Without appropriate content expertise, some authors may be unaware of AI-generated text that is plagiarised. Left unchecked, this may result in a snowball effect, where authors unknowingly cite AI-generated plagiarised text published in other articles (i.e. double plagiarism) \[[5](seccion-007.md)\].
 
-<!-- okf-source-span: p-3 -->
+<!-- okf-source-span: u-26 -->
 ‘AI Hallucination’ is a phenomenon where the generative AI tool offers convincing, but completely fabricated, nonsensical, or factually inaccurate content in response to prompts provided by the user \[[13](seccion-007.md)–[15](seccion-007.md)\]. As generative
 
-<!-- okf-source-span: p-3 -->
+<!-- okf-source-span: u-27 -->
 AI tools are not designed to assess accuracy or authenticity of content, they are prone to produce fabricated content when trained on large amounts of unsupervised data, as is the case of ChatGPT. While new models of ChatGPT have ‘learned’ compared to prior releases, they cannot differentiate between real and factitious data that is received, integrated and used to generate new content \[[19](seccion-007.md)\]. Further complicating this issue is generative AI’s limited ability to comprehend complex commands \[[14](seccion-007.md)\]. Consequently, when asked to write medical abstracts, case reports, or research proposals, these generative AI tools frequently include inaccurate statements or fabricated content fueled by false sources of data \[[13](seccion-007.md)–[15](seccion-007.md)\]. A final issue is that AI tools will tend to generate output that reproduces or amplifies biases inherent within the source data \[[19](seccion-007.md)\]. These troublesome patterns may lead to the spread of misinformation or bias, or threaten researcher integrity if left unchecked \[[5](seccion-007.md)\].
 
-<!-- okf-source-span: p-3 -->
+<!-- okf-source-span: u-28 -->
 LLM-powered generative AI tools are notoriously poor at referencing medical literature. Athaluri et al. tasked ChatGPT to write 50 research protocols with references on a spectrum of novel medical research topics \[[15](seccion-007.md)\]. Amongst the references generated for these research protocols, 38% had the wrong DOI or a fabricated DOI, and 16% of the referenced articles were completely fabricated, suggesting that the ability of ChatGPT to generate accurate references is potentially linked to the availability of a DOI and accessibility of online articles \[[15](seccion-007.md)\]. Another study found that amongst 30 short medical papers generated by ChatGPT, nearly half of the references were fabricated, while 46% of the references were authentic but inaccurate \[[16](seccion-007.md)\]. Amongst the inaccurate references, 48% were errors with the title, 52% represented errors with authorship, and 93% of these references had the wrong PMID. Only 7% of all the references generated by ChatGPT were completely authentic and accurate, signalling a significant reliability issue when it comes to ChatGPT’s ability to generate accurate references \[[16](seccion-007.md)\].
 
-<!-- okf-source-span: p-3 -->
+<!-- okf-source-span: u-29 -->
 Rapid technological changes may render these issues insignificant over time, as has been demonstrated with the evolution of generative AI tools to date. Researchers ultimately hold full responsibility for the originality of their manuscript, accuracy and relevance of content, and appropriate referencing of published literature. As a result, we caution against the sole use of LLM-based generative AI to (1) write content that will be used verbatim (i.e. without human editing) in medical abstracts, articles, or research proposals; and (2) generate references that will be used in medical abstracts, articles, or research proposals. Even if authors double check content for accuracy, relevance, reasoning, bias, and appropriate referencing, they are still assuming some inherent risk given the issues described above.
 
-<!-- okf-source-span: p-4 -->
+<!-- okf-source-span: u-30 -->
 **Ethical use of AI for writing.**
 
-<!-- okf-source-span: p-4 -->
+<!-- okf-source-span: u-31 -->
 In our effort to define how generative AI tools can be ethically used to assist in writing for healthcare and related academic journals, we asked ChatGPT 4.0 the following question: ‘Can you please provide a list of ways ChatGPT can be ethically used to assist authors in writing articles for medical journals?’ The results of this request are displayed in Fig. [1](seccion-005.md). We found that ChatGPT oversimplified many items in this list, which may results in misleading guidance for academic authors and scholars. We collectively reflected on the recommendations made by ChatGPT, discussed our personal insights, and considered existing research on this topic before deciding which items should be included,
 
-<!-- okf-source-span: p-4 -->
+<!-- okf-source-span: u-32 -->
 ![Imagen de la página 4](../assets/pagina-004-imagen-01.png)
 
-<!-- okf-source-span: p-4 -->
+<!-- okf-source-span: u-33 -->
 **Fig. 1** ChatGPT 4o response to the prompt: ‘Can you please provide a list of ways ChatGPT can be ethically used to assist authors in writing articles for medical journals?’
 
-<!-- okf-source-span: p-5 -->
+<!-- okf-source-span: u-34 -->
 modified or excluded. The resultant Fig. [2](seccion-005.md) provides our suggestions on how LLM-based generative AI can be ethically used to support the academic writing process.
 
-<!-- okf-source-span: p-5 -->
+<!-- okf-source-span: u-35 -->
 When analysing these suggestions, it is helpful to consider two questions. First, “What exactly are LLM’s such as ChatGPT trained to do?”. In terms of LLM training, specifically, it is important to understand that systems such as these represent mathematical models mapping specific segments of text and symbols (often called ‘tokens’) in the initial request with segments of text and symbols in the LLM’s ‘answer’ \[[2](seccion-007.md)\]. This mapping process utilises an extensive set of pre-learned token associations derived from large sets of human-generated data (typically the internet). While the ‘meaning’ of these tokens is implicit to some extent within these associations, the model is not explicitly utilising this meaning, but is rather generating syntactically appropriate strings of text based on statistical associations \[[20](seccion-007.md)\]. There are no ‘fact-checking’ components to this process in current models, which is an important source of the AI hallucinations and propagation of biases within the training dataset. Given this, we find it helpful to view LLM’s functionality as the creation of syntactically appropriate text that expresses associations already present within the training data, with the understanding that this text may or may not express ‘accurate’ data, and that this text may be subject to implicit or explicit bias \[[2](seccion-007.md)\]. The potentially helpful and ethical uses of ChatGPT for academic writers, then, will be those that utilise its strengths with structure and syntax while avoiding its weaknesses via human oversight and review.
 
-<!-- okf-source-span: p-5 -->
+<!-- okf-source-span: u-36 -->
 The second question warranting consideration is “Will the specific use of ChatGPT have a deleterious effect on human critical thinking and scholarly development?” As researchers, it is vital that we be concerned with more than just productivity, but with the professional growth and evolution of scholars within our field. This includes assuring that they are able to think deeply and creatively about both the research problems they are investigating, and their resulting data. While novice scholars are in most need of developing these skills, even mature researchers benefit from adapting their research skills to the evolving landscape of healthcare simulation research. It is a concern, then, if scholars become too dependent on ChatGPT for ideation, generation of primary written content, and initial data interpretation, as this assistance could easily devolve into a dependency that arrests further scholarly development.
 
-<!-- okf-source-span: p-5 -->
+<!-- okf-source-span: u-37 -->
 Using this heuristic, we organised the items on the list provided by ChatGPT into ‘ethical tiers’ (Fig. [2](seccion-005.md)). The most ethically acceptable tier includes those items in which ChatGPT is primarily used to re-structure previously existing text or ideas, including grammar and spelling, readability, and language translation. While ChatGPT is not designed to directly check grammar and spelling, it will respond to prompts by rewriting content in a grammatically correct fashion without spelling mistakes. It will also help with refining the readability and flow of the manuscript, assuring that it uses the best grammatical
 
-<!-- okf-source-span: p-5 -->
+<!-- okf-source-span: u-38 -->
 ![Imagen de la página 5](../assets/pagina-005-imagen-01.png)
 
-<!-- okf-source-span: p-5 -->
+<!-- okf-source-span: u-39 -->
 **Fig. 2** Ethical use of AI generative tools in writing
 
-<!-- okf-source-span: p-6 -->
+<!-- okf-source-span: u-40 -->
 syntax. Authors should always double check the refined text to ensure the edits still closely reflect their own voice and critical thinking, and that it is free of grammatical errors and spelling mistakes. Authors looking for realtime writing support (e.g. grammar and spelling suggestions as you write), proactive suggestions to rewrite sentences, and adjusting the tone of writing should look to AI writing assistants (e.g. Grammarly), which have been specifically designed for these purposes \[[21](seccion-007.md)\]. LLM-powered generative AI tools can also be used to provide translation of text into a semantically equivalent receptor language, which may be helpful for researchers looking to submit an article in a non-native language. However, some limitations are that ChatGPT is unable to accurately interpret the subtle nuances between languages, slang words, or cultural terms, which sometimes leads to inaccurate translation \[[22](seccion-009.md)\]. Researchers using ChatGPT to translate academic manuscripts should always have a human author (ideally a native speaker of the receptor language) review the final manuscript for accurate translation. These and similar uses best fit the model’s strengths while not encouraging over-reliance on the tool for tasks requiring critical thought.
 
-<!-- okf-source-span: p-6 -->
+<!-- okf-source-span: u-41 -->
 The next tier represents a more ethically contingent group of possibilities, as their appropriate use depends primarily on the steps the author takes when working with AI-generated content. Items in this tier include the use of ChatGPT for generating an outline, summarising content, improving clarity of drafted content, or brainstorming ideas. In each case, these uses task ChatGPT with generating novel text and thus have heightened potential for the introduction of bias, hallucination, or plagiarism if engaged in uncritically. ChatGPT is most skilled and accurate at text manipulation when the necessary ideas are already present in the initial query. Thus, using ChatGPT to generate an outline from a prompt containing manuscript content, or transforming a roughly outlined portion of text that contains all necessary concepts into a more powerfully written version may be of potential value. Refining a previously constructed outline containing all core concepts or expanding a clearly specified concept into a more elaborate summary may also represent ethical use of generative AI. In all such use cases, however, authors should ensure the final product accurately reflects their own ideas and insights and that the AI-generated content did not alter the key meaning or message. Finally, asking ChatGPT to brainstorm ideas based on a prompt containing questions or original text may also provide some benefit. For example, authors may ask ChatGPT to offer arguments or counter-arguments for a certain philosophical position or viewpoint, which can then be helpful to expand perspectives when crafting a discussion. When used to brainstorm ideas, authors must be certain these ChatGPT-generated ideas are attributed and edited appropriately to ensure accuracy and to eliminate or reduce the risk of plagiarism.
 
-<!-- okf-source-span: p-6 -->
+<!-- okf-source-span: u-42 -->
 Asking generative AI to do slightly more than the above, however, may make application of ChatGPT in these use cases ethically suspect our final tier of uses. For example, drafting de novo text without providing original content in the prompt or developing new concepts for a particular section of text risks not only introducing factually incorrect material but also deprives the authors of an opportunity to engage deeply with the source material on which their paper is based on a personal level. Such deep engagement is vital for developing a comprehensive understanding of the research question. Other use cases fitting within this final tier includes the use of ChatGPT for data interpretation, literature review, and checking for ethical compliance and plagiarism. The use of ChatGPT to perform the primary analysis of study data introduces the possibility of bias and hallucination and effectively shortcircuits an intellectual process that is most properly the domain of the authors. We believe that this task is best left for the authors themselves as, by analysing the data in its entirely first, they gain a fuller understanding of the results which can then be used to critique any interpretations inserted by Chat GPT.
 
-<!-- okf-source-span: p-6 -->
+<!-- okf-source-span: u-43 -->
 As noted above, published evidence indicates that ChatGPT is notoriously unreliable in citing references and can easily generate grammatically perfect references that do not actually exist. While some specialist products designed to support literature reviews are emerging (e.g. Elicit), any literature search performed using ChatGPT must thus be confirmed with a traditional search engine, thus negating the actual benefit of using generative AI. The use of ChatGPT to assure ethical, unbiased language is even more suspect, due to unavoidable biases contained within the textual databases that are used to train the LLM statistical models. Barring future developments that permit the creation of truly unbiased training datasets, there is a reasonable chance that the indiscriminate use of ChatGPT in this way will introduce and perpetuate, rather than remove, bias. Training set issues also form the basis of our concerns regarding the use of AI to avoid plagiarism, as it is possible to query LLM’s in a manner that causes them to reproduce elements of their training set verbatim, thus potentially introducing plagiarised text that otherwise would not find its way into the manuscript \[[18](seccion-007.md)\]. Determining the best language to use to assure neutrality and objectivity, and the avoidance of plagiarism, is thus best left to the human authors.
 

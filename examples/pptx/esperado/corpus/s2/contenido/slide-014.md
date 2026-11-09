@@ -18,6 +18,15 @@ source_spans:
     kind: "pptx_slide"
     slide_index: 14
     slide_id: 269
+  - id: "f-340"
+    source_id: "original"
+    kind: "pptx_shape"
+    slide_index: 14
+    shape_id: 340
+    x: 152400
+    y: 80100
+    cx: 11643946
+    cy: 6553202
 visual_only: true
 status: "draft"
 ---
@@ -28,6 +37,7 @@ status: "draft"
 
 ## Contenido
 
+<!-- okf-source-span: f-340 -->
 ![Imagen 1 de la diapositiva 14](../assets/slide-014-image-01.png)
 
 ## Vista visual

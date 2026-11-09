@@ -18,12 +18,22 @@ source_spans:
     kind: "pptx_slide"
     slide_index: 17
     slide_id: 272
+  - id: "f-359"
+    source_id: "original"
+    kind: "pptx_shape"
+    slide_index: 17
+    shape_id: 359
+    x: 1596175
+    y: 2108200
+    cx: 10106400
+    cy: 4203600
 ---
 
 # RAGAs: Evaluación por componentes
 
 ## Contenido
 
+<!-- okf-source-span: f-359 -->
 - Mide separadamente el rendimiento del recuperador y del generador.
 - Métricas del recuperador: Context Precision y Context Recall valoran la calidad de la recuperación.
 - Métricas del generador: Faithfulness y Answer Relevancy evalúan la fidelidad y relevancia de las respuestas.

@@ -18,6 +18,15 @@ source_spans:
     kind: "pptx_slide"
     slide_index: 5
     slide_id: 260
+  - id: "f-276"
+    source_id: "original"
+    kind: "pptx_shape"
+    slide_index: 5
+    shape_id: 276
+    x: 386325
+    y: 152400
+    cx: 11643946
+    cy: 6553202
 visual_only: true
 status: "draft"
 ---
@@ -28,6 +37,7 @@ status: "draft"
 
 ## Contenido
 
+<!-- okf-source-span: f-276 -->
 ![Imagen 1 de la diapositiva 5](../assets/slide-005-image-01.png)
 
 ## Vista visual

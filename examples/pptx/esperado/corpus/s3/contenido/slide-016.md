@@ -18,12 +18,22 @@ source_spans:
     kind: "pptx_slide"
     slide_index: 16
     slide_id: 271
+  - id: "f-352"
+    source_id: "original"
+    kind: "pptx_shape"
+    slide_index: 16
+    shape_id: 352
+    x: 1596175
+    y: 2108200
+    cx: 10106400
+    cy: 4203600
 ---
 
 # RAGAs
 
 ## Contenido
 
+<!-- okf-source-span: f-352 -->
 - Evaluación “sin referencias”
 - Solo requiere pregunta, respuesta generada y contextos recuperados.
 - Supera el cuello de botella de crear respuestas de referencia y rubricas manualmente.

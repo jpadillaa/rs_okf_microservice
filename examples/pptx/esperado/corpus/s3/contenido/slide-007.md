@@ -18,12 +18,22 @@ source_spans:
     kind: "pptx_slide"
     slide_index: 7
     slide_id: 262
+  - id: "f-289"
+    source_id: "original"
+    kind: "pptx_shape"
+    slide_index: 7
+    shape_id: 289
+    x: 1682650
+    y: 1766175
+    cx: 10106400
+    cy: 4244100
 ---
 
 # Consecuencias
 
 ## Contenido
 
+<!-- okf-source-span: f-289 -->
 - Se recuperan textos que “se parecen” a la pregunta, pero que en realidad no contienen la información correcta, lo que termina afectando la generación.
 - Al mezclar demasiada información irrelevante con la útil, el LLM corre el riesgo de pasar por alto los pocos datos realmente importantes que sí estaban disponibles.
 - En conjuntos grandes de información, algunos datos clave pueden no aparecer nunca en los resultados, aun cuando existen, simplemente porque quedan “perdidos” entre demasiadas opciones similares.

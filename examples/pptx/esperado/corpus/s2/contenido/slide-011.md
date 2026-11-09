@@ -18,6 +18,15 @@ source_spans:
     kind: "pptx_slide"
     slide_index: 11
     slide_id: 266
+  - id: "f-320"
+    source_id: "original"
+    kind: "pptx_shape"
+    slide_index: 11
+    shape_id: 320
+    x: 2057025
+    y: 1465000
+    cx: 9040884
+    cy: 5088201
 visual_only: true
 status: "draft"
 ---
@@ -28,6 +37,7 @@ status: "draft"
 
 ## Contenido
 
+<!-- okf-source-span: f-320 -->
 ![Imagen 1 de la diapositiva 11](../assets/slide-011-image-01.png)
 
 ## Vista visual

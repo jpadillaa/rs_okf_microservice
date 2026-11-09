@@ -18,6 +18,15 @@ source_spans:
     kind: "pptx_slide"
     slide_index: 8
     slide_id: 263
+  - id: "f-299"
+    source_id: "original"
+    kind: "pptx_shape"
+    slide_index: 8
+    shape_id: 299
+    x: 2539075
+    y: 1994055
+    cx: 8100840
+    cy: 4559145
 visual_only: true
 status: "draft"
 ---
@@ -28,6 +37,7 @@ status: "draft"
 
 ## Contenido
 
+<!-- okf-source-span: f-299 -->
 ![Imagen 1 de la diapositiva 8](../assets/slide-008-image-01.png)
 
 ## Vista visual

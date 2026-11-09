@@ -120,6 +120,7 @@ fn cpu_time() -> std::time::Duration {
 
 /// Página leída: líneas sin encabezados ni pies, imágenes y clasificación.
 pub(crate) struct PageInfo {
+    pub(crate) width: f32,
     pub(crate) height: f32,
     pub(crate) lines: Vec<Line>,
     pub(crate) rotated: Vec<Line>,
@@ -144,6 +145,36 @@ pub(crate) struct Unit {
     pub(crate) kind: Kind,
     pub(crate) from: usize,
     pub(crate) to: usize,
+    /// Caja de la unidad en cada página que ocupa (plan 3, I6).
+    pub(crate) boxes: Vec<(usize, Rect)>,
+}
+
+/// Une las cajas de `more` a las de `boxes`, una por página y en orden de página.
+fn union_boxes(boxes: &mut Vec<(usize, Rect)>, more: &[(usize, Rect)]) {
+    for &(p, r) in more {
+        match boxes.iter_mut().find(|(q, _)| *q == p) {
+            Some((_, b)) => {
+                b.x0 = b.x0.min(r.x0);
+                b.top = b.top.min(r.top);
+                b.x1 = b.x1.max(r.x1);
+                b.bottom = b.bottom.max(r.bottom);
+            }
+            None => boxes.push((p, r)),
+        }
+    }
+    boxes.sort_by_key(|(p, _)| *p);
+}
+
+/// Caja que encierra las líneas de un párrafo.
+fn lines_box(lines: &[Line]) -> Option<Rect> {
+    let rects: Vec<Rect> = lines.iter().map(Line::rect).collect();
+    let first = *rects.first()?;
+    Some(rects.iter().fold(first, |a, r| Rect {
+        x0: a.x0.min(r.x0),
+        top: a.top.min(r.top),
+        x1: a.x1.max(r.x1),
+        bottom: a.bottom.max(r.bottom),
+    }))
 }
 
 #[derive(Clone, Debug)]
@@ -378,6 +409,7 @@ pub(crate) fn extract(
         }
         tally.decorative += raw.pictures.iter().filter(|x| x.hash.is_none()).count();
         pages.push(PageInfo {
+            width: raw.width,
             height: raw.height,
             lines,
             rotated,
@@ -701,6 +733,15 @@ pub(crate) fn extract(
                 kind: Kind::PageNote(p + 1),
                 from: p + 1,
                 to: p + 1,
+                boxes: vec![(
+                    p + 1,
+                    Rect {
+                        x0: 0.0,
+                        top: 0.0,
+                        x1: page.width,
+                        bottom: page.height,
+                    },
+                )],
             });
             leaves_of.push((p, usize::MAX));
         }
@@ -747,6 +788,7 @@ pub(crate) fn extract(
                     kind,
                     from: p + 1,
                     to: p + 1,
+                    boxes: vec![(p + 1, rect)],
                 },
                 rect,
                 leaf,
@@ -757,6 +799,7 @@ pub(crate) fn extract(
                 kind: Kind::Image(page.attached[&k].clone()),
                 from: p + 1,
                 to: p + 1,
+                boxes: vec![(p + 1, r)],
             };
             let at = page_units
                 .iter()
@@ -773,6 +816,7 @@ pub(crate) fn extract(
                 kind: Kind::Rotated(line.text()),
                 from: p + 1,
                 to: p + 1,
+                boxes: vec![(p + 1, line.rect())],
             });
             leaves_of.push((p, usize::MAX - 2));
         }
@@ -783,6 +827,15 @@ pub(crate) fn extract(
                 kind: Kind::PageNote(p + 1),
                 from: p + 1,
                 to: p + 1,
+                boxes: vec![(
+                    p + 1,
+                    Rect {
+                        x0: 0.0,
+                        top: 0.0,
+                        x1: page.width,
+                        bottom: page.height,
+                    },
+                )],
             });
             leaves_of.push((p, usize::MAX));
         }
@@ -827,6 +880,7 @@ pub(crate) fn extract(
                 });
                 a.lines.extend(b.lines.iter().cloned());
                 prev.to = u.to;
+                union_boxes(&mut prev.boxes, &u.boxes);
                 *prev_leaf = leaf;
                 continue;
             }
@@ -1086,11 +1140,20 @@ pub(crate) fn outline(ex: &mut Extraction, filename: &str) -> Outline {
             head.lines.truncate(k);
             tail.lines.drain(..k);
             tail.marker = None;
-            let rest = Unit {
-                kind: Kind::Para(tail),
-                from: ex.units[i].from,
-                to: ex.units[i].to,
+            // En una sola página, cada parte tiene la caja de sus líneas; si el párrafo
+            // cruza páginas, las dos conservan la del párrafo entero.
+            let (from, to) = (ex.units[i].from, ex.units[i].to);
+            let part = |lines: &[Line], whole: &[(usize, Rect)]| match lines_box(lines) {
+                Some(r) if from == to => vec![(from, r)],
+                _ => whole.to_vec(),
             };
+            let rest = Unit {
+                boxes: part(&tail.lines, &ex.units[i].boxes),
+                kind: Kind::Para(tail),
+                from,
+                to,
+            };
+            ex.units[i].boxes = part(&head.lines, &ex.units[i].boxes);
             ex.units[i].kind = Kind::Para(head);
             ex.units.insert(i + 1, rest);
             headings.insert(i + 1, None);
@@ -1303,23 +1366,34 @@ struct Render<'a> {
 }
 
 impl Render<'_> {
-    fn marker(
-        out: &mut String,
-        spans: &mut Vec<(String, usize, usize)>,
-        from: usize,
-        to: usize,
-        multi: bool,
-    ) {
-        if !multi {
-            return;
-        }
-        let id = if from == to {
-            format!("p-{from}")
+    /// Marcador del bloque formado por las unidades `first..=last` (una lista contigua
+    /// las agrupa): `u-N` o `u-N-M`, con sus páginas y su caja en cada una.
+    fn marker(&self, out: &mut String, spans: &mut Vec<Span>, first: usize, last: usize) {
+        let units = &self.ex.units;
+        let id = if first == last {
+            format!("u-{}", first + 1)
         } else {
-            format!("p-{from}-{to}")
+            format!("u-{}-{}", first + 1, last + 1)
         };
-        if !spans.iter().any(|(s, _, _)| *s == id) {
-            spans.push((id.clone(), from, to));
+        let mut boxes = Vec::new();
+        for u in &units[first..=last] {
+            union_boxes(&mut boxes, &u.boxes);
+        }
+        // Una imagen puede salirse de la página (sangrado): la caja es la parte visible.
+        for (p, r) in boxes.iter_mut() {
+            let page = &self.ex.pages[*p - 1];
+            r.x0 = r.x0.clamp(0.0, page.width);
+            r.x1 = r.x1.clamp(r.x0, page.width);
+            r.top = r.top.clamp(0.0, page.height);
+            r.bottom = r.bottom.clamp(r.top, page.height);
+        }
+        if !spans.iter().any(|s| s.id == id) {
+            spans.push(Span {
+                id: id.clone(),
+                from: units[first].from,
+                to: units[last].to,
+                boxes,
+            });
         }
         out.push_str(&format!("<!-- okf-source-span: {id} -->\n"));
     }
@@ -1404,9 +1478,8 @@ impl Render<'_> {
             .filter(|&i| Some(i) != outline.title_unit)
             .collect();
         let (pages_from, pages_to) = self.pages(k);
-        let multi = pages_from != pages_to;
         let mut body = String::new();
-        let mut spans: Vec<(String, usize, usize)> = Vec::new();
+        let mut spans: Vec<Span> = Vec::new();
         if sec.inferred
             && let Some(h) = sec.heading
         {
@@ -1424,7 +1497,7 @@ impl Render<'_> {
                 if h.inferred {
                     self.inferred.push(u.from);
                 }
-                Self::marker(&mut body, &mut spans, u.from, u.to, multi);
+                self.marker(&mut body, &mut spans, i, i);
                 body.push_str(&format!(
                     "{} {}\n\n",
                     outline.hashes(h.level),
@@ -1443,8 +1516,7 @@ impl Render<'_> {
                     {
                         j += 1;
                     }
-                    let (a, b) = (u.from, units[range[j]].to);
-                    Self::marker(&mut body, &mut spans, a, b, multi);
+                    self.marker(&mut body, &mut spans, i, range[j]);
                     for &x in &range[idx..=j] {
                         let Kind::Para(q) = &units[x].kind else {
                             continue;
@@ -1468,7 +1540,7 @@ impl Render<'_> {
                     continue;
                 }
                 Kind::Para(p) if p.mono => {
-                    Self::marker(&mut body, &mut spans, u.from, u.to, multi);
+                    self.marker(&mut body, &mut spans, i, i);
                     // La sangría de cada línea se reconstruye con espacios del ancho de
                     // un carácter monoespaciado.
                     let left = p.lines.iter().map(|l| l.x0).fold(f32::MAX, f32::min);
@@ -1485,12 +1557,12 @@ impl Render<'_> {
                     body.push_str(&format!("{fence}\n{code}\n{fence}\n\n"));
                 }
                 Kind::Para(p) => {
-                    Self::marker(&mut body, &mut spans, u.from, u.to, multi);
+                    self.marker(&mut body, &mut spans, i, i);
                     body.push_str(&escape_line_start(&runs_md(&p.runs())));
                     body.push_str("\n\n");
                 }
                 Kind::Table(rows) => {
-                    Self::marker(&mut body, &mut spans, u.from, u.to, multi);
+                    self.marker(&mut body, &mut spans, i, i);
                     let cells: Vec<Vec<String>> = rows
                         .iter()
                         .map(|r| {
@@ -1503,16 +1575,16 @@ impl Render<'_> {
                     body.push('\n');
                 }
                 Kind::Image(path) => {
-                    Self::marker(&mut body, &mut spans, u.from, u.to, multi);
+                    self.marker(&mut body, &mut spans, i, i);
                     body.push_str(&format!("![Imagen de la página {}](../{path})\n\n", u.from));
                 }
                 Kind::PageNote(p) => {
-                    Self::marker(&mut body, &mut spans, u.from, u.to, multi);
+                    self.marker(&mut body, &mut spans, i, i);
                     body.push_str(&self.page_note(*p));
                     body.push('\n');
                 }
                 Kind::Rotated(t) => {
-                    Self::marker(&mut body, &mut spans, u.from, u.to, multi);
+                    self.marker(&mut body, &mut spans, i, i);
                     body.push_str(&format!("_Texto girado:_ {}\n\n", escape_inline(t)));
                 }
             }
@@ -1557,7 +1629,7 @@ impl Render<'_> {
         let draft =
             !transcribed.is_empty() || noted.iter().any(|&p| ex.pages[p - 1].class.unverified());
         let mut source_spans = vec![pages_span("seccion", pages_from, pages_to)];
-        source_spans.extend(spans.iter().map(|(id, a, b)| pages_span(id, *a, *b)));
+        source_spans.extend(spans.iter().map(Span::fields));
         let kind = if outline.split.is_some() {
             "Source Section"
         } else {
@@ -1597,6 +1669,33 @@ fn percent(x: f32) -> String {
 }
 
 /// Tramo de procedencia de unas páginas físicas.
+/// Localizador de un bloque: páginas y caja en cada una, en puntos con origen arriba a
+/// la izquierda de la página.
+struct Span {
+    id: String,
+    from: usize,
+    to: usize,
+    boxes: Vec<(usize, Rect)>,
+}
+
+impl Span {
+    fn fields(&self) -> Fields {
+        let boxes: Vec<Fields> = self
+            .boxes
+            .iter()
+            .map(|(p, r)| {
+                Fields::new()
+                    .with("page", *p)
+                    .with("x0", r.x0)
+                    .with("top", r.top)
+                    .with("x1", r.x1)
+                    .with("bottom", r.bottom)
+            })
+            .collect();
+        pages_span(&self.id, self.from, self.to).with("boxes", boxes)
+    }
+}
+
 fn pages_span(id: &str, from: impl Into<Yaml>, to: impl Into<Yaml>) -> Fields {
     span(id, "pdf_pages").with("from", from).with("to", to)
 }
@@ -2234,6 +2333,44 @@ fn listed(md: &str, prefix: &str) -> Vec<String> {
 /// páginas y las cubren todas, cada localizador cae dentro de su concepto, todo bloque
 /// de un concepto de varias páginas lleva su marcador y los índices enumeran los
 /// conceptos en orden.
+/// Las cajas de un localizador (plan 3, I6) están en sus páginas, una por página, y
+/// dentro de cada una, con medio punto de margen por el redondeo.
+fn check_boxes(doc: &PdfDocument, name: &str, span: &YamlValue, (a, b): (u64, u64)) -> Result<()> {
+    let Some(boxes) = span.get("boxes") else {
+        return Ok(());
+    };
+    let id = span.get("id").and_then(YamlValue::as_str).unwrap_or("?");
+    let Some(boxes) = boxes.as_sequence() else {
+        bail!("{name}: boxes de {id} no es una lista")
+    };
+    let mut seen = HashSet::new();
+    for bx in boxes {
+        let page = bx.get("page").and_then(YamlValue::as_u64);
+        let num = |k: &str| bx.get(k).and_then(YamlValue::as_f64);
+        let (Some(page), Some(x0), Some(top), Some(x1), Some(bottom)) =
+            (page, num("x0"), num("top"), num("x1"), num("bottom"))
+        else {
+            bail!("{name}: una caja de {id} no tiene página y coordenadas numéricas")
+        };
+        if !(a..=b).contains(&page) || !seen.insert(page) {
+            bail!("{name}: la caja de {id} en la página {page} no corresponde a sus páginas")
+        }
+        let (mx0, my0, mx1, my1) = read::media_box(doc, page as usize - 1);
+        let (w, h) = (f64::from(mx1 - mx0), f64::from(my1 - my0));
+        let tol = 0.5;
+        if !(x0 >= -tol
+            && x0 <= x1
+            && x1 <= w + tol
+            && top >= -tol
+            && top <= bottom
+            && bottom <= h + tol)
+        {
+            bail!("{name}: la caja de {id} en la página {page} sale de la página")
+        }
+    }
+    Ok(())
+}
+
 pub(crate) fn validate(
     z: &mut ZipArchive<fs::File>,
     names: &HashSet<String>,
@@ -2296,6 +2433,7 @@ pub(crate) fn validate(
                     if let Some(id) = s.get("id").and_then(YamlValue::as_str) {
                         ids.insert(id.to_string(), (a, b));
                     }
+                    check_boxes(&doc, name, s, (a, b))?;
                 }
                 _ => bail!("{name} tiene un localizador de páginas fuera de su sección"),
             }
@@ -2508,8 +2646,9 @@ mod tests {
         assert!(
             text.contains("- Las reservas se hacen con dos días de anticipación.\n- Los daños")
         );
-        // Un concepto de una sola página no lleva marcadores de pasaje.
-        assert!(!text.contains("okf-source-span"));
+        // Cada bloque lleva su marcador, con su caja, aunque el concepto ocupe una página.
+        assert!(text.contains("<!-- okf-source-span: u-2 -->\n"));
+        assert!(text.contains("    boxes:\n      - page: 1\n"));
         assert!(
             md["documento.md"]
                 .contains("<!-- okf-source-span: titulo -->\n# Préstamo de equipos audiovisuales")
@@ -2550,9 +2689,7 @@ mod tests {
             )
         );
         let method = &md["contenido/seccion-004.md"];
-        assert!(
-            method.contains("<!-- okf-source-span: p-1-2 -->\nSe prepararon veinte documentos")
-        );
+        assert!(method.contains("<!-- okf-source-span: u-8 -->\nSe prepararon veinte documentos"));
         assert!(method.contains("anotando cualquier diferencia en el orden"));
         assert!(method.contains("La conversión se consideró correcta"));
         assert!(method.contains("estimar el costo-beneficio de cada procedimiento"));
@@ -2562,7 +2699,7 @@ mod tests {
         ));
         // Un concepto de una sola página no lleva marcadores.
         assert!(results.contains(
-            "![Imagen de la página 2](../assets/pagina-002-imagen-01.png)\n\n*Figura 1."
+            "![Imagen de la página 2](../assets/pagina-002-imagen-01.png)\n\n<!-- okf-source-span: u-17 -->\n*Figura 1."
         ));
         assert!(names.contains("assets/pagina-002-imagen-01.png"));
         assert!(
@@ -2623,9 +2760,9 @@ mod tests {
         assert_eq!(state, "partial");
         let text = &md["contenido/texto.md"];
         assert!(text.contains("status: \"draft\""));
-        assert!(text.contains("<!-- okf-source-span: p-2 -->\n![Vista de la página 2](../assets/pagina-002.png)\n> Página escaneada sin capa de texto"));
-        assert!(text.contains("<!-- okf-source-span: p-3 -->\n_Página 3 sin contenido propio"));
-        assert!(text.contains("<!-- okf-source-span: p-4 -->\n![Vista de la página 4](../assets/pagina-004.png)\n> Página sin texto con contenido gráfico"));
+        assert!(text.contains("<!-- okf-source-span: u-5 -->\n![Vista de la página 2](../assets/pagina-002.png)\n> Página escaneada sin capa de texto"));
+        assert!(text.contains("<!-- okf-source-span: u-6 -->\n_Página 3 sin contenido propio"));
+        assert!(text.contains("<!-- okf-source-span: u-7 -->\n![Vista de la página 4](../assets/pagina-004.png)\n> Página sin texto con contenido gráfico"));
         assert!(text.contains("![Imagen de la página 5](../assets/pagina-005-imagen-01.png)"));
         assert!(text.contains("_Texto girado:_ Copia controlada · no imprimir"));
         for asset in [

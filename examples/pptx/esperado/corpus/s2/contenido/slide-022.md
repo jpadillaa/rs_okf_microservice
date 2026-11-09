@@ -18,12 +18,22 @@ source_spans:
     kind: "pptx_slide"
     slide_index: 22
     slide_id: 277
+  - id: "f-395"
+    source_id: "original"
+    kind: "pptx_shape"
+    slide_index: 22
+    shape_id: 395
+    x: 1682650
+    y: 1806825
+    cx: 10106400
+    cy: 4203600
 ---
 
 # Los metadatos
 
 ## Contenido
 
+<!-- okf-source-span: f-395 -->
 - Las bases vectoriales permiten filtrado por metadatos junto con la similitud.
 - Ejemplo: Podemos almacenar con cada vector información como la fuente, fecha, idioma, etc., y al hacer la búsqueda pedir “los vectores más cercanos que además pertenezcan a X categoría”.
 - Esto combina la potencia de la búsqueda semántica con reglas adicionales de negocio.

@@ -18,6 +18,24 @@ source_spans:
     kind: "pptx_slide"
     slide_index: 11
     slide_id: 266
+  - id: "f-316"
+    source_id: "original"
+    kind: "pptx_shape"
+    slide_index: 11
+    shape_id: 316
+    x: 3084513
+    y: 2303463
+    cx: 6130800
+    cy: 2268600
+  - id: "f-317"
+    source_id: "original"
+    kind: "pptx_shape"
+    slide_index: 11
+    shape_id: 317
+    x: 3478213
+    y: 4957763
+    cx: 3792300
+    cy: 492000
 status: "draft"
 ---
 
@@ -25,7 +43,10 @@ status: "draft"
 
 ## Contenido
 
+<!-- okf-source-span: f-316 -->
 - Cómo sabemos que nuestro RAG responde bien?
+
+<!-- okf-source-span: f-317 -->
 - Reflexión
 
 ## Vista visual

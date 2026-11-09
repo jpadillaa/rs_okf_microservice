@@ -17,12 +17,22 @@ source_spans:
     slide_index: 1
     slide_id: 256
     display_label: "1"
+  - id: "f-2"
+    source_id: "original"
+    kind: "pptx_shape"
+    slide_index: 1
+    shape_id: 2
+    x: 457200
+    y: 1650000
+    cx: 8200000
+    cy: 1500000
 ---
 
 # A simple OKF test deck
 
 ## Contenido
 
+<!-- okf-source-span: f-2 -->
 - One short paragraph of slide content
 
 ## Notas del presentador

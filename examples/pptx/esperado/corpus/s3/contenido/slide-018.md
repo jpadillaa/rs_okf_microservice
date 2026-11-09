@@ -18,6 +18,15 @@ source_spans:
     kind: "pptx_slide"
     slide_index: 18
     slide_id: 273
+  - id: "f-366"
+    source_id: "original"
+    kind: "pptx_shape"
+    slide_index: 18
+    shape_id: 366
+    x: 2193850
+    y: 1354225
+    cx: 9111735
+    cy: 5128076
 visual_only: true
 status: "draft"
 ---
@@ -28,6 +37,7 @@ status: "draft"
 
 ## Contenido
 
+<!-- okf-source-span: f-366 -->
 ![Imagen 1 de la diapositiva 18](../assets/slide-018-image-01.png)
 
 ## Notas del presentador

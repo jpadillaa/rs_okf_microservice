@@ -16,16 +16,42 @@ source_spans:
     kind: "pptx_slide"
     slide_index: 1
     slide_id: 256
+  - id: "f-4"
+    source_id: "original"
+    kind: "pptx_shape"
+    slide_index: 1
+    shape_id: 4
+    x: 457200
+    y: 1500000
+    cx: 4000000
+    cy: 900000
+  - id: "f-6"
+    source_id: "original"
+    kind: "pptx_shape"
+    slide_index: 1
+    shape_id: 6
+  - id: "f-9"
+    source_id: "original"
+    kind: "pptx_shape"
+    slide_index: 1
+    shape_id: 9
+    x: 5000000
+    y: 2500000
+    cx: 1500000
+    cy: 300000
 ---
 
 # Equations and comments
 
 ## Contenido
 
+<!-- okf-source-span: f-4 -->
 - `E=mc^2+a/b`
 
+<!-- okf-source-span: f-6 -->
 > Texto alternativo: Ciclo: consulta, recuperación y respuesta
 
+<!-- okf-source-span: f-9 -->
 > Texto alternativo: Flecha de la consulta hacia el índice
 
 ## Comentarios de revisión

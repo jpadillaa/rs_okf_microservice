@@ -1,6 +1,6 @@
 ---
 type: "Source Section"
-unit_id: "21d872babe37e1dc9dae2ec3ea96b6c8cc878d3d3172a5c2e7d3296fa066ebd7/contenido/seccion-008.md"
+unit_id: "60f867d0d9d4911da4d8e656e26f567a2e6b239065e7f759a0c17f83389162f8/contenido/seccion-008.md"
 parent: "documento.md"
 previous: "contenido/seccion-007.md"
 title: "Referencias"
@@ -17,16 +17,27 @@ source_spans:
     kind: "pdf_pages"
     from: 12
     to: 13
-  - id: "p-12-13"
+  - id: "u-87-96"
     source_id: "original"
     kind: "pdf_pages"
     from: 12
     to: 13
+    boxes:
+      - page: 12
+        x0: 103.05
+        top: 355.62
+        x1: 519.92
+        bottom: 703.72
+      - page: 13
+        x0: 103.05
+        top: 76.53
+        x1: 493.16
+        bottom: 88.53
 ---
 
 # Referencias
 
-<!-- okf-source-span: p-12-13 -->
+<!-- okf-source-span: u-87-96 -->
 - Amazon Web Services. "Amazon Bedrock AgentCore Overview." Documentación oficial, 2025.
 - Boston Consulting Group. "Leading in the Age of AI Agents: Managing the Machines That Manage Themselves." 2025.
 - Forrester. "Introducing AEGIS: The Guardrails CISOs Need for the Agentic Enterprise." 2025. Actualizado 2026.

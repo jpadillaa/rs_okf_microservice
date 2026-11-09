@@ -1,6 +1,6 @@
 ---
 type: "Source Section"
-unit_id: "8058ce4b27030242d1c6a750669727cecd6c67024c6a89e4254fb23415fd0482/contenido/seccion-004.md"
+unit_id: "3332d31ccc42065c251db6fdda0d87515824229ff0044d852b55f4dd78f50037/contenido/seccion-004.md"
 parent: "documento.md"
 previous: "contenido/seccion-003.md"
 next: "contenido/seccion-005.md"
@@ -18,23 +18,40 @@ source_spans:
     kind: "pdf_pages"
     from: 1
     to: 2
-  - id: "p-1-2"
+  - id: "u-8"
     source_id: "original"
     kind: "pdf_pages"
     from: 1
     to: 2
-  - id: "p-1"
+    boxes:
+      - page: 1
+        x0: 307.50
+        top: 329.50
+        x1: 534.20
+        bottom: 389.50
+      - page: 2
+        x0: 56.00
+        top: 60.50
+        x1: 286.08
+        bottom: 145.50
+  - id: "u-9"
     source_id: "original"
     kind: "pdf_pages"
     from: 1
     to: 1
+    boxes:
+      - page: 1
+        x0: 56.00
+        top: 782.35
+        x1: 173.84
+        bottom: 798.35
 ---
 
 # 2. Método
 
-<!-- okf-source-span: p-1-2 -->
+<!-- okf-source-span: u-8 -->
 Se prepararon veinte documentos artificiales con columnas, tablas, figuras y notas al pie. Cada documento se convirtió con los dos procedimientos y un revisor comparó el resultado con el original, párrafo por párrafo, anotando cualquier diferencia en el orden o en el contenido. La conversión se consideró correcta cuando todos los párrafos aparecían completos y en su orden. Para cada documento se anotó también el tiempo de proceso y la memoria utilizada, con el fin de estimar el costo-beneficio de cada procedimiento.
 
-<!-- okf-source-span: p-1 -->
+<!-- okf-source-span: u-9 -->
 ¹ Universidad Ficticia del Norte. ² Instituto Imaginario de Documentos.
 

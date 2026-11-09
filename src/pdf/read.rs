@@ -190,6 +190,7 @@ pub(crate) struct Encoded {
 }
 
 pub(crate) struct Page {
+    pub(crate) width: f32,
     pub(crate) height: f32,
     pub(crate) glyphs: Vec<Glyph>,
     pub(crate) pictures: Vec<Picture>,
@@ -434,6 +435,7 @@ pub(crate) fn page(doc: &PdfDocument, index: usize) -> Result<Page> {
         });
     }
     Ok(Page {
+        width,
         height,
         glyphs,
         pictures,

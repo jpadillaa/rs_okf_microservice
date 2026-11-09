@@ -18,6 +18,24 @@ source_spans:
     kind: "pptx_slide"
     slide_index: 25
     slide_id: 280
+  - id: "f-416"
+    source_id: "original"
+    kind: "pptx_shape"
+    slide_index: 25
+    shape_id: 416
+    x: 1596175
+    y: 2108200
+    cx: 10106400
+    cy: 4203600
+  - id: "f-418"
+    source_id: "original"
+    kind: "pptx_shape"
+    slide_index: 25
+    shape_id: 418
+    x: 3239
+    y: 0
+    cx: 12185523
+    cy: 6858001
 view_hides_text: true
 ---
 
@@ -27,9 +45,11 @@ view_hides_text: true
 
 ## Contenido
 
+<!-- okf-source-span: f-416 -->
 - Evalúa si los fragmentos recuperados son realmente relevantes para la pregunta,
 - Penaliza la recuperación de información irrelevante que podría confundir al modelo generador.
 
+<!-- okf-source-span: f-418 -->
 ![Imagen 1 de la diapositiva 25](../assets/slide-025-image-01.png)
 
 ## Notas del presentador

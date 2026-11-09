@@ -18,6 +18,24 @@ source_spans:
     kind: "pptx_slide"
     slide_index: 23
     slide_id: 278
+  - id: "f-401"
+    source_id: "original"
+    kind: "pptx_shape"
+    slide_index: 23
+    shape_id: 401
+    x: 1596175
+    y: 2108200
+    cx: 10106400
+    cy: 4203600
+  - id: "f-403"
+    source_id: "original"
+    kind: "pptx_shape"
+    slide_index: 23
+    shape_id: 403
+    x: 3239
+    y: 0
+    cx: 12185523
+    cy: 6858001
 view_hides_text: true
 ---
 
@@ -27,9 +45,11 @@ view_hides_text: true
 
 ## Contenido
 
+<!-- okf-source-span: f-401 -->
 - Esta métrica evalúa cuán pertinente es la respuesta generada para la pregunta original,
 - Penaliza las respuestas que son incompletas o que contienen información redundante y superflua.
 
+<!-- okf-source-span: f-403 -->
 ![Imagen 1 de la diapositiva 23](../assets/slide-023-image-01.png)
 
 ## Notas del presentador

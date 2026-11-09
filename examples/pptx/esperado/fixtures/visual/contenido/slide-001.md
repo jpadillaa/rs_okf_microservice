@@ -16,6 +16,15 @@ source_spans:
     kind: "pptx_slide"
     slide_index: 1
     slide_id: 256
+  - id: "f-12"
+    source_id: "original"
+    kind: "pptx_shape"
+    slide_index: 1
+    shape_id: 12
+    x: 1500000
+    y: 1400000
+    cx: 6000000
+    cy: 3500000
 visual_only: true
 status: "draft"
 ---
@@ -26,6 +35,7 @@ status: "draft"
 
 ## Contenido
 
+<!-- okf-source-span: f-12 -->
 ![Imagen 1 de la diapositiva 1](../assets/slide-001-image-01.png)
 
 ## Vista visual

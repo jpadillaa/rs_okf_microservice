@@ -1,6 +1,6 @@
 ---
 type: "Source Section"
-unit_id: "8058ce4b27030242d1c6a750669727cecd6c67024c6a89e4254fb23415fd0482/contenido/seccion-001.md"
+unit_id: "3332d31ccc42065c251db6fdda0d87515824229ff0044d852b55f4dd78f50037/contenido/seccion-001.md"
 parent: "documento.md"
 next: "contenido/seccion-002.md"
 title: "Lectura de documentos con varias columnas: un estudio con materiales artificiales"
@@ -17,9 +17,21 @@ source_spans:
     kind: "pdf_pages"
     from: 1
     to: 1
+  - id: "u-2"
+    source_id: "original"
+    kind: "pdf_pages"
+    from: 1
+    to: 1
+    boxes:
+      - page: 1
+        x0: 56.00
+        top: 128.55
+        x1: 186.57
+        bottom: 139.55
 ---
 
 # Lectura de documentos con varias columnas: un estudio con materiales artificiales
 
+<!-- okf-source-span: u-2 -->
 Ana Ruiz¹ y Tomás Peña²
 

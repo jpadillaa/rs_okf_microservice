@@ -18,12 +18,22 @@ source_spans:
     kind: "pptx_slide"
     slide_index: 31
     slide_id: 286
+  - id: "f-462"
+    source_id: "original"
+    kind: "pptx_shape"
+    slide_index: 31
+    shape_id: 462
+    x: 1596179
+    y: 4319194
+    cx: 10106400
+    cy: 1500300
 ---
 
 # Hallucination- Free? Assessing the Reliability of Leading AI Legal Research Tools
 
 ## Contenido
 
+<!-- okf-source-span: f-462 -->
 - Paper
 
 ## Vista visual

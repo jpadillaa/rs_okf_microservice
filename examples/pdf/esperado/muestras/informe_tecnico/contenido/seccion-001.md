@@ -1,6 +1,6 @@
 ---
 type: "Source Section"
-unit_id: "a38e2b6d4bb9b0f1993c27bfa7a1394d0603e8bf2cd07c780877be96c0cb5642/contenido/seccion-001.md"
+unit_id: "952562bd3b0e2ab8224d973377177c1f2fbcf53f6a576d3a5a5d4e1eca0cc762/contenido/seccion-001.md"
 parent: "documento.md"
 next: "contenido/seccion-002.md"
 title: "Informe técnico de migración"
@@ -17,9 +17,21 @@ source_spans:
     kind: "pdf_pages"
     from: 1
     to: 1
+  - id: "u-2"
+    source_id: "original"
+    kind: "pdf_pages"
+    from: 1
+    to: 1
+    boxes:
+      - page: 1
+        x0: 72.00
+        top: 104.53
+        x1: 512.54
+        bottom: 142.03
 ---
 
 # Informe técnico de migración
 
+<!-- okf-source-span: u-2 -->
 Este informe describe la migración ficticia de un sistema de inventario a una nueva plataforma. Todos los nombres, cifras y fechas son artificiales y solo sirven para probar la conversión de documentos.
 

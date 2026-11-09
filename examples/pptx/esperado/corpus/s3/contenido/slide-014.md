@@ -18,12 +18,22 @@ source_spans:
     kind: "pptx_slide"
     slide_index: 14
     slide_id: 269
+  - id: "f-338"
+    source_id: "original"
+    kind: "pptx_shape"
+    slide_index: 14
+    shape_id: 338
+    x: 1596175
+    y: 2471175
+    cx: 10106400
+    cy: 3573900
 ---
 
 # Evaluar el RAG: Contexto, Fidelidad, Relevancia de la respuesta
 
 ## Contenido
 
+<!-- okf-source-span: f-338 -->
 - La arquitectura RAG: componentes interdependientes (recuperador y generador), donde los errores se propagan entre etapas, dificultando el diagnóstico.
 - Herramientas: RAGAS, LangSmith, DeepEval, open-rag-eval, etc.
 

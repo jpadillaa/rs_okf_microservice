@@ -18,6 +18,15 @@ source_spans:
     kind: "pptx_slide"
     slide_index: 7
     slide_id: 262
+  - id: "f-292"
+    source_id: "original"
+    kind: "pptx_shape"
+    slide_index: 7
+    shape_id: 292
+    x: 2725400
+    y: 1994055
+    cx: 8100840
+    cy: 4559145
 visual_only: true
 status: "draft"
 ---
@@ -28,6 +37,7 @@ status: "draft"
 
 ## Contenido
 
+<!-- okf-source-span: f-292 -->
 ![Imagen 1 de la diapositiva 7](../assets/slide-007-image-01.png)
 
 ## Vista visual
