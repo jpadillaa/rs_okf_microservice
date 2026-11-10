@@ -772,6 +772,9 @@ pub(crate) fn extract(
     z: &mut ZipWriter<fs::File>,
 ) -> Result<Extraction> {
     let started = Instant::now();
+    // CPU de esta conversión: el proceso del servicio solo hace una, pero las pruebas
+    // comparten el suyo.
+    let cpu_started = cpu_time();
     let max_pages = cfg.max_pages;
     let reopen = bytes.len() > REOPEN_BYTES;
     let first = read::open(bytes)?;
@@ -992,7 +995,8 @@ pub(crate) fn extract(
                 page.ocr = Some(Ocr::Skipped(Budget::Pages));
                 continue;
             }
-            if started.elapsed() >= budget || cpu_time() >= cfg.cpu_limit().mul_f64(OCR_TIME_SHARE)
+            if started.elapsed() >= budget
+                || cpu_time().saturating_sub(cpu_started) >= cfg.cpu_limit().mul_f64(OCR_TIME_SHARE)
             {
                 page.ocr = Some(Ocr::Skipped(Budget::Time));
                 continue;
@@ -4843,6 +4847,26 @@ mod tests {
             all.contains(
                 "no se aplicó OCR porque el documento supera el límite de páginas con OCR."
             )
+        );
+    }
+
+    #[test]
+    fn ocr_budget_counts_only_the_cpu_of_this_conversion() {
+        // Las pruebas comparten un proceso: la CPU que otras ya consumieron no agota el
+        // presupuesto del OCR de esta conversión (en la CI dejaba los escaneos sin OCR).
+        let Some(mut cfg) = ocr_config() else { return };
+        cfg.timeout = std::time::Duration::from_secs(3);
+        let start = cpu_time();
+        let mut x = 0u64;
+        while cpu_time() - start < std::time::Duration::from_millis(2500) {
+            x = std::hint::black_box(x.wrapping_mul(31).wrapping_add(7));
+        }
+        let (_, md, _) = convert_with("examples/pdf/muestras/escaneado_ocr.pdf", &cfg);
+        assert!(
+            md.iter().any(|(n, t)| n.starts_with("contenido/")
+                && t.contains("procede de OCR local del servicio")),
+            "{}",
+            md["conversion-report.md"]
         );
     }
 
