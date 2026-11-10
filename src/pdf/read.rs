@@ -6,12 +6,76 @@ use crate::worker::Rejected;
 use anyhow::{Context, Result};
 use pdf_oxide::{
     Destination, OutlineItem, PdfDocument,
+    content::{Operator, TextElement, parse_content_stream},
     extractors::images::{ColorSpace, PdfFilter},
     layout::TextChar,
     object::Object,
     rendering::{RenderOptions, render_page},
 };
 use sha2::{Digest, Sha256};
+use std::collections::{HashMap, HashSet};
+
+/// Resuelve una URI sin protocolo solo si el propio PDF contiene un destino
+/// HTTP(S) inequívoco para el mismo dominio y ruta. No consulta la red.
+pub(crate) fn uri_aliases(doc: &PdfDocument, pages: usize) -> HashMap<String, String> {
+    aliases_for_uris(
+        (0..pages)
+            .flat_map(|p| doc.get_annotations(p).unwrap_or_default())
+            .filter_map(|a| match a.action {
+                Some(pdf_oxide::LinkAction::Uri(uri)) => Some(uri),
+                _ => None,
+            }),
+    )
+}
+
+fn aliases_for_uris(uris: impl IntoIterator<Item = String>) -> HashMap<String, String> {
+    let mut explicit: HashMap<String, HashSet<String>> = HashMap::new();
+    let mut bare = HashSet::new();
+    for uri in uris {
+        let Some(k) = uri_key(&uri) else {
+            continue;
+        };
+        if crate::bundle::has_scheme(&uri) {
+            let target = if k.ends_with('/') && !k[..k.len() - 1].contains('/') {
+                uri.trim_end_matches('/').to_string()
+            } else {
+                uri.clone()
+            };
+            explicit.entry(k).or_default().insert(target);
+        } else {
+            bare.insert(uri);
+        }
+    }
+    bare.into_iter()
+        .filter_map(|uri| {
+            let targets = explicit.get(&uri_key(&uri)?)?;
+            (targets.len() == 1).then(|| (uri, targets.iter().next().unwrap().clone()))
+        })
+        .collect()
+}
+
+fn uri_key(uri: &str) -> Option<String> {
+    let uri = uri.trim();
+    let rest = if let Some((scheme, rest)) = uri.split_once("://") {
+        if !matches!(scheme.to_ascii_lowercase().as_str(), "http" | "https") {
+            return None;
+        }
+        rest
+    } else {
+        uri
+    };
+    let (host, path) = rest.split_once('/').unwrap_or((rest, ""));
+    let host = host.to_ascii_lowercase();
+    let host = host.strip_prefix("www.").unwrap_or(&host);
+    if !host.contains('.')
+        || !host
+            .bytes()
+            .all(|c| c.is_ascii_alphanumeric() || matches!(c, b'.' | b'-'))
+    {
+        return None;
+    }
+    Some(format!("{host}/{}", path))
+}
 
 /// Rectángulo en puntos, con origen arriba a la izquierda.
 #[derive(Clone, Copy, Debug, PartialEq)]
@@ -71,10 +135,108 @@ pub(crate) struct Glyph {
 /// Prefijo del destino de un enlace a una página del propio documento.
 pub(crate) const PAGE_LINK: &str = "\u{5}";
 
+fn uri_target(uri: &str) -> Option<String> {
+    let uri = uri.trim();
+    (!uri.is_empty()).then(|| {
+        if crate::bundle::has_scheme(uri) {
+            uri.to_string()
+        } else {
+            // El destino pertenece al PDF original, no a contenido/ en el ZIP.
+            crate::bundle::UNRESOLVED_DEST.to_string()
+        }
+    })
+}
+
+fn resolved(doc: &PdfDocument, object: &Object) -> Option<Object> {
+    let mut object = object.clone();
+    let mut seen = std::collections::HashSet::new();
+    for _ in 0..64 {
+        match object {
+            Object::Reference(r) if seen.insert(r) => object = doc.load_object(r).ok()?,
+            Object::Reference(_) => return None,
+            _ => return Some(object),
+        }
+    }
+    None
+}
+
+/// Un destino local referencia un objeto Page, no su ordinal. Recorre sus padres
+/// sumando las páginas de los hermanos anteriores y comprueba la identidad final.
+fn referenced_page(
+    doc: &PdfDocument,
+    reference: pdf_oxide::object::ObjectRef,
+    pages: usize,
+) -> Option<usize> {
+    let target = doc.load_object(reference).ok()?;
+    let mut child = reference;
+    let mut object = target.clone();
+    let mut offset = 0usize;
+    let mut seen = std::collections::HashSet::new();
+    for _ in 0..64 {
+        if !seen.insert(child) {
+            return None;
+        }
+        let dict = object.as_dict()?;
+        let Some(parent) = dict.get("Parent") else {
+            return (offset < pages && doc.get_page(offset).ok()? == target).then_some(offset);
+        };
+        let parent_ref = parent.as_reference()?;
+        let parent = doc.load_object(parent_ref).ok()?;
+        let kids = resolved(doc, parent.as_dict()?.get("Kids")?)?;
+        let mut found = false;
+        for sibling in kids.as_array()? {
+            if sibling.as_reference() == Some(child) {
+                found = true;
+                break;
+            }
+            let sibling = resolved(doc, sibling)?;
+            let d = sibling.as_dict()?;
+            let count = if d.get("Type").and_then(Object::as_name) == Some("Pages") {
+                usize::try_from(d.get("Count")?.as_integer()?).ok()?
+            } else {
+                1
+            };
+            offset = offset.checked_add(count)?;
+            if offset >= pages {
+                return None;
+            }
+        }
+        if !found {
+            return None;
+        }
+        child = parent_ref;
+        object = parent;
+    }
+    None
+}
+
+fn raw_destination(doc: &PdfDocument, a: &pdf_oxide::Annotation) -> Option<Object> {
+    let dict = a.raw_dict.as_ref()?;
+    if let Some(dest) = dict.get("Dest") {
+        return resolved(doc, dest);
+    }
+    let action = resolved(doc, dict.get("A")?)?;
+    let action = action.as_dict()?;
+    (action.get("S").and_then(Object::as_name) == Some("GoTo"))
+        .then(|| resolved(doc, action.get("D")?))
+        .flatten()
+}
+
 /// Destino de una anotación de enlace: URL, página (desde 1) o referencia sin destino.
 /// Los demás (otro archivo, acciones con nombre) no se convierten en enlace.
 fn link_target(doc: &PdfDocument, a: &pdf_oxide::Annotation, pages: usize) -> Option<String> {
     use pdf_oxide::{LinkAction, LinkDestination};
+    if let Some(Object::Array(dest)) = raw_destination(doc, a) {
+        let page = match dest.first() {
+            Some(Object::Reference(r)) => referenced_page(doc, *r, pages),
+            Some(Object::Integer(n)) => usize::try_from(*n).ok().filter(|&n| n < pages),
+            _ => None,
+        };
+        return Some(page.map_or_else(
+            || crate::bundle::UNRESOLVED_DEST.to_string(),
+            |p| format!("{PAGE_LINK}{}", p + 1),
+        ));
+    }
     let page = |d: &LinkDestination| -> String {
         let p = match d {
             LinkDestination::Explicit { page, .. } => Some(*page as usize),
@@ -86,14 +248,20 @@ fn link_target(doc: &PdfDocument, a: &pdf_oxide::Annotation, pages: usize) -> Op
         }
     };
     match (&a.action, &a.destination) {
-        (Some(LinkAction::Uri(u)), _) => Some(u.trim().to_string()).filter(|u| !u.is_empty()),
+        (Some(LinkAction::Uri(u)), _) => uri_target(u),
         (Some(LinkAction::GoTo(d)), _) | (None, Some(d)) => Some(page(d)),
         _ => None,
     }
 }
 
 /// Marca los caracteres que cubre cada anotación de enlace de la página.
-fn apply_links(doc: &PdfDocument, index: usize, (mx0, my1): (f32, f32), glyphs: &mut [Glyph]) {
+fn apply_links(
+    doc: &PdfDocument,
+    index: usize,
+    (mx0, my1): (f32, f32),
+    glyphs: &mut [Glyph],
+    aliases: &HashMap<String, String>,
+) {
     let Ok(annotations) = doc.get_annotations(index) else {
         return;
     };
@@ -102,8 +270,13 @@ fn apply_links(doc: &PdfDocument, index: usize, (mx0, my1): (f32, f32), glyphs: 
         if a.subtype.as_deref() != Some("Link") {
             continue;
         }
-        let (Some([ax0, ay0, ax1, ay1]), Some(target)) = (a.rect, link_target(doc, &a, pages))
-        else {
+        let target = match &a.action {
+            Some(pdf_oxide::LinkAction::Uri(uri)) if aliases.contains_key(uri) => {
+                aliases.get(uri).cloned()
+            }
+            _ => link_target(doc, &a, pages),
+        };
+        let (Some([ax0, ay0, ax1, ay1]), Some(target)) = (a.rect, target) else {
             continue;
         };
         let (left, right) = (ax0.min(ax1) as f32 - mx0, ax0.max(ax1) as f32 - mx0);
@@ -189,13 +362,133 @@ pub(crate) struct Encoded {
     pub(crate) ext: &'static str,
 }
 
+#[derive(Clone, Debug)]
+pub(crate) struct LateralLink {
+    pub(crate) rect: Rect,
+    pub(crate) target: String,
+}
+
+fn annotation_rect(rect: [f64; 4], origin: (f32, f32)) -> Rect {
+    let [x0, y0, x1, y1] = rect;
+    Rect {
+        x0: x0.min(x1) as f32 - origin.0,
+        x1: x0.max(x1) as f32 - origin.0,
+        top: origin.1 - y0.max(y1) as f32,
+        bottom: origin.1 - y0.min(y1) as f32,
+    }
+}
+
+pub(crate) fn lateral_links(doc: &PdfDocument, index: usize) -> Vec<LateralLink> {
+    let (x0, y0, x1, y1) = media_box(doc, index);
+    let (w, h) = (x1 - x0, y1 - y0);
+    doc.get_annotations(index)
+        .unwrap_or_default()
+        .iter()
+        .filter_map(|a| {
+            if a.subtype.as_deref() != Some("Link") {
+                return None;
+            }
+            let rect = annotation_rect(a.rect?, (x0, y1));
+            ((rect.x0 >= 0.88 * w || rect.x1 <= 0.12 * w)
+                && rect.width() <= 0.15 * w
+                && rect.height() >= 0.04 * h)
+                .then(|| {
+                    Some(LateralLink {
+                        rect,
+                        target: link_target(doc, a, doc.page_count().ok()?)?,
+                    })
+                })
+                .flatten()
+        })
+        .collect()
+}
+
+/// Recupera las líneas giradas de una pestaña en el orden de escritura: columna
+/// desde la izquierda y, dentro de ella, avance desde abajo hacia arriba. Descarta
+/// las copias diminutas de accesibilidad cuando también hay texto visible.
+pub(crate) fn sidebar_text(doc: &PdfDocument, index: usize, rect: Rect) -> String {
+    let (mx0, _, _, my1) = media_box(doc, index);
+    let mut spans: Vec<_> = doc
+        .extract_spans(index)
+        .unwrap_or_default()
+        .into_iter()
+        .filter(|s| {
+            let (x, y) = (s.bbox.x - mx0, my1 - s.bbox.y);
+            x >= rect.x0 - 1.
+                && x <= rect.x1 + 1.
+                && y >= rect.top - 2.
+                && y <= rect.bottom + 2.
+                && !s.text.trim().is_empty()
+        })
+        .collect();
+    let size = spans.iter().map(|s| s.font_size).fold(0., f32::max);
+    spans.retain(|s| s.font_size >= 0.6 * size);
+    spans.sort_by(|a, b| {
+        a.bbox
+            .x
+            .total_cmp(&b.bbox.x)
+            .then(a.bbox.y.total_cmp(&b.bbox.y))
+    });
+    spans
+        .iter()
+        .map(|s| s.text.trim())
+        .collect::<Vec<_>>()
+        .join(" ")
+}
+
+/// Reglas rectas pintadas, en coordenadas físicas; los rectángulos grandes y las
+/// curvas de diagramas no se interpretan como separadores de tabla.
+pub(crate) fn rulings(doc: &PdfDocument, index: usize) -> Vec<Rect> {
+    let (x0, _, _, y1) = media_box(doc, index);
+    doc.extract_paths(index)
+        .unwrap_or_default()
+        .into_iter()
+        .filter(|p| {
+            p.bbox.width >= 40.
+                && p.bbox.height <= 1.5
+                && p.stroke_color.is_some()
+                && p.operations.iter().all(|op| {
+                    matches!(
+                        op,
+                        pdf_oxide::elements::PathOperation::MoveTo(..)
+                            | pdf_oxide::elements::PathOperation::LineTo(..)
+                    )
+                })
+        })
+        .map(|p| Rect {
+            x0: p.bbox.x - x0,
+            x1: p.bbox.x + p.bbox.width - x0,
+            top: y1 - p.bbox.y - p.bbox.height,
+            bottom: y1 - p.bbox.y,
+        })
+        .collect()
+}
+
+pub(crate) fn small_controls(doc: &PdfDocument, index: usize) -> Vec<Rect> {
+    let (x0, y0, x1, y1) = media_box(doc, index);
+    doc.get_annotations(index)
+        .unwrap_or_default()
+        .iter()
+        .filter_map(|a| {
+            if a.subtype.as_deref() != Some("Widget") {
+                return None;
+            }
+            let rect = annotation_rect(a.rect?, (x0, y1));
+            (rect.width() > 1.
+                && rect.width() < 0.15 * (x1 - x0)
+                && rect.height() > 1.
+                && rect.height() < 0.06 * (y1 - y0))
+                .then_some(rect)
+        })
+        .collect()
+}
+
 pub(crate) struct Page {
     pub(crate) width: f32,
     pub(crate) height: f32,
     pub(crate) glyphs: Vec<Glyph>,
     pub(crate) pictures: Vec<Picture>,
-    /// Texto escrito con una fuente sin glifos, típica de la capa de OCR que acompaña a
-    /// un escaneo.
+    /// Fuente sin glifos o texto invisible sobre la imagen de un escaneo.
     pub(crate) ocr_layer: bool,
 }
 
@@ -238,6 +531,181 @@ pub(crate) fn page_count(doc: &PdfDocument) -> Result<usize> {
         .map_err(|e| Rejected(format!("el PDF no tiene un árbol de páginas legible: {e}")).into())
 }
 
+/// Solo texto invisible en el flujo de página: no confunde una cadena que contiene
+/// «3 Tr» con un operador, ni olvida que q/Q restaura el modo de dibujo del texto.
+fn invisible_text(data: &[u8]) -> bool {
+    let Some(data) = content_without_comments(data) else {
+        return false;
+    };
+    let Ok(ops) = parse_content_stream(&data) else {
+        return false;
+    };
+    let mut mode = 0;
+    let mut stack = Vec::new();
+    let mut found = false;
+    for op in ops {
+        let has_text = match &op {
+            Operator::Tj { text }
+            | Operator::Quote { text }
+            | Operator::DoubleQuote { text, .. } => !text.is_empty(),
+            Operator::TJ { array } => array
+                .iter()
+                .any(|e| matches!(e, TextElement::String(s) if !s.is_empty())),
+            _ => false,
+        };
+        if has_text {
+            if mode != 3 {
+                return false;
+            }
+            found = true;
+        }
+        match op {
+            Operator::Tr { render } => mode = render,
+            Operator::SaveState => stack.push(mode),
+            Operator::RestoreState => match stack.pop() {
+                Some(saved) => mode = saved,
+                None => return false,
+            },
+            _ => {}
+        }
+    }
+    found
+}
+
+/// El parser de operadores puede interpretar palabras dentro de comentarios.
+/// El parser de objetos sí respeta cadenas, escapes, arrays y comentarios internos.
+fn content_without_comments(mut data: &[u8]) -> Option<Vec<u8>> {
+    let mut clean = Vec::with_capacity(data.len());
+    while !data.is_empty() {
+        data = data.trim_ascii_start();
+        if data.first() == Some(&0) {
+            data = &data[1..];
+            continue;
+        }
+        if data.first() == Some(&b'%') {
+            data = &data[data
+                .iter()
+                .position(|b| matches!(b, b'\r' | b'\n'))
+                .unwrap_or(data.len())..];
+            continue;
+        }
+        if data.is_empty() {
+            break;
+        }
+        let len = if let Ok((rest, _)) = pdf_oxide::parser::parse_object(data) {
+            data.len() - rest.len()
+        } else {
+            let len = data
+                .iter()
+                .position(|b| b.is_ascii_whitespace() || b"\0()<>[]{}/%".contains(b))
+                .unwrap_or(data.len());
+            // Las imágenes inline contienen bytes arbitrarios; no se infiere su modo.
+            if len == 0 || &data[..len] == b"BI" {
+                return None;
+            }
+            len
+        };
+        clean.extend_from_slice(&data[..len]);
+        clean.push(b' ');
+        data = &data[len..];
+    }
+    Some(clean)
+}
+
+fn invisible_ocr_layer(doc: &PdfDocument, index: usize) -> bool {
+    let Ok(data) = doc.get_page_content_data(index) else {
+        return false;
+    };
+    if !invisible_text(&data) {
+        return false;
+    }
+    let Some(resources) = doc
+        .get_page_resources(index)
+        .ok()
+        .and_then(|r| resolved(doc, &r))
+    else {
+        return false;
+    };
+    if resources.as_dict().is_none_or(|r| r.is_empty()) {
+        return false;
+    }
+    forms_without_text(doc, &resources, 0, &mut 64)
+}
+
+/// Un Form puede envolver las imágenes de un escaneo. Solo se admite si sus
+/// recursos anidados se comprueban también y no contienen operadores de texto.
+/// Los límites evitan ciclos y expansiones de recursos en documentos hostiles.
+fn forms_without_text(
+    doc: &PdfDocument,
+    resources: &Object,
+    depth: usize,
+    budget: &mut usize,
+) -> bool {
+    if depth >= 8 {
+        return false;
+    }
+    let Some(resources_dict) = resources.as_dict() else {
+        return false;
+    };
+    if let Some(xobjects) = resources_dict.get("XObject") {
+        let Some(xobjects) = resolved(doc, xobjects) else {
+            return false;
+        };
+        let Some(objects) = xobjects.as_dict() else {
+            return false;
+        };
+        for object in objects.values() {
+            if *budget == 0 {
+                return false;
+            }
+            *budget -= 1;
+            let Some(object) = resolved(doc, object) else {
+                return false;
+            };
+            let Some(dict) = object.as_dict() else {
+                return false;
+            };
+            match dict.get("Subtype").and_then(Object::as_name) {
+                Some("Image") => {}
+                Some("Form") => {
+                    let Ok(data) = object.decode_stream_data() else {
+                        return false;
+                    };
+                    let Some(data) = content_without_comments(&data) else {
+                        return false;
+                    };
+                    let Ok(ops) = parse_content_stream(&data) else {
+                        return false;
+                    };
+                    if ops.iter().any(|op| {
+                        matches!(
+                            op,
+                            Operator::Tj { .. }
+                                | Operator::TJ { .. }
+                                | Operator::Quote { .. }
+                                | Operator::DoubleQuote { .. }
+                        )
+                    }) {
+                        return false;
+                    }
+                    let child = match dict.get("Resources") {
+                        Some(r) => match resolved(doc, r) {
+                            Some(r) => r,
+                            None => return false,
+                        },
+                        None => resources.clone(),
+                    };
+                    if !forms_without_text(doc, &child, depth + 1, budget) {
+                        return false;
+                    }
+                }
+                _ => return false,
+            }
+        }
+    }
+    true
+}
+
 /// Caja de la página: origen y tamaño en el espacio de usuario.
 pub(crate) fn media_box(doc: &PdfDocument, index: usize) -> (f32, f32, f32, f32) {
     match doc.get_page_media_box(index) {
@@ -247,7 +715,16 @@ pub(crate) fn media_box(doc: &PdfDocument, index: usize) -> (f32, f32, f32, f32)
 }
 
 /// Caracteres e imágenes de una página.
+#[cfg(test)]
 pub(crate) fn page(doc: &PdfDocument, index: usize) -> Result<Page> {
+    page_with_aliases(doc, index, &HashMap::new())
+}
+
+pub(crate) fn page_with_aliases(
+    doc: &PdfDocument,
+    index: usize,
+    aliases: &HashMap<String, String>,
+) -> Result<Page> {
     let (mx0, my0, mx1, my1) = media_box(doc, index);
     let (width, height) = (mx1 - mx0, my1 - my0);
     // Los fragmentos de texto conservan la decodificación correcta de cada carácter y
@@ -352,7 +829,7 @@ pub(crate) fn page(doc: &PdfDocument, index: usize) -> Result<Page> {
         }
     }
     let (chars, span_of): (Vec<TextChar>, Vec<usize>) = chars.into_iter().unzip();
-    let mut ocr_layer = false;
+    let mut ocr_layer = invisible_ocr_layer(doc, index);
     let mut glyphs: Vec<Glyph> = Vec::with_capacity(chars.len());
     let mut k = 0;
     while k < chars.len() {
@@ -414,7 +891,7 @@ pub(crate) fn page(doc: &PdfDocument, index: usize) -> Result<Page> {
             link: None,
         });
     }
-    apply_links(doc, index, (mx0, my1), &mut glyphs);
+    apply_links(doc, index, (mx0, my1), &mut glyphs, aliases);
     let page_rect = Rect {
         x0: 0.0,
         top: 0.0,
@@ -736,8 +1213,179 @@ fn text_string(b: &[u8]) -> String {
 }
 
 #[cfg(test)]
+pub(super) fn synthetic_slides() -> Vec<u8> {
+    synthetic_slides_with_title("First slide")
+}
+
+#[cfg(test)]
+pub(super) fn synthetic_slides_with_title(title: &str) -> Vec<u8> {
+    let stream = |title: &str| {
+        format!(
+            "BT /F1 24 Tf 30 260 Td ({title}) Tj ET\nBT /F1 10 Tf 0 1 -1 0 380 80 Tm (Menu) Tj ET\n0 G 30 205 m 330 205 l S 30 160 m 330 160 l S 30 115 m 330 115 l S 30 70 m 330 70 l S\nBT /F1 12 Tf 30 215 Td (Key) Tj 120 0 Td (Description) Tj ET\nBT /F1 12 Tf 30 190 Td (One) Tj 120 0 Td (First row) Tj 0 -14 Td (continued) Tj ET\nBT /F1 12 Tf 30 145 Td (Two) Tj 120 0 Td (Second row) Tj ET\nBT /F1 12 Tf 30 100 Td (Three) Tj 120 0 Td (Third row) Tj ET\n0 0 1 RG 240 35 m 275 50 l 300 35 l S\n"
+        )
+    };
+    let content1 = stream(title);
+    let content2 = stream("Second slide");
+    let objects=std::collections::BTreeMap::from([
+        (1,"<< /Type /Catalog /Pages 2 0 R /Outlines 10 0 R >>".into()),
+        (2,"<< /Type /Pages /Kids [3 0 R] /Count 2 >>".into()),
+        (3,"<< /Type /Pages /Parent 2 0 R /Kids [40 0 R 70 0 R] /Count 2 >>".into()),
+        (4,"<< /Type /Pages /Parent 2 0 R /Kids [70 0 R] /Count 1 >>".into()),
+        (5,"<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>".into()),
+        (10,"<< /Type /Outlines /First 11 0 R /Last 12 0 R /Count 2 >>".into()),
+        (11,"<< /Title (Slide 1: First slide) /Parent 10 0 R /Next 12 0 R /Dest [40 0 R /Fit] >>".into()),
+        (12,"<< /Title (Slide 2: Second slide) /Parent 10 0 R /Prev 11 0 R /Dest [70 0 R /Fit] >>".into()),
+        (40,"<< /Type /Page /Parent 3 0 R /MediaBox [0 0 400 300] /Resources << /Font << /F1 5 0 R >> >> /Contents 50 0 R /Annots [60 0 R] >>".into()),
+        (50,format!("<< /Length {} >>\nstream\n{}endstream",content1.len(),content1)),
+        (60,"<< /Type /Annot /Subtype /Link /Rect [360 0 400 300] /Dest [70 0 R /Fit] >>".into()),
+        (70,"<< /Type /Page /Parent 3 0 R /MediaBox [0 0 400 300] /Resources << /Font << /F1 5 0 R >> >> /Contents 80 0 R /Annots [60 0 R] >>".into()),
+        (80,format!("<< /Length {} >>\nstream\n{}endstream",content2.len(),content2)),
+    ]);
+    let mut text = String::from("%PDF-1.7\n");
+    let mut offsets = std::collections::BTreeMap::new();
+    for (id, object) in &objects {
+        offsets.insert(*id, text.len());
+        text.push_str(&format!("{id} 0 obj\n{object}\nendobj\n"));
+    }
+    let xref = text.len();
+    text.push_str("xref\n0 81\n0000000000 65535 f \n");
+    for id in 1..=80 {
+        match offsets.get(&id) {
+            Some(offset) => text.push_str(&format!("{offset:010} 00000 n \n")),
+            None => text.push_str("0000000000 00000 f \n"),
+        }
+    }
+    text.push_str(&format!(
+        "trailer\n<< /Size 81 /Root 1 0 R >>\nstartxref\n{xref}\n%%EOF\n"
+    ));
+    text.into_bytes()
+}
+
+#[cfg(test)]
+pub(super) fn synthetic_ocr_overlay(mode: u8, form: Option<&str>) -> Vec<u8> {
+    // Fuente normal sobre una imagen grande: la señal es Tr, no el nombre de fuente.
+    let content = format!(
+        "q 300 0 0 300 0 0 cm /Im Do Q\nBT /F1 12 Tf {mode} Tr 30 150 Td (Example OCR text.) Tj ET\n"
+    );
+    let image_ref = if form.is_some() { 7 } else { 5 };
+    let mut objects = vec![
+        "<< /Type /Catalog /Pages 2 0 R >>".into(),
+        "<< /Type /Pages /Kids [3 0 R] /Count 1 >>".into(),
+        format!("<< /Type /Page /Parent 2 0 R /MediaBox [0 0 300 300] /Resources << /Font << /F1 4 0 R >> /XObject << /Im {image_ref} 0 R >> >> /Contents 6 0 R >>"),
+        "<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>".into(),
+        "<< /Type /XObject /Subtype /Image /Width 1 /Height 1 /ColorSpace /DeviceRGB /BitsPerComponent 8 /Length 3 >>\nstream\nabc\nendstream".into(),
+        format!("<< /Length {} >>\nstream\n{content}endstream", content.len()),
+    ];
+    if let Some(form) = form {
+        objects.push(format!("<< /Type /XObject /Subtype /Form /BBox [0 0 1 1] /Resources << /Font << /F1 4 0 R >> /XObject << /Im 5 0 R >> >> /Length {} >>\nstream\n{form}\nendstream",form.len()));
+    }
+    let count = objects.len() + 1;
+    let mut text = String::from("%PDF-1.7\n");
+    let mut offsets = Vec::new();
+    for (i, object) in objects.iter().enumerate() {
+        offsets.push(text.len());
+        text.push_str(&format!("{} 0 obj\n{object}\nendobj\n", i + 1));
+    }
+    let xref = text.len();
+    text.push_str(&format!("xref\n0 {count}\n0000000000 65535 f \n"));
+    for offset in offsets {
+        text.push_str(&format!("{offset:010} 00000 n \n"));
+    }
+    text.push_str(&format!(
+        "trailer\n<< /Size {count} /Root 1 0 R >>\nstartxref\n{xref}\n%%EOF\n"
+    ));
+    text.into_bytes()
+}
+
+#[cfg(test)]
 mod tests {
     use super::*;
+    #[test]
+    fn bare_uris_require_an_unambiguous_destination_inside_the_same_pdf() {
+        let aliases = aliases_for_uris(
+            [
+                "Example.org",
+                "example.org/docs/",
+                "absent.example",
+                "https://www.example.org/",
+                "https://www.example.org",
+                "https://www.example.org/docs/",
+            ]
+            .map(str::to_string),
+        );
+        assert_eq!(
+            aliases.get("Example.org").map(String::as_str),
+            Some("https://www.example.org")
+        );
+        assert_eq!(
+            aliases.get("example.org/docs/").map(String::as_str),
+            Some("https://www.example.org/docs/")
+        );
+        assert!(!aliases.contains_key("absent.example"));
+        let ambiguous = aliases_for_uris(
+            ["example.org", "http://example.org", "https://example.org"].map(str::to_string),
+        );
+        assert!(ambiguous.is_empty());
+        assert_ne!(uri_key("example.org/docs"), uri_key("example.org/docs/"));
+    }
+    #[test]
+    fn invisible_text_requires_real_show_operators_and_preserves_graphics_state() {
+        for data in [
+            b"BT 3 Tr (Hidden) Tj ET".as_slice(),
+            b"q 3 Tr BT [(Hidden) 20 (text)] TJ ET Q",
+            b"3 Tr q 0 Tr Q BT (Hidden) ' ET",
+            b"3 Tr BT 0 0 (Hidden) \" ET",
+            b"3 Tr BT (First) Tj ET BT (Second) Tj ET",
+        ] {
+            assert!(invisible_text(data), "{}", String::from_utf8_lossy(data));
+        }
+        for data in [
+            b"BT (Literal 3 Tr) Tj ET".as_slice(),
+            b"BT 3 Tr () Tj [] TJ ET",
+            b"q 3 Tr BT (Hidden) Tj ET Q BT (Visible) Tj ET",
+            b"3 Tr BT (Hidden) Tj 0 Tr (Visible) Tj ET",
+            b"BT 7 Tr (Clipping) Tj ET",
+            b"% 3 Tr\nBT (Visible) Tj ET",
+            b"3 Tr Q BT (Unbalanced) Tj ET",
+        ] {
+            assert!(!invisible_text(data), "{}", String::from_utf8_lossy(data));
+        }
+    }
+    #[test]
+    fn explicit_page_references_use_the_nested_page_tree_not_object_numbers() {
+        let doc = open(&synthetic_slides()).unwrap();
+        assert_eq!(
+            bookmarks(&doc).iter().map(|b| b.page).collect::<Vec<_>>(),
+            vec![Some(0), Some(1)]
+        );
+        assert_eq!(
+            referenced_page(&doc, pdf_oxide::object::ObjectRef::new(70, 0), 2),
+            Some(1)
+        );
+        let a = doc.get_annotations(0).unwrap();
+        assert_eq!(link_target(&doc, &a[0], 2), Some(format!("{PAGE_LINK}2")));
+        let links = lateral_links(&doc, 0);
+        assert_eq!(links.len(), 1);
+        assert_eq!(sidebar_text(&doc, 0, links[0].rect), "Menu");
+    }
+    #[test]
+    fn uri_annotations_without_a_scheme_do_not_point_inside_the_bundle() {
+        for uri in ["www.example.org", "../manual.pdf", "//example.org"] {
+            assert_eq!(
+                uri_target(uri).as_deref(),
+                Some(crate::bundle::UNRESOLVED_DEST)
+            );
+        }
+        assert_eq!(
+            uri_target(" https://example.org ").as_deref(),
+            Some("https://example.org")
+        );
+        assert_eq!(
+            uri_target("mailto:autor@example.org").as_deref(),
+            Some("mailto:autor@example.org")
+        );
+        assert_eq!(uri_target("  "), None);
+    }
 
     #[test]
     fn text_strings_decode_utf16_and_latin1() {

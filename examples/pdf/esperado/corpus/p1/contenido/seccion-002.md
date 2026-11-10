@@ -1,6 +1,6 @@
 ---
 type: "Source Section"
-unit_id: "2f52b3d4c1834b1ede717538e64efc631cfb8a5a41a61ddaabfe24a5ee811a39/contenido/seccion-002.md"
+unit_id: "d5f0bdd688345f5d0409d6aeff3ac73d660c3563dd0d0f152256d141c71cb1ff/contenido/seccion-002.md"
 parent: "documento.md"
 previous: "contenido/seccion-001.md"
 next: "contenido/seccion-003.md"
@@ -333,11 +333,33 @@ source_spans:
     to: 24
     boxes:
       - page: 24
-        x0: 62.13
+        x0: 111.34
         top: 249.22
+        x1: 276.98
+        bottom: 277.23
+  - id: "u-150"
+    source_id: "original"
+    kind: "pdf_pages"
+    from: 24
+    to: 24
+    boxes:
+      - page: 24
+        x0: 1158.25
+        top: 250.67
+        x1: 1391.83
+        bottom: 278.68
+  - id: "u-151"
+    source_id: "original"
+    kind: "pdf_pages"
+    from: 24
+    to: 24
+    boxes:
+      - page: 24
+        x0: 62.13
+        top: 279.64
         x1: 1394.35
         bottom: 599.26
-  - id: "u-150"
+  - id: "u-152"
     source_id: "original"
     kind: "pdf_pages"
     from: 25
@@ -348,7 +370,7 @@ source_spans:
         top: 26.04
         x1: 1093.50
         bottom: 67.04
-  - id: "u-151"
+  - id: "u-153"
     source_id: "original"
     kind: "pdf_pages"
     from: 25
@@ -359,7 +381,7 @@ source_spans:
         top: 96.24
         x1: 795.22
         bottom: 130.57
-  - id: "u-152"
+  - id: "u-154"
     source_id: "original"
     kind: "pdf_pages"
     from: 25
@@ -370,7 +392,7 @@ source_spans:
         top: 157.31
         x1: 450.82
         bottom: 178.58
-  - id: "u-153"
+  - id: "u-155"
     source_id: "original"
     kind: "pdf_pages"
     from: 25
@@ -381,7 +403,7 @@ source_spans:
         top: 200.06
         x1: 721.95
         bottom: 221.33
-  - id: "u-154"
+  - id: "u-156"
     source_id: "original"
     kind: "pdf_pages"
     from: 25
@@ -392,7 +414,7 @@ source_spans:
         top: 242.81
         x1: 456.54
         bottom: 264.08
-  - id: "u-155"
+  - id: "u-157"
     source_id: "original"
     kind: "pdf_pages"
     from: 25
@@ -403,7 +425,7 @@ source_spans:
         top: 285.56
         x1: 569.14
         bottom: 306.83
-  - id: "u-156"
+  - id: "u-158"
     source_id: "original"
     kind: "pdf_pages"
     from: 25
@@ -414,7 +436,7 @@ source_spans:
         top: 328.31
         x1: 1028.58
         bottom: 349.58
-  - id: "u-157"
+  - id: "u-159"
     source_id: "original"
     kind: "pdf_pages"
     from: 25
@@ -425,7 +447,7 @@ source_spans:
         top: 371.06
         x1: 479.90
         bottom: 392.33
-  - id: "u-158"
+  - id: "u-160"
     source_id: "original"
     kind: "pdf_pages"
     from: 25
@@ -436,7 +458,7 @@ source_spans:
         top: 413.81
         x1: 461.95
         bottom: 435.08
-  - id: "u-159"
+  - id: "u-161"
     source_id: "original"
     kind: "pdf_pages"
     from: 25
@@ -447,7 +469,7 @@ source_spans:
         top: 456.56
         x1: 486.40
         bottom: 477.83
-  - id: "u-160"
+  - id: "u-162"
     source_id: "original"
     kind: "pdf_pages"
     from: 25
@@ -458,7 +480,7 @@ source_spans:
         top: 49.61
         x1: 1265.51
         bottom: 73.61
-  - id: "u-161"
+  - id: "u-163"
     source_id: "original"
     kind: "pdf_pages"
     from: 26
@@ -469,7 +491,7 @@ source_spans:
         top: 26.04
         x1: 1093.50
         bottom: 67.04
-  - id: "u-162"
+  - id: "u-164"
     source_id: "original"
     kind: "pdf_pages"
     from: 26
@@ -480,7 +502,7 @@ source_spans:
         top: 99.61
         x1: 789.14
         bottom: 133.95
-  - id: "u-163"
+  - id: "u-165"
     source_id: "original"
     kind: "pdf_pages"
     from: 26
@@ -491,7 +513,7 @@ source_spans:
         top: 157.31
         x1: 1131.62
         bottom: 221.33
-  - id: "u-164"
+  - id: "u-166"
     source_id: "original"
     kind: "pdf_pages"
     from: 26
@@ -502,7 +524,7 @@ source_spans:
         top: 242.81
         x1: 684.26
         bottom: 264.08
-  - id: "u-165"
+  - id: "u-167"
     source_id: "original"
     kind: "pdf_pages"
     from: 26
@@ -513,7 +535,7 @@ source_spans:
         top: 285.56
         x1: 633.36
         bottom: 306.83
-  - id: "u-166"
+  - id: "u-168"
     source_id: "original"
     kind: "pdf_pages"
     from: 26
@@ -524,7 +546,7 @@ source_spans:
         top: 328.31
         x1: 1099.11
         bottom: 392.33
-  - id: "u-167"
+  - id: "u-169"
     source_id: "original"
     kind: "pdf_pages"
     from: 26
@@ -535,7 +557,7 @@ source_spans:
         top: 413.81
         x1: 679.25
         bottom: 435.08
-  - id: "u-168"
+  - id: "u-170"
     source_id: "original"
     kind: "pdf_pages"
     from: 26
@@ -546,7 +568,7 @@ source_spans:
         top: 456.56
         x1: 807.87
         bottom: 477.83
-  - id: "u-169"
+  - id: "u-171"
     source_id: "original"
     kind: "pdf_pages"
     from: 26
@@ -557,7 +579,7 @@ source_spans:
         top: 49.61
         x1: 1265.51
         bottom: 73.61
-  - id: "u-170"
+  - id: "u-172"
     source_id: "original"
     kind: "pdf_pages"
     from: 27
@@ -568,7 +590,7 @@ source_spans:
         top: 58.29
         x1: 927.87
         bottom: 115.29
-  - id: "u-171"
+  - id: "u-173"
     source_id: "original"
     kind: "pdf_pages"
     from: 27
@@ -579,7 +601,7 @@ source_spans:
         top: 66.86
         x1: 1274.68
         bottom: 90.86
-  - id: "u-172"
+  - id: "u-174"
     source_id: "original"
     kind: "pdf_pages"
     from: 27
@@ -590,7 +612,7 @@ source_spans:
         top: 242.02
         x1: 1336.95
         bottom: 406.27
-  - id: "u-173"
+  - id: "u-175"
     source_id: "original"
     kind: "pdf_pages"
     from: 27
@@ -601,7 +623,7 @@ source_spans:
         top: 413.02
         x1: 1273.77
         bottom: 534.52
-  - id: "u-174"
+  - id: "u-176"
     source_id: "original"
     kind: "pdf_pages"
     from: 27
@@ -612,7 +634,7 @@ source_spans:
         top: 557.06
         x1: 1146.47
         bottom: 685.77
-  - id: "u-175"
+  - id: "u-177"
     source_id: "original"
     kind: "pdf_pages"
     from: 28
@@ -623,7 +645,18 @@ source_spans:
         top: 58.29
         x1: 927.87
         bottom: 115.29
-  - id: "u-176"
+  - id: "u-178"
+    source_id: "original"
+    kind: "pdf_pages"
+    from: 28
+    to: 28
+    boxes:
+      - page: 28
+        x0: 1206.63
+        top: 66.86
+        x1: 1274.68
+        bottom: 90.86
+  - id: "u-179"
     source_id: "original"
     kind: "pdf_pages"
     from: 28
@@ -634,7 +667,7 @@ source_spans:
         top: 133.05
         x1: 472.17
         bottom: 185.55
-  - id: "u-177"
+  - id: "u-180"
     source_id: "original"
     kind: "pdf_pages"
     from: 28
@@ -645,29 +678,7 @@ source_spans:
         top: 133.05
         x1: 929.08
         bottom: 185.55
-  - id: "u-178"
-    source_id: "original"
-    kind: "pdf_pages"
-    from: 28
-    to: 28
-    boxes:
-      - page: 28
-        x0: 131.05
-        top: 207.14
-        x1: 864.73
-        bottom: 331.57
-  - id: "u-179"
-    source_id: "original"
-    kind: "pdf_pages"
-    from: 28
-    to: 28
-    boxes:
-      - page: 28
-        x0: 1206.63
-        top: 66.86
-        x1: 1274.68
-        bottom: 90.86
-  - id: "u-180"
+  - id: "u-181"
     source_id: "original"
     kind: "pdf_pages"
     from: 28
@@ -677,18 +688,7 @@ source_spans:
         x0: 966.50
         top: 133.05
         x1: 1376.79
-        bottom: 231.14
-  - id: "u-181"
-    source_id: "original"
-    kind: "pdf_pages"
-    from: 28
-    to: 28
-    boxes:
-      - page: 28
-        x0: 1032.60
-        top: 255.02
-        x1: 1310.68
-        bottom: 331.57
+        bottom: 185.55
   - id: "u-182"
     source_id: "original"
     kind: "pdf_pages"
@@ -696,10 +696,10 @@ source_spans:
     to: 28
     boxes:
       - page: 28
-        x0: 156.25
-        top: 363.27
-        x1: 376.36
-        bottom: 387.27
+        x0: 133.40
+        top: 207.14
+        x1: 1310.68
+        bottom: 279.02
   - id: "u-183"
     source_id: "original"
     kind: "pdf_pages"
@@ -707,22 +707,11 @@ source_spans:
     to: 28
     boxes:
       - page: 28
-        x0: 659.33
-        top: 363.27
-        x1: 778.62
+        x0: 131.05
+        top: 307.57
+        x1: 1295.05
         bottom: 387.27
   - id: "u-184"
-    source_id: "original"
-    kind: "pdf_pages"
-    from: 28
-    to: 28
-    boxes:
-      - page: 28
-        x0: 1103.11
-        top: 363.27
-        x1: 1240.19
-        bottom: 387.27
-  - id: "u-185"
     source_id: "original"
     kind: "pdf_pages"
     from: 28
@@ -733,7 +722,7 @@ source_spans:
         top: 407.12
         x1: 449.53
         bottom: 498.62
-  - id: "u-186"
+  - id: "u-185"
     source_id: "original"
     kind: "pdf_pages"
     from: 28
@@ -744,7 +733,7 @@ source_spans:
         top: 516.62
         x1: 364.10
         bottom: 540.62
-  - id: "u-187"
+  - id: "u-186"
     source_id: "original"
     kind: "pdf_pages"
     from: 28
@@ -755,7 +744,7 @@ source_spans:
         top: 407.12
         x1: 915.45
         bottom: 431.12
-  - id: "u-188"
+  - id: "u-187"
     source_id: "original"
     kind: "pdf_pages"
     from: 28
@@ -766,7 +755,7 @@ source_spans:
         top: 407.12
         x1: 1391.83
         bottom: 431.12
-  - id: "u-189"
+  - id: "u-188"
     source_id: "original"
     kind: "pdf_pages"
     from: 28
@@ -777,7 +766,7 @@ source_spans:
         top: 446.12
         x1: 940.77
         bottom: 498.62
-  - id: "u-190"
+  - id: "u-189"
     source_id: "original"
     kind: "pdf_pages"
     from: 28
@@ -788,7 +777,7 @@ source_spans:
         top: 446.12
         x1: 1383.01
         bottom: 498.62
-  - id: "u-191"
+  - id: "u-190"
     source_id: "original"
     kind: "pdf_pages"
     from: 28
@@ -799,7 +788,7 @@ source_spans:
         top: 516.62
         x1: 834.94
         bottom: 540.62
-  - id: "u-192"
+  - id: "u-191"
     source_id: "original"
     kind: "pdf_pages"
     from: 28
@@ -810,7 +799,7 @@ source_spans:
         top: 516.62
         x1: 1335.45
         bottom: 540.62
-  - id: "u-193"
+  - id: "u-192"
     source_id: "original"
     kind: "pdf_pages"
     from: 28
@@ -821,7 +810,7 @@ source_spans:
         top: 564.67
         x1: 472.17
         bottom: 617.17
-  - id: "u-194"
+  - id: "u-193"
     source_id: "original"
     kind: "pdf_pages"
     from: 28
@@ -832,7 +821,7 @@ source_spans:
         top: 564.67
         x1: 926.34
         bottom: 617.17
-  - id: "u-195"
+  - id: "u-194"
     source_id: "original"
     kind: "pdf_pages"
     from: 28
@@ -843,7 +832,7 @@ source_spans:
         top: 564.67
         x1: 1349.69
         bottom: 617.17
-  - id: "u-196"
+  - id: "u-195"
     source_id: "original"
     kind: "pdf_pages"
     from: 28
@@ -854,7 +843,7 @@ source_spans:
         top: 631.26
         x1: 1079.34
         bottom: 783.93
-  - id: "u-197"
+  - id: "u-196"
     source_id: "original"
     kind: "pdf_pages"
     from: 28
@@ -865,7 +854,7 @@ source_spans:
         top: 645.64
         x1: 1092.75
         bottom: 756.05
-  - id: "u-198"
+  - id: "u-197"
     source_id: "original"
     kind: "pdf_pages"
     from: 28
@@ -876,7 +865,7 @@ source_spans:
         top: 648.33
         x1: 1265.64
         bottom: 777.79
-  - id: "u-199"
+  - id: "u-198"
     source_id: "original"
     kind: "pdf_pages"
     from: 29
@@ -887,7 +876,7 @@ source_spans:
         top: 36.43
         x1: 386.83
         bottom: 86.42
-  - id: "u-200"
+  - id: "u-199"
     source_id: "original"
     kind: "pdf_pages"
     from: 29
@@ -898,7 +887,7 @@ source_spans:
         top: 181.47
         x1: 757.78
         bottom: 555.43
-  - id: "u-201"
+  - id: "u-200"
     source_id: "original"
     kind: "pdf_pages"
     from: 30
@@ -909,7 +898,7 @@ source_spans:
         top: 34.93
         x1: 727.82
         bottom: 78.92
-  - id: "u-202"
+  - id: "u-201"
     source_id: "original"
     kind: "pdf_pages"
     from: 30
@@ -920,7 +909,7 @@ source_spans:
         top: 113.90
         x1: 805.94
         bottom: 212.15
-  - id: "u-203"
+  - id: "u-202"
     source_id: "original"
     kind: "pdf_pages"
     from: 30
@@ -931,7 +920,7 @@ source_spans:
         top: 212.90
         x1: 812.36
         bottom: 249.65
-  - id: "u-204"
+  - id: "u-203"
     source_id: "original"
     kind: "pdf_pages"
     from: 30
@@ -942,7 +931,7 @@ source_spans:
         top: 250.40
         x1: 668.09
         bottom: 268.40
-  - id: "u-205"
+  - id: "u-204"
     source_id: "original"
     kind: "pdf_pages"
     from: 30
@@ -953,7 +942,7 @@ source_spans:
         top: 163.34
         x1: 897.66
         bottom: 184.02
-  - id: "u-206"
+  - id: "u-205"
     source_id: "original"
     kind: "pdf_pages"
     from: 30
@@ -964,7 +953,7 @@ source_spans:
         top: 476.67
         x1: 350.09
         bottom: 577.17
-  - id: "u-207"
+  - id: "u-206"
     source_id: "original"
     kind: "pdf_pages"
     from: 30
@@ -975,7 +964,7 @@ source_spans:
         top: 577.92
         x1: 366.75
         bottom: 670.92
-  - id: "u-208"
+  - id: "u-207"
     source_id: "original"
     kind: "pdf_pages"
     from: 30
@@ -986,7 +975,7 @@ source_spans:
         top: 706.10
         x1: 185.99
         bottom: 726.78
-  - id: "u-209"
+  - id: "u-208"
     source_id: "original"
     kind: "pdf_pages"
     from: 30
@@ -997,7 +986,7 @@ source_spans:
         top: 377.52
         x1: 691.60
         bottom: 401.52
-  - id: "u-210"
+  - id: "u-209"
     source_id: "original"
     kind: "pdf_pages"
     from: 30
@@ -1008,7 +997,7 @@ source_spans:
         top: 401.52
         x1: 725.36
         bottom: 494.52
-  - id: "u-211"
+  - id: "u-210"
     source_id: "original"
     kind: "pdf_pages"
     from: 30
@@ -1019,7 +1008,7 @@ source_spans:
         top: 555.50
         x1: 990.01
         bottom: 579.50
-  - id: "u-212"
+  - id: "u-211"
     source_id: "original"
     kind: "pdf_pages"
     from: 30
@@ -1030,7 +1019,7 @@ source_spans:
         top: 581.00
         x1: 1023.48
         bottom: 662.00
-  - id: "u-213"
+  - id: "u-212"
     source_id: "original"
     kind: "pdf_pages"
     from: 30
@@ -1041,7 +1030,7 @@ source_spans:
         top: 706.10
         x1: 860.08
         bottom: 726.78
-  - id: "u-214"
+  - id: "u-213"
     source_id: "original"
     kind: "pdf_pages"
     from: 31
@@ -1052,7 +1041,7 @@ source_spans:
         top: 28.50
         x1: 653.18
         bottom: 78.50
-  - id: "u-215"
+  - id: "u-214"
     source_id: "original"
     kind: "pdf_pages"
     from: 31
@@ -1063,7 +1052,7 @@ source_spans:
         top: 111.01
         x1: 158.91
         bottom: 138.01
-  - id: "u-216"
+  - id: "u-215"
     source_id: "original"
     kind: "pdf_pages"
     from: 31
@@ -1074,7 +1063,7 @@ source_spans:
         top: 107.52
         x1: 873.29
         bottom: 134.52
-  - id: "u-217"
+  - id: "u-216"
     source_id: "original"
     kind: "pdf_pages"
     from: 31
@@ -1085,7 +1074,7 @@ source_spans:
         top: 164.52
         x1: 893.61
         bottom: 220.02
-  - id: "u-218"
+  - id: "u-217"
     source_id: "original"
     kind: "pdf_pages"
     from: 31
@@ -1096,7 +1085,7 @@ source_spans:
         top: 226.79
         x1: 183.49
         bottom: 246.46
-  - id: "u-219"
+  - id: "u-218"
     source_id: "original"
     kind: "pdf_pages"
     from: 31
@@ -1107,7 +1096,7 @@ source_spans:
         top: 226.79
         x1: 300.56
         bottom: 246.46
-  - id: "u-220"
+  - id: "u-219"
     source_id: "original"
     kind: "pdf_pages"
     from: 31
@@ -1118,7 +1107,7 @@ source_spans:
         top: 226.78
         x1: 429.25
         bottom: 244.46
-  - id: "u-221"
+  - id: "u-220"
     source_id: "original"
     kind: "pdf_pages"
     from: 31
@@ -1129,7 +1118,7 @@ source_spans:
         top: 226.78
         x1: 564.81
         bottom: 244.46
-  - id: "u-222"
+  - id: "u-221"
     source_id: "original"
     kind: "pdf_pages"
     from: 31
@@ -1140,7 +1129,7 @@ source_spans:
         top: 221.52
         x1: 862.86
         bottom: 248.52
-  - id: "u-223"
+  - id: "u-222"
     source_id: "original"
     kind: "pdf_pages"
     from: 31
@@ -1151,7 +1140,7 @@ source_spans:
         top: 250.02
         x1: 868.46
         bottom: 277.02
-  - id: "u-224"
+  - id: "u-223"
     source_id: "original"
     kind: "pdf_pages"
     from: 31
@@ -1162,7 +1151,7 @@ source_spans:
         top: 304.78
         x1: 175.26
         bottom: 353.96
-  - id: "u-225"
+  - id: "u-224"
     source_id: "original"
     kind: "pdf_pages"
     from: 31
@@ -1173,7 +1162,7 @@ source_spans:
         top: 319.03
         x1: 300.54
         bottom: 339.71
-  - id: "u-226"
+  - id: "u-225"
     source_id: "original"
     kind: "pdf_pages"
     from: 31
@@ -1184,7 +1173,7 @@ source_spans:
         top: 319.03
         x1: 432.20
         bottom: 339.71
-  - id: "u-227"
+  - id: "u-226"
     source_id: "original"
     kind: "pdf_pages"
     from: 31
@@ -1195,7 +1184,7 @@ source_spans:
         top: 319.03
         x1: 559.54
         bottom: 339.71
-  - id: "u-228"
+  - id: "u-227"
     source_id: "original"
     kind: "pdf_pages"
     from: 31
@@ -1206,7 +1195,7 @@ source_spans:
         top: 335.53
         x1: 995.16
         bottom: 383.27
-  - id: "u-229"
+  - id: "u-228"
     source_id: "original"
     kind: "pdf_pages"
     from: 31
@@ -1214,10 +1203,153 @@ source_spans:
     boxes:
       - page: 31
         x0: 55.93
+        top: 413.53
+        x1: 182.91
+        bottom: 434.21
+  - id: "u-229"
+    source_id: "original"
+    kind: "pdf_pages"
+    from: 31
+    to: 31
+    boxes:
+      - page: 31
+        x0: 647.10
         top: 409.78
-        x1: 994.65
-        bottom: 614.96
+        x1: 992.37
+        bottom: 432.77
   - id: "u-230"
+    source_id: "original"
+    kind: "pdf_pages"
+    from: 31
+    to: 31
+    boxes:
+      - page: 31
+        x0: 78.29
+        top: 442.03
+        x1: 155.90
+        bottom: 491.21
+  - id: "u-231"
+    source_id: "original"
+    kind: "pdf_pages"
+    from: 31
+    to: 31
+    boxes:
+      - page: 31
+        x0: 230.58
+        top: 442.03
+        x1: 299.84
+        bottom: 462.71
+  - id: "u-232"
+    source_id: "original"
+    kind: "pdf_pages"
+    from: 31
+    to: 31
+    boxes:
+      - page: 31
+        x0: 370.97
+        top: 442.03
+        x1: 423.98
+        bottom: 462.71
+  - id: "u-233"
+    source_id: "original"
+    kind: "pdf_pages"
+    from: 31
+    to: 31
+    boxes:
+      - page: 31
+        x0: 497.14
+        top: 442.03
+        x1: 568.93
+        bottom: 462.71
+  - id: "u-234"
+    source_id: "original"
+    kind: "pdf_pages"
+    from: 31
+    to: 31
+    boxes:
+      - page: 31
+        x0: 676.37
+        top: 434.53
+        x1: 963.12
+        bottom: 507.02
+  - id: "u-235"
+    source_id: "original"
+    kind: "pdf_pages"
+    from: 31
+    to: 31
+    boxes:
+      - page: 31
+        x0: 65.71
+        top: 537.28
+        x1: 168.46
+        bottom: 557.96
+  - id: "u-236"
+    source_id: "original"
+    kind: "pdf_pages"
+    from: 31
+    to: 31
+    boxes:
+      - page: 31
+        x0: 644.83
+        top: 533.53
+        x1: 994.65
+        bottom: 556.52
+  - id: "u-237"
+    source_id: "original"
+    kind: "pdf_pages"
+    from: 31
+    to: 31
+    boxes:
+      - page: 31
+        x0: 101.92
+        top: 565.78
+        x1: 132.25
+        bottom: 614.96
+  - id: "u-238"
+    source_id: "original"
+    kind: "pdf_pages"
+    from: 31
+    to: 31
+    boxes:
+      - page: 31
+        x0: 236.36
+        top: 565.78
+        x1: 289.37
+        bottom: 586.46
+  - id: "u-239"
+    source_id: "original"
+    kind: "pdf_pages"
+    from: 31
+    to: 31
+    boxes:
+      - page: 31
+        x0: 361.58
+        top: 565.78
+        x1: 433.37
+        bottom: 586.46
+  - id: "u-240"
+    source_id: "original"
+    kind: "pdf_pages"
+    from: 31
+    to: 31
+    boxes:
+      - page: 31
+        x0: 498.41
+        top: 565.78
+        x1: 567.66
+        bottom: 586.46
+  - id: "u-241"
+    source_id: "original"
+    kind: "pdf_pages"
+    from: 31
+    to: 31
+    boxes:
+      - page: 31
+        x0: 692.58
+        top: 558.28
+        x1: 946.90
+        bottom: 606.02
+  - id: "u-242"
     source_id: "original"
     kind: "pdf_pages"
     from: 31
@@ -1228,7 +1360,7 @@ source_spans:
         top: 632.53
         x1: 999.21
         bottom: 729.77
-  - id: "u-231"
+  - id: "u-243"
     source_id: "original"
     kind: "pdf_pages"
     from: 32
@@ -1239,7 +1371,7 @@ source_spans:
         top: 58.29
         x1: 724.84
         bottom: 115.29
-  - id: "u-232"
+  - id: "u-244"
     source_id: "original"
     kind: "pdf_pages"
     from: 32
@@ -1250,7 +1382,7 @@ source_spans:
         top: 66.86
         x1: 1274.68
         bottom: 90.86
-  - id: "u-233"
+  - id: "u-245"
     source_id: "original"
     kind: "pdf_pages"
     from: 32
@@ -1261,7 +1393,7 @@ source_spans:
         top: 364.20
         x1: 1290.27
         bottom: 400.68
-  - id: "u-234"
+  - id: "u-246"
     source_id: "original"
     kind: "pdf_pages"
     from: 32
@@ -1272,7 +1404,7 @@ source_spans:
         top: 509.75
         x1: 683.74
         bottom: 545.75
-  - id: "u-235"
+  - id: "u-247"
     source_id: "original"
     kind: "pdf_pages"
     from: 32
@@ -1283,7 +1415,7 @@ source_spans:
         top: 509.75
         x1: 1057.58
         bottom: 545.75
-  - id: "u-236"
+  - id: "u-248"
     source_id: "original"
     kind: "pdf_pages"
     from: 33
@@ -1387,151 +1519,151 @@ Tipos de texto Párrafos Ortografía y vocabulario Coherencia y cohesión
 **Lenguaje claro, conciso,**
 
 <!-- okf-source-span: u-149 -->
-| Trato formal y |  |  | respetuoso y formal |
-| --- | --- | --- | --- |
-| cuidadoso Saludar, pedir el favor, | ¿Con qué | ¿Cómo me comunico con | Uso de conectores |
-| dar las gracias Adecuada ortografía Concordancia y cohesión en las ideas | asocias el concepto de asertividad? | los demás en escenarios laborales por escrito? | Adecuada ortografía Concordancia y cohesión en las ideas Estructura del texto |
+**Trato formal y**
 
 <!-- okf-source-span: u-150 -->
-¿Qué tan asertivos somos? Más allá de una lista de chequeo
+**respetuoso y formal**
 
 <!-- okf-source-span: u-151 -->
-**Individualmente responda y justique en una hoja**
+| cuidadoso Saludar, pedir el favor, | ¿Con qué | ¿Cómo me comunico con | Uso de conectores |
+| --- | --- | --- | --- |
+| dar las gracias Adecuada ortografía Concordancia y cohesión en las ideas | asocias el concepto de asertividad? | los demás en escenarios laborales por escrito? | Adecuada ortografía Concordancia y cohesión en las ideas Estructura del texto |
 
 <!-- okf-source-span: u-152 -->
-**¿Es fácil para mí pedir lo que necesito?**
-
-<!-- okf-source-span: u-153 -->
-**¿Suelo comunicar de forma sincera y directa lo que pienso y siento?**
-
-<!-- okf-source-span: u-154 -->
-**¿Defiendo mis derechos y necesidades?**
-
-<!-- okf-source-span: u-155 -->
-**¿Respeto los derechos y necesidades de los demás?**
-
-<!-- okf-source-span: u-156 -->
-**¿Comunico lo que pienso, quiero y siento de forma firme, tranquila, empática, directa y respetuosa?**
-
-<!-- okf-source-span: u-157 -->
-**¿Digo que no cuando quiero decir que no?**
-
-<!-- okf-source-span: u-158 -->
-**¿Digo que sí cuando quiero decir que sí?**
-
-<!-- okf-source-span: u-159 -->
-**¿Soy flexible y busco acuerdos gana-gana?**
-
-<!-- okf-source-span: u-160 -->
-**5 min**
-
-<!-- okf-source-span: u-161 -->
 ¿Qué tan asertivos somos? Más allá de una lista de chequeo
 
-<!-- okf-source-span: u-162 -->
+<!-- okf-source-span: u-153 -->
 **Individualmente responda y justique en una hoja**
 
-<!-- okf-source-span: u-163 -->
-**¿Puedo mantener la calma y comunicarme con respeto y empatía cuando los demás se equivocan o no cumplen mis expectativas?**
+<!-- okf-source-span: u-154 -->
+**¿Es fácil para mí pedir lo que necesito?**
 
-<!-- okf-source-span: u-164 -->
-**¿Puedo defenderme con firmeza cuando los demás me critican?**
+<!-- okf-source-span: u-155 -->
+**¿Suelo comunicar de forma sincera y directa lo que pienso y siento?**
 
-<!-- okf-source-span: u-165 -->
-**¿Siento seguridad para expresar mis ideas y sentimientos?**
+<!-- okf-source-span: u-156 -->
+**¿Defiendo mis derechos y necesidades?**
 
-<!-- okf-source-span: u-166 -->
-**¿Mantengo la compostura en momentos difíciles y regulo mis emociones para comunicarme asertivamente? ¿Pido lo que necesito y manifiesto lo que siento de forma específica, directa, honesta y sin sarcasmo?**
+<!-- okf-source-span: u-157 -->
+**¿Respeto los derechos y necesidades de los demás?**
 
-<!-- okf-source-span: u-167 -->
-**¿Afronto las conversaciones difíciles con respeto y honestidad?**
+<!-- okf-source-span: u-158 -->
+**¿Comunico lo que pienso, quiero y siento de forma firme, tranquila, empática, directa y respetuosa?**
 
-<!-- okf-source-span: u-168 -->
-**¿Puedo describir lo que siento cuando hago un reclamo o tengo un conflicto?**
+<!-- okf-source-span: u-159 -->
+**¿Digo que no cuando quiero decir que no?**
 
-<!-- okf-source-span: u-169 -->
+<!-- okf-source-span: u-160 -->
+**¿Digo que sí cuando quiero decir que sí?**
+
+<!-- okf-source-span: u-161 -->
+**¿Soy flexible y busco acuerdos gana-gana?**
+
+<!-- okf-source-span: u-162 -->
 **5 min**
 
+<!-- okf-source-span: u-163 -->
+¿Qué tan asertivos somos? Más allá de una lista de chequeo
+
+<!-- okf-source-span: u-164 -->
+**Individualmente responda y justique en una hoja**
+
+<!-- okf-source-span: u-165 -->
+**¿Puedo mantener la calma y comunicarme con respeto y empatía cuando los demás se equivocan o no cumplen mis expectativas?**
+
+<!-- okf-source-span: u-166 -->
+**¿Puedo defenderme con firmeza cuando los demás me critican?**
+
+<!-- okf-source-span: u-167 -->
+**¿Siento seguridad para expresar mis ideas y sentimientos?**
+
+<!-- okf-source-span: u-168 -->
+**¿Mantengo la compostura en momentos difíciles y regulo mis emociones para comunicarme asertivamente? ¿Pido lo que necesito y manifiesto lo que siento de forma específica, directa, honesta y sin sarcasmo?**
+
+<!-- okf-source-span: u-169 -->
+**¿Afronto las conversaciones difíciles con respeto y honestidad?**
+
 <!-- okf-source-span: u-170 -->
-¿Qué es la comunicación asertiva?
+**¿Puedo describir lo que siento cuando hago un reclamo o tengo un conflicto?**
 
 <!-- okf-source-span: u-171 -->
-**10 min**
+**5 min**
 
 <!-- okf-source-span: u-172 -->
-Conjunto de comportamientos que expresan ideas, opiniones, sentimientos y emociones –hacer peticiones o refutar solicitudes de otros—de forma clara, específica, razonable y calmada, reconociendo los derechos propios y los de otros. No demuestra o solicita obligación pero si debe evidenciar importancia.
-
-<!-- okf-source-span: u-173 -->
-Aprender a comunicarnos asertivamente no garantiza que se cumplan nuestras necesidades, pero lo hace más posible, y puede mejorar las relaciones interpersonales.
-
-<!-- okf-source-span: u-174 -->
-![Imagen de la página 27](../assets/pagina-027-imagen-01.png)
-
-<!-- okf-source-span: u-175 -->
 ¿Qué es la comunicación asertiva?
 
-<!-- okf-source-span: u-176 -->
-**Pensar:** tus necesidades no tienen ninguna importancia
-
-<!-- okf-source-span: u-177 -->
-**Reconocer:** tus necesidades importan tanto como las de los demás
-
-<!-- okf-source-span: u-178 -->
-| Adjudica. | Respeta. |
-| --- | --- |
-| No habla, no es escuchado. | Habla y escucha. |
-| Trata de mantener la calma. | Asegura la justicia para todos. |
-
-<!-- okf-source-span: u-179 -->
+<!-- okf-source-span: u-173 -->
 **10 min**
 
+<!-- okf-source-span: u-174 -->
+Conjunto de comportamientos que expresan ideas, opiniones, sentimientos y emociones –hacer peticiones o refutar solicitudes de otros—de forma clara, específica, razonable y calmada, reconociendo los derechos propios y los de otros. No demuestra o solicita obligación pero si debe evidenciar importancia.
+
+<!-- okf-source-span: u-175 -->
+Aprender a comunicarnos asertivamente no garantiza que se cumplan nuestras necesidades, pero lo hace más posible, y puede mejorar las relaciones interpersonales.
+
+<!-- okf-source-span: u-176 -->
+![Imagen de la página 27](../assets/pagina-027-imagen-01.png)
+
+<!-- okf-source-span: u-177 -->
+¿Qué es la comunicación asertiva?
+
+<!-- okf-source-span: u-178 -->
+**10 min**
+
+<!-- okf-source-span: u-179 -->
+**Pensar:** tus necesidades no tienen ninguna importancia
+
 <!-- okf-source-span: u-180 -->
-**Pensar:** tus necesidades son las únicas que importan Arrebata y exige.
+**Reconocer:** tus necesidades importan tanto como las de los demás
 
 <!-- okf-source-span: u-181 -->
-Perturba a la gente al hablar. Vela solo para la persona.
+**Pensar:** tus necesidades son las únicas que importan
 
 <!-- okf-source-span: u-182 -->
-Permite que lo acosen.
+| Adjudica. | Respeta. | Arrebata y exige. |
+| --- | --- | --- |
+| No habla, no es escuchado. | Habla y escucha. | Perturba a la gente al hablar. |
 
 <!-- okf-source-span: u-183 -->
-Se defiende.
+| Trata de mantener la calma. | Asegura la justicia para todos. | Vela solo para la persona. |
+| --- | --- | --- |
+| Permite que lo acosen. | Se defiende. | Acosa a otros. |
 
 <!-- okf-source-span: u-184 -->
-Acosa a otros.
-
-<!-- okf-source-span: u-185 -->
 No dice lo que piensa o no dice nada. Daña las relaciones: otras personas lo irrespetan.
 
-<!-- okf-source-span: u-186 -->
+<!-- okf-source-span: u-185 -->
 Daña tu autoestima.
 
-<!-- okf-source-span: u-187 -->
+<!-- okf-source-span: u-186 -->
 Expresa la idea con claridad y seguridad.
 
-<!-- okf-source-span: u-188 -->
+<!-- okf-source-span: u-187 -->
 Puede dar lugar a gritos, agresión y violencia.
 
-<!-- okf-source-span: u-189 -->
+<!-- okf-source-span: u-188 -->
 Mejora las relaciones: otras personas saben a qué atenerse.
 
-<!-- okf-source-span: u-190 -->
+<!-- okf-source-span: u-189 -->
 Daña las relaciones: a otras personas no les gusta la agresión, se alejan.
 
-<!-- okf-source-span: u-191 -->
+<!-- okf-source-span: u-190 -->
 Fortalece la autoestima.
 
-<!-- okf-source-span: u-192 -->
+<!-- okf-source-span: u-191 -->
 Daña la autoestima de los demás.
 
-<!-- okf-source-span: u-193 -->
+<!-- okf-source-span: u-192 -->
 Evita el conflicto en todo momento. Busca complacer a otros.
 
-<!-- okf-source-span: u-194 -->
+<!-- okf-source-span: u-193 -->
 Busca: contribuir, llegar a un acuerdo y ser honesto.
 
-<!-- okf-source-span: u-195 -->
+<!-- okf-source-span: u-194 -->
 Clave: ganar Ignora o rechaza la opinión de otros.
+
+<!-- okf-source-span: u-195 -->
+![Imagen de la página 28](../assets/pagina-027-imagen-01.png)
 
 <!-- okf-source-span: u-196 -->
 ![Imagen de la página 28](../assets/pagina-027-imagen-01.png)
@@ -1540,125 +1672,157 @@ Clave: ganar Ignora o rechaza la opinión de otros.
 ![Imagen de la página 28](../assets/pagina-027-imagen-01.png)
 
 <!-- okf-source-span: u-198 -->
-![Imagen de la página 28](../assets/pagina-027-imagen-01.png)
-
-<!-- okf-source-span: u-199 -->
 Actividad grupal
 
-<!-- okf-source-span: u-200 -->
+<!-- okf-source-span: u-199 -->
 Requerimientos Asignación de presupuesto Distribución de tareas en eventos Negociación con proveedores
 
-<!-- okf-source-span: u-201 -->
+<!-- okf-source-span: u-200 -->
 **Actividad - grupos de tres personas**
 
-<!-- okf-source-span: u-202 -->
+<!-- okf-source-span: u-201 -->
 | 3 rondas para rotar | Persona 1: quien interpreta Lee la situación. Es la única persona que ve el texto original. Lo lee y registra en su ficha el tema, el propósito y la manera en que el |
 | --- | --- |
 | en los 3 roles | texto evidencia o no la importancia del asunto.También, la acción concreta que se solicita y cómo evidencia el texto la importancia del |
 
-<!-- okf-source-span: u-203 -->
+<!-- okf-source-span: u-202 -->
 asunto; si no la evidencia, escribe la razón que a su juicio faltó.También puede agregar un dato que considere indispensable no perder.
 
-<!-- okf-source-span: u-204 -->
+<!-- okf-source-span: u-203 -->
 Luego explica la situación oralmente alla persona 2.
 
-<!-- okf-source-span: u-205 -->
+<!-- okf-source-span: u-204 -->
 **4 min**
 
-<!-- okf-source-span: u-206 -->
+<!-- okf-source-span: u-205 -->
 **Persona 3: quien propone soluciones (sale del salón durante 10 min durante la interacción de los roles 1 y 2)**
 
-<!-- okf-source-span: u-207 -->
+<!-- okf-source-span: u-206 -->
 No ve el mensaje original y no escucha al rol 1 y ni el 2. Lee solamente el mensaje que recibe, define la solución al requerimiento y consigna cómo percibe el estilo y el efecto del mensaje. Podría adicionar qué faltó.
 
-<!-- okf-source-span: u-208 -->
+<!-- okf-source-span: u-207 -->
 **5 min**
 
-<!-- okf-source-span: u-209 -->
+<!-- okf-source-span: u-208 -->
 **Persona 4: observador/a**
 
-<!-- okf-source-span: u-210 -->
+<!-- okf-source-span: u-209 -->
 Observa las situaciones comunicativas que se están presentando y analiza qué ocurre con la asertividad (si está presente o no, y a qué se debe esto) en cada una de ellas. Anota las consecuencias de su presencia o ausencia.
 
-<!-- okf-source-span: u-211 -->
+<!-- okf-source-span: u-210 -->
 **Persona 2: quien redacta**
 
-<!-- okf-source-span: u-212 -->
+<!-- okf-source-span: u-211 -->
 No ve el mensaje original en ningún momento. Escucha a la persona 1 y redacta un mensaje escrito dirigido a la persona 3 con la explicación que recibe.
 
-<!-- okf-source-span: u-213 -->
+<!-- okf-source-span: u-212 -->
 **4 min**
 
-<!-- okf-source-span: u-214 -->
+<!-- okf-source-span: u-213 -->
 **¿Cómo les fue? socialización**
 
-<!-- okf-source-span: u-215 -->
+<!-- okf-source-span: u-214 -->
 **Ronda 4**
 
-<!-- okf-source-span: u-216 -->
+<!-- okf-source-span: u-215 -->
 **En grupo:**
 
-<!-- okf-source-span: u-217 -->
+<!-- okf-source-span: u-216 -->
 **Lectura del texto 3 Luego del texto 2**
 
-<!-- okf-source-span: u-218 -->
+<!-- okf-source-span: u-217 -->
 Requerimientos
 
-<!-- okf-source-span: u-219 -->
+<!-- okf-source-span: u-218 -->
 Grupo 1
 
-<!-- okf-source-span: u-220 -->
+<!-- okf-source-span: u-219 -->
 Grupo 2
 
-<!-- okf-source-span: u-221 -->
+<!-- okf-source-span: u-220 -->
 Grupo 3
 
-<!-- okf-source-span: u-222 -->
+<!-- okf-source-span: u-221 -->
 **Luego el texto 1**
 
-<!-- okf-source-span: u-223 -->
+<!-- okf-source-span: u-222 -->
 **Luego el original**
 
-<!-- okf-source-span: u-224 -->
+<!-- okf-source-span: u-223 -->
 Asignación de presupuesto
 
-<!-- okf-source-span: u-225 -->
+<!-- okf-source-span: u-224 -->
 Agresiva
 
-<!-- okf-source-span: u-226 -->
+<!-- okf-source-span: u-225 -->
 Asertivo
 
-<!-- okf-source-span: u-227 -->
+<!-- okf-source-span: u-226 -->
 Pasivo
 
-<!-- okf-source-span: u-228 -->
+<!-- okf-source-span: u-227 -->
 ¿Cómo le fue a cada uno cumpliendo el rol asignado?
 
+<!-- okf-source-span: u-228 -->
+Distribución de
+
 <!-- okf-source-span: u-229 -->
-| Distribución de |  |  |  | ¿Hubo alguna clase de malentendido |
-| --- | --- | --- | --- | --- |
-| tareas en eventos | Asertivo | Pasivo | Agresivo | o dificultas en la comunicación establecida para resolver el caso? ¿Qué efectos generó? |
-| Negociación |  |  |  | Al final, ¿hubo algún caso que tuviera |
-| con proveedores | Pasivo | Agresivo | Asertivo | una solución más atinada o pertinente? ¿A qué se debió esto? |
+¿Hubo alguna clase de malentendido
 
 <!-- okf-source-span: u-230 -->
-¿Qué papel jugó la asetividad tanto en la forma en que recibieron el mensaje y lo interpretaron como en las respuestas que produjeron?
+tareas en eventos
 
 <!-- okf-source-span: u-231 -->
-Cierre a modo de plenaria
+Asertivo
 
 <!-- okf-source-span: u-232 -->
-**10 min**
+Pasivo
 
 <!-- okf-source-span: u-233 -->
-**¿Que nos permite la comunicación asertiva y clara en el equipo por escrito?**
+Agresivo
 
 <!-- okf-source-span: u-234 -->
-A nivel institucional
+o dificultas en la comunicación establecida para resolver el caso? ¿Qué efectos generó?
 
 <!-- okf-source-span: u-235 -->
-A nivel interpersonal
+Negociación
 
 <!-- okf-source-span: u-236 -->
+Al final, ¿hubo algún caso que tuviera
+
+<!-- okf-source-span: u-237 -->
+con proveedores
+
+<!-- okf-source-span: u-238 -->
+Pasivo
+
+<!-- okf-source-span: u-239 -->
+Agresivo
+
+<!-- okf-source-span: u-240 -->
+Asertivo
+
+<!-- okf-source-span: u-241 -->
+una solución más atinada o pertinente? ¿A qué se debió esto?
+
+<!-- okf-source-span: u-242 -->
+¿Qué papel jugó la asetividad tanto en la forma en que recibieron el mensaje y lo interpretaron como en las respuestas que produjeron?
+
+<!-- okf-source-span: u-243 -->
+Cierre a modo de plenaria
+
+<!-- okf-source-span: u-244 -->
+**10 min**
+
+<!-- okf-source-span: u-245 -->
+**¿Que nos permite la comunicación asertiva y clara en el equipo por escrito?**
+
+<!-- okf-source-span: u-246 -->
+A nivel institucional
+
+<!-- okf-source-span: u-247 -->
+A nivel interpersonal
+
+<!-- okf-source-span: u-248 -->
 ## ¡Gracias!
 

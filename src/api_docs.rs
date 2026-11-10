@@ -6,21 +6,25 @@ use utoipa_swagger_ui::{Config, SwaggerUi};
 #[derive(utoipa::ToSchema)]
 #[allow(dead_code)] // Describe Multipart; Axum recibe los bytes directamente.
 pub(crate) struct Upload {
-    /// Un archivo .pdf, .docx, .xlsx o .pptx.
+    /// **Único campo obligatorio.** Selecciona un archivo .pdf, .docx, .xlsx o .pptx
+    /// y pulsa **Execute** para iniciar la conversión.
     #[schema(value_type = String, format = Binary)]
     file: Vec<u8>,
-    /// Clave opcional con que el sistema de origen agrupa las versiones de un
-    /// documento: de 1 a 256 caracteres ASCII visibles, sin espacios.
+    /// **Opcional: déjalo vacío para convertir un archivo.** Úsalo solo si quieres
+    /// agrupar versiones de un documento con una misma clave, como `manual-equipo`.
+    /// Si lo rellenas, admite de 1 a 256 caracteres ASCII visibles, sin espacios.
     #[schema(
         nullable = false,
+        example = "",
         min_length = 1,
         max_length = 256,
         pattern = "^[!-~]+$"
     )]
     document_key: Option<String>,
-    /// Permisos opcionales del sistema de origen: un JSON que el servicio conserva sin
-    /// interpretar ni ampliar, de hasta `OKF_MAX_ACCESS_BYTES` (16 KiB por defecto).
-    #[schema(nullable = false)]
+    /// **Opcional: déjalo vacío para convertir un archivo.** Úsalo solo si otro sistema
+    /// proporciona permisos en JSON que quieras conservar en el resultado.
+    /// El servicio conserva ese JSON; no lo aplica como control de acceso.
+    #[schema(nullable = false, example = "")]
     access: Option<String>,
 }
 
@@ -34,7 +38,9 @@ pub(crate) struct BinaryFile(Vec<u8>);
     info(
         title = "Microservicio OKF — API de pruebas",
         description = "Convierte PDF, DOCX, XLSX y PPTX en bundles OKF.\n\n\
-            1. Abre **POST /jobs**, selecciona un archivo y pulsa **Execute**.\n\
+            1. Abre **POST /jobs**, selecciona un archivo en **file** y pulsa **Execute**. \
+            **Solo el archivo es obligatorio**: deja **document_key** y **access** vacíos, \
+            con **Send empty value** desmarcado.\n\
             2. Copia el **job_id** de la respuesta en **GET /jobs/{id}** y consulta hasta obtener **complete** o **partial**.\n\
             3. Usa ese identificador en **GET /jobs/{id}/bundle** para descargar el ZIP.\n\n\
             La API y el worker deben estar iniciados. **GET /health** permite comprobarlo."
@@ -47,15 +53,51 @@ pub(crate) struct BinaryFile(Vec<u8>);
 )]
 struct ApiDoc;
 
-pub(crate) fn swagger_ui() -> SwaggerUi {
-    SwaggerUi::new("/docs")
-        .url("/api-docs/openapi.json", ApiDoc::openapi())
-        .config(
-            Config::default()
-                .try_it_out_enabled(true)
-                .display_request_duration(true)
-                // Evita enviar el contrato a un validador externo.
-                .validator_url("none"),
+pub(crate) fn swagger_ui() -> axum::Router<crate::App> {
+    let config = Config::from("/api-docs/openapi.json")
+        .try_it_out_enabled(true)
+        .display_request_duration(true)
+        // Evita enviar el contrato a un validador externo.
+        .validator_url("none");
+    // Conserva el inicializador y la configuración de la biblioteca; solo añade
+    // el plugin local que desmarca el envío de campos opcionales vacíos al abrirlos.
+    let file = utoipa_swagger_ui::serve(
+        "swagger-initializer.js",
+        std::sync::Arc::new(config.clone()),
+    )
+    .expect("inicializador Swagger válido")
+    .expect("inicializador Swagger embebido");
+    let initializer = String::from_utf8(file.bytes.into_owned()).expect("inicializador UTF-8");
+    let plugin_slot = "SwaggerUIBundle.plugins.DownloadUrl";
+    assert_eq!(initializer.matches(plugin_slot).count(), 1);
+    let initializer = initializer.replacen(
+        plugin_slot,
+        &format!(
+            "{plugin_slot},\n{}",
+            include_str!("swagger-empty-fields.js")
+        ),
+        1,
+    );
+    axum::Router::new()
+        .merge(
+            SwaggerUi::new("/docs")
+                .url("/api-docs/openapi.json", ApiDoc::openapi())
+                .config(config),
+        )
+        .route(
+            "/docs/swagger-initializer.js",
+            axum::routing::get(move || {
+                let initializer = initializer.clone();
+                async move {
+                    (
+                        [(
+                            axum::http::header::CONTENT_TYPE,
+                            "text/javascript; charset=utf-8",
+                        )],
+                        initializer,
+                    )
+                }
+            }),
         )
 }
 

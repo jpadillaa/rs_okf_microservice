@@ -3,6 +3,7 @@
 //! maquetación propia de `layout`, clasifica las páginas (texto digital, escaneo,
 //! mixta, solo visual o en blanco), aplica OCR a los escaneos si está activo
 //! (`ocr`) y divide el documento en conceptos por secciones.
+mod code;
 mod layout;
 pub(crate) mod ocr;
 mod read;
@@ -32,9 +33,12 @@ const FURNITURE_BAND: f32 = 0.12;
 const LARGE_PICTURE: f32 = 0.3;
 /// Mayor dimensión, en píxeles, de las vistas de página.
 const VIEW_PX: f32 = 1600.0;
-/// Por encima de este tamaño el documento se reabre en cada página, para que las
-/// cachés de pdf_oxide no acumulen las imágenes de todo el archivo.
+/// Por encima de este tamaño se acotan las cachés de texto por grupos de páginas
+/// y las de imágenes por página, sin acumular las imágenes de todo el archivo.
 const REOPEN_BYTES: usize = 16 * 1024 * 1024;
+/// Reutiliza fuentes y objetos durante la lectura de un grupo acotado de páginas.
+/// La extracción y el renderizado de imágenes siguen reabriendo por página.
+const TEXT_BATCH_PAGES: usize = 8;
 
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub(crate) enum Class {
@@ -126,6 +130,9 @@ pub(crate) struct PageInfo {
     pub(crate) rotated: Vec<Line>,
     pub(crate) pictures: Vec<Picture>,
     pub(crate) ocr_layer: bool,
+    /// Glifos OCR conservados hasta contrastar los listados con la vista.
+    pub(crate) ocr_glyphs: Vec<read::Glyph>,
+    pub(crate) ocr_code: Vec<(Para, Rect)>,
     /// OCR del servicio, si la página es un escaneo sin texto y el OCR está activo.
     pub(crate) ocr: Option<Ocr>,
     /// Rectángulos de las líneas de encabezado o pie de página.
@@ -185,6 +192,7 @@ pub(crate) enum Kind {
     /// Página sin texto propio: en blanco, escaneada o solo visual.
     PageNote(usize),
     Rotated(String),
+    View(usize),
 }
 
 /// Texto repetido en encabezados o pies de página, con las páginas donde aparece.
@@ -206,6 +214,13 @@ pub(crate) struct Tally {
     pub(crate) rotated: Vec<usize>,
     pub(crate) views_failed: Vec<usize>,
     pub(crate) unreadable: Vec<usize>,
+    pub(crate) code_continued: Vec<usize>,
+    pub(crate) code_wrapped: Vec<usize>,
+    pub(crate) variable_furniture: Vec<usize>,
+    pub(crate) margin_headings: Vec<usize>,
+    pub(crate) ocr_code: Vec<usize>,
+    pub(crate) bookmark_fragments: usize,
+    pub(crate) bookmark_symbols: usize,
 }
 
 pub(crate) struct Extraction {
@@ -219,6 +234,114 @@ pub(crate) struct Extraction {
     pub(crate) internal_labels: Vec<String>,
     pub(crate) info: Info,
     pub(crate) tally: Tally,
+    pub(crate) slide_export: bool,
+    pub(crate) navigation: Vec<SideNavigation>,
+}
+
+pub(crate) struct SideNavigation {
+    text: String,
+    target: Option<String>,
+    pages: Vec<usize>,
+}
+
+fn slide_label(title: &str) -> Option<&str> {
+    let (prefix, text) = title.split_once(':').unwrap_or((title, ""));
+    let parts: Vec<_> = prefix.split_whitespace().collect();
+    match parts.as_slice() {
+        [kind, n]
+            if (kind.eq_ignore_ascii_case("Slide") || kind.eq_ignore_ascii_case("Diapositiva"))
+                && n.parse::<usize>().is_ok_and(|n| n > 0) =>
+        {
+            Some(text.trim())
+        }
+        _ => None,
+    }
+}
+
+fn slide_title_key(text: &str) -> String {
+    norm(text).split_whitespace().collect()
+}
+
+/// Un título de diapositiva puede envolver varias líneas mientras una columna
+/// lateral empieza a su lado. Se reúne por geometría antes del corte, solo si
+/// reproduce el marcador y pertenece a la tipografía principal de esa página.
+fn take_slide_title(
+    lines: &mut Vec<Line>,
+    bookmarks: &[Bookmark],
+    page: usize,
+) -> Option<(Para, Rect)> {
+    let want = slide_title_key(slide_label(
+        &bookmarks
+            .iter()
+            .find(|b| b.page == Some(page) && slide_label(&b.title).is_some_and(|s| !s.is_empty()))?
+            .title,
+    )?);
+    let largest = lines
+        .iter()
+        .filter(|l| !l.mono && l.text().chars().filter(|c| c.is_alphabetic()).count() >= 3)
+        .map(|l| l.size)
+        .fold(0., f32::max);
+    for i in 0..lines.len() {
+        let first = &lines[i];
+        if first.mono
+            || first.size < 0.85 * largest
+            || !want.starts_with(&slide_title_key(&first.text()))
+        {
+            continue;
+        }
+        let mut selected = vec![i];
+        let mut text = first.text();
+        for _ in 0..8 {
+            if slide_title_key(&text) == want {
+                break;
+            }
+            if !want.starts_with(&slide_title_key(&text)) {
+                break;
+            }
+            let last = &lines[*selected.last()?];
+            let next = lines
+                .iter()
+                .enumerate()
+                .filter(|(_, l)| {
+                    !l.mono
+                        && (l.size - first.size).abs() < 0.5
+                        && l.bold == first.bold
+                        && (l.x0 - first.x0).abs() < 0.5 * first.size
+                        && l.base > last.base + 0.5 * first.size
+                        && l.base <= last.base + 1.8 * first.size
+                })
+                .min_by(|a, b| a.1.base.total_cmp(&b.1.base));
+            let Some((j, next)) = next else {
+                break;
+            };
+            selected.push(j);
+            text.push(' ');
+            text.push_str(&next.text());
+        }
+        if slide_title_key(&text) != want {
+            continue;
+        }
+        let chosen: Vec<_> = selected.iter().map(|&i| lines[i].clone()).collect();
+        let rect = lines_box(&chosen)?;
+        let para = Para {
+            size: first.size,
+            bold: first.bold,
+            mono: false,
+            x0: first.x0,
+            marker: None,
+            lines: chosen,
+            keep_hyphen: vec![],
+            join_hyphen: vec![],
+        };
+        let mut index = 0;
+        lines.retain(|_| {
+            let keep = !selected.contains(&index);
+            index += 1;
+            keep
+        });
+        return Some((para, rect));
+    }
+    None
 }
 
 /// Normaliza un texto para compararlo: minúsculas, sin espacios repetidos, guiones y
@@ -319,6 +442,67 @@ fn roman(s: &str) -> Option<u32> {
     (total > 0).then_some(total as u32)
 }
 
+/// Un encabezado de margen alineado con un número de página ya confirmado no debe
+/// interrumpir la continuación de un listado. Se conserva como texto fuera del código.
+fn running_header(unit: &Unit, pages: &[PageInfo]) -> bool {
+    if unit.from != unit.to {
+        return false;
+    }
+    let page = &pages[unit.from - 1];
+    page.label.is_some()
+        && unit.boxes.iter().any(|(_, b)| {
+            b.bottom < FURNITURE_BAND * page.height
+                && page
+                    .furniture
+                    .iter()
+                    .any(|f| (f.top - b.top).abs() < 4.0 && (f.bottom - b.bottom).abs() < 4.0)
+        })
+}
+
+/// Reúne la continuación de un listado y deja fuera sus notas y el encabezado de margen.
+fn continue_code(
+    merged: &mut [(Unit, (usize, usize))],
+    u: &Unit,
+    leaf: (usize, usize),
+    pages: &[PageInfo],
+    tally: &mut Tally,
+) -> bool {
+    if let Kind::Para(b) = &u.kind
+        && b.mono
+        && leaf.1 == layout::CODE_FLOW
+        && u.boxes
+            .first()
+            .is_some_and(|(_, r)| r.top < 0.18 * pages[u.from - 1].height)
+    {
+        let mut j = merged.len();
+        while j > 0
+            && (merged[j - 1].1.1 == layout::CODE_NOTE || running_header(&merged[j - 1].0, pages))
+        {
+            j -= 1;
+        }
+        if j > 0 {
+            let (prev, prev_leaf) = &mut merged[j - 1];
+            if prev.to + 1 == u.from
+                && prev_leaf.1 == layout::CODE_FLOW
+                && prev
+                    .boxes
+                    .last()
+                    .is_some_and(|(_, r)| r.bottom > 0.75 * pages[prev.to - 1].height)
+                && let Kind::Para(a) = &mut prev.kind
+                && a.mono
+                && (a.size - b.size).abs() < 0.5
+            {
+                tally.code_continued.extend([prev.to, u.from]);
+                a.lines.extend(b.lines.iter().cloned());
+                prev.to = u.to;
+                union_boxes(&mut prev.boxes, &u.boxes);
+                return true;
+            }
+        }
+    }
+    false
+}
+
 /// Número de página impreso en una línea: «12», «xii», «- 12 -», «Página 12 de 40»,
 /// «Page 4 of 9» o «4 / 9», también al final de un encabezado. Devuelve la etiqueta
 /// literal y el total si lo indica.
@@ -360,8 +544,139 @@ fn printed_number(text: &str) -> Option<(String, Option<usize>)> {
     None
 }
 
-/// Lee todas las páginas, escribe en el ZIP las imágenes y vistas que se adjuntan y
-/// devuelve las unidades del documento en orden de lectura.
+/// Cabeceras variables: misma línea base que un folio confirmado y un puesto
+/// tipográfico que reaparece en tres páginas. No depende del texto del capítulo.
+fn variable_furniture(
+    pages: &[PageInfo],
+    numbered: &HashSet<(usize, usize)>,
+) -> HashSet<(usize, usize)> {
+    let mut slots: HashMap<_, HashSet<usize>> = HashMap::new();
+    let mut candidates = Vec::new();
+    for (p, page) in pages.iter().enumerate() {
+        for (i, line) in page.lines.iter().enumerate() {
+            if numbered.contains(&(p, i)) || line.mono {
+                continue;
+            }
+            let top = line.bottom() < FURNITURE_BAND * page.height;
+            let bottom = line.top() > (1.0 - FURNITURE_BAND) * page.height;
+            if !(top || bottom)
+                || !page.lines.iter().enumerate().any(|(j, folio)| {
+                    numbered.contains(&(p, j))
+                        && (line.base - folio.base).abs() <= 0.5 * line.size.min(folio.size)
+                        && (folio.size * 2.0 / 3.0..=1.25 * folio.size).contains(&line.size)
+                        && (line.x1 <= folio.x0 || line.x0 >= folio.x1)
+                })
+            {
+                continue;
+            }
+            let slot = (
+                top,
+                (line.base / page.height * 1000.0).round() as i32,
+                (line.size * 2.0).round() as i32,
+                line.bold,
+            );
+            slots.entry(slot).or_default().insert(p);
+            candidates.push((p, i, slot));
+        }
+    }
+    candidates
+        .into_iter()
+        .filter(|(_, _, slot)| slots[slot].len() >= 3)
+        .map(|(p, i, _)| (p, i))
+        .collect()
+}
+
+/// Reúne el número lateral con la primera línea del título antes de cortar por
+/// columnas. Exige el marcador completo, su página y la alineación del original.
+fn heading_number(prefix: &str) -> bool {
+    let mut parts = prefix.split('.');
+    let first = parts.next().unwrap_or_default();
+    let digits = |s: &str| !s.is_empty() && s.chars().all(|c| c.is_ascii_digit());
+    let rest: Vec<_> = parts.collect();
+    (digits(first)
+        || (first.len() == 1 && first.chars().all(|c| c.is_ascii_alphabetic()) && !rest.is_empty()))
+        && rest.iter().all(|part| digits(part))
+}
+
+fn join_margin_headings(lines: &mut Vec<Line>, bookmarks: &[Bookmark], page: usize) -> usize {
+    let mut joined = 0;
+    for bookmark in bookmarks.iter().filter(|b| b.page == Some(page)) {
+        let want = norm(&bookmark.title);
+        let Some((prefix, _)) = want.split_once(' ') else {
+            continue;
+        };
+        if !heading_number(prefix) {
+            continue;
+        }
+        let Some(i) = lines
+            .iter()
+            .position(|l| !l.mono && norm(&l.text()) == prefix)
+        else {
+            continue;
+        };
+        let number = &lines[i];
+        let mut right: Vec<_> = lines
+            .iter()
+            .enumerate()
+            .filter(|(j, l)| {
+                *j != i
+                    && !l.mono
+                    && l.bold == number.bold
+                    && (l.size - number.size).abs() <= 0.5
+                    && (l.base - number.base).abs() <= 0.3 * number.size
+                    && l.x0 >= number.x1
+                    && l.x0 - number.x1 <= 6.0 * number.size
+            })
+            .map(|(j, _)| j)
+            .collect();
+        right.sort_by(|&a, &b| lines[a].x0.total_cmp(&lines[b].x0));
+        let Some(&j) = right.first() else { continue };
+        // El resto de un título de varias líneas debe reproducir el marcador,
+        // sin saltar prosa ni cambiar de columna o de formato.
+        let mut text = format!("{} {}", number.text(), lines[j].text());
+        let mut last = &lines[j];
+        for _ in 0..3 {
+            if norm(&text) == want || !want.starts_with(&norm(&text)) {
+                break;
+            }
+            let next = lines
+                .iter()
+                .filter(|l| {
+                    !l.mono
+                        && l.bold == last.bold
+                        && (l.size - last.size).abs() <= 0.5
+                        && (l.x0 - lines[j].x0).abs() <= 0.5 * last.size
+                        && l.base > last.base + 0.5 * last.size
+                        && l.base <= last.base + 1.8 * last.size
+                })
+                .min_by(|a, b| a.base.total_cmp(&b.base));
+            let Some(next) = next else { break };
+            text.push(' ');
+            text.push_str(&next.text());
+            last = next;
+        }
+        if norm(&text) != want {
+            continue;
+        }
+        let mut heading = lines[j].clone();
+        let mut runs = lines[i].runs.clone();
+        runs.push(Run {
+            text: " ".into(),
+            bold: heading.bold,
+            italic: false,
+            link: None,
+        });
+        runs.extend(heading.runs);
+        heading.runs = runs;
+        heading.x0 = lines[i].x0;
+        lines[j] = heading;
+        lines.remove(i);
+        joined += 1;
+    }
+    joined
+}
+
+/// Lee páginas, adjunta imágenes y devuelve unidades en orden de lectura.
 pub(crate) fn extract(
     bytes: &[u8],
     cfg: &Config,
@@ -384,8 +699,25 @@ pub(crate) fn extract(
     let info = read::info(&first);
     let restrictions = read::restrictions(&first);
     let bookmarks = read::bookmarks(&first);
+    let uri_aliases = read::uri_aliases(&first, n);
+    let slide_pages: HashSet<_> = bookmarks
+        .iter()
+        .filter(|b| slide_label(&b.title).is_some())
+        .filter_map(|b| b.page)
+        .filter(|&p| p < n)
+        .collect();
+    let slide_export = slide_pages.len() >= 2
+        && slide_pages.len() * 5 >= n * 4
+        && (0..n)
+            .filter(|&p| {
+                let (x0, y0, x1, y1) = read::media_box(&first, p);
+                x1 - x0 > y1 - y0
+            })
+            .count()
+            * 5
+            >= n * 4;
     let internal_labels = read::internal_labels(&first, n);
-    // Un documento grande se reabre en cada página y no se conserva el primero.
+    // Los recursos de un documento grande se reabren por página; no se guarda el primero.
     let doc = (!reopen).then_some(first);
     let with_doc = |f: &mut dyn FnMut(&PdfDocument) -> Result<()>| -> Result<()> {
         match &doc {
@@ -396,12 +728,32 @@ pub(crate) fn extract(
     let mut tally = Tally::default();
     // 1. Líneas e imágenes de cada página.
     let mut pages: Vec<PageInfo> = Vec::with_capacity(n);
+    let mut hints = Vec::with_capacity(n);
+    let mut text_doc = None;
     for p in 0..n {
+        if reopen && p % TEXT_BATCH_PAGES == 0 {
+            // Libera la caché anterior antes de reservar la siguiente.
+            drop(text_doc.take());
+            text_doc = Some(read::open(bytes)?);
+        }
         let mut raw = None;
-        with_doc(&mut |d| {
-            raw = Some(read::page(d, p)?);
+        let mut hint = (Vec::new(), Vec::new(), Vec::new());
+        let mut read_page = |d: &PdfDocument| {
+            raw = Some(read::page_with_aliases(d, p, &uri_aliases)?);
+            if slide_export {
+                hint = (
+                    read::rulings(d, p),
+                    read::small_controls(d, p),
+                    read::lateral_links(d, p),
+                );
+            }
             Ok(())
-        })?;
+        };
+        match &text_doc {
+            Some(d) => read_page(d)?,
+            None => with_doc(&mut read_page)?,
+        }
+        hints.push(hint);
         let raw = raw.expect("página leída");
         if raw.glyphs.iter().any(|g| g.c == '\u{FFFD}') {
             tally.unreadable.push(p + 1);
@@ -418,6 +770,12 @@ pub(crate) fn extract(
             rotated,
             pictures: raw.pictures,
             ocr_layer: raw.ocr_layer,
+            ocr_glyphs: if raw.ocr_layer {
+                raw.glyphs
+            } else {
+                Vec::new()
+            },
+            ocr_code: Vec::new(),
             ocr: None,
             furniture: Vec::new(),
             class: Class::Digital,
@@ -426,6 +784,77 @@ pub(crate) fn extract(
             attached: HashMap::new(),
             columns: false,
         });
+    }
+    drop(text_doc);
+    let mut navigation: Vec<SideNavigation> = Vec::new();
+    if slide_export {
+        let mut slots: Vec<(Rect, HashSet<usize>)> = Vec::new();
+        for (p, (_, _, links)) in hints.iter().enumerate() {
+            for link in links {
+                if let Some((_, seen)) = slots.iter_mut().find(|(r, _)| {
+                    (r.x0 - link.rect.x0).abs() < 2.
+                        && (r.top - link.rect.top).abs() < 2.
+                        && (r.bottom - link.rect.bottom).abs() < 2.
+                }) {
+                    seen.insert(p);
+                } else {
+                    slots.push((link.rect, HashSet::from([p])));
+                }
+            }
+        }
+        slots.retain(|(_, seen)| seen.len() >= 2);
+        let full = slots.clone();
+        slots.retain(|(r, _)| {
+            !full.iter().any(|(outer, _)| {
+                outer.area() > r.area() + 1.
+                    && outer.x0 <= r.x0 + 2.
+                    && outer.x1 >= r.x1 - 2.
+                    && outer.top <= r.top + 2.
+                    && outer.bottom >= r.bottom - 2.
+            })
+        });
+        slots.sort_by(|a, b| a.0.top.total_cmp(&b.0.top));
+        for (p, page) in pages.iter_mut().enumerate() {
+            for (rect, _) in &slots {
+                let mut text = String::new();
+                with_doc(&mut |d| {
+                    text = read::sidebar_text(d, p, *rect);
+                    Ok(())
+                })?;
+                if text.is_empty() {
+                    continue;
+                }
+                let target = hints[p]
+                    .2
+                    .iter()
+                    .find(|l| {
+                        (l.rect.x0 - rect.x0).abs() < 2. && (l.rect.top - rect.top).abs() < 2.
+                    })
+                    .map(|l| l.target.clone());
+                if let Some(nav) = navigation
+                    .iter_mut()
+                    .find(|nav| nav.text == text && nav.target == target)
+                {
+                    if nav.pages.last() != Some(&(p + 1)) {
+                        nav.pages.push(p + 1);
+                    }
+                } else {
+                    navigation.push(SideNavigation {
+                        text,
+                        target,
+                        pages: vec![p + 1],
+                    });
+                }
+                let marginal = |l: &Line| {
+                    l.x0 >= rect.x0 - 2.
+                        && l.x0 <= rect.x1 + 2.
+                        && l.base >= rect.top - 4.
+                        && l.base <= rect.bottom + 4.
+                };
+                page.lines.retain(|l| !marginal(l));
+                page.rotated.retain(|l| !marginal(l));
+            }
+        }
     }
     // 2. Imágenes repetidas en muchas páginas (logotipos, fondos de plantilla): se
     //    registran una vez en documento.md.
@@ -575,11 +1004,52 @@ pub(crate) fn extract(
             }
         }
     }
+    let variable = variable_furniture(&pages, &numbered);
     let mut furniture: Vec<Furniture> = Vec::new();
     for (p, page) in pages.iter_mut().enumerate() {
         let height = page.height;
         let mut kept = Vec::with_capacity(page.lines.len());
+        // Cada fila de cabecera variable se registra entera, sin su folio y sin
+        // fragmentar la numeración del título que forma parte de ella.
+        let mut marginal: Vec<_> = page
+            .lines
+            .iter()
+            .enumerate()
+            .filter(|(i, _)| variable.contains(&(p, *i)))
+            .map(|(_, line)| line.clone())
+            .collect();
+        marginal.sort_by(|a, b| a.base.total_cmp(&b.base).then(a.x0.total_cmp(&b.x0)));
+        let mut rows: Vec<Vec<Line>> = Vec::new();
+        for line in marginal {
+            if let Some(row) = rows.last_mut()
+                && (row[0].base - line.base).abs() < 0.5 * line.size
+            {
+                row.push(line);
+            } else {
+                rows.push(vec![line]);
+            }
+        }
+        for mut row in rows {
+            row.sort_by(|a, b| a.x0.total_cmp(&b.x0));
+            let shown = row.iter().map(Line::text).collect::<Vec<_>>().join(" ");
+            match furniture.iter_mut().find(|f| f.text == shown) {
+                Some(f) => {
+                    if f.pages.last() != Some(&(p + 1)) {
+                        f.pages.push(p + 1);
+                    }
+                }
+                None => furniture.push(Furniture {
+                    text: shown,
+                    pages: vec![p + 1],
+                }),
+            }
+            tally.variable_furniture.push(p + 1);
+        }
         for (i, line) in std::mem::take(&mut page.lines).into_iter().enumerate() {
+            if variable.contains(&(p, i)) {
+                page.furniture.push(line.rect());
+                continue;
+            }
             let top = line.bottom() < FURNITURE_BAND * height;
             let bottom = line.top() > (1.0 - FURNITURE_BAND) * height;
             let text = line.text();
@@ -613,7 +1083,11 @@ pub(crate) fn extract(
             }
         }
         page.lines = kept;
+        if join_margin_headings(&mut page.lines, &bookmarks, p) > 0 {
+            tally.margin_headings.push(p + 1);
+        }
     }
+    tally.variable_furniture.dedup();
     // 5. Clasificación de cada página.
     for (p, page) in pages.iter_mut().enumerate() {
         let large = largest(page);
@@ -669,15 +1143,19 @@ pub(crate) fn extract(
             .collect();
         let mut encoded = Vec::new();
         let mut view = None;
-        with_doc(&mut |d| {
-            if !missing.is_empty() {
-                encoded = read::encoded(d, p, &missing, cfg.max_image_pixels);
-            }
-            if class.needs_view() {
-                view = Some(read::render_png(d, p, VIEW_PX));
-            }
-            Ok(())
-        })?;
+        // En PDF grandes, with_doc reabre el original. Una página sin recursos
+        // nuevos ni vista no necesita volver a parsear todo el documento.
+        if !missing.is_empty() || class.needs_view() || slide_export {
+            with_doc(&mut |d| {
+                if !missing.is_empty() {
+                    encoded = read::encoded(d, p, &missing, cfg.max_image_pixels);
+                }
+                if class.needs_view() || slide_export {
+                    view = Some(read::render_png(d, p, VIEW_PX));
+                }
+                Ok(())
+            })?;
+        }
         let mut encoded = missing.iter().zip(encoded);
         let mut ordinal = 0;
         for (k, index, hash) in wanted {
@@ -716,6 +1194,18 @@ pub(crate) fn extract(
         }
         match view {
             Some(Ok(png)) => {
+                if class == Class::ScannedOcr && !page.ocr_glyphs.is_empty() {
+                    page.ocr_code = code::recover(
+                        &mut page.lines,
+                        &page.ocr_glyphs,
+                        &png,
+                        page.width,
+                        page.height,
+                    );
+                    tally
+                        .ocr_code
+                        .extend(std::iter::repeat_n(p + 1, page.ocr_code.len()));
+                }
                 let path = format!("assets/pagina-{:03}.png", p + 1);
                 write_zip_file(z, &path, &png)?;
                 page.view = Some(path);
@@ -723,6 +1213,7 @@ pub(crate) fn extract(
             Some(Err(_)) => tally.views_failed.push(p + 1),
             None => {}
         }
+        drop(std::mem::take(&mut page.ocr_glyphs));
     }
     tally.broken.dedup();
     tally.oversized.dedup();
@@ -731,6 +1222,11 @@ pub(crate) fn extract(
     let mut leaves_of: Vec<(usize, usize)> = Vec::new();
     for (p, page) in pages.iter_mut().enumerate() {
         let start = units.len();
+        let slide_title = if slide_export {
+            take_slide_title(&mut page.lines, &bookmarks, p)
+        } else {
+            None
+        };
         if page.class != Class::Digital && page.class != Class::Mixed {
             units.push(Unit {
                 kind: Kind::PageNote(p + 1),
@@ -775,9 +1271,30 @@ pub(crate) fn extract(
         items.extend((0..rects.len()).map(Item::Picture));
         let leaves = layout::reading_order(&region, items);
         page.columns = columns(&region, &leaves);
-        let blocks = layout::blocks(&region, &leaves);
+        let blocks = if slide_export {
+            layout::slide_blocks(&region, &hints[p].0, &hints[p].1, page.width, page.height)
+        } else {
+            layout::blocks(&region, &leaves)
+        };
         let mut page_units: Vec<(Unit, Rect, usize)> = Vec::new();
+        if let Some((para, rect)) = slide_title {
+            page_units.push((
+                Unit {
+                    kind: Kind::Para(para),
+                    from: p + 1,
+                    to: p + 1,
+                    boxes: vec![(p + 1, rect)],
+                },
+                rect,
+                usize::MAX - 6,
+            ));
+        }
         for (block, rect, leaf) in blocks {
+            if let Block::Para(q) = &block
+                && q.lines.iter().any(|l| l.code.is_some_and(|c| c.wrapped))
+            {
+                tally.code_wrapped.push(p + 1);
+            }
             let kind = match block {
                 Block::Para(para) => Kind::Para(para),
                 Block::Table(rows) => {
@@ -796,6 +1313,25 @@ pub(crate) fn extract(
                 rect,
                 leaf,
             ));
+        }
+        for (para, rect) in std::mem::take(&mut page.ocr_code) {
+            let at = page_units
+                .iter()
+                .position(|(_, r, _)| r.top >= rect.top)
+                .unwrap_or(page_units.len());
+            page_units.insert(
+                at,
+                (
+                    Unit {
+                        kind: Kind::Para(para),
+                        from: p + 1,
+                        to: p + 1,
+                        boxes: vec![(p + 1, rect)],
+                    },
+                    rect,
+                    layout::CODE_FLOW,
+                ),
+            );
         }
         for (k, r) in floating {
             let unit = Unit {
@@ -822,6 +1358,23 @@ pub(crate) fn extract(
                 boxes: vec![(p + 1, line.rect())],
             });
             leaves_of.push((p, usize::MAX - 2));
+        }
+        if slide_export && !page.class.needs_view() && page.view.is_some() {
+            units.push(Unit {
+                kind: Kind::View(p + 1),
+                from: p + 1,
+                to: p + 1,
+                boxes: vec![(
+                    p + 1,
+                    Rect {
+                        x0: 0.,
+                        top: 0.,
+                        x1: page.width,
+                        bottom: page.height,
+                    },
+                )],
+            });
+            leaves_of.push((p, usize::MAX - 5));
         }
         if units.len() == start {
             // Página con texto solo en encabezados o pies.
@@ -850,8 +1403,13 @@ pub(crate) fn extract(
     //    después del párrafo unido.
     let mut merged: Vec<(Unit, (usize, usize))> = Vec::with_capacity(units.len());
     for (u, leaf) in units.into_iter().zip(leaves_of) {
-        if let Kind::Para(b) = &u.kind
-            && leaf.1 < usize::MAX - 2
+        if !slide_export && continue_code(&mut merged, &u, leaf, &pages, &mut tally) {
+            continue;
+        }
+        if !slide_export
+            && let Kind::Para(b) = &u.kind
+            && leaf.1 < layout::CODE_FLOW
+            && !b.mono
             && b.marker.is_none()
             && b.lines[0]
                 .text()
@@ -873,7 +1431,7 @@ pub(crate) fn extract(
                 && a.marker.is_none()
                 && (a.size - b.size).abs() < 0.5
                 && a.bold == b.bold
-                && a.mono == b.mono
+                && !a.mono
                 && !terminal_text(&a.last().text())
             {
                 tally.continued.push(if u.from != prev.to {
@@ -932,7 +1490,9 @@ pub(crate) fn extract(
         }
     }
     for u in &mut merged {
-        if let Kind::Para(p) = &mut u.kind {
+        if let Kind::Para(p) = &mut u.kind
+            && !p.mono
+        {
             for k in 0..p.lines.len().saturating_sub(1) {
                 let t = p.lines[k].text().to_lowercase();
                 let Some(head) = t.strip_suffix('-') else {
@@ -980,6 +1540,8 @@ pub(crate) fn extract(
         internal_labels,
         info,
         tally,
+        slide_export,
+        navigation,
     })
 }
 
@@ -1048,6 +1610,7 @@ pub(crate) struct Outline {
     pub(crate) unmatched_bookmarks: usize,
     pub(crate) split: Option<u8>,
     pub(crate) sections: Vec<Section>,
+    pub(crate) by_page: bool,
 }
 
 impl Outline {
@@ -1079,7 +1642,152 @@ fn unit_chars(u: &Unit) -> usize {
     }
 }
 
+/// Algunos productores escriben el número y el título de un marcador como bloques
+/// separados. Solo se reúnen cuando hasta cuatro párrafos contiguos de la misma
+/// página reproducen exactamente el marcador; nunca se adivina un título por prefijo.
+fn join_bookmark_fragments(ex: &mut Extraction) {
+    let mut cursor = 0;
+    for bookmark in &ex.bookmarks {
+        let want = norm(&bookmark.title);
+        if want.is_empty() {
+            continue;
+        }
+        let mut found = None;
+        for start in cursor..ex.units.len() {
+            let first = &ex.units[start];
+            if first.from != first.to || bookmark.page.is_some_and(|p| first.to < p + 1) {
+                continue;
+            }
+            let mut acc = String::new();
+            for end in start..ex.units.len().min(start + 4) {
+                let unit = &ex.units[end];
+                let Kind::Para(p) = &unit.kind else { break };
+                if unit.from != first.from
+                    || unit.to != first.to
+                    || (end > start && p.marker.is_some())
+                {
+                    break;
+                }
+                if !acc.is_empty() {
+                    acc.push(' ');
+                }
+                acc.push_str(&para_text(unit).unwrap_or_default());
+                let got = norm(&acc);
+                if got == want {
+                    found = Some((start, end));
+                    break;
+                }
+                if !want.starts_with(&got) {
+                    break;
+                }
+            }
+            if found.is_some() {
+                break;
+            }
+        }
+        if let Some((start, end)) = found {
+            for _ in start..end {
+                let next = ex.units.remove(start + 1);
+                union_boxes(&mut ex.units[start].boxes, &next.boxes);
+                if let (Kind::Para(first), Kind::Para(next)) =
+                    (&mut ex.units[start].kind, next.kind)
+                {
+                    let offset = first.lines.len();
+                    first
+                        .keep_hyphen
+                        .extend(next.keep_hyphen.iter().map(|n| n + offset));
+                    first
+                        .join_hyphen
+                        .extend(next.join_hyphen.iter().map(|n| n + offset));
+                    first.lines.extend(next.lines);
+                    first.size = next.size;
+                }
+            }
+            cursor = start + 1;
+        }
+    }
+}
+
+/// Prefijo de numeración de un marcador, que puede estar dibujado en una columna de
+/// margen separada del título (y por ello no pertenecer a su párrafo).
+fn unnumbered_heading(title: &str) -> Option<&str> {
+    let (number, text) = title.split_once(' ')?;
+    heading_number(number).then_some(text)
+}
+
+fn prepare_bookmarks(ex: &mut Extraction) {
+    // Un marcador puede dividir el propio título en dos entradas consecutivas.
+    // Solo se reúnen si la concatenación existe en un mismo párrafo de su página.
+    let mut i = 0;
+    while i + 1 < ex.bookmarks.len() {
+        let a = &ex.bookmarks[i];
+        let b = &ex.bookmarks[i + 1];
+        let combined = format!("{} {}", a.title, b.title);
+        let numbered_title = norm(&a.title).split_once(" - ").is_some_and(|(prefix, _)| {
+            heading_number(prefix)
+                && prefix
+                    .split('.')
+                    .all(|n| n.parse::<usize>().is_ok_and(|n| n < 100))
+        });
+        let found = numbered_title && a.page.is_some() && a.page == b.page && a.depth == b.depth
+            && ex.units.iter().any(|u| u.from == u.to && Some(u.from - 1) == a.page && matches!(&u.kind, Kind::Para(p) if !p.mono && norm(&p.text()) == norm(&combined)));
+        if found {
+            ex.bookmarks[i].title = combined;
+            ex.bookmarks.remove(i + 1);
+            ex.tally.bookmark_fragments += 1;
+        } else {
+            i += 1;
+        }
+    }
+    // Una capa OCR puede desplazar los asteriscos de un identificador. El marcador
+    // solo repone su posición en un título de una línea, en negrita, en su página;
+    // letras, resto de signos y número de asteriscos deben coincidir exactamente.
+    for b in &ex.bookmarks {
+        let stars = b.title.chars().filter(|c| *c == '*').count();
+        if stars == 0 || stars > 8 {
+            continue;
+        }
+        let wanted = norm(&b.title);
+        let candidates: Vec<_> = ex
+            .units
+            .iter()
+            .enumerate()
+            .filter_map(|(i, u)| {
+                let Kind::Para(p) = &u.kind else {
+                    return None;
+                };
+                let got = norm(&p.text());
+                (u.from == u.to
+                    && Some(u.from - 1) == b.page
+                    && p.bold
+                    && p.lines.len() == 1
+                    && got != wanted
+                    && got.chars().filter(|c| *c == '*').count() == stars
+                    && got.replace('*', "") == wanted.replace('*', ""))
+                .then_some(i)
+            })
+            .collect();
+        if candidates.len() == 1 {
+            let Kind::Para(p) = &mut ex.units[candidates[0]].kind else {
+                unreachable!()
+            };
+            p.lines[0].runs = vec![Run {
+                text: b.title.clone(),
+                bold: true,
+                italic: false,
+                link: None,
+            }];
+            ex.tally.bookmark_symbols += 1;
+        }
+    }
+}
+
 pub(crate) fn outline(ex: &mut Extraction, filename: &str) -> Outline {
+    if ex.slide_export {
+        return slide_outline(ex, filename);
+    }
+    prepare_bookmarks(ex);
+    join_bookmark_fragments(ex);
     // Encabezados del esquema: cada marcador se busca, en orden, como un párrafo con el
     // mismo texto (o como sus primeras líneas) a partir de su página de destino.
     let mut headings: Vec<Option<Heading>> = vec![None; ex.units.len()];
@@ -1097,7 +1805,15 @@ pub(crate) fn outline(ex: &mut Extraction, filename: &str) -> Outline {
                 return None;
             }
             let Kind::Para(p) = &u.kind else { return None };
-            if norm(&para_text(u)?) == want {
+            // Solo en la página de destino se admite el texto exacto sin el número
+            // inicial del marcador. El número impreso se conserva donde lo leyó el
+            // maquetador; no se añade al título ni se borra otra unidad.
+            let short = b
+                .page
+                .filter(|p| u.from == p + 1)
+                .and_then(|_| unnumbered_heading(&want));
+            let matches = |text: &str| text == want || short == Some(text);
+            if matches(&norm(&para_text(u)?)) {
                 return Some((i, p.lines.len()));
             }
             // Las primeras líneas del párrafo forman el título.
@@ -1105,10 +1821,12 @@ pub(crate) fn outline(ex: &mut Extraction, filename: &str) -> Outline {
             for (k, line) in p.lines.iter().enumerate().take(p.lines.len() - 1) {
                 acc.push_str(&line.text());
                 acc.push(' ');
-                if norm(&acc) == want {
+                if matches(&norm(&acc)) {
                     return Some((i, k + 1));
                 }
-                if !want.starts_with(&norm(&acc)) {
+                if !want.starts_with(&norm(&acc))
+                    && !short.is_some_and(|s| s.starts_with(&norm(&acc)))
+                {
                     break;
                 }
             }
@@ -1322,6 +2040,93 @@ pub(crate) fn outline(ex: &mut Extraction, filename: &str) -> Outline {
         unmatched_bookmarks: if from_bookmarks { usable - matched } else { 0 },
         split,
         sections,
+        by_page: false,
+    }
+}
+
+fn slide_outline(ex: &mut Extraction, filename: &str) -> Outline {
+    let effective: Vec<_> = ex
+        .bookmarks
+        .iter()
+        .filter_map(|b| {
+            let title = slide_label(&b.title)?;
+            (!title.is_empty()).then(|| Bookmark {
+                title: title.into(),
+                page: b.page,
+                depth: 0,
+            })
+        })
+        .collect();
+    let original = std::mem::replace(&mut ex.bookmarks, effective);
+    join_bookmark_fragments(ex);
+    let mut headings = vec![None; ex.units.len()];
+    let mut sections = Vec::new();
+    let mut matched = 0;
+    for page in 1..=ex.pages.len() {
+        let indices: Vec<_> = ex
+            .units
+            .iter()
+            .enumerate()
+            .filter(|(_, u)| u.from == page && u.to == page)
+            .map(|(i, _)| i)
+            .collect();
+        if indices.is_empty() {
+            continue;
+        }
+        let desired = ex.bookmarks.iter().find(|b| b.page == Some(page - 1));
+        let found = desired.and_then(|b| {
+            indices.iter().copied().find(|&i| {
+                para_text(&ex.units[i])
+                    .is_some_and(|t| slide_title_key(&t) == slide_title_key(&b.title))
+            })
+        });
+        if found.is_some() {
+            matched += 1;
+        }
+        let heading=found.or_else(||indices.iter().copied().filter(|&i| matches!(&ex.units[i].kind,Kind::Para(p) if !p.mono&&p.text().chars().filter(|c|c.is_alphabetic()).count()>=3&&p.text().chars().count()<=500)).max_by(|&a,&b| {
+            let size=|i: usize|match &ex.units[i].kind {Kind::Para(p)=>p.size,_=>0.};size(a).total_cmp(&size(b)).then(b.cmp(&a))
+        }));
+        let title = match (found, desired) {
+            (Some(_), Some(b)) => b.title.clone(),
+            _ => heading
+                .and_then(|i| para_text(&ex.units[i]))
+                .unwrap_or_else(|| format!("Página {page}")),
+        };
+        if let Some(i) = heading {
+            headings[i] = Some(Heading {
+                level: 1,
+                inferred: found.is_none(),
+            });
+        }
+        sections.push(Section {
+            title,
+            heading,
+            from: indices[0],
+            to: *indices.last().unwrap(),
+            preamble: false,
+            inferred: found.is_none(),
+        });
+    }
+    ex.bookmarks = original;
+    let title = ex.info.title.clone().unwrap_or_else(|| {
+        sections
+            .first()
+            .map_or_else(|| filename.into(), |s| s.title.clone())
+    });
+    Outline {
+        headings,
+        title,
+        title_unit: None,
+        title_source: if ex.info.title.is_some() {
+            TitleSource::Metadata
+        } else {
+            TitleSource::Heading
+        },
+        from_bookmarks: true,
+        unmatched_bookmarks: ex.bookmarks.len() - matched,
+        split: Some(1),
+        sections,
+        by_page: true,
     }
 }
 
@@ -1551,15 +2356,24 @@ impl Render<'_> {
                     // La sangría de cada línea se reconstruye con espacios del ancho de
                     // un carácter monoespaciado.
                     let left = p.lines.iter().map(|l| l.x0).fold(f32::MAX, f32::min);
-                    let code: Vec<String> = p
-                        .lines
-                        .iter()
-                        .map(|l| {
-                            let indent = ((l.x0 - left) / (0.6 * l.size)).round().max(0.0) as usize;
-                            format!("{}{}", " ".repeat(indent.min(40)), l.text())
-                        })
-                        .collect();
-                    let code = code.join("\n");
+                    let mut code = String::new();
+                    for l in &p.lines {
+                        let position = l.code.unwrap_or(layout::CodePosition {
+                            indent: ((l.x0 - left) / (0.6 * l.size)).round().max(0.0) as usize,
+                            blank_lines: 0,
+                            wrapped: false,
+                        });
+                        if position.wrapped && !code.is_empty() {
+                            code.push(' ');
+                        } else {
+                            if !code.is_empty() {
+                                code.push('\n');
+                            }
+                            code.extend(std::iter::repeat_n('\n', position.blank_lines.min(8)));
+                            code.extend(std::iter::repeat_n(' ', position.indent.min(256)));
+                        }
+                        code.push_str(&l.text());
+                    }
                     let fence = if code.contains("```") { "~~~~" } else { "```" };
                     body.push_str(&format!("{fence}\n{code}\n{fence}\n\n"));
                 }
@@ -1593,6 +2407,13 @@ impl Render<'_> {
                 Kind::Rotated(t) => {
                     self.marker(&mut body, &mut spans, i, i);
                     body.push_str(&format!("_Texto girado:_ {}\n\n", escape_inline(t)));
+                }
+                Kind::View(p) => {
+                    self.marker(&mut body, &mut spans, i, i);
+                    if let Some(path) = &ex.pages[*p - 1].view {
+                        body.push_str(&format!("![Vista de la página {p}](../{path})\n\n"));
+                        body.push_str(&generated_note("> Vista del original: conserva diagramas, relaciones espaciales y controles del formulario.\n\n"));
+                    }
                 }
             }
             idx += 1;
@@ -1775,8 +2596,12 @@ pub(crate) fn build_bundle(
             if Some(i) == outline.title_unit {
                 continue;
             }
-            let text =
-                escape_line_start(&escape_inline(&para_text(&ex.units[i]).unwrap_or_default()));
+            let title = if ex.slide_export && Some(i) == sec.heading {
+                sec.title.clone()
+            } else {
+                para_text(&ex.units[i]).unwrap_or_default()
+            };
+            let text = escape_line_start(&escape_inline(&title));
             let page = ex.units[i].from;
             let suffix = if h.inferred {
                 format!(" · página {page} (inferido por formato)")
@@ -1816,6 +2641,18 @@ pub(crate) fn build_bundle(
                 "- {}: ![Imagen repetida]({path})\n",
                 pages_phrase(pages)
             ));
+        }
+    }
+    if !ex.navigation.is_empty() {
+        furniture_md.push_str("\n## Navegación lateral del original\n\nPestañas repetidas registradas una vez con sus destinos y páginas.\n\n");
+        for nav in &ex.navigation {
+            let text = runs_md(&[Run {
+                text: nav.text.clone(),
+                bold: false,
+                italic: false,
+                link: nav.target.clone(),
+            }]);
+            furniture_md.push_str(&format!("- {}: {text}\n", pages_phrase(&nav.pages)));
         }
     }
     let labels: Vec<(usize, &String)> = ex
@@ -2033,6 +2870,12 @@ pub(crate) fn build_bundle(
         )));
     }
     let ocr = by_class(Class::ScannedOcr);
+    if !t.ocr_code.is_empty() {
+        let mut pages = t.ocr_code.clone();
+        pages.sort_unstable();
+        pages.dedup();
+        issues.push(Issue::note(format!("{} listado(s) OCR numerados en paneles coloreados, conservados en cercas con su numeración y sangría medida en la vista ({}); los caracteres OCR no se corrigen y no se garantiza código ejecutable", t.ocr_code.len(), pages_phrase(&pages))));
+    }
     if !ocr.is_empty() {
         issues.push(Issue::note(format!(
             "{}: escaneo con una capa de texto de OCR previo; se conserva ese texto sin verificar y se adjunta la vista",
@@ -2104,6 +2947,30 @@ pub(crate) fn build_bundle(
             pages_phrase(&t.tables)
         )));
     }
+    if !t.code_continued.is_empty() {
+        let mut pages = t.code_continued.clone();
+        pages.sort_unstable();
+        pages.dedup();
+        issues.push(Issue::note(format!("{}: listados de código continuados entre páginas, con sangría relativa al margen de cada página; las anotaciones y los encabezados de margen se conservan fuera del bloque", pages_phrase(&pages))));
+    }
+    if !t.code_wrapped.is_empty() {
+        let mut pages = t.code_wrapped.clone();
+        pages.sort_unstable();
+        pages.dedup();
+        issues.push(Issue::note(format!("{}: líneas de un literal simple de código reunidas al detectar una continuación editorial con marcador o sangría fuera de la cuadrícula de cuatro columnas; conviene revisar el listado", pages_phrase(&pages))));
+    }
+    if !t.variable_furniture.is_empty() {
+        issues.push(Issue::note(format!(
+            "{}: cabeceras o pies variables separados por su alineación con un folio confirmado y su posición tipográfica recurrente; textos y páginas registrados en documento.md",
+            pages_phrase(&t.variable_furniture)
+        )));
+    }
+    if !t.margin_headings.is_empty() {
+        issues.push(Issue::note(format!(
+            "{}: numeración lateral reunida con el título alineado antes de ordenar columnas; coincidencia completa con el marcador en su página de destino",
+            pages_phrase(&t.margin_headings)
+        )));
+    }
     if !t.rotated.is_empty() {
         issues.push(Issue::note(format!(
             "{}: texto girado, escrito al final del contenido de su página",
@@ -2117,11 +2984,24 @@ pub(crate) fn build_bundle(
         )));
     }
     if outline.from_bookmarks {
+        if t.bookmark_fragments > 0 {
+            issues.push(Issue::note(format!("{} fragmento(s) consecutivos de marcadores reunidos con el título completo de su párrafo y página", t.bookmark_fragments)));
+        }
+        if t.bookmark_symbols > 0 {
+            issues.push(Issue::note(format!("{} título(s) con posición de asteriscos recuperada del marcador confirmado en su página, sin cambiar letras ni el número de símbolos",t.bookmark_symbols)));
+        }
         issues.push(Issue::note(format!(
             "Encabezados tomados de los marcadores del PDF ({} de {} encontrados en el texto)",
-            ex.bookmarks.len() - outline.unmatched_bookmarks,
-            ex.bookmarks.len()
+            ex.bookmarks.len() + t.bookmark_fragments - outline.unmatched_bookmarks,
+            ex.bookmarks.len() + t.bookmark_fragments
         )));
+    }
+    if outline.by_page {
+        issues.push(Issue::note(format!("Exportación de diapositivas reconocida por sus marcadores: {} concepto(s), uno por página física; los prefijos del exportador no forman parte del título impreso",outline.sections.len())));
+        issues.push(Issue::note("Tablas delimitadas por reglas dibujadas; las vistas adjuntas conservan diagramas vectoriales y controles del original".into()));
+    }
+    if !ex.navigation.is_empty() {
+        issues.push(Issue::note(format!("{} texto(s) de navegación lateral registrados con sus destinos y páginas en documento.md, fuera del flujo de contenido",ex.navigation.len())));
     }
     if !ex.furniture.is_empty() || !ex.furniture_images.is_empty() {
         issues.push(Issue::note(format!(
@@ -2454,7 +3334,7 @@ pub(crate) fn validate(
         // Cada bloque del cuerpo, tras el título y su nota, lleva un marcador.
         let mut used = HashSet::new();
         let mut started = false;
-        for chunk in body.split("\n\n").map(str::trim).filter(|c| !c.is_empty()) {
+        for chunk in markdown_blocks(body) {
             // Una nota del conversor se reconoce por lo que sigue a su marcador.
             let note = chunk.strip_prefix(GENERATED).map_or(chunk, str::trim_start);
             if !started
@@ -2543,6 +3423,507 @@ pub(crate) fn validate(
 #[cfg(test)]
 mod tests {
     use super::*;
+    #[test]
+    fn slide_export_preserves_page_sections_navigation_ruled_cells_and_views() {
+        let tmp = tempfile::tempdir().unwrap();
+        let path = tmp.path().join("slides.pdf");
+        fs::write(&path, read::synthetic_slides()).unwrap();
+        let (status, md, names) = convert_with(path.to_str().unwrap(), &Config::default());
+        assert_eq!(status, "complete");
+        assert!(
+            names.contains("assets/pagina-001.png") && names.contains("assets/pagina-002.png"),
+            "{}",
+            md["conversion-report.md"]
+        );
+        for (i, title) in [(1, "First slide"), (2, "Second slide")] {
+            let text = &md[&format!("contenido/seccion-{i:03}.md")];
+            assert!(text.contains(&format!("# {title}")), "{text}");
+            assert!(text.contains("| One | First row continued |"), "{text}");
+            assert!(!text.contains("Texto girado"));
+            assert!(text.contains(&format!("Vista de la página {i}")));
+        }
+        assert!(md["documento.md"].contains("[Menu](contenido/seccion-002.md)"));
+        assert!(
+            !md.values()
+                .any(|s| s.contains("referencia interna no resuelta"))
+        );
+        for invalid in [
+            "Slideshow 1: Title",
+            "Slide title",
+            "Chapter 1: Title",
+            "Slide 0: Title",
+        ] {
+            assert_eq!(slide_label(invalid), None);
+        }
+        assert_eq!(slide_label("Diapositiva 2: Título"), Some("Título"));
+    }
+
+    fn margin_line(text: &str, x: f32, base: f32, size: f32) -> Line {
+        Line {
+            x0: x,
+            x1: x + text.len() as f32 * size * 0.5,
+            base,
+            size,
+            runs: vec![Run {
+                text: text.into(),
+                bold: true,
+                italic: false,
+                link: None,
+            }],
+            bold: true,
+            mono: false,
+            code: None,
+        }
+    }
+
+    #[test]
+    fn wrapped_slide_title_is_taken_from_its_column_not_the_running_header() {
+        let mut lines = vec![
+            margin_line("An educational title", 200., 20., 8.),
+            margin_line("An educational", 40., 100., 24.),
+            margin_line("Other column", 300., 100., 12.),
+            margin_line("title", 40., 129., 24.),
+        ];
+        let bookmarks = vec![Bookmark {
+            title: "Slide 1: An educational title".into(),
+            depth: 0,
+            page: Some(0),
+        }];
+        let (p, rect) = take_slide_title(&mut lines, &bookmarks, 0).unwrap();
+        assert_eq!(p.text(), "An educational title");
+        assert_eq!(p.lines.len(), 2);
+        assert_eq!(rect.x0, 40.);
+        assert!(rect.bottom > 129.);
+        assert_eq!(lines.len(), 2);
+        assert_eq!(lines[0].size, 8.);
+    }
+
+    #[test]
+    fn slide_bookmark_restores_spaces_only_when_the_complete_title_matches() {
+        let tmp = tempfile::tempdir().unwrap();
+        for (printed, expected) in [
+            ("Firstslide", "First slide"),
+            ("Other title", "Other title"),
+        ] {
+            let path = tmp.path().join("slides.pdf");
+            fs::write(&path, read::synthetic_slides_with_title(printed)).unwrap();
+            let (_, md, _) = convert_with(path.to_str().unwrap(), &Config::default());
+            assert!(md["contenido/seccion-001.md"].contains(&format!("# {expected}\n")));
+            assert!(
+                md["documento.md"].contains(&format!("[{expected}](contenido/seccion-001.md)"))
+            );
+        }
+    }
+
+    #[test]
+    fn variable_headers_need_a_confirmed_folio_and_three_page_slot() {
+        let pages: Vec<_> = (0..3)
+            .map(|i| PageInfo {
+                width: 612.0,
+                height: 792.0,
+                lines: vec![
+                    margin_line(&(i + 1).to_string(), 470.0, 33.0, 9.0),
+                    margin_line(&format!("Sección distinta {i}"), 180.0, 32.7, 9.0),
+                    margin_line("Título del cuerpo", 100.0, 65.0, 12.0),
+                    margin_line("Leyenda de tabla", 100.0, 80.0, 9.0),
+                    margin_line("CAPÍTULO", 100.0, 33.0, 6.36),
+                    margin_line("Texto grande", 100.0, 33.0, 14.0),
+                    {
+                        let mut code = margin_line("código", 100.0, 33.0, 9.0);
+                        code.mono = true;
+                        code
+                    },
+                ],
+                rotated: vec![],
+                pictures: vec![],
+                ocr_layer: false,
+                ocr_glyphs: Vec::new(),
+                ocr_code: Vec::new(),
+                ocr: None,
+                furniture: vec![],
+                class: Class::Digital,
+                label: None,
+                view: None,
+                attached: HashMap::new(),
+                columns: false,
+            })
+            .collect();
+        let numbered = HashSet::from([(0, 0), (1, 0), (2, 0)]);
+        assert_eq!(
+            variable_furniture(&pages, &numbered),
+            HashSet::from([(0, 1), (1, 1), (2, 1), (0, 4), (1, 4), (2, 4)])
+        );
+        assert!(variable_furniture(&pages, &HashSet::new()).is_empty());
+        assert!(variable_furniture(&pages[..2], &numbered).is_empty());
+    }
+
+    #[test]
+    fn margin_numbers_join_only_the_complete_aligned_bookmark_on_its_page() {
+        let original = vec![
+            margin_line("2.3", 60.0, 120.0, 12.0),
+            margin_line("Una sección", 100.0, 120.0, 12.0),
+            margin_line("Texto del cuerpo", 100.0, 145.0, 10.0),
+        ];
+        let bookmarks = vec![Bookmark {
+            title: "2.3 Una sección".into(),
+            depth: 1,
+            page: Some(4),
+        }];
+        let mut lines = original.clone();
+        assert_eq!(join_margin_headings(&mut lines, &bookmarks, 4), 1);
+        assert_eq!(lines.len(), 2);
+        assert_eq!(lines[0].text(), "2.3 Una sección");
+        assert_eq!(lines[0].x0, 60.0);
+        assert_eq!(lines[0].base, 120.0);
+        assert_eq!(lines[0].x1, original[1].x1);
+        assert_eq!(lines[1].text(), "Texto del cuerpo");
+        let mut lines = original.clone();
+        assert_eq!(join_margin_headings(&mut lines, &bookmarks, 3), 0);
+        lines[1].base += 14.0;
+        assert_eq!(join_margin_headings(&mut lines, &bookmarks, 4), 0);
+        let mut lines = original.clone();
+        lines[1].runs[0].text.push_str(" con texto adicional");
+        assert_eq!(join_margin_headings(&mut lines, &bookmarks, 4), 0);
+        let mut lines = original;
+        lines[1].size = 10.0;
+        assert_eq!(join_margin_headings(&mut lines, &bookmarks, 4), 0);
+    }
+
+    #[test]
+    fn margin_numbers_accept_wrapped_titles_without_flattening_their_geometry() {
+        let mut lines = vec![
+            margin_line("2.3", 60.0, 120.0, 12.0),
+            margin_line("Un título de", 100.0, 120.0, 12.0),
+            margin_line("dos renglones", 100.0, 135.0, 12.0),
+        ];
+        let bookmarks = vec![Bookmark {
+            title: "2.3 Un título de dos renglones".into(),
+            depth: 1,
+            page: Some(0),
+        }];
+        assert_eq!(join_margin_headings(&mut lines, &bookmarks, 0), 1);
+        assert_eq!(lines[0].text(), "2.3 Un título de");
+        assert_eq!(lines[1].base, 135.0);
+    }
+
+    #[test]
+    fn appendix_margin_numbers_join_without_treating_words_as_numbering() {
+        let mut lines = vec![
+            margin_line("B.2.3", 50.0, 100.0, 12.0),
+            margin_line("Un entorno local", 100.0, 100.0, 12.0),
+        ];
+        let bookmarks = vec![Bookmark {
+            title: "B.2.3 Un entorno local".into(),
+            depth: 2,
+            page: Some(0),
+        }];
+        assert_eq!(join_margin_headings(&mut lines, &bookmarks, 0), 1);
+        assert_eq!(lines[0].text(), "B.2.3 Un entorno local");
+        for bad in ["B", "NOTE", "1..2", ".2", "B.text", "AB.2"] {
+            assert!(!heading_number(bad), "{bad}");
+        }
+    }
+    #[test]
+    fn code_continues_across_margins_but_never_across_body_text() {
+        let tmp = tempfile::tempdir().unwrap();
+        let mut zip = ZipWriter::new(fs::File::create(tmp.path().join("units.zip")).unwrap());
+        let mut ex = extract(
+            &fs::read("examples/pdf/muestras/informe_tecnico.pdf").unwrap(),
+            &Config::default(),
+            &mut zip,
+        )
+        .unwrap();
+        ex.pages[1].label = Some("2".into());
+        ex.pages[1].furniture = vec![Rect {
+            x0: 500.0,
+            x1: 510.0,
+            top: 30.0,
+            bottom: 40.0,
+        }];
+        let unit = |text: &str, page: usize, top: f32, mono: bool, indent: usize| {
+            let line = Line {
+                x0: if page == 1 { 102.0 } else { 93.0 },
+                x1: 300.0,
+                base: top + 7.0,
+                size: 8.0,
+                runs: vec![Run {
+                    text: text.into(),
+                    bold: false,
+                    italic: false,
+                    link: None,
+                }],
+                bold: false,
+                mono,
+                code: mono.then_some(layout::CodePosition {
+                    indent,
+                    blank_lines: 0,
+                    wrapped: false,
+                }),
+            };
+            Unit {
+                from: page,
+                to: page,
+                boxes: vec![(
+                    page,
+                    Rect {
+                        x0: line.x0,
+                        x1: line.x1,
+                        top,
+                        bottom: top + 10.0,
+                    },
+                )],
+                kind: Kind::Para(Para {
+                    lines: vec![line],
+                    keep_hyphen: vec![],
+                    join_hyphen: vec![],
+                    marker: None,
+                    size: 8.0,
+                    bold: false,
+                    mono,
+                    x0: 0.0,
+                }),
+            }
+        };
+        let first = unit("def example():", 1, 710.0, true, 0);
+        let mut merged = vec![
+            (first.clone(), (0, layout::CODE_FLOW)),
+            (
+                unit("Nota lateral", 1, 730.0, false, 0),
+                (0, layout::CODE_NOTE),
+            ),
+            (unit("Encabezado", 2, 30.0, false, 0), (1, 0)),
+        ];
+        let next = unit("return 1", 2, 60.0, true, 8);
+        let mut tally = Tally::default();
+        assert!(continue_code(
+            &mut merged,
+            &next,
+            (1, layout::CODE_FLOW),
+            &ex.pages,
+            &mut tally
+        ));
+        assert_eq!((merged[0].0.from, merged[0].0.to), (1, 2));
+        assert_eq!(merged[0].0.boxes.len(), 2);
+        let Kind::Para(p) = &merged[0].0.kind else {
+            panic!()
+        };
+        assert_eq!(p.lines[1].code.unwrap().indent, 8);
+        assert_eq!(p.lines[1].x0, 93.0);
+        assert_eq!(merged.len(), 3);
+        assert_eq!(tally.code_continued, [1, 2]);
+        let mut separated = vec![
+            (first, (0, layout::CODE_FLOW)),
+            (unit("Texto principal", 2, 55.0, false, 0), (1, 0)),
+        ];
+        assert!(!continue_code(
+            &mut separated,
+            &next,
+            (1, layout::CODE_FLOW),
+            &ex.pages,
+            &mut tally
+        ));
+    }
+
+    #[test]
+    fn adjacent_bookmark_titles_and_displaced_asterisks_need_exact_page_evidence() {
+        let tmp = tempfile::tempdir().unwrap();
+        let mut zip = ZipWriter::new(fs::File::create(tmp.path().join("units.zip")).unwrap());
+        let mut ex = extract(
+            &fs::read("examples/pdf/muestras/breve.pdf").unwrap(),
+            &Config::default(),
+            &mut zip,
+        )
+        .unwrap();
+        let unit = |text: &str, page: usize| Unit {
+            kind: Kind::Para(Para {
+                lines: vec![margin_line(text, 40., 80., 20.)],
+                keep_hyphen: vec![],
+                join_hyphen: vec![],
+                marker: None,
+                size: 20.,
+                bold: true,
+                mono: false,
+                x0: 40.,
+            }),
+            from: page,
+            to: page,
+            boxes: vec![(
+                page,
+                Rect {
+                    x0: 40.,
+                    x1: 400.,
+                    top: 60.,
+                    bottom: 90.,
+                },
+            )],
+        };
+        ex.units = vec![
+            unit("2 - Topic: A complete title", 1),
+            unit("4 - *data and *kw*data", 2),
+        ];
+        ex.bookmarks = vec![
+            Bookmark {
+                title: "2 - Topic:".into(),
+                page: Some(0),
+                depth: 0,
+            },
+            Bookmark {
+                title: "A complete title".into(),
+                page: Some(0),
+                depth: 0,
+            },
+            Bookmark {
+                title: "4 - *data and **kwdata".into(),
+                page: Some(1),
+                depth: 0,
+            },
+        ];
+        prepare_bookmarks(&mut ex);
+        assert_eq!(ex.bookmarks.len(), 2);
+        assert_eq!(ex.tally.bookmark_fragments, 1);
+        assert_eq!(ex.tally.bookmark_symbols, 1);
+        assert_eq!(
+            para_text(&ex.units[1]).as_deref(),
+            Some("4 - *data and **kwdata")
+        );
+        ex.bookmarks = vec![
+            Bookmark {
+                title: "2 - Topic:".into(),
+                page: Some(0),
+                depth: 0,
+            },
+            Bookmark {
+                title: "A complete title".into(),
+                page: Some(1),
+                depth: 0,
+            },
+        ];
+        prepare_bookmarks(&mut ex);
+        assert_eq!(ex.bookmarks.len(), 2);
+        ex.units = vec![unit("Distinct headings", 1)];
+        ex.bookmarks = vec![
+            Bookmark {
+                title: "Distinct".into(),
+                page: Some(0),
+                depth: 0,
+            },
+            Bookmark {
+                title: "headings".into(),
+                page: Some(0),
+                depth: 0,
+            },
+        ];
+        prepare_bookmarks(&mut ex);
+        assert_eq!(ex.bookmarks.len(), 2);
+    }
+
+    #[test]
+    fn bookmark_fragments_restore_chapters_without_consuming_body_text() {
+        let tmp = tempfile::tempdir().unwrap();
+        let mut zip = ZipWriter::new(fs::File::create(tmp.path().join("units.zip")).unwrap());
+        let mut ex = extract(
+            &fs::read("examples/pdf/muestras/breve.pdf").unwrap(),
+            &Config::default(),
+            &mut zip,
+        )
+        .unwrap();
+        let unit = |text: &str, page: usize, size: f32| {
+            let line = Line {
+                x0: 60.0,
+                x1: 300.0,
+                base: 100.0,
+                size,
+                runs: vec![Run {
+                    text: text.into(),
+                    bold: false,
+                    italic: false,
+                    link: None,
+                }],
+                bold: false,
+                mono: false,
+                code: None,
+            };
+            Unit {
+                from: page,
+                to: page,
+                boxes: vec![(page, line.rect())],
+                kind: Kind::Para(Para {
+                    lines: vec![line],
+                    keep_hyphen: vec![],
+                    join_hyphen: vec![],
+                    marker: None,
+                    size,
+                    bold: false,
+                    mono: false,
+                    x0: 60.0,
+                }),
+            }
+        };
+        ex.units = vec![
+            unit("1", 1, 40.0),
+            unit("Un capítulo", 1, 20.0),
+            unit("1.1", 1, 12.0),
+            unit("Una sección", 1, 12.0),
+            unit(
+                &"Contenido que no forma parte del título. ".repeat(60),
+                1,
+                10.0,
+            ),
+            unit("2", 2, 40.0),
+            unit("Otro capítulo", 2, 20.0),
+        ];
+        ex.bookmarks = vec![
+            Bookmark {
+                title: "1 Un capítulo".into(),
+                depth: 0,
+                page: Some(0),
+            },
+            Bookmark {
+                title: "1.1 Una sección".into(),
+                depth: 1,
+                page: Some(0),
+            },
+            Bookmark {
+                title: "2 Otro capítulo".into(),
+                depth: 0,
+                page: Some(1),
+            },
+        ];
+        let result = outline(&mut ex, "prueba.pdf");
+        assert!(result.from_bookmarks);
+        assert_eq!(result.split, Some(1));
+        assert_eq!(result.sections.len(), 2);
+        assert_eq!(result.sections[0].title, "1 Un capítulo");
+        assert_eq!(result.sections[1].title, "2 Otro capítulo");
+        assert_eq!(ex.units.len(), 4);
+        assert!(para_text(&ex.units[2]).unwrap().starts_with("Contenido"));
+        // Un título que solo coincide cruzando una página no se reúne.
+        ex.units = vec![unit("1", 1, 40.0), unit("Un capítulo", 2, 20.0)];
+        join_bookmark_fragments(&mut ex);
+        assert_eq!(ex.units.len(), 2);
+        // Tampoco se salta un párrafo intermedio ni se acepta solo un prefijo.
+        ex.units = vec![
+            unit("1", 1, 40.0),
+            unit("Otra cosa", 1, 20.0),
+            unit("Un capítulo", 1, 20.0),
+        ];
+        join_bookmark_fragments(&mut ex);
+        assert_eq!(ex.units.len(), 3);
+        // La columna del margen puede haber separado el número de su título. El
+        // marcador identifica el texto exacto en su página; el número no se inventa.
+        ex.units = vec![
+            unit("1", 1, 40.0),
+            unit("Texto entre la columna del margen y el título.", 1, 10.0),
+            unit("Un capítulo", 1, 20.0),
+            unit("2 Otro capítulo", 2, 20.0),
+        ];
+        ex.bookmarks.remove(1);
+        let result = outline(&mut ex, "prueba.pdf");
+        assert!(result.from_bookmarks);
+        assert!(result.headings[2].is_some());
+        assert_eq!(para_text(&ex.units[0]).as_deref(), Some("1"));
+        assert_eq!(para_text(&ex.units[2]).as_deref(), Some("Un capítulo"));
+    }
     use sha2::{Digest, Sha256};
     use std::io::Read;
 
@@ -2801,6 +4182,36 @@ mod tests {
     }
 
     #[test]
+    fn invisible_ocr_with_a_normal_font_keeps_text_a_view_and_draft_status() {
+        for (mode, form, label, has_view) in [
+            (3, None, "escaneo con capa de OCR", true),
+            (3, Some("q /Im Do Q"), "escaneo con capa de OCR", true),
+            (
+                3,
+                Some("BT /F1 1 Tf (Visible) Tj ET /Im Do"),
+                "mixta (texto e imagen)",
+                false,
+            ),
+            (0, None, "mixta (texto e imagen)", false),
+        ] {
+            let tmp = tempfile::tempdir().unwrap();
+            let input = tmp.path().join("overlay.pdf");
+            fs::write(&input, read::synthetic_ocr_overlay(mode, form)).unwrap();
+            let cfg = Config::default();
+            let (_, md, names) = convert_with(input.to_str().unwrap(), &cfg);
+            let text = &md["contenido/texto.md"];
+            assert!(text.contains("Example OCR text."));
+            assert_eq!(text.contains("status: \"draft\""), has_view);
+            assert_eq!(names.contains("assets/pagina-001.png"), has_view);
+            assert!(md["conversion-report.md"].contains(label));
+            if has_view {
+                assert!(text.contains("OCR"));
+                assert!(md["conversion-report.md"].contains("sin verificar"));
+            }
+        }
+    }
+
+    #[test]
     fn page_classes_scanned_blank_visual_and_mixed_are_declared() {
         let (state, md, names) = sample("escaneado_mixto");
         assert_eq!(state, "partial");
@@ -2997,7 +4408,11 @@ mod tests {
         let (state, md, names) = convert_with("examples/pdf/muestras/escaneado_ocr.pdf", &cfg);
         assert_eq!(state, "complete");
         // Las vistas se conservan como referencia; el escaneo no se adjunta aparte.
-        assert!(names.contains("assets/pagina-001.png") && names.contains("assets/pagina-002.png"));
+        assert!(
+            names.contains("assets/pagina-001.png") && names.contains("assets/pagina-002.png"),
+            "{}",
+            md["conversion-report.md"]
+        );
         assert!(!names.iter().any(|n| n.contains("-imagen-")));
         let report = &md["conversion-report.md"];
         assert!(

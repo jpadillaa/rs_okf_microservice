@@ -23,7 +23,20 @@ pub(crate) struct Line {
     pub(crate) runs: Vec<Run>,
     pub(crate) bold: bool,
     pub(crate) mono: bool,
+    /// Posición dentro del listado, independiente del margen físico de cada página.
+    pub(crate) code: Option<CodePosition>,
 }
+
+#[derive(Clone, Copy, Debug)]
+pub(crate) struct CodePosition {
+    pub(crate) indent: usize,
+    pub(crate) blank_lines: usize,
+    pub(crate) wrapped: bool,
+}
+
+/// Hojas reservadas para un listado y sus anotaciones, fuera del flujo corriente.
+pub(crate) const CODE_FLOW: usize = usize::MAX - 4;
+pub(crate) const CODE_NOTE: usize = usize::MAX - 3;
 
 impl Line {
     pub(crate) fn text(&self) -> String {
@@ -246,21 +259,29 @@ fn line_from(glyphs: &[&Glyph]) -> Option<Line> {
     let first = visible.first()?;
     let mut runs: Vec<Run> = Vec::new();
     let mut prev: Option<&Glyph> = None;
-    let mut pending_space = false;
+    let mono = visible.iter().all(|g| g.mono);
+    let mut pending_spaces = 0;
     let mut sizes: Vec<(f32, usize)> = Vec::new();
     for g in glyphs {
         if g.c.is_whitespace() {
-            pending_space = prev.is_some();
+            pending_spaces += usize::from(prev.is_some());
             continue;
         }
         if let Some(p) = prev
-            && (pending_space || g.x0 - p.x1 > IMPLICIT_SPACE * p.size.min(g.size))
+            && (pending_spaces > 0 || g.x0 - p.x1 > IMPLICIT_SPACE * p.size.min(g.size))
             && let Some(r) = runs.last_mut()
             && !r.text.ends_with(' ')
         {
-            r.text.push(' ');
+            let spaces = if mono {
+                (((g.x0 - p.x1) / (0.6 * p.size)).round().max(1.0) as usize)
+                    .max(pending_spaces)
+                    .min(256)
+            } else {
+                1
+            };
+            r.text.extend(std::iter::repeat_n(' ', spaces));
         }
-        pending_space = false;
+        pending_spaces = 0;
         match runs.last_mut() {
             Some(r) if r.bold == g.bold && r.italic == g.italic && r.link == g.link => {
                 r.text.push(g.c)
@@ -298,7 +319,8 @@ fn line_from(glyphs: &[&Glyph]) -> Option<Line> {
         base,
         size,
         bold: visible.iter().all(|g| g.bold),
-        mono: visible.iter().all(|g| g.mono),
+        mono,
+        code: None,
         runs,
     })
 }
@@ -313,12 +335,13 @@ pub(crate) enum Item {
 /// Grupo de elementos que se leen seguidos: una columna o banda (de arriba abajo), o
 /// una fila de celdas una junto a otra (de izquierda a derecha), cada una con sus
 /// líneas de arriba abajo.
-#[derive(Debug)]
+#[derive(Clone, Debug)]
 pub(crate) struct Leaf {
     pub(crate) items: Vec<Item>,
     pub(crate) row: bool,
     /// Celdas de una fila, con los elementos de cada una.
     pub(crate) cells: Vec<Vec<Item>>,
+    table: bool,
 }
 
 impl Leaf {
@@ -327,6 +350,7 @@ impl Leaf {
             items,
             row: false,
             cells: Vec::new(),
+            table: false,
         }
     }
 }
@@ -365,6 +389,22 @@ fn median(mut v: Vec<f32>) -> f32 {
 /// las dos partes tengan líneas breves alineadas fila a fila, que son celdas de una
 /// tabla; si no lo hay, se corta por el mayor espacio horizontal (bandas).
 pub(crate) fn reading_order(region: &Region, items: Vec<Item>) -> Vec<Leaf> {
+    if let Some((top, bottom, rows)) = table_band(region, &items) {
+        let before = items
+            .iter()
+            .copied()
+            .filter(|&i| region.rect(i).bottom <= top)
+            .collect();
+        let after = items
+            .iter()
+            .copied()
+            .filter(|&i| region.rect(i).top >= bottom)
+            .collect();
+        let mut out = reading_order(region, before);
+        out.extend(rows);
+        out.extend(reading_order(region, after));
+        return out;
+    }
     let mut out = Vec::new();
     let sizes: Vec<f32> = items
         .iter()
@@ -374,6 +414,141 @@ pub(crate) fn reading_order(region: &Region, items: Vec<Item>) -> Vec<Leaf> {
     let gutter = 0.7 * median(sizes).max(4.0);
     cut(region, items, gutter, &mut out);
     out
+}
+
+/// Tres filas de al menos tres celdas alineadas fijan una banda tabular antes del
+/// corte por columnas. No cambia el recorrido de un artículo corriente a dos columnas.
+fn table_band(region: &Region, items: &[Item]) -> Option<(f32, f32, Vec<Leaf>)> {
+    let mut order: Vec<_> = items
+        .iter()
+        .copied()
+        .filter(|&i| matches!(i, Item::Line(_)))
+        .collect();
+    order.sort_by(|&a, &b| region.rect(a).top.total_cmp(&region.rect(b).top));
+    let mut rows: Vec<Leaf> = Vec::new();
+    for it in order {
+        if let Some(last) = rows.last_mut()
+            && (region.rect(it).bottom - region.rect(last.items[0]).bottom).abs()
+                < 0.3 * region.size(it)
+        {
+            last.items.push(it);
+            last.cells.push(vec![it]);
+        } else {
+            rows.push(Leaf {
+                items: vec![it],
+                row: true,
+                cells: vec![vec![it]],
+                table: false,
+            });
+        }
+    }
+    for row in &mut rows {
+        row.items
+            .sort_by(|&a, &b| region.rect(a).x0.total_cmp(&region.rect(b).x0));
+        row.cells = row.items.iter().map(|&i| vec![i]).collect();
+    }
+    let candidates: Vec<_> = rows
+        .iter()
+        .filter(|r| {
+            r.cells.len() >= 3
+                && r.items
+                    .iter()
+                    .all(|i| matches!(i,Item::Line(k) if !region.lines[*k].mono))
+        })
+        .collect();
+    for pair in candidates.windows(2) {
+        // Los renglones consecutivos de tarjetas o párrafos paralelos no son
+        // filas independientes: hace falta espacio entre los anclajes iniciales.
+        let first = cell_rect(region, &pair[0].items)?;
+        let second = cell_rect(region, &pair[1].items)?;
+        if second.top - first.bottom < 0.6 * region.size(pair[0].items[0]) {
+            continue;
+        }
+        let Some(cols) = table_columns(region, pair[0], pair[1]) else {
+            continue;
+        };
+        // Una tabla breve dentro de una columna no convierte la columna narrativa
+        // vecina en una tercera celda: el canal entre columnas es mucho más ancho.
+        let gaps: Vec<_> = cols.windows(2).map(|w| w[1].0 - w[0].1).collect();
+        if gaps.iter().copied().fold(0.0, f32::max)
+            > 3.0 * gaps.iter().copied().fold(f32::MAX, f32::min)
+        {
+            continue;
+        }
+        let size = region.size(pair[0].items[0]);
+        let edges: Vec<_> = cols.windows(2).map(|w| w[1].0 - 1.0).collect();
+        let fits = |r: Rect| {
+            (0..cols.len()).any(|i| {
+                (i == 0 || r.x0 >= edges[i - 1] - 1.0)
+                    && (i + 1 == cols.len() || r.x1 <= edges[i] + 1.0)
+            })
+        };
+        let top = cell_rect(region, &pair[0].items)?.top;
+        let mut bottom = cell_rect(region, &pair[1].items)?.bottom;
+        let mut count = 2;
+        let initial_bottom = bottom;
+        for row in candidates
+            .iter()
+            .filter(|r| region.rect(r.items[0]).top > initial_bottom)
+        {
+            let r = cell_rect(region, &row.items)?;
+            if r.top - bottom > 12.0 * size
+                || row.cells.len() != cols.len()
+                || row
+                    .items
+                    .iter()
+                    .any(|&i| !fits(region.rect(i)) || (region.size(i) - size).abs() > 0.5)
+            {
+                break;
+            }
+            bottom = r.bottom;
+            count += 1;
+        }
+        if count < 3 {
+            continue;
+        }
+        // Incluye las últimas líneas de las celdas que continúan debajo de la fila.
+        let last_anchor = bottom;
+        let mut selected = Vec::new();
+        let mut valid = true;
+        for row in &rows {
+            let r = cell_rect(region, &row.items)?;
+            if r.top >= top && r.top <= bottom + 2.0 * size {
+                if row.items.iter().any(|&i| {
+                    let mono = matches!(i, Item::Line(k) if region.lines[k].mono);
+                    !fits(region.rect(i))
+                        || ((region.size(i) - size).abs() > 0.5
+                            && (!mono || !(0.7 * size..=1.3 * size).contains(&region.size(i))))
+                }) {
+                    if r.top >= last_anchor {
+                        break;
+                    }
+                    valid = false;
+                    break;
+                }
+                bottom = bottom.max(r.bottom);
+                let mut leaf = if row.items.len() == 1 {
+                    Leaf::flow(row.items.clone())
+                } else {
+                    row.clone()
+                };
+                leaf.table = true;
+                selected.push(leaf);
+            }
+        }
+        if !valid
+            || items.iter().any(|&i| {
+                let r = region.rect(i);
+                r.top < bottom
+                    && r.bottom > top
+                    && (matches!(i, Item::Picture(_)) || r.top < top || r.bottom > bottom)
+            })
+        {
+            continue;
+        }
+        return Some((top, bottom, selected));
+    }
+    None
 }
 
 fn cut(region: &Region, items: Vec<Item>, gutter: f32, out: &mut Vec<Leaf>) {
@@ -433,6 +608,7 @@ fn cut(region: &Region, items: Vec<Item>, gutter: f32, out: &mut Vec<Leaf>) {
                 items: cells.iter().flatten().copied().collect(),
                 row: true,
                 cells,
+                table: false,
             });
         }
         return;
@@ -620,7 +796,7 @@ pub(crate) struct Para {
 
 impl Para {
     fn new(line: Line) -> Self {
-        let (marker, line) = match list_marker(&line.text()) {
+        let (marker, line) = match (!line.mono).then(|| list_marker(&line.text())).flatten() {
             Some((label, _)) => (Some(label.clone()), strip_marker(line, &label)),
             None => (None, line),
         };
@@ -779,23 +955,499 @@ fn terminal(text: &str) -> bool {
 /// Bloques de una hoja en orden: párrafos, elementos de lista, tablas e imágenes.
 /// Cada bloque lleva su rectángulo y la hoja de lectura de la que procede.
 pub(crate) fn blocks(region: &Region, leaves: &[Leaf]) -> Vec<(Block, Rect, usize)> {
+    let all: Vec<Item> = leaves
+        .iter()
+        .flat_map(|l| l.items.iter().copied())
+        .collect();
+    let mut in_table = vec![false; region.lines.len()];
+    for leaf in leaves.iter().filter(|l| l.table) {
+        for it in &leaf.items {
+            if let Item::Line(k) = it {
+                in_table[*k] = true;
+            }
+        }
+    }
+    let mut mono: Vec<usize> = all
+        .iter()
+        .filter_map(|i| match *i {
+            Item::Line(k) if region.lines[k].mono && !in_table[k] => Some(k),
+            _ => None,
+        })
+        .collect();
+    mono.sort_by(|&a, &b| {
+        region.lines[a]
+            .base
+            .total_cmp(&region.lines[b].base)
+            .then(region.lines[a].x0.total_cmp(&region.lines[b].x0))
+    });
+    let mut groups: Vec<Vec<usize>> = Vec::new();
+    for i in mono {
+        let line = &region.lines[i];
+        let continued = groups.last().is_some_and(|g| {
+            let prev = &region.lines[*g.last().unwrap()];
+            let left = g
+                .iter()
+                .map(|&k| region.lines[k].x0)
+                .fold(line.x0, f32::min);
+            let barrier = region.lines.iter().any(|l| {
+                !l.mono
+                    && l.base > prev.base
+                    && l.base < line.base
+                    && l.x0 >= left - line.size
+                    && l.x0 <= left + 2.5 * line.size
+                    && l.x1 > left + 3.0 * line.size
+            });
+            (line.size - prev.size).abs() < 0.5
+                && line.base - prev.base <= 4.5 * line.size
+                && !barrier
+        });
+        if continued {
+            groups.last_mut().unwrap().push(i);
+        } else {
+            groups.push(vec![i]);
+        }
+    }
+    groups.retain(|g| g.len() >= 2);
+    if groups.is_empty() {
+        return flow_blocks(region, leaves);
+    }
+    let mut taken = vec![false; region.lines.len()];
+    let mut bundles = Vec::new();
+    for g in groups {
+        let left = g
+            .iter()
+            .map(|&i| region.lines[i].x0)
+            .fold(f32::MAX, f32::min);
+        let size = region.lines[g[0]].size;
+        let top = region.lines[g[0]].top();
+        let bottom = region.lines[*g.last().unwrap()].bottom();
+        let mut code_lines: Vec<Line> = Vec::new();
+        for &i in &g {
+            taken[i] = true;
+            let line = &region.lines[i];
+            if let Some(prev) = code_lines.last_mut()
+                && (prev.base - line.base).abs() < 0.25 * size
+            {
+                let spaces = ((line.x0 - prev.x1) / (0.6 * size)).round().max(1.0) as usize;
+                prev.runs.push(Run {
+                    text: " ".repeat(spaces.min(256)),
+                    bold: false,
+                    italic: false,
+                    link: None,
+                });
+                prev.runs.extend(line.runs.clone());
+                prev.x1 = prev.x1.max(line.x1);
+            } else {
+                code_lines.push(line.clone());
+            }
+        }
+        let pitch = median(
+            code_lines
+                .windows(2)
+                .map(|w| w[1].base - w[0].base)
+                .filter(|g| *g > 0.5 * size)
+                .collect(),
+        )
+        .clamp(size, 1.5 * size);
+        let mut previous = None;
+        let mut previous_text = String::new();
+        for line in &mut code_lines {
+            let indent = ((line.x0 - left) / (0.6 * size)).round().max(0.0) as usize;
+            let marker = region.lines.iter().any(|l| {
+                matches!(l.text().trim(), "➥" | "↪") && (l.base - line.base).abs() < 0.5 * size
+            });
+            let wrapped = joins_wrapped_literal(&previous_text, &line.text())
+                && previous.is_some_and(|base: f32| line.base - base <= 1.8 * pitch)
+                && (marker || !indent.is_multiple_of(4));
+            line.code = Some(CodePosition {
+                indent,
+                blank_lines: previous.map_or(0, |base: f32| {
+                    ((line.base - base) / pitch).round().max(1.0) as usize - 1
+                }),
+                wrapped,
+            });
+            previous = Some(line.base);
+            previous_text = line.text();
+        }
+        let mut code = Para::new(code_lines[0].clone());
+        code.lines = code_lines;
+        code.x0 = left;
+        let rect = cell_rect(
+            region,
+            &g.iter().copied().map(Item::Line).collect::<Vec<_>>(),
+        )
+        .unwrap();
+        let mut bundle = vec![(Block::Para(code), rect, CODE_FLOW)];
+        let notes: Vec<Item> = all
+            .iter()
+            .filter_map(|i| match *i {
+                Item::Line(k) if !taken[k] && !in_table[k] && !region.lines[k].mono => {
+                    let l = &region.lines[k];
+                    (l.base >= top
+                        && l.top() <= bottom + 3.0 * size
+                        && (l.x1 <= left + 0.25 * size || l.x0 > left + 4.0 * size))
+                        .then_some(Item::Line(k))
+                }
+                _ => None,
+            })
+            .collect();
+        for i in &notes {
+            if let Item::Line(k) = i {
+                taken[*k] = true;
+            }
+        }
+        let note_leaves: Vec<Leaf> = reading_order(region, notes)
+            .into_iter()
+            .flat_map(|l| {
+                if l.row {
+                    l.cells.into_iter().map(Leaf::flow).collect()
+                } else {
+                    vec![l]
+                }
+            })
+            .collect();
+        bundle.extend(
+            flow_blocks(region, &note_leaves)
+                .into_iter()
+                .map(|(b, r, _)| (b, r, CODE_NOTE)),
+        );
+        bundles.push((top, bundle));
+    }
+    let remaining = all
+        .into_iter()
+        .filter(|i| match *i {
+            Item::Line(k) => !taken[k],
+            _ => true,
+        })
+        .collect();
+    let mut out = flow_blocks(region, &reading_order(region, remaining));
+    // Un listado y sus notas forman una secuencia: las notas nunca interrumpen código.
+    for (top, bundle) in bundles {
+        let at = out
+            .iter()
+            .position(|(_, r, _)| r.top >= top)
+            .unwrap_or(out.len());
+        out.splice(at..at, bundle);
+    }
+    out
+}
+
+/// Tablas de diapositivas delimitadas por reglas pintadas. Los anclajes salen de
+/// columnas que reaparecen en varias bandas; los controles vacíos fijan columnas
+/// de respuesta sin inventar selecciones. Fuera de esas reglas no se adivinan tablas.
+pub(crate) fn slide_blocks(
+    region: &Region,
+    rules: &[Rect],
+    controls: &[Rect],
+    width: f32,
+    height: f32,
+) -> Vec<(Block, Rect, usize)> {
+    let mut candidates: Vec<_> = rules
+        .iter()
+        .copied()
+        .filter(|r| r.width() >= 0.25 * width)
+        .collect();
+    candidates.sort_by(|a, b| b.width().total_cmp(&a.width()));
+    let mut taken = vec![false; region.lines.len()];
+    let mut tables = Vec::new();
+    for wide in candidates {
+        let full = rules
+            .iter()
+            .filter(|r| (r.x0 - wide.x0).abs() < 2. && (r.x1 - wide.x1).abs() < 2.)
+            .count();
+        if full < 3 {
+            continue;
+        }
+        let mut ys: Vec<_> = rules
+            .iter()
+            .filter(|r| {
+                r.x0 >= wide.x0 - 2. && r.x1 <= wide.x1 + 2. && r.width() >= 0.4 * wide.width()
+            })
+            .map(|r| r.top)
+            .collect();
+        ys.sort_by(f32::total_cmp);
+        ys.dedup_by(|a, b| (*a - *b).abs() < 1.);
+        let (first, last) = (*ys.first().unwrap(), *ys.last().unwrap());
+        let inside = |l: &Line| l.x0 >= wide.x0 - 2. && l.x1 <= wide.x1 + 3. && !l.mono;
+        let band = |y: f32| ys.partition_point(|&p| p < y);
+        let mut anchors: Vec<(f32, std::collections::HashSet<usize>)> = Vec::new();
+        let mut positions: Vec<_> = region
+            .lines
+            .iter()
+            .filter(|l| inside(l) && l.top() > first && l.bottom() < last)
+            .map(|l| (l.x0, band(l.base)))
+            .collect();
+        positions.extend(
+            controls
+                .iter()
+                .filter(|r| {
+                    r.x0 >= wide.x0 && r.x1 <= wide.x1 + 3. && r.top > first && r.bottom < last
+                })
+                .map(|r| (r.x0, band(r.top))),
+        );
+        positions.sort_by(|a, b| a.0.total_cmp(&b.0));
+        for (x, b) in positions {
+            if let Some((left, rows)) = anchors.last_mut()
+                && x - *left < 3.
+            {
+                rows.insert(b);
+            } else {
+                anchors.push((x, std::collections::HashSet::from([b])));
+            }
+        }
+        let mut cols: Vec<_> = anchors
+            .into_iter()
+            .filter(|(_, rows)| rows.len() >= 2)
+            .map(|(x, _)| x)
+            .collect();
+        if cols.len() < 2 {
+            continue;
+        }
+        let pitch = cols
+            .windows(2)
+            .map(|w| w[1] - w[0])
+            .fold(f32::MAX, f32::min);
+        for x in &mut cols {
+            let text_anchor = region
+                .lines
+                .iter()
+                .any(|l| (l.x0 - *x).abs() < 3. && l.top() > first && l.bottom() < last);
+            if !text_anchor
+                && controls.iter().any(|r| (r.x0 - *x).abs() < 3.)
+                && let Some(left) = region
+                    .lines
+                    .iter()
+                    .filter(|l| {
+                        inside(l)
+                            && l.top() > 0.12 * height
+                            && l.bottom() < first
+                            && ((l.x0 + l.x1) / 2. - *x).abs() < 0.5 * pitch
+                    })
+                    .map(|l| l.x0)
+                    .min_by(f32::total_cmp)
+            {
+                *x = left;
+            }
+        }
+        let col_of = |l: &Line| cols.partition_point(|&x| x <= l.x0 + 3.).saturating_sub(1);
+        let fits = |l: &Line| {
+            let col = col_of(l);
+            inside(l) && (col + 1 == cols.len() || l.x1 <= cols[col + 1] + 1.)
+        };
+        let eligible: Vec<_> = region
+            .lines
+            .iter()
+            .enumerate()
+            .filter(|(_, l)| fits(l) && l.top() > 0.12 * height && l.bottom() < height * 0.95)
+            .collect();
+        let Some(top) = eligible
+            .iter()
+            .filter(|(_, l)| l.bottom() <= first)
+            .map(|(_, l)| l.top())
+            .min_by(f32::total_cmp)
+        else {
+            continue;
+        };
+        let size = median(
+            eligible
+                .iter()
+                .filter(|(_, l)| l.top() > first && l.bottom() < last)
+                .map(|(_, l)| l.size)
+                .collect(),
+        )
+        .max(4.);
+        let mut bottom = last;
+        let mut after: Vec<_> = eligible.iter().filter(|(_, l)| l.top() >= last).collect();
+        after.sort_by(|a, b| a.1.top().total_cmp(&b.1.top()));
+        for (_, l) in after {
+            if l.top() - bottom > 3. * size {
+                break;
+            }
+            bottom = bottom.max(l.bottom());
+        }
+        if region
+            .lines
+            .iter()
+            .enumerate()
+            .any(|(i, l)| taken[i] && inside(l) && l.top() >= top && l.bottom() <= bottom)
+        {
+            continue;
+        }
+        // Una cabecera separada de la primera fila por espacio vertical debe ser
+        // una fila propia, aunque falte una regla dibujada debajo de ella.
+        let mut initial: Vec<_> = eligible
+            .iter()
+            .filter(|(_, l)| l.top() >= top && l.bottom() <= first)
+            .map(|(_, l)| (l.top(), l.bottom()))
+            .collect();
+        initial.sort_by(|a, b| a.0.total_cmp(&b.0));
+        let mut reach = top;
+        let mut gap = (0., 0.);
+        for (a, b) in initial {
+            if a - reach > gap.0 {
+                gap = (a - reach, (a + reach) / 2.);
+            }
+            reach = reach.max(b);
+        }
+        if gap.0 > 0.45 * size {
+            ys.push(gap.1);
+        }
+        ys.retain(|&y| y > top && y < bottom);
+        ys.sort_by(f32::total_cmp);
+        ys.dedup_by(|a, b| (*a - *b).abs() < 1.);
+        let mut rows = vec![vec![String::new(); cols.len()]; ys.len() + 1];
+        let mut selected: Vec<_> = region
+            .lines
+            .iter()
+            .enumerate()
+            .filter(|(i, l)| {
+                !taken[*i] && inside(l) && l.top() >= top - 0.1 && l.bottom() <= bottom + 0.1
+            })
+            .collect();
+        selected.sort_by(|a, b| {
+            a.1.base
+                .total_cmp(&b.1.base)
+                .then(a.1.x0.total_cmp(&b.1.x0))
+        });
+        let mut indices = Vec::new();
+        for (i, l) in selected {
+            if !fits(l) && l.bottom() > first {
+                continue;
+            }
+            let row = ys.partition_point(|&y| y < l.base);
+            let col = col_of(l);
+            let cell = &mut rows[row][col];
+            if !cell.is_empty() {
+                cell.push('\n');
+            }
+            cell.push_str(&l.text());
+            indices.push(i);
+        }
+        // Una regla que empieza después de una columna deja esa celda combinada
+        // verticalmente. Markdown no tiene rowspan: repetimos su etiqueta.
+        for r in 1..rows.len() {
+            let boundary = ys[r - 1];
+            if rows[r][0].is_empty()
+                && !rows[r - 1][0].is_empty()
+                && rules.iter().any(|line| {
+                    (line.top - boundary).abs() < 1.
+                        && line.x0 > cols[0] + 3.
+                        && line.x0 <= cols[1] + 3.
+                })
+                && !rules
+                    .iter()
+                    .any(|line| (line.top - boundary).abs() < 1. && line.x0 <= cols[0] + 3.)
+            {
+                rows[r][0] = rows[r - 1][0].clone();
+            }
+        }
+        rows.retain(|row| row.iter().any(|c| !c.is_empty()));
+        if rows.len() < 3 {
+            continue;
+        }
+        for row in &mut rows {
+            for cell in row {
+                *cell = join_runs(&[Run {
+                    text: std::mem::take(cell),
+                    bold: false,
+                    italic: false,
+                    link: None,
+                }])
+                .0
+                .into_iter()
+                .map(|r| r.text)
+                .collect();
+            }
+        }
+        for i in indices {
+            taken[i] = true;
+        }
+        tables.push((
+            Block::Table(rows),
+            Rect {
+                x0: wide.x0,
+                x1: wide.x1,
+                top,
+                bottom,
+            },
+            0,
+        ));
+    }
+    let items = (0..region.lines.len())
+        .filter(|&i| !taken[i])
+        .map(Item::Line)
+        .chain((0..region.pictures.len()).map(Item::Picture))
+        .collect();
+    let leaves: Vec<_> = reading_order(region, items)
+        .into_iter()
+        .flat_map(|l| {
+            if l.row {
+                l.cells.into_iter().map(Leaf::flow).collect::<Vec<_>>()
+            } else {
+                vec![l]
+            }
+        })
+        .collect();
+    let mut out = blocks(region, &leaves);
+    tables.sort_by(|a, b| a.1.top.total_cmp(&b.1.top));
+    for table in tables {
+        let at = out
+            .iter()
+            .position(|(_, r, _)| r.top >= table.1.top)
+            .unwrap_or(out.len());
+        out.insert(at, table);
+    }
+    out
+}
+
+/// Un salto editorial dentro de un literal simple: la segunda parte no abre otro
+/// literal y cierra la comilla que quedó abierta. Nunca modifica cadenas triples ni
+/// una continuación explícita con barra inversa.
+fn joins_wrapped_literal(previous: &str, next: &str) -> bool {
+    if previous.ends_with('\\')
+        || [previous, next]
+            .iter()
+            .any(|s| s.contains("\"\"\"") || s.contains("'''"))
+    {
+        return false;
+    }
+    let mut quote = None;
+    let mut escaped = false;
+    for c in previous.chars() {
+        if escaped {
+            escaped = false;
+            continue;
+        }
+        if c == '\\' {
+            escaped = true;
+            continue;
+        }
+        if matches!(c, '\'' | '"') {
+            if quote == Some(c) {
+                quote = None;
+            } else if quote.is_none() {
+                quote = Some(c);
+            }
+        }
+    }
+    quote.is_some_and(|q| !next.trim_start().starts_with(['\'', '"']) && next.contains(q))
+}
+
+fn flow_blocks(region: &Region, leaves: &[Leaf]) -> Vec<(Block, Rect, usize)> {
     let mut out: Vec<(Block, Rect, usize)> = Vec::new();
     let mut k = 0;
     while k < leaves.len() {
         let leaf = &leaves[k];
         // Filas consecutivas de varias celdas de texto: tabla.
         let text_row = |l: &Leaf| l.row && l.items.iter().all(|i| matches!(i, Item::Line(_)));
-        if text_row(leaf) {
-            let mut end = k;
-            while end + 1 < leaves.len() && text_row(&leaves[end + 1]) {
-                end += 1;
-            }
-            if end > k {
-                let (rows, rect, used) = table(region, leaves, k, end);
-                out.push((Block::Table(rows), rect, k));
-                k = used + 1;
-                continue;
-            }
+        if text_row(leaf)
+            && let Some(next) = leaves.get(k + 1).filter(|l| text_row(l))
+            && let Some(cols) = table_columns(region, leaf, next)
+        {
+            let (rows, rect, used) = table(region, leaves, k, &cols);
+            out.push((Block::Table(rows), rect, k));
+            k = used + 1;
+            continue;
         }
         if leaf.row {
             // Celdas sueltas una junto a otra: cada una es un bloque.
@@ -914,59 +1566,70 @@ fn continues(p: &Para, line: &Line, right: f32, usual_gap: f32) -> bool {
 /// Tabla de las filas `from..=to`; añade a la celda de su columna las líneas sueltas
 /// que la continúan justo debajo. Devuelve las filas, el rectángulo y la última hoja
 /// usada.
+fn cell_rect(region: &Region, cell: &[Item]) -> Option<Rect> {
+    cell.iter()
+        .map(|&i| region.rect(i))
+        .fold(None, |acc: Option<Rect>, r| {
+            Some(match acc {
+                None => r,
+                Some(o) => Rect {
+                    x0: o.x0.min(r.x0),
+                    top: o.top.min(r.top),
+                    x1: o.x1.max(r.x1),
+                    bottom: o.bottom.max(r.bottom),
+                },
+            })
+        })
+}
+
+/// Dos filas vecinas fijan un número estable de columnas. Una leyenda o encabezado
+/// que las cruza no puede ensancharlas hasta fundirlas.
+fn table_columns(region: &Region, a: &Leaf, b: &Leaf) -> Option<Vec<(f32, f32)>> {
+    if a.cells.len() < 2 || a.cells.len() != b.cells.len() {
+        return None;
+    }
+    let mut cols = Vec::new();
+    let size = median(a.items.iter().map(|&i| region.size(i)).collect()).max(4.0);
+    for (a, b) in a.cells.iter().zip(&b.cells) {
+        let (a, b) = (cell_rect(region, a)?, cell_rect(region, b)?);
+        if b.top - a.bottom > 2.5 * size {
+            return None;
+        }
+        cols.push((a.x0.min(b.x0), a.x1.max(b.x1)));
+    }
+    cols.windows(2)
+        .all(|w| w[0].1 + 1.0 < w[1].0)
+        .then_some(cols)
+}
+
 fn table(
     region: &Region,
     leaves: &[Leaf],
     from: usize,
-    to: usize,
+    cols: &[(f32, f32)],
 ) -> (Vec<Vec<String>>, Rect, usize) {
-    let cell_rect = |cell: &[Item]| {
-        cell.iter()
-            .map(|&i| region.rect(i))
-            .fold(None, |acc: Option<Rect>, r| {
-                Some(match acc {
-                    None => r,
-                    Some(o) => Rect {
-                        x0: o.x0.min(r.x0),
-                        top: o.top.min(r.top),
-                        x1: o.x1.max(r.x1),
-                        bottom: o.bottom.max(r.bottom),
-                    },
-                })
-            })
-    };
-    let mut spans: Vec<(f32, f32)> = leaves[from..=to]
-        .iter()
-        .flat_map(|l| l.cells.iter().filter_map(|c| cell_rect(c)))
-        .map(|r| (r.x0, r.x1))
-        .collect();
-    spans.sort_by(|a, b| a.0.total_cmp(&b.0));
-    let mut cols: Vec<(f32, f32)> = Vec::new();
-    for (a, b) in spans {
-        match cols.last_mut() {
-            Some(c) if a <= c.1 => c.1 = c.1.max(b),
-            _ => cols.push((a, b)),
-        }
-    }
-    // Columna de una celda: la que más se solapa con ella (los números alineados a la
-    // derecha no empiezan todos en el mismo punto).
-    let overlaps = |r: &Rect| -> Vec<(usize, f32)> {
-        cols.iter()
-            .enumerate()
-            .map(|(i, c)| (i, r.x1.min(c.1) - r.x0.max(c.0)))
-            .filter(|(_, o)| *o > 0.5)
-            .collect()
-    };
-    let col_of = |r: &Rect| {
-        overlaps(r)
-            .into_iter()
-            .max_by(|a, b| a.1.total_cmp(&b.1))
-            .map_or(0, |(i, _)| i)
+    let edges: Vec<f32> = cols.windows(2).map(|w| w[1].0 - 1.0).collect();
+    let col_of = |r: &Rect| -> Option<usize> {
+        (0..cols.len()).find(|&i| {
+            (i == 0 || r.x0 >= edges[i - 1] - 1.0)
+                && (i == cols.len() - 1 || r.x1 <= edges[i] + 1.0)
+        })
     };
     let text_of = |it: Item| match it {
         Item::Line(i) => region.lines[i].text(),
         Item::Picture(_) => String::new(),
     };
+    let body_tops: Vec<_> = leaves[from + 1..]
+        .iter()
+        .take_while(|l| l.table)
+        .filter(|l| l.cells.len() == cols.len())
+        .filter_map(|l| cell_rect(region, &l.items).map(|r| r.top))
+        .collect();
+    let multiline = body_tops
+        .windows(2)
+        .filter(|w| w[1] - w[0] > 1.7 * region.size(leaves[from].items[0]))
+        .count()
+        >= 2;
     let mut rows: Vec<Vec<String>> = Vec::new();
     let mut rect: Option<Rect> = None;
     let grow = |rect: &mut Option<Rect>, r: Rect| {
@@ -980,49 +1643,72 @@ fn table(
             },
         });
     };
-    let mut last = to;
+    let append = |cell: &mut String, text: &str| {
+        if !cell.is_empty() {
+            cell.push('\n');
+        }
+        cell.push_str(text);
+    };
+    let mut last = from;
     let mut k = from;
+    let mut previous_top = None;
     while k < leaves.len() {
         let leaf = &leaves[k];
         let is_row = leaf.row && leaf.items.iter().all(|i| matches!(i, Item::Line(_)));
         if leaf.row && !is_row {
             break;
         }
-        // Tras una línea de continuación, la tabla sigue con las filas cuyas celdas
-        // caen en sus columnas.
-        if k > to
-            && is_row
-            && !leaf
-                .cells
-                .iter()
-                .filter_map(|c| cell_rect(c))
-                .all(|r| overlaps(&r).len() == 1)
+        let current = cell_rect(region, &leaf.items);
+        if k > from
+            && current.is_some_and(|r| {
+                r.top - rect.map_or(0.0, |b| b.bottom)
+                    > (if leaf.table { 12.0 } else { 2.5 }) * region.size(leaf.items[0]).max(4.0)
+            })
         {
             break;
         }
         if is_row {
+            let cells: Vec<_> = leaf
+                .cells
+                .iter()
+                .filter_map(|c| cell_rect(region, c))
+                .collect();
+            if !cells.iter().all(|r| col_of(r).is_some()) {
+                break;
+            }
             let mut row = vec![String::new(); cols.len()];
             for c in &leaf.cells {
-                let Some(r) = cell_rect(c) else { continue };
+                let Some(r) = cell_rect(region, c) else {
+                    continue;
+                };
                 grow(&mut rect, r);
-                let cell = &mut row[col_of(&r)];
+                let cell = &mut row[col_of(&r).expect("celda en su columna")];
                 for &it in c {
-                    if !cell.is_empty() {
-                        cell.push(' ');
-                    }
-                    cell.push_str(&text_of(it));
+                    append(cell, &text_of(it));
                 }
             }
-            rows.push(row);
+            if !rows.is_empty()
+                && (row[0].is_empty()
+                    || (multiline
+                        && current.is_some_and(|r| {
+                            previous_top
+                                .is_some_and(|p| r.top - p <= 1.4 * region.size(leaf.items[0]))
+                        })))
+            {
+                for (cell, text) in rows.last_mut().unwrap().iter_mut().zip(row) {
+                    if !text.is_empty() {
+                        append(cell, &text);
+                    }
+                }
+            } else {
+                rows.push(row);
+            }
         } else {
             // Línea suelta dentro de una columna, pegada a la fila anterior.
             let bottom = rect.map_or(0.0, |r| r.bottom);
             let fits = leaf.items.len() == 1 && matches!(leaf.items[0], Item::Line(_)) && {
                 let r = region.rect(leaf.items[0]);
-                let c = col_of(&r);
-                r.top - bottom <= 0.6 * region.size(leaf.items[0])
-                    && r.x1 <= cols[c].1 + 1.0
-                    && (c + 1 == cols.len() || r.x1 < cols[c + 1].0)
+                col_of(&r).is_some() && r.top - bottom <= 0.75 * region.size(leaf.items[0])
             };
             if !fits {
                 break;
@@ -1030,14 +1716,12 @@ fn table(
             let r = region.rect(leaf.items[0]);
             grow(&mut rect, r);
             if let Some(row) = rows.last_mut() {
-                let cell = &mut row[col_of(&r)];
-                if !cell.is_empty() && !cell.ends_with('-') {
-                    cell.push(' ');
-                }
-                cell.push_str(&text_of(leaf.items[0]));
+                let cell = &mut row[col_of(&r).expect("continuación en su columna")];
+                append(cell, &text_of(leaf.items[0]));
             }
         }
         last = k;
+        previous_top = current.map(|r| r.top);
         k += 1;
     }
     let rect = rect.unwrap_or(Rect {
@@ -1046,12 +1730,111 @@ fn table(
         x1: 0.0,
         bottom: 0.0,
     });
-    (rows, rect, last.max(to))
+    for cell in rows.iter_mut().flatten() {
+        *cell = join_runs(&[Run {
+            text: std::mem::take(cell),
+            bold: false,
+            italic: false,
+            link: None,
+        }])
+        .0
+        .into_iter()
+        .map(|r| r.text)
+        .collect();
+    }
+    (rows, rect, last)
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
+    #[test]
+    fn ruled_scale_uses_control_columns_and_preserves_wrapped_headers_and_merged_labels() {
+        let mut glyphs = Vec::new();
+        let mut controls = Vec::new();
+        let choices = ["Always", "Often", "Sometimes", "Rarely", "Never"];
+        for (i, text) in choices.iter().enumerate() {
+            glyphs.extend(text_at(text, 350. + 90. * i as f32, 100., 8., true));
+        }
+        for row in 0..5 {
+            let y = 140. + 40. * row as f32;
+            if row != 1 {
+                glyphs.extend(text_at(
+                    if row == 0 { "Group one" } else { "Other group" },
+                    40.,
+                    y,
+                    8.,
+                    true,
+                ));
+            }
+            glyphs.extend(text_at("A row description", 170., y, 8., false));
+            for i in 0..5 {
+                controls.push(Rect {
+                    x0: 370. + 90. * i as f32,
+                    x1: 385. + 90. * i as f32,
+                    top: y - 9.,
+                    bottom: y + 6.,
+                });
+            }
+        }
+        let rules = vec![
+            Rect {
+                x0: 170.,
+                x1: 820.,
+                top: 170.,
+                bottom: 170.,
+            },
+            Rect {
+                x0: 40.,
+                x1: 820.,
+                top: 210.,
+                bottom: 210.,
+            },
+            Rect {
+                x0: 40.,
+                x1: 820.,
+                top: 250.,
+                bottom: 250.,
+            },
+            Rect {
+                x0: 40.,
+                x1: 820.,
+                top: 290.,
+                bottom: 290.,
+            },
+        ];
+        let (lines, _) = lines(&glyphs);
+        let region = Region {
+            lines: &lines,
+            pictures: &[],
+        };
+        let output = slide_blocks(&region, &rules, &controls, 1000., 600.);
+        let tables: Vec<_> = output
+            .iter()
+            .filter_map(|(b, _, _)| {
+                if let Block::Table(rows) = b {
+                    Some(rows)
+                } else {
+                    None
+                }
+            })
+            .collect();
+        assert_eq!(tables.len(), 1, "{output:?}");
+        let table = tables[0];
+        assert_eq!(table.len(), 6, "{table:?}");
+        assert_eq!(&table[0][2..], choices);
+        assert_eq!(table[1][0], "Group one");
+        assert_eq!(table[2][0], "Group one");
+        for row in &table[1..] {
+            assert_eq!(row[1], "A row description");
+        }
+        let without_rules = slide_blocks(&region, &[], &controls, 1000., 600.);
+        assert!(
+            !without_rules
+                .iter()
+                .any(|(b, _, _)| matches!(b, Block::Table(_)))
+        );
+    }
 
     /// Caracteres de un texto escrito en una línea a partir de `x`, con letras de ancho
     /// fijo de medio tamaño.
@@ -1096,6 +1879,248 @@ mod tests {
             .collect()
     }
 
+    fn code_at(s: &str, x: f32, base: f32) -> Vec<Glyph> {
+        let mut glyphs = text_at(s, x, base, 8.0, false);
+        for (i, g) in glyphs.iter_mut().enumerate() {
+            g.mono = true;
+            g.x0 = x + i as f32 * 4.8;
+            g.x1 = g.x0 + 4.8;
+        }
+        glyphs
+    }
+
+    #[test]
+    fn three_columns_keep_multiline_cells_and_exclude_the_caption() {
+        let mut g = text_at("Informe", 220.0, 30.0, 9.0, true);
+        g.extend(text_at("Tabla 2", 40.0, 60.0, 8.0, true));
+        g.extend(text_at(
+            "Descripción general de los registros",
+            90.0,
+            60.0,
+            8.0,
+            true,
+        ));
+        for (text, x) in [("Clave", 45.0), ("Petición", 180.0), ("Respuesta", 330.0)] {
+            g.extend(text_at(text, x, 85.0, 8.0, true));
+        }
+        for (i, label) in ["Uno", "Dos", "Tres", "Cuatro"].iter().enumerate() {
+            let base = 105.0 + i as f32 * 27.0;
+            g.extend(text_at(label, 40.0, base, 8.0, false));
+            g.extend(text_at(
+                "Una petición de longitud considerable",
+                140.0,
+                base,
+                8.0,
+                false,
+            ));
+            g.extend(text_at(
+                "Devuelve una respuesta con docu-",
+                310.0,
+                base,
+                8.0,
+                false,
+            ));
+            g.extend(text_at(
+                "continuación de la petición",
+                140.0,
+                base + 10.0,
+                8.0,
+                false,
+            ));
+            g.extend(text_at("mentos", 310.0, base + 10.0, 8.0, false));
+        }
+        let (ls, _) = lines(&g);
+        let region = Region {
+            lines: &ls,
+            pictures: &[],
+        };
+        let leaves = reading_order(&region, (0..ls.len()).map(Item::Line).collect());
+        let result = blocks(&region, &leaves);
+        let tables: Vec<_> = result
+            .iter()
+            .filter_map(|(b, _, _)| match b {
+                Block::Table(t) => Some(t),
+                _ => None,
+            })
+            .collect();
+        assert_eq!(tables.len(), 1, "{result:?}");
+        assert_eq!(tables[0].len(), 5);
+        assert_eq!(tables[0][0], ["Clave", "Petición", "Respuesta"]);
+        for row in &tables[0][1..] {
+            assert_eq!(row.len(), 3);
+            assert!(row[1].ends_with("continuación de la petición"));
+            assert_eq!(row[2], "Devuelve una respuesta con documentos");
+        }
+        assert!(
+            result
+                .iter()
+                .any(|(b, _, _)| matches!(b,Block::Para(p) if p.text().contains("Tabla 2")))
+        );
+    }
+
+    #[test]
+    fn code_keeps_spaces_indentation_and_blank_lines_outside_side_notes() {
+        let mut g = Vec::new();
+        for (text, base) in [
+            ("def plan():", 100.0),
+            ("    value = \"a  b\"", 120.0),
+            ("    return value", 130.0),
+            ("print(plan())", 140.0),
+        ] {
+            g.extend(code_at(text, 50.0, base));
+        }
+        g.extend(text_at("Nota lateral", 220.0, 113.0, 9.0, true));
+        g.extend(text_at("sobre el valor", 220.0, 123.0, 9.0, true));
+        g.extend(text_at(
+            "Texto que sigue al listado.",
+            50.0,
+            175.0,
+            10.0,
+            false,
+        ));
+        let (ls, _) = lines(&g);
+        let region = Region {
+            lines: &ls,
+            pictures: &[],
+        };
+        let result = blocks(
+            &region,
+            &reading_order(&region, (0..ls.len()).map(Item::Line).collect()),
+        );
+        let code: Vec<_> = result
+            .iter()
+            .filter_map(|(b, _, _)| match b {
+                Block::Para(p) if p.mono => Some(p),
+                _ => None,
+            })
+            .collect();
+        assert_eq!(code.len(), 1, "{result:?}");
+        assert_eq!(
+            code[0]
+                .lines
+                .iter()
+                .map(|l| l.code.unwrap().indent)
+                .collect::<Vec<_>>(),
+            [0, 4, 4, 0]
+        );
+        assert_eq!(code[0].lines[1].code.unwrap().blank_lines, 1);
+        assert_eq!(code[0].lines[1].text(), "value = \"a  b\"");
+        assert!(result.iter().any(|(b, _, k)| *k == CODE_NOTE
+            && matches!(b,Block::Para(p) if p.text().contains("Nota lateral"))));
+        assert!(
+            matches!(&result.last().unwrap().0,Block::Para(p) if p.text()=="Texto que sigue al listado.")
+        );
+    }
+
+    #[test]
+    fn tall_table_rows_keep_monospace_fragments_inside_their_cells() {
+        let mut g = Vec::new();
+        for (text, x) in [("Clave", 40.0), ("Ejemplo", 180.0), ("Notas", 330.0)] {
+            g.extend(text_at(text, x, 80.0, 8.0, true));
+        }
+        for (i, label) in ["Uno", "Dos", "Tres"].iter().enumerate() {
+            let base = 100.0 + i as f32 * 60.0;
+            g.extend(text_at(label, 40.0, base, 8.0, false));
+            g.extend(text_at(
+                "Parámetros que deben conservarse",
+                140.0,
+                base,
+                8.0,
+                false,
+            ));
+            g.extend(text_at(
+                "Descripción explicativa de esta fila",
+                310.0,
+                base,
+                8.0,
+                false,
+            ));
+            for j in 1..=3 {
+                g.extend(text_at(
+                    "más información de la misma celda",
+                    310.0,
+                    base + j as f32 * 10.0,
+                    8.0,
+                    false,
+                ));
+            }
+            g.extend(code_at("alpha,", 140.0, base + 10.0));
+            g.extend(text_at("continuación", 40.0, base + 10.0, 8.0, false));
+            g.extend(code_at("beta", 140.0, base + 20.0));
+            g.extend(text_at(
+                "Una continuación más larga que el inicio",
+                140.0,
+                base + 30.0,
+                8.0,
+                false,
+            ));
+        }
+        let (ls, _) = lines(&g);
+        let region = Region {
+            lines: &ls,
+            pictures: &[],
+        };
+        let result = blocks(
+            &region,
+            &reading_order(&region, (0..ls.len()).map(Item::Line).collect()),
+        );
+        let tables: Vec<_> = result
+            .iter()
+            .filter_map(|(b, _, _)| match b {
+                Block::Table(t) => Some(t),
+                _ => None,
+            })
+            .collect();
+        assert_eq!(tables.len(), 1, "{result:?}");
+        assert_eq!(tables[0].len(), 4);
+        assert_eq!(tables[0][1][0], "Uno continuación");
+        assert!(tables[0][3][1].ends_with("Una continuación más larga que el inicio"));
+        assert_eq!(tables[0][3][2].matches("más información").count(), 3);
+        assert!(tables[0][1][1].contains("alpha, beta"));
+        assert!(
+            !result
+                .iter()
+                .any(|(b, _, _)| matches!(b,Block::Para(p) if p.mono))
+        );
+    }
+
+    #[test]
+    fn only_editorial_wraps_in_simple_literals_are_joined() {
+        assert!(joins_wrapped_literal(
+            "text = \"primera parte",
+            "segunda parte\","
+        ));
+        assert!(!joins_wrapped_literal(
+            "text = \"\"\"primera",
+            "segunda\"\"\""
+        ));
+        assert!(!joins_wrapped_literal("text = \"primera\\", "segunda\""));
+        assert!(!joins_wrapped_literal(
+            "text = (\"primera\"",
+            "\"segunda\")"
+        ));
+        let mut g = code_at("text = \"primera parte", 50.0, 100.0);
+        g.extend(code_at("segunda parte\"", 83.6, 110.0));
+        g.extend(code_at("print(text)", 50.0, 120.0));
+        let (ls, _) = lines(&g);
+        let region = Region {
+            lines: &ls,
+            pictures: &[],
+        };
+        let result = blocks(
+            &region,
+            &reading_order(&region, (0..ls.len()).map(Item::Line).collect()),
+        );
+        let code = result
+            .iter()
+            .find_map(|(b, _, _)| match b {
+                Block::Para(p) if p.mono => Some(p),
+                _ => None,
+            })
+            .unwrap();
+        assert!(code.lines[1].code.unwrap().wrapped);
+    }
+
     #[test]
     fn two_columns_are_read_one_after_the_other() {
         let mut g = text_at("Titulo general", 50.0, 40.0, 16.0, true);
@@ -1123,6 +2148,59 @@ mod tests {
                 "la columna derecha tiene también su propio texto, que ocupa tres líneas y termina."
             ]
         );
+    }
+
+    #[test]
+    fn bibliography_columns_are_not_a_tabular_band() {
+        let doc =
+            crate::pdf::read::open(&std::fs::read("examples/pdf/corpus/p2.pdf").unwrap()).unwrap();
+        let raw = crate::pdf::read::page(&doc, 7).unwrap();
+        let (ls, _) = lines(&raw.glyphs);
+        let region = Region {
+            lines: &ls,
+            pictures: &[],
+        };
+        let leaves = reading_order(&region, (0..ls.len()).map(Item::Line).collect());
+        let selected: Vec<_> = leaves
+            .iter()
+            .filter(|l| l.table)
+            .map(|l| {
+                l.items
+                    .iter()
+                    .filter_map(|i| match i {
+                        Item::Line(k) => Some(region.lines[*k].text()),
+                        _ => None,
+                    })
+                    .collect::<Vec<_>>()
+            })
+            .collect();
+        assert!(selected.is_empty(), "{selected:?}");
+    }
+
+    #[test]
+    fn text_cards_are_not_promoted_to_a_tabular_band() {
+        let doc =
+            crate::pdf::read::open(&std::fs::read("examples/pdf/corpus/p1.pdf").unwrap()).unwrap();
+        let raw = crate::pdf::read::page(&doc, 36).unwrap();
+        let (ls, _) = lines(&raw.glyphs);
+        let region = Region {
+            lines: &ls,
+            pictures: &[],
+        };
+        let leaves = reading_order(&region, (0..ls.len()).map(Item::Line).collect());
+        assert!(leaves.iter().all(|l| !l.table));
+        let text = blocks(&region, &leaves)
+            .into_iter()
+            .filter_map(|(b, _, _)| match b {
+                Block::Para(p) => Some(p.text()),
+                _ => None,
+            })
+            .collect::<Vec<_>>()
+            .join("\n");
+        assert!(text.contains(
+            "Escribir bien ayuda a potenciar el perfil profesional Expresarse sin errores genera credibilidad"
+        ));
+        assert!(text.contains("Darle valor a la importancia de la autoría de un texto"));
     }
 
     #[test]

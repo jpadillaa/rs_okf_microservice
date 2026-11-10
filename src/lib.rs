@@ -223,8 +223,10 @@ fn free_space_mb(path: &FsPath) -> std::io::Result<u64> {
 
 /// Subir un documento y crear un trabajo
 ///
-/// Selecciona un PDF, DOCX, XLSX o PPTX en el campo `file`. Se procesa el primer
-/// archivo del formulario. El límite es 100 MiB por defecto, configurable con
+/// Selecciona un PDF, DOCX, XLSX o PPTX en el campo `file` y pulsa **Execute**.
+/// **Solo `file` es obligatorio**:
+/// deja `document_key` y `access` vacíos y **Send empty value** desmarcado.
+/// Se procesa el primer archivo del formulario. El límite es 100 MiB por defecto, configurable con
 /// `OKF_MAX_UPLOAD_MB`. Guarda el `job_id` de la respuesta para consultar el estado.
 /// El campo opcional `document_key` agrupa las versiones de un mismo documento.
 #[utoipa::path(

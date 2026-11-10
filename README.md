@@ -41,7 +41,7 @@ flowchart LR
 
 El resultado se puede leer directamente o entregar a un sistema de búsqueda o a un asistente de IA. Ese sistema se encarga de indexar el contenido y responder preguntas.
 
-**Por dónde empezar:** [entender el contrato común](#un-contrato-común-de-salida-las-mismas-reglas-para-todos-los-formatos) · [ver el resultado](#qué-contiene-el-resultado) · [ponerlo en marcha](#servicio-completo-con-docker) · [convertir el primer archivo](#probar-los-endpoints-con-swagger-ui) · [consultar la documentación técnica](docs/README.md).
+**Por dónde empezar:** [entender el contrato común](#un-contrato-común-de-salida-las-mismas-reglas-para-todos-los-formatos) · [ver el resultado](#qué-contiene-el-resultado) · [leer los metadatos YAML](#cómo-leer-los-metadatos-yaml) · [ponerlo en marcha](#servicio-completo-con-docker) · [convertir el primer archivo](#probar-los-endpoints-con-swagger-ui) · [consultar la documentación técnica](docs/README.md).
 
 ## Qué contiene el resultado
 
@@ -79,6 +79,107 @@ Dentro de esa estructura común, el contenido se organiza según el formato del 
 El conversor extrae y organiza el contenido sin resumirlo. Sus notas se distinguen del texto original. Si detecta pérdidas o incertidumbre, las declara en el informe.
 
 En [los documentos de ejemplo](examples/) y sus carpetas `esperado/` se pueden consultar resultados de referencia. Las reglas completas están en la [especificación del bundle](docs/especificacion/ESPECIFICACION_OKF.md).
+
+## Cómo leer los metadatos YAML
+
+Al comienzo de `documento.md`, de cada archivo de `contenido/` y de `conversion-report.md` hay un encabezado entre dos líneas `---`. Se llama **frontmatter** y está escrito en **YAML**, un formato que organiza datos mediante nombres de campo, valores, listas y sangría. Después del segundo `---` comienza el cuerpo del documento en Markdown. Estos archivos se denominan **conceptos** en OKF.
+
+**Estos metadatos hacen explícito el contrato común de salida:** permiten identificar cada unidad, localizar su origen, recuperar su contexto y conocer cómo se produjo. Los campos dependen del archivo: `documento.md` describe el conjunto, los archivos de `contenido/` describen sus unidades y el informe registra el resultado de la conversión.
+
+Este ejemplo procede del [texto DOCX breve de referencia](examples/docx/esperado/fixtures/breve/contenido/texto.md). Se muestra solo el localizador general y se usa una fecha ilustrativa:
+
+```yaml
+---
+type: "Source Text"
+unit_id: "b50a3bf11592a55cec4caa203d549d21ac966cb70336d8236a18e6ec03835cb7/contenido/texto.md"
+parent: "documento.md"
+title: "breve"
+description: "Texto completo de breve.docx. Nota breve"
+sources:
+  - id: "original"
+    resource: "/references/original.docx"
+generated:
+  by: "process:document-conversion"
+  at: "2026-11-09T15:00:00Z"
+source_spans:
+  - id: "seccion"
+    source_id: "original"
+    kind: "docx_blocks"
+    from: 1
+    to: 5
+---
+```
+
+El ejemplo describe una unidad que depende de `documento.md` y procede de los bloques 1 a 5 del Word original. `source_id: "original"` la vincula con la fuente declarada en `sources`. La fecha de `generated.at` corresponde a la conversión.
+
+### Contenido, procedencia y relaciones
+
+En las tablas siguientes, el punto indica un campo anidado y `[]` indica cada elemento de una lista. Por ejemplo, `sources[].resource` es el campo `resource` de cada fuente.
+
+| Campo | Significado |
+| --- | --- |
+| `type` | Clase de unidad: `Source Document` para el documento completo, `Source Text` o `Source Section` para texto, `Slide` para una diapositiva, `Sheet` o `Sheet Region` para Excel y `Conversion Report` para el informe. |
+| `title` | Título de la unidad. Su procedencia depende del formato; puede tomarse del original, de sus propiedades o del nombre del archivo, o inferirse según las reglas del perfil. |
+| `description` | Descripción breve escrita por el conversor, que puede incorporar el título o el comienzo del texto extraído. Debe interpretarse como una descripción de la unidad, no como una cita literal del original. |
+| `unit_id` | Identificador de la unidad, formado por el identificador de conversión y la ruta del archivo dentro del bundle. También aparece en `documento.md` y en el informe. |
+| `sources[].id` y `sources[].resource` | Identificador local de la fuente y ruta de la copia del original incluida en el bundle. |
+| `source_spans[]` | Lugares del original que corresponden a la unidad o a sus pasajes. Cada entrada tiene un `id`, un `source_id` que enlaza con `sources`, un `kind` que indica el tipo de ubicación y los datos para localizarla. |
+| `generated.by` y `generated.at` | Proceso que produjo el archivo Markdown y fecha de esa conversión, con zona horaria. |
+| `parent`, `previous` y `next` | Unidad que contiene el concepto y, cuando existen, unidades anterior y siguiente con el mismo `parent`, en orden de lectura. Son rutas relativas a la raíz del bundle y se declaran en los conceptos de `contenido/`. |
+
+El significado de la ubicación cambia según `source_spans[].kind`:
+
+| Valor de `kind` | Cómo se localiza el contenido |
+| --- | --- |
+| `pdf_pages` | `from` y `to` indican páginas físicas, desde 1 e incluidas ambas. Los localizadores de bloques añaden `boxes`, con la página y las coordenadas del área ocupada. |
+| `docx_blocks` | `from` y `to` indican bloques en el orden estructural del Word, desde 1 e incluidos ambos. Son bloques, no páginas renderizadas. |
+| `xlsx_range` | `sheet` identifica la hoja y `range` el rango de celdas, por ejemplo `A1:D20`. |
+| `pptx_slide` | `slide_index` indica la posición de la diapositiva, desde 1 e incluidas las ocultas. `slide_id` conserva su identificador interno cuando existe. |
+| `pptx_shape` | `slide_index` y `shape_id` identifican un elemento dentro de una diapositiva; se añaden su posición y tamaño cuando están disponibles. |
+
+En PDF, `page_labels` en `documento.md` relaciona las páginas físicas con los números impresos cuando se reconocen. Así, una página física puede tener una etiqueta visible distinta.
+
+Los marcadores del cuerpo, como `<!-- okf-source-span: b-2 -->`, vinculan el bloque siguiente con el `id` correspondiente de `source_spans`. **Un pasaje se identifica mediante el `unit_id` de su concepto y el `id` de su localizador.** Las notas añadidas por el conversor se distinguen con `<!-- okf-generated -->`, aplicado al bloque siguiente.
+
+### Estado y señales de revisión
+
+El significado de `status` depende del archivo que lo declara:
+
+| Campo y ubicación | Interpretación |
+| --- | --- |
+| `status: draft` en un concepto de contenido | La unidad requiere revisión por ambigüedad, contenido incompleto o texto obtenido por OCR. |
+| `status: complete` en el informe | El bundle es válido y no se detectaron pérdidas ni incertidumbres sustantivas pendientes. |
+| `status: partial` en el informe | El bundle es válido, pero tiene pérdidas o incertidumbres sustantivas declaradas en el informe. |
+| `title_inferred: true` | El título se dedujo de la estructura o del aspecto del contenido. Esta señal, por sí sola, no vuelve incompleta la conversión. |
+| `visual_only: true` en una diapositiva | El contenido sustantivo está en una imagen sin transcripción; el concepto también lleva `status: draft`. |
+| `view_hides_text: true` en una diapositiva | La vista estática oculta texto que sí se conserva en el contenido extraído. |
+
+Un concepto obtenido con OCR puede llevar `status: draft` y pertenecer a un bundle `complete` si no se detectan pérdidas ni incertidumbres sustantivas. El estado `failed` corresponde al trabajo de conversión: en ese caso no hay un bundle publicado. El informe detalla la cobertura, las incidencias y las observaciones en su cuerpo Markdown.
+
+<details>
+<summary><strong>Identidad del documento, versiones, configuración y permisos</strong></summary>
+
+Los siguientes campos permiten comparar conversiones y distinguir documentos y versiones. Se encuentran en `documento.md` y en el informe, salvo donde se indica otra ubicación. Una **huella SHA-256** es un valor calculado a partir del contenido de un archivo o de unos datos; permite detectar si cambiaron.
+
+| Campo | Significado |
+| --- | --- |
+| `source_file.path` y `source_file.sha256` | En `documento.md`, ruta de la copia del original y huella de sus bytes. El informe repite esa misma huella en `sha256`. |
+| `document_key` | Clave opcional recibida del sistema de origen para agrupar versiones de un mismo documento. Se conserva sin interpretarla; el servicio no decide cuál es la versión vigente. |
+| `conversion_id` | Identificador calculado a partir de la huella del original, la versión del perfil y la configuración que afecta a la salida. Es distinto del `job_id`, que sirve para seguir una ejecución del servicio. |
+| `profile_version` | Versión de las reglas documentales de este proyecto; actualmente, `1.16.0`. |
+| `converter_version` y `converter_commit` | Versión del programa y revisión del código que realizó la conversión. El commit puede ser `unknown` si no se proporcionó al construir el programa. |
+| `conversion_settings` | Configuración que afecta al contenido del resultado. En PDF incluye el límite de píxeles y la configuración del OCR; en PPTX, la huella de la fuente usada para las vistas. En DOCX y XLSX es `{}`. |
+| `settings_sha256` | Huella de esa configuración, para comprobar si dos conversiones usaron los mismos valores. |
+| `reproducible: false` | El OCR agotó su plazo y dejó páginas sin transcribir. Repetir la conversión con la misma configuración puede producir otro resultado. |
+| `access` | Permisos opcionales recibidos del sistema de origen, conservados como una cadena con el JSON original. Su presencia no añade control de acceso a la API. |
+| `format` | En el informe, formato del archivo recibido: `pdf`, `docx`, `xlsx` o `pptx`. |
+| `okf_version` | En el `index.md` raíz, versión del formato OKF: `0.2`. Es independiente de `profile_version` y de la versión del programa. |
+
+El mismo original, con el mismo perfil y la misma configuración, conserva sus identificadores de conversión y de unidad. Estos identificadores no incorporan el commit del conversor: una corrección del programa puede conservarlos, por lo que también conviene comparar `converter_commit`. Si aparece `reproducible: false`, el identificador tampoco garantiza que el resultado sea idéntico al repetir la conversión.
+
+Los campos opcionales, como `document_key` y `access`, aparecen solo cuando se reciben o se cumplen sus condiciones. La [especificación del perfil](docs/especificacion/ESPECIFICACION_OKF.md) define las reglas completas y el [esquema del frontmatter](docs/especificacion/perfil-1.16.0.schema.json) permite comprobar los campos y sus tipos automáticamente.
+
+</details>
 
 ## Cómo funciona
 
@@ -230,7 +331,7 @@ flowchart LR
     linkStyle default stroke:#64748B,stroke-width:2px;
 ```
 
-1. **Subir un ejemplo.** Expandir `POST /jobs`, pulsar **Try it out** si aparece, elegir `examples/docx/breve.docx` en el campo `file` y pulsar **Execute**. Los campos opcionales pueden dejarse vacíos. La respuesta `202` significa «aceptado» e incluye el `job_id`.
+1. **Subir un ejemplo.** Expandir `POST /jobs`, pulsar **Try it out** si aparece, elegir `examples/docx/breve.docx` en el campo `file` y pulsar **Execute**. **Solo `file` es obligatorio**: `document_key` y `access` aparecen vacíos y pueden dejarse así, con **Send empty value** desmarcado. La respuesta `202` significa «aceptado» e incluye el `job_id`.
 2. **Consultar el avance.** Copiar ese identificador en `id` de `GET /jobs/{id}` y pulsar **Execute**. Repetir mientras el estado sea `queued` o `processing`. Si aparece `failed`, consultar el campo `error`.
 3. **Descargar el resultado.** Cuando el estado sea `complete` o `partial`, usar el mismo identificador en `GET /jobs/{id}/bundle`. Pulsar **Execute** y guardar el ZIP desde **Download file**. Descomprimirlo y abrir `index.md` y `conversion-report.md`.
 

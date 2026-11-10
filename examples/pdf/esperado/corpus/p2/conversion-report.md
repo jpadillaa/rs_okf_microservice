@@ -1,15 +1,15 @@
 ---
 converter_version: "0.1.0"
 converter_commit: "<commit>"
-profile_version: "1.10.0"
+profile_version: "1.16.0"
 conversion_settings:
   max_image_pixels: 33554432
   ocr:
     enabled: false
 settings_sha256: "ad1d7709796a5172b6ad18d538b1bef5780b44279dd787d15ecc82ede959ef16"
-conversion_id: "4508517dec4720992f16b3f5e986431784d832f7a9fc659599ad6c843a615fb1"
+conversion_id: "7c2d679c1e8d94fb01b20f514e0e82b4d4064718444eb22b9401c5c94d842df5"
 type: "Conversion Report"
-unit_id: "4508517dec4720992f16b3f5e986431784d832f7a9fc659599ad6c843a615fb1/conversion-report.md"
+unit_id: "7c2d679c1e8d94fb01b20f514e0e82b4d4064718444eb22b9401c5c94d842df5/conversion-report.md"
 title: "Informe de conversión"
 generated:
   by: "process:document-conversion"
@@ -73,6 +73,7 @@ Información sobre la conversión que no afecta el estado.
 - 7 párrafo(s) unidos con su continuación en otra columna o página (la frase sigue en minúscula con el mismo formato): páginas 1, 1→2, 2, 2→3, 4, 5, 6
 - 108 palabra(s) partidas con guion al final de línea, unidas sin el guion
 - Página 8: tabla reconstruida por la alineación de sus celdas; puede no coincidir con las líneas de la tabla original
+- Páginas 2–9: cabeceras o pies variables separados por su alineación con un folio confirmado y su posición tipográfica recurrente; textos y páginas registrados en documento.md
 - Encabezados tomados de los marcadores del PDF (9 de 9 encontrados en el texto)
 - Encabezados y pies de página registrados una vez en documento.md: 3 texto(s) y 0 imagen(es) repetidas
 - Números de página impresos detectados en 8 página(s) y registrados en \`page\_labels\`

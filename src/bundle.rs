@@ -276,12 +276,17 @@ pub(crate) fn has_scheme(target: &str) -> bool {
 const SPAN_MARKER: &str = "<!-- okf-source-span: ";
 
 /// Destinos de los enlaces Markdown de un texto, sin los `<` `>` que admiten paréntesis.
-/// `\](` es texto literal escapado, no un enlace.
+/// Los bloques y tramos de código y `\](` son texto literal, no enlaces.
 pub(crate) fn link_targets(md: &str) -> Vec<&str> {
     let mut targets = Vec::new();
+    let code = code_ranges(md);
     let mut pos = 0;
     while let Some(start) = md[pos..].find("](") {
         let s = pos + start + 2;
+        if let Some(range) = code.iter().find(|r| r.contains(&(s - 2))) {
+            pos = range.end;
+            continue;
+        }
         if md[..pos + start].ends_with('\\') {
             pos = s;
             continue;
@@ -303,6 +308,109 @@ pub(crate) fn link_targets(md: &str) -> Vec<&str> {
         pos = s + next;
     }
     targets
+}
+
+/// Rangos de código literal: cercas Markdown de al menos tres acentos graves o
+/// virgulillas, y tramos inline cerrados por el mismo número de acentos graves.
+/// Conserva los offsets del texto para devolver destinos prestados, sin copiar el PDF.
+pub(crate) fn code_ranges(md: &str) -> Vec<std::ops::Range<usize>> {
+    let mut fences = Vec::new();
+    let mut open: Option<(usize, u8, usize)> = None;
+    let mut offset = 0;
+    for line in md.split_inclusive('\n') {
+        let text = line.trim_start_matches(' ');
+        let indent = line.len() - text.len();
+        let byte = text.as_bytes().first().copied().unwrap_or(0);
+        let count = text.bytes().take_while(|b| *b == byte).count();
+        if indent <= 3 && matches!(byte, b'`' | b'~') && count >= 3 {
+            match open {
+                Some((start, marker, len))
+                    if byte == marker && count >= len && text[count..].trim().is_empty() =>
+                {
+                    fences.push(start..offset + line.len());
+                    open = None;
+                }
+                None if byte != b'`' || !text[count..].contains('`') => {
+                    open = Some((offset, byte, count));
+                }
+                _ => {}
+            }
+        }
+        offset += line.len();
+    }
+    if let Some((start, _, _)) = open {
+        fences.push(start..md.len());
+    }
+    let mut ranges = Vec::new();
+    let mut pos = 0;
+    for fence in fences.iter().chain(std::iter::once(&(md.len()..md.len()))) {
+        while pos < fence.start {
+            let Some(start) = md[pos..fence.start].find('`').map(|i| pos + i) else {
+                break;
+            };
+            let len = md[start..fence.start]
+                .bytes()
+                .take_while(|b| *b == b'`')
+                .count();
+            pos = start + len;
+            // Un acento escapado no abre código. Dentro del código las barras son
+            // literales y no impiden que el acento cierre el tramo.
+            if md[..start]
+                .bytes()
+                .rev()
+                .take_while(|b| *b == b'\\')
+                .count()
+                % 2
+                == 1
+            {
+                continue;
+            }
+            let mut next = pos;
+            while next < fence.start {
+                let Some(end) = md[next..fence.start].find('`').map(|i| next + i) else {
+                    break;
+                };
+                let n = md[end..fence.start]
+                    .bytes()
+                    .take_while(|b| *b == b'`')
+                    .count();
+                next = end + n;
+                if n == len {
+                    ranges.push(start..next);
+                    pos = next;
+                    break;
+                }
+            }
+        }
+        if !fence.is_empty() {
+            ranges.push(fence.clone());
+        }
+        pos = fence.end;
+    }
+    ranges
+}
+
+/// Bloques separados por líneas vacías fuera del código literal. Las líneas vacías
+/// de un listado pertenecen al mismo bloque y al mismo marcador de procedencia.
+pub(crate) fn markdown_blocks(md: &str) -> Vec<&str> {
+    let code = code_ranges(md);
+    let mut blocks = Vec::new();
+    let mut start = 0;
+    for (i, _) in md.match_indices("\n\n") {
+        if code.iter().any(|r| r.contains(&(i + 1))) {
+            continue;
+        }
+        let block = md[start..i].trim();
+        if !block.is_empty() {
+            blocks.push(block);
+        }
+        start = i + 2;
+    }
+    let last = md[start..].trim();
+    if !last.is_empty() {
+        blocks.push(last);
+    }
+    blocks
 }
 
 pub(crate) fn validate_bundle(path: &FsPath) -> Result<()> {
@@ -532,6 +640,40 @@ pub(crate) fn chrono_now() -> String {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn blank_lines_inside_fences_do_not_start_unlocated_blocks() {
+        for fence in ["```", "~~~~"] {
+            let md = format!(
+                "<!-- okf-source-span: u-1 -->\n{fence}\nfirst()\n\nsecond()\n{fence}\n\n<!-- okf-source-span: u-2 -->\nDespués.\n"
+            );
+            let blocks = markdown_blocks(&md);
+            assert_eq!(blocks.len(), 2);
+            assert!(blocks[0].contains("first()\n\nsecond()"));
+            assert!(blocks[1].starts_with("<!-- okf-source-span: u-2 -->"));
+        }
+    }
+
+    #[test]
+    fn code_is_literal_but_links_after_it_are_still_checked() {
+        let md = "[antes](antes.md)\n```python\nresult = funcs[0](kernel, args)\n[falso](ausente.md)\n```\n[después](despues.md)\n";
+        assert_eq!(link_targets(md), ["antes.md", "despues.md"]);
+        assert_eq!(
+            link_targets("`` [literal](no.md) ` `` y `[otro](no.md)` [real](sí.md)"),
+            ["sí.md"]
+        );
+        assert_eq!(
+            link_targets("~~~~\n[x](no.md)\n~~~\n[y](no.md)\n~~~~\n[z](sí.md)"),
+            ["sí.md"]
+        );
+        assert_eq!(
+            link_targets("````\n```\n[x](no.md)\n````\n[y](sí.md)"),
+            ["sí.md"]
+        );
+        assert!(link_targets("~~~\n[x](no.md)").is_empty());
+        assert_eq!(link_targets("un ` sin cierre [x](sí.md)"), ["sí.md"]);
+        assert_eq!(link_targets(r"\`[x](sí.md)\`"), ["sí.md"]);
+    }
 
     #[test]
     fn link_targets_handle_angle_destinations_before_multibyte_text() {

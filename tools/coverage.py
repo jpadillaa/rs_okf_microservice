@@ -302,15 +302,66 @@ READERS = {
 # --- Bundle ---------------------------------------------------------------------------
 
 
+def code_ranges(md):
+    """Rangos literales: cercas e inline; sus llamadas y comentarios son contenido."""
+    fences, opened, offset = [], None, 0
+    for line in md.splitlines(keepends=True):
+        match = re.match(r"^ {0,3}(`{3,}|~{3,})(.*)", line)
+        if match:
+            marker, rest = match.groups()
+            if opened and marker[0] == opened[1] and len(marker) >= opened[2] and not rest.strip():
+                fences.append((opened[0], offset + len(line)))
+                opened = None
+            elif opened is None and (marker[0] != "`" or "`" not in rest):
+                opened = (offset, marker[0], len(marker))
+        offset += len(line)
+    if opened:
+        fences.append((opened[0], len(md)))
+    ranges, pos = [], 0
+    for start, end in fences + [(len(md), len(md))]:
+        while pos < start:
+            tick = md.find("`", pos, start)
+            if tick < 0:
+                break
+            after = tick + 1
+            while after < start and md[after] == "`":
+                after += 1
+            pos = after
+            escape = tick
+            while escape > 0 and md[escape - 1] == "\\":
+                escape -= 1
+            if (tick - escape) % 2:
+                continue
+            nxt = after
+            while nxt < start:
+                close = md.find("`", nxt, start)
+                if close < 0:
+                    break
+                nxt = close + 1
+                while nxt < start and md[nxt] == "`":
+                    nxt += 1
+                if nxt - close == after - tick:
+                    ranges.append((tick, nxt))
+                    pos = nxt
+                    break
+        if end > start:
+            ranges.append((start, end))
+        pos = end
+    return ranges
+
+
 def markdown_text(md):
     fields = []
     if md.startswith("---\n"):
         end = md.find("\n---\n", 4)
         fields = CONTENT_FIELDS.findall(md[: end if end >= 0 else 0])
         md = md[end + 5 :] if end >= 0 else md
-    md = re.sub(r"<!--.*?-->", " ", md, flags=re.S)
-    md = re.sub(r"\]\([^)]*\)", "] ", md)
-    return "\n".join(fields + [md])
+    out, pos = [], 0
+    for start, end in code_ranges(md) + [(len(md), len(md))]:
+        prose = re.sub(r"<!--.*?-->", " ", md[pos:start], flags=re.S)
+        out.extend([re.sub(r"\]\([^)]*\)", "] ", prose), md[start:end]])
+        pos = end
+    return "\n".join(fields + ["".join(out)])
 
 
 def bundle_texts(zip_path):

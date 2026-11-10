@@ -520,6 +520,24 @@ impl Watch<'_> {
 
 const TICK: Duration = Duration::from_millis(100);
 
+/// El hijo puede producir muchos mensajes de una biblioteca. Se drena toda la tubería
+/// para no bloquearlo, conservando solo su final (respuesta JSON o causa del fallo).
+const CHILD_OUTPUT_BYTES: usize = 64 * 1024;
+
+async fn output_tail(mut reader: impl tokio::io::AsyncRead + Unpin) -> String {
+    let mut tail = Vec::with_capacity(CHILD_OUTPUT_BYTES);
+    let mut chunk = [0u8; 8192];
+    while let Ok(n) = reader.read(&mut chunk).await {
+        if n == 0 {
+            break;
+        }
+        let discard = (tail.len() + n).saturating_sub(CHILD_OUTPUT_BYTES);
+        tail.drain(..discard);
+        tail.extend_from_slice(&chunk[..n]);
+    }
+    String::from_utf8_lossy(&tail).into_owned()
+}
+
 /// Ejecuta la conversión en un proceso hijo y lo termina si supera la memoria o el
 /// plazo, o si la reserva pasa a otro worker.
 async fn run_child(
@@ -590,17 +608,10 @@ async fn run_child(
         .kill_on_drop(true)
         .spawn()
         .context("no se pudo iniciar el proceso de conversión")?;
-    let read = |mut r: Box<dyn tokio::io::AsyncRead + Unpin + Send>| {
-        tokio::spawn(async move {
-            let mut buf = Vec::new();
-            let _ = r.read_to_end(&mut buf).await;
-            String::from_utf8_lossy(&buf).into_owned()
-        })
-    };
-    let stdout = read(Box::new(
+    let stdout = tokio::spawn(output_tail(
         child.stdout.take().context("sin salida estándar")?,
     ));
-    let stderr = read(Box::new(
+    let stderr = tokio::spawn(output_tail(
         child.stderr.take().context("sin salida de error")?,
     ));
     let mut watch = Watch {
@@ -1261,6 +1272,21 @@ pub async fn worker(root: PathBuf, poll_ms: u64, once: bool) -> Result<()> {
 mod tests {
     use super::*;
     use std::os::unix::fs::PermissionsExt;
+
+    #[tokio::test]
+    async fn child_output_is_drained_and_only_its_tail_is_kept() {
+        use tokio::io::AsyncWriteExt;
+        let (mut writer, reader) = tokio::io::duplex(1024);
+        let data = "a".repeat(CHILD_OUTPUT_BYTES * 20) + "\nfallo final: conversión inválida";
+        let expected = data[data.len() - CHILD_OUTPUT_BYTES..].to_owned();
+        let write = tokio::spawn(async move { writer.write_all(data.as_bytes()).await.unwrap() });
+        let tail = tokio::time::timeout(Duration::from_secs(5), output_tail(reader))
+            .await
+            .unwrap();
+        write.await.unwrap();
+        assert_eq!(tail, expected);
+        assert_eq!(output_tail(&b"mensaje corto"[..]).await, "mensaje corto");
+    }
 
     #[tokio::test]
     async fn concurrent_claims_skip_locked_rows_and_recover_expired_jobs_once() {

@@ -1,6 +1,6 @@
 ---
 type: "Source Section"
-unit_id: "2f52b3d4c1834b1ede717538e64efc631cfb8a5a41a61ddaabfe24a5ee811a39/contenido/seccion-001.md"
+unit_id: "d5f0bdd688345f5d0409d6aeff3ac73d660c3563dd0d0f152256d141c71cb1ff/contenido/seccion-001.md"
 parent: "documento.md"
 next: "contenido/seccion-002.md"
 title: "COMUNICACIÓN EFECTIVA EN ENTORNOS LABORALES"

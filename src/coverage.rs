@@ -31,8 +31,15 @@ fn markdown_text(md: &str) -> String {
         }
         body = &md[end + 5..];
     }
-    let body = COMMENTS.replace_all(body, " ");
-    text.push_str(&TARGETS.replace_all(&body, "] "));
+    let mut pos = 0;
+    for range in crate::bundle::code_ranges(body) {
+        let prose = COMMENTS.replace_all(&body[pos..range.start], " ");
+        text.push_str(&TARGETS.replace_all(&prose, "] "));
+        text.push_str(&body[range.clone()]);
+        pos = range.end;
+    }
+    let prose = COMMENTS.replace_all(&body[pos..], " ");
+    text.push_str(&TARGETS.replace_all(&prose, "] "));
     text
 }
 
@@ -153,6 +160,22 @@ fn coverage_matches_python_and_detects_lost_text() {
     );
     let md = "---\ntitle: \"excluir\"\nsection: \"Original\"\n---\nTexto <!-- oculto\nen comentario --> [visible](destino.pdf)";
     assert_eq!(words(&markdown_text(md)), ["original", "texto", "visible"]);
+    assert_eq!(
+        words(&markdown_text(
+            "[visible](destino.pdf)\n\n```\nfunctions[0](argument, \"value\")\n\n<!-- literal -->\n```\n\n`items[1](other)`"
+        )),
+        [
+            "visible",
+            "functions",
+            "0",
+            "argument",
+            "value",
+            "literal",
+            "items",
+            "1",
+            "other"
+        ]
+    );
     let mut files = BTreeMap::from([
         ("contenido/a.md".into(), md.into()),
         ("documento.md".into(), "origen".into()),

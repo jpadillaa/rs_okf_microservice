@@ -24,6 +24,8 @@ Las dos partes se reducen a palabras (NFKC, sin distinguir mayúsculas, secuenci
 
 Del bundle se leen los conceptos Markdown y `documento.md` (sin comentarios HTML, destinos de enlaces ni frontmatter, salvo los campos con texto del original: `kicker`, `section` y `display_label`) y los recursos CSV; no los índices ni el informe.
 
+Desde la evaluación del 9 de noviembre del perfil 1.12.0, ambos medidores conservan el código cercado e inline al limpiar Markdown: `funcs[0](argumento)` no es un enlace ni sus argumentos son un destino que deba excluirse, y un comentario literal de código es contenido. Para comparar las versiones 1.11.0 y 1.12.0 del PDF largo se vuelven a medir ambos ZIP con esta corrección; las cifras históricas anteriores conservan su método original.
+
 Con `--write-reference`, el script guarda la lista de palabras de la referencia de cada documento de `examples/` en `examples/<formato>/cobertura/<grupo>/<nombre>.tsv` (palabra y número de apariciones), para que la CI compare la cobertura sin Python ([plan 2, C2](../planes/PLAN_2_CALIDAD_Y_ROBUSTEZ.md#c2-cobertura-como-control-de-la-ci-s)). Los documentos de fuera de `examples/` no tienen lista: pueden ser privados, como el recibo.
 
 ## 2. Corpus real
