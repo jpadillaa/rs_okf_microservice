@@ -1,6 +1,6 @@
 ---
 type: "Source Section"
-unit_id: "f98aad26887b3c3a6d1c53082e01a9b28e0553452136090e6609645ba3efca6d/contenido/seccion-007.md"
+unit_id: "fd8eed7b7dbc77c25be7436f2204edd9d556d30f2aa24dcc151e632ba18e5f71/contenido/seccion-007.md"
 parent: "documento.md"
 previous: "contenido/seccion-006.md"
 next: "contenido/seccion-008.md"
@@ -18,94 +18,7 @@ source_spans:
     kind: "pdf_pages"
     from: 11
     to: 12
-  - id: "u-78"
-    source_id: "original"
-    kind: "pdf_pages"
-    from: 11
-    to: 11
-    boxes:
-      - page: 11
-        x0: 85.03
-        top: 121.55
-        x1: 525.15
-        bottom: 169.55
-  - id: "u-79"
-    source_id: "original"
-    kind: "pdf_pages"
-    from: 11
-    to: 11
-    boxes:
-      - page: 11
-        x0: 85.03
-        top: 187.58
-        x1: 524.94
-        bottom: 271.58
-  - id: "u-80"
-    source_id: "original"
-    kind: "pdf_pages"
-    from: 11
-    to: 11
-    boxes:
-      - page: 11
-        x0: 85.03
-        top: 289.60
-        x1: 519.50
-        bottom: 391.62
-  - id: "u-81"
-    source_id: "original"
-    kind: "pdf_pages"
-    from: 11
-    to: 11
-    boxes:
-      - page: 11
-        x0: 85.03
-        top: 409.62
-        x1: 524.98
-        bottom: 529.67
-  - id: "u-82"
-    source_id: "original"
-    kind: "pdf_pages"
-    from: 11
-    to: 11
-    boxes:
-      - page: 11
-        x0: 85.03
-        top: 547.67
-        x1: 505.38
-        bottom: 667.70
-  - id: "u-83"
-    source_id: "original"
-    kind: "pdf_pages"
-    from: 11
-    to: 11
-    boxes:
-      - page: 11
-        x0: 85.03
-        top: 685.72
-        x1: 524.46
-        bottom: 715.72
-  - id: "u-84"
-    source_id: "original"
-    kind: "pdf_pages"
-    from: 12
-    to: 12
-    boxes:
-      - page: 12
-        x0: 85.03
-        top: 76.53
-        x1: 520.27
-        bottom: 142.55
-  - id: "u-85"
-    source_id: "original"
-    kind: "pdf_pages"
-    from: 12
-    to: 12
-    boxes:
-      - page: 12
-        x0: 85.03
-        top: 160.55
-        x1: 523.72
-        bottom: 280.60
+block_spans: "/contenido/seccion-007.spans.json"
 ---
 
 # El principio de agencia mínima

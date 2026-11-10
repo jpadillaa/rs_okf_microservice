@@ -1,6 +1,6 @@
 ---
 type: "Source Section"
-unit_id: "2670da573f38b94708b33c6720fc15e23efedf95e1fbaff90dc6270364c47646/contenido/seccion-002.md"
+unit_id: "926510cb92f4446c311f3dc726406ce3d01f2731b565e30f67f1e8133c2a412a/contenido/seccion-002.md"
 parent: "documento.md"
 previous: "contenido/seccion-001.md"
 next: "contenido/seccion-003.md"
@@ -18,39 +18,7 @@ source_spans:
     kind: "pdf_pages"
     from: 1
     to: 1
-  - id: "u-4"
-    source_id: "original"
-    kind: "pdf_pages"
-    from: 1
-    to: 1
-    boxes:
-      - page: 1
-        x0: 72.00
-        top: 181.42
-        x1: 534.77
-        bottom: 218.92
-  - id: "u-5"
-    source_id: "original"
-    kind: "pdf_pages"
-    from: 1
-    to: 1
-    boxes:
-      - page: 1
-        x0: 72.00
-        top: 227.92
-        x1: 504.89
-        bottom: 238.42
-  - id: "u-6"
-    source_id: "original"
-    kind: "pdf_pages"
-    from: 1
-    to: 1
-    boxes:
-      - page: 1
-        x0: 72.00
-        top: 247.42
-        x1: 538.74
-        bottom: 271.42
+block_spans: "/contenido/seccion-002.spans.json"
 title_inferred: true
 ---
 

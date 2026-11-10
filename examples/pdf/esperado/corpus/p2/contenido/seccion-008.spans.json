@@ -1,0 +1,20 @@
+{
+  "concept": "contenido/seccion-008.md",
+  "source_spans": [
+    {"id": "u-56", "source_id": "original", "kind": "pdf_pages", "from": 8, "to": 8, "boxes": [{"page": 8, "x0": 56.69, "top": 314.42, "x1": 289.64, "bottom": 402.92}]},
+    {"id": "u-57", "source_id": "original", "kind": "pdf_pages", "from": 8, "to": 8, "boxes": [{"page": 8, "x0": 56.69, "top": 413.42, "x1": 129.08, "bottom": 420.92}]},
+    {"id": "u-58", "source_id": "original", "kind": "pdf_pages", "from": 8, "to": 8, "boxes": [{"page": 8, "x0": 56.69, "top": 422.42, "x1": 281.35, "bottom": 447.92}]},
+    {"id": "u-59", "source_id": "original", "kind": "pdf_pages", "from": 8, "to": 8, "boxes": [{"page": 8, "x0": 56.69, "top": 458.42, "x1": 83.70, "bottom": 465.92}]},
+    {"id": "u-60", "source_id": "original", "kind": "pdf_pages", "from": 8, "to": 8, "boxes": [{"page": 8, "x0": 56.69, "top": 467.42, "x1": 101.62, "bottom": 474.92}]},
+    {"id": "u-61", "source_id": "original", "kind": "pdf_pages", "from": 8, "to": 8, "boxes": [{"page": 8, "x0": 56.69, "top": 485.42, "x1": 109.13, "bottom": 492.92}]},
+    {"id": "u-62", "source_id": "original", "kind": "pdf_pages", "from": 8, "to": 8, "boxes": [{"page": 8, "x0": 56.69, "top": 494.42, "x1": 252.39, "bottom": 501.92}]},
+    {"id": "u-63", "source_id": "original", "kind": "pdf_pages", "from": 8, "to": 8, "boxes": [{"page": 8, "x0": 56.69, "top": 517.14, "x1": 106.58, "bottom": 526.34}]},
+    {"id": "u-64", "source_id": "original", "kind": "pdf_pages", "from": 8, "to": 8, "boxes": [{"page": 8, "x0": 56.69, "top": 536.42, "x1": 192.94, "bottom": 543.92}]},
+    {"id": "u-65", "source_id": "original", "kind": "pdf_pages", "from": 8, "to": 8, "boxes": [{"page": 8, "x0": 56.69, "top": 545.42, "x1": 101.62, "bottom": 552.92}]},
+    {"id": "u-66", "source_id": "original", "kind": "pdf_pages", "from": 8, "to": 8, "boxes": [{"page": 8, "x0": 56.69, "top": 563.42, "x1": 132.80, "bottom": 570.92}]},
+    {"id": "u-67", "source_id": "original", "kind": "pdf_pages", "from": 8, "to": 8, "boxes": [{"page": 8, "x0": 56.69, "top": 572.42, "x1": 102.60, "bottom": 579.92}]},
+    {"id": "u-68", "source_id": "original", "kind": "pdf_pages", "from": 8, "to": 8, "boxes": [{"page": 8, "x0": 56.69, "top": 590.42, "x1": 122.51, "bottom": 597.92}]},
+    {"id": "u-69", "source_id": "original", "kind": "pdf_pages", "from": 8, "to": 8, "boxes": [{"page": 8, "x0": 56.69, "top": 599.42, "x1": 285.86, "bottom": 642.92}]},
+    {"id": "u-70", "source_id": "original", "kind": "pdf_pages", "from": 8, "to": 8, "boxes": [{"page": 8, "x0": 56.69, "top": 662.42, "x1": 220.69, "bottom": 669.92}]}
+  ]
+}

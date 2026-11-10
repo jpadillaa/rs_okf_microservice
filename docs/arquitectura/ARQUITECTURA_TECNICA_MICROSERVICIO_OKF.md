@@ -93,6 +93,8 @@ La primera entrega implementó la ruta completa con PPTX; la segunda añadió el
 | `OKF_MAX_CELLS` | 1000000 | Celdas con contenido máximas por libro XLSX. |
 | `OKF_MAX_PAGES` | 2000 | Páginas máximas por documento PDF. |
 | `OKF_CONVERSION_TIMEOUT_S` | 300 | Duración máxima de una conversión; con el OCR activo, también su presupuesto de tiempo (ver `OKF_OCR_MAX_PAGES`). |
+| `OKF_CONVERSION_THREADS` | 1 | Hilos con los que una conversión PDF lee el texto, codifica las imágenes y renderiza las vistas: cada hilo procesa un tramo de ocho páginas con su propio documento abierto, porque pdf_oxide no admite el uso simultáneo de uno, y los resultados se escriben en orden, de modo que el bundle es idéntico con cualquier número de hilos. Cada hilo suma la memoria de un documento abierto (unas dos veces el tamaño del PDF) y la de sus páginas; súbase `OKF_MAX_MEMORY_MB` en proporción. Entre 1 y 64. |
+| `OKF_MAX_CPU_S` | plazo × hilos | Tiempo de CPU máximo del proceso de conversión, sumados sus hilos (`RLIMIT_CPU`). Sin declarar, `OKF_CONVERSION_TIMEOUT_S` × `OKF_CONVERSION_THREADS`, para que una conversión con varios hilos no agote la CPU antes que el plazo. Mayor que 0. |
 | `OKF_RETENTION_DAYS` | 0 (desactivada) | Días completos desde la finalización para expirar trabajos `complete`, `partial` o `failed`; sin variable o con 0 se conservan los archivos. |
 | `OKF_SHUTDOWN_GRACE_S` | 30 | Plazo de gracia del worker tras SIGTERM/SIGINT; 0 interrumpe sin espera adicional. |
 | `OKF_MAX_ATTEMPTS` | 3 | Intentos máximos ante fallos transitorios. |
@@ -102,9 +104,9 @@ La primera entrega implementó la ruta completa con PPTX; la segunda añadió el
 | `OKF_MAX_ZIP_ENTRY_MB` | 128 | Tamaño descomprimido máximo de una parte de un paquete OOXML, en MiB. |
 | `OKF_MAX_ZIP_TOTAL_MB` | 512 | Tamaño descomprimido máximo de un paquete OOXML, en MiB. |
 | `OKF_MAX_ZIP_ENTRIES` | 4096 | Partes máximas de un paquete OOXML. |
-| `OKF_OCR_ENABLED` | `false` | `true` aplica el OCR local a las páginas PDF escaneadas sin capa de texto; el adaptador decide qué páginas lo necesitan y la API no cambia. Admite solo `true` o `false`. Con `true`, el worker no arranca si faltan los modelos o no se pueden cargar. |
+| `OKF_OCR_ENABLED` | `true` | `true` aplica el OCR local a las páginas PDF escaneadas sin capa de texto; el adaptador decide qué páginas lo necesitan y la API no cambia. Admite solo `true` o `false`. Con `true`, el worker no arranca si faltan los modelos o no se pueden cargar; la imagen Docker los incluye, y en el host se descargan con `tools/ocr_models.sh` o se declara `false`. Las pruebas, los bundles de referencia y el fuzzing convierten sin OCR (`Config::default()`), porque su resultado depende de los modelos. |
 | `OKF_OCR_MODELS_DIR` | `/usr/local/share/okf/ocr` (la ruta de la imagen) | Directorio con `det.onnx`, `rec.onnx` y `dict.txt`; `tools/ocr_models.sh` los descarga y verifica para el binario en el host (`models/ocr` en `.env.example`). Compose fija la ruta de la imagen para el worker. Landlock permite leerlo al hijo cuando el OCR está activo. Las pruebas lo usan como origen de los modelos, con `models/ocr` por defecto. |
-| `OKF_OCR_MAX_PAGES` | 40 | Páginas escaneadas que se transcriben como máximo en un documento; las demás quedan como vista e incidencia. Debe ser mayor que 0 con el OCR activo. Además, el OCR no empieza otra página cuando el proceso ha consumido dos tercios de `OKF_CONVERSION_TIMEOUT_S` en tiempo o en CPU (que es también su `RLIMIT_CPU`): las restantes quedan igual, para que la conversión entregue un bundle `partial` en vez de fallar. |
+| `OKF_OCR_MAX_PAGES` | 40 | Páginas escaneadas que se transcriben como máximo en un documento; las demás quedan como vista e incidencia. Debe ser mayor que 0 con el OCR activo. Además, el OCR no empieza otra página cuando el proceso ha consumido dos tercios de `OKF_CONVERSION_TIMEOUT_S` en tiempo o de `OKF_MAX_CPU_S` en CPU: las restantes quedan igual, para que la conversión entregue un bundle `partial` en vez de fallar. |
 | `OKF_OCR_MEMORY_MB` | 256 | MB que se suman a `OKF_MAX_MEMORY_MB` (vigilancia de RSS y `RLIMIT_AS`) en la conversión de un PDF con el OCR activo; los demás formatos conservan su límite. |
 | `OKF_REQUIRE_OCR_MODELS` | sin definir | Solo pruebas: su presencia hace fallar las pruebas del OCR si faltan los modelos, en vez de omitirlas. La CI la fija. |
 | `OKF_MAX_IMAGE_PIXELS` | 33554432 | Píxeles máximos de una imagen que el conversor decodifica (imágenes PDF que no se copian como JPEG); una imagen mayor no se adjunta y se declara como pérdida. Las vistas PPTX aplican el presupuesto fijo del renderizador, que es el mismo valor, y declaran igual las imágenes omitidas. |
@@ -117,7 +119,8 @@ La primera entrega implementó la ruta completa con PPTX; la segunda añadió el
 **Límites duros y rutas (plan 2, C4).** El subcomando `convert` se ejecuta sin runtime
 asíncrono y fija los límites antes de crear hilos o leer el documento: `RLIMIT_AS`
 solo en Linux (memoria virtual, con margen de 2 × RSS + 128 MiB), `RLIMIT_CPU`
-(plazo, mínimo un segundo de CPU, un segundo adicional de límite duro),
+(`OKF_MAX_CPU_S`, por defecto el plazo por los hilos; mínimo un segundo de CPU, un
+segundo adicional de límite duro),
 `RLIMIT_FSIZE`, `RLIMIT_NOFILE` y `RLIMIT_CORE=0`. Nunca eleva un límite duro
 heredado. El padre mantiene el control de RSS y tiempo de pared cada 100 ms.
 SIGXCPU, SIGXFSZ y un aborto con el diagnóstico de asignación de memoria rechazada
@@ -332,6 +335,14 @@ cada bloque, recorta las cajas a la página y las escribe con dos decimales
 (`Yaml::Decimal`). Medida con pdfium sobre un párrafo de `articulo_columnas`, la caja
 difiere 0,41 pt como máximo de la tinta de sus caracteres y 0,61 pt de su caja
 tipográfica.
+
+Desde el perfil 1.17.0, `Render::concept` devuelve los localizadores de bloque aparte
+del frontmatter y `BundleWriter::block_spans` (`src/output.rs`) los escribe en
+`contenido/<concepto>.spans.json`, un localizador por línea, y añade `block_spans` al
+frontmatter detrás de `source_spans`. `bundle::concept_spans` reúne los del frontmatter
+y los del archivo para el validador común y para `pdf::validate`: exige que el archivo
+sea el del concepto, que nombre al concepto y que no haya archivos de localizadores sin
+concepto ni identificadores repetidos.
 
 En PPTX, `parse_part` guarda junto a cada bloque su origen (`Origin`): el `id` del
 último `cNvPr` leído y el rectángulo de la forma, con las transformaciones de grupo. Los

@@ -1,6 +1,6 @@
 ---
 type: "Source Section"
-unit_id: "7c2d679c1e8d94fb01b20f514e0e82b4d4064718444eb22b9401c5c94d842df5/contenido/seccion-004.md"
+unit_id: "deececaf92dbda184b80f8f48b0f7ed3b03aff137641e43559589ff0caaa3fb4/contenido/seccion-004.md"
 parent: "documento.md"
 previous: "contenido/seccion-003.md"
 next: "contenido/seccion-005.md"
@@ -18,55 +18,7 @@ source_spans:
     kind: "pdf_pages"
     from: 2
     to: 3
-  - id: "u-19"
-    source_id: "original"
-    kind: "pdf_pages"
-    from: 2
-    to: 2
-    boxes:
-      - page: 2
-        x0: 304.72
-        top: 136.44
-        x1: 538.61
-        bottom: 266.24
-  - id: "u-20"
-    source_id: "original"
-    kind: "pdf_pages"
-    from: 2
-    to: 2
-    boxes:
-      - page: 2
-        x0: 304.72
-        top: 268.43
-        x1: 538.61
-        bottom: 458.24
-  - id: "u-21"
-    source_id: "original"
-    kind: "pdf_pages"
-    from: 2
-    to: 3
-    boxes:
-      - page: 2
-        x0: 304.72
-        top: 460.43
-        x1: 538.61
-        bottom: 722.21
-      - page: 3
-        x0: 56.69
-        top: 88.44
-        x1: 290.55
-        bottom: 110.24
-  - id: "u-22"
-    source_id: "original"
-    kind: "pdf_pages"
-    from: 3
-    to: 3
-    boxes:
-      - page: 3
-        x0: 56.69
-        top: 112.43
-        x1: 290.59
-        bottom: 362.24
+block_spans: "/contenido/seccion-004.spans.json"
 ---
 
 # What do the journals and publishers say?

@@ -214,10 +214,79 @@ pub(crate) fn hex(b: &[u8]) -> String {
     b.iter().map(|v| format!("{v:02x}")).collect()
 }
 
+/// Tramos de la muestra con la que se decide si comprimir una entrada grande.
+const PROBE_CHUNKS: usize = 128;
+const PROBE_CHUNK: usize = 2 * 1024;
+
+/// ¿Ahorraría Deflate menos del 5 % en `data`? Se comprime con el nivel más rápido una
+/// muestra de 128 tramos de 2 KiB repartidos por la entrada (con tramos mayores, unos
+/// pocos fragmentos compresibles la sesgan). Un JPEG, un PNG o un PDF de flujos
+/// comprimidos apenas se reducen, y comprimirlos al escribir y descomprimirlos al
+/// validar llegaba a ocupar dos tercios de la conversión.
+fn incompressible(data: &[u8]) -> bool {
+    if data.len() < PROBE_CHUNKS * PROBE_CHUNK {
+        return false;
+    }
+    let step = (data.len() - PROBE_CHUNK) / (PROBE_CHUNKS - 1);
+    let mut probe = ZipWriter::new(std::io::Cursor::new(Vec::new()));
+    let options = SimpleFileOptions::default().compression_level(Some(1));
+    let compressed = probe.start_file("muestra", options).is_ok()
+        && (0..PROBE_CHUNKS).all(|i| probe.write_all(&data[i * step..][..PROBE_CHUNK]).is_ok());
+    match probe.finish() {
+        Ok(out) if compressed => out.get_ref().len() * 100 >= PROBE_CHUNKS * PROBE_CHUNK * 95,
+        _ => false,
+    }
+}
+
 pub(crate) fn write_zip_file(zip: &mut ZipWriter<fs::File>, name: &str, data: &[u8]) -> Result<()> {
-    zip.start_file(name, SimpleFileOptions::default())?;
+    let options = SimpleFileOptions::default();
+    let options = if incompressible(data) {
+        options.compression_method(zip::CompressionMethod::Stored)
+    } else {
+        options
+    };
+    zip.start_file(name, options)?;
     zip.write_all(data)?;
     Ok(())
+}
+
+/// Localizadores de un concepto: los de su frontmatter y, si declara `block_spans`
+/// (perfil 1.17.0), los de bloque de ese archivo, que debe ser el suyo
+/// (`<concepto>.spans.json`), estar en el bundle y nombrar al concepto.
+pub(crate) fn concept_spans(
+    z: &mut ZipArchive<fs::File>,
+    names: &std::collections::HashSet<String>,
+    name: &str,
+    fm: &YamlValue,
+) -> Result<Vec<YamlValue>> {
+    let mut spans: Vec<YamlValue> = fm
+        .get("source_spans")
+        .and_then(YamlValue::as_sequence)
+        .cloned()
+        .unwrap_or_default();
+    let Some(declared) = fm.get("block_spans") else {
+        return Ok(spans);
+    };
+    let file = crate::output::block_spans_path(name);
+    if declared.as_str() != Some(format!("/{file}").as_str()) || !names.contains(&file) {
+        bail!("{name}: block_spans no es su archivo de localizadores /{file}")
+    }
+    let json: serde_json::Value = serde_json::from_str(&read_text(z, &file)?)
+        .with_context(|| format!("{file} no es JSON válido"))?;
+    if json.get("concept").and_then(serde_json::Value::as_str) != Some(name) {
+        bail!("{file} no declara el concepto {name}")
+    }
+    let Some(blocks) = json
+        .get("source_spans")
+        .and_then(serde_json::Value::as_array)
+        .filter(|b| !b.is_empty())
+    else {
+        bail!("{file} no tiene una lista de localizadores")
+    };
+    for block in blocks {
+        spans.push(yaml_serde::to_value(block)?);
+    }
+    Ok(spans)
 }
 
 pub(crate) fn frontmatter(md: &str) -> Result<YamlValue> {
@@ -468,6 +537,8 @@ pub(crate) fn validate_bundle(path: &FsPath) -> Result<()> {
         bail!("index.md no declara okf_version 0.2")
     }
     let mut linked = std::collections::HashSet::new();
+    // Archivos de localizadores de bloque declarados por su concepto (perfil 1.17.0).
+    let mut block_files = std::collections::HashSet::new();
     for name in names.iter().filter(|n| n.ends_with(".md")) {
         let mut md = String::new();
         z.by_name(name)?.read_to_string(&mut md)?;
@@ -521,20 +592,19 @@ pub(crate) fn validate_bundle(path: &FsPath) -> Result<()> {
                 .iter()
                 .filter_map(|s| s.get("id").and_then(YamlValue::as_str))
                 .collect();
-            span_ids = fm
-                .get("source_spans")
-                .and_then(YamlValue::as_sequence)
-                .map(Vec::as_slice)
-                .unwrap_or_default()
+            let spans = concept_spans(&mut z, &names, name, &fm)?;
+            if fm.get("block_spans").is_some() {
+                block_files.insert(crate::output::block_spans_path(name));
+            }
+            span_ids = spans
                 .iter()
                 .filter_map(|s| s.get("id").and_then(YamlValue::as_str).map(str::to_string))
                 .collect();
-            for span in fm
-                .get("source_spans")
-                .and_then(YamlValue::as_sequence)
-                .map(Vec::as_slice)
-                .unwrap_or_default()
-            {
+            let unique: std::collections::HashSet<&String> = span_ids.iter().collect();
+            if unique.len() != span_ids.len() {
+                bail!("{name} repite el identificador de un localizador")
+            }
+            for span in &spans {
                 let source = span.get("source_id").and_then(YamlValue::as_str);
                 if !source.is_some_and(|s| source_ids.contains(&s)) {
                     bail!("source_spans de {name} cita una fuente no declarada: {source:?}")
@@ -582,6 +652,12 @@ pub(crate) fn validate_bundle(path: &FsPath) -> Result<()> {
     {
         bail!("el recurso {orphan} no está enlazado desde ningún concepto")
     }
+    if let Some(orphan) = names
+        .iter()
+        .find(|n| n.ends_with(".spans.json") && !block_files.contains(*n))
+    {
+        bail!("el archivo de localizadores {orphan} no pertenece a ningún concepto")
+    }
     // Toda referencia marcada como sin destino se declara en el informe.
     if !marked.is_empty() && !read_text(&mut z, "conversion-report.md")?.contains("sin destino") {
         bail!(
@@ -606,8 +682,17 @@ pub(crate) fn validate_against_original(
     format: Format,
 ) -> Result<()> {
     let entry = format.original_entry();
-    let mut original = Vec::new();
-    z.by_name(&entry)?.read_to_end(&mut original)?;
+    let mut file = z.by_name(&entry)?;
+    // Sin reserva, leer un original grande duplica la capacidad por pasos y llega a
+    // tener dos copias a la vez. El tamaño de una entrada sin comprimir está acotado
+    // por el propio ZIP; el de una comprimida no se cree antes de descomprimirla.
+    let mut original = if file.compression() == zip::CompressionMethod::Stored {
+        Vec::with_capacity(usize::try_from(file.size()).unwrap_or(0))
+    } else {
+        Vec::new()
+    };
+    file.read_to_end(&mut original)?;
+    drop(file);
     let hash = hex(&Sha256::digest(&original));
     let report = read_text(z, "conversion-report.md")?;
     if frontmatter(&report)?
@@ -640,6 +725,38 @@ pub(crate) fn chrono_now() -> String {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn only_large_incompressible_entries_are_stored() {
+        // Bytes de una cadena de SHA-256: indistinguibles de datos ya comprimidos.
+        let mut noise = Vec::new();
+        let mut block = Sha256::digest(b"semilla").to_vec();
+        while noise.len() < 1024 * 1024 {
+            block = Sha256::digest(&block).to_vec();
+            noise.extend_from_slice(&block);
+        }
+        let text = "Un párrafo que se repite y Deflate reduce mucho.\n".repeat(30_000);
+        assert!(incompressible(&noise));
+        assert!(!incompressible(text.as_bytes()));
+        assert!(!incompressible(&noise[..64 * 1024]));
+        // La entrada sin comprimir se lee igual.
+        let dir = tempfile::tempdir().unwrap();
+        let path = dir.path().join("b.zip");
+        let mut z = ZipWriter::new(fs::File::create(&path).unwrap());
+        write_zip_file(&mut z, "ruido.bin", &noise).unwrap();
+        write_zip_file(&mut z, "texto.md", text.as_bytes()).unwrap();
+        z.finish().unwrap();
+        let mut z = ZipArchive::new(fs::File::open(&path).unwrap()).unwrap();
+        let mut stored = Vec::new();
+        let entry = z.by_name("ruido.bin").unwrap();
+        assert_eq!(entry.compression(), zip::CompressionMethod::Stored);
+        std::io::copy(&mut { entry }, &mut stored).unwrap();
+        assert_eq!(stored, noise);
+        assert_eq!(
+            z.by_name("texto.md").unwrap().compression(),
+            zip::CompressionMethod::Deflated
+        );
+    }
 
     #[test]
     fn blank_lines_inside_fences_do_not_start_unlocated_blocks() {

@@ -1,6 +1,6 @@
 ---
 type: "Source Document"
-unit_id: "7c2d679c1e8d94fb01b20f514e0e82b4d4064718444eb22b9401c5c94d842df5/documento.md"
+unit_id: "deececaf92dbda184b80f8f48b0f7ed3b03aff137641e43559589ff0caaa3fb4/documento.md"
 title: "Artificial intelligence‑assisted academic writing: recommendations for ethical use"
 description: "Documento fuente p2.pdf convertido a conceptos OKF por secciones."
 sources:
@@ -11,13 +11,13 @@ generated:
   at: "<generado>"
 converter_version: "0.1.0"
 converter_commit: "<commit>"
-profile_version: "1.16.0"
+profile_version: "1.17.0"
 conversion_settings:
   max_image_pixels: 33554432
   ocr:
     enabled: false
 settings_sha256: "ad1d7709796a5172b6ad18d538b1bef5780b44279dd787d15ecc82ede959ef16"
-conversion_id: "7c2d679c1e8d94fb01b20f514e0e82b4d4064718444eb22b9401c5c94d842df5"
+conversion_id: "deececaf92dbda184b80f8f48b0f7ed3b03aff137641e43559589ff0caaa3fb4"
 source_file:
   path: "references/original.pdf"
   sha256: "49ec606d9b25c9775c58749a7246c0451ba962124c8d34890815a011603ff015"

@@ -1,15 +1,15 @@
 ---
 converter_version: "0.1.0"
 converter_commit: "<commit>"
-profile_version: "1.16.0"
+profile_version: "1.17.0"
 conversion_settings:
   max_image_pixels: 33554432
   ocr:
     enabled: false
 settings_sha256: "ad1d7709796a5172b6ad18d538b1bef5780b44279dd787d15ecc82ede959ef16"
-conversion_id: "7c2d679c1e8d94fb01b20f514e0e82b4d4064718444eb22b9401c5c94d842df5"
+conversion_id: "deececaf92dbda184b80f8f48b0f7ed3b03aff137641e43559589ff0caaa3fb4"
 type: "Conversion Report"
-unit_id: "7c2d679c1e8d94fb01b20f514e0e82b4d4064718444eb22b9401c5c94d842df5/conversion-report.md"
+unit_id: "deececaf92dbda184b80f8f48b0f7ed3b03aff137641e43559589ff0caaa3fb4/conversion-report.md"
 title: "Informe de conversión"
 generated:
   by: "process:document-conversion"
@@ -23,7 +23,7 @@ sha256: "49ec606d9b25c9775c58749a7246c0451ba962124c8d34890815a011603ff015"
 
 - Estado: `complete`
 - Páginas: 9 (texto digital: 8; mixtas: 1; escaneadas: 0; escaneadas con OCR previo: 0; solo visuales: 0; en blanco: 0)
-- Unidades representadas: 98 (párrafos, listas, tablas, imágenes y notas de página)
+- Unidades representadas: 97 (párrafos, listas, tablas, imágenes y notas de página)
 - Conceptos: 9 concepto(s), divididos por los encabezados de nivel 2
 - Encabezados: 9 (de los marcadores del PDF)
 - Tablas reconstruidas: 1; imágenes adjuntas: 3; vistas de página: 0
@@ -70,7 +70,7 @@ Información sobre la conversión que no afecta el estado.
 
 - Página 4: texto con imágenes grandes; las imágenes se adjuntan sin transcribir (no se aplicó OCR)
 - Páginas 2, 3, 6 y 8: varias columnas; el orden de lectura se infiere de la disposición (columna por columna, de izquierda a derecha)
-- 7 párrafo(s) unidos con su continuación en otra columna o página (la frase sigue en minúscula con el mismo formato): páginas 1, 1→2, 2, 2→3, 4, 5, 6
+- 8 párrafo(s) unidos con su continuación en otra columna o página (la frase sigue en minúscula con el mismo formato): páginas 1, 1→2, 2, 2→3, 4, 5, 6, 8→9
 - 108 palabra(s) partidas con guion al final de línea, unidas sin el guion
 - Página 8: tabla reconstruida por la alineación de sus celdas; puede no coincidir con las líneas de la tabla original
 - Páginas 2–9: cabeceras o pies variables separados por su alineación con un folio confirmado y su posición tipográfica recurrente; textos y páginas registrados en documento.md

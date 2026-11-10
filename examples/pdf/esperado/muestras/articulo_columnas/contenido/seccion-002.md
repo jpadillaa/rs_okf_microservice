@@ -1,6 +1,6 @@
 ---
 type: "Source Section"
-unit_id: "f3a2a95e9065bb6d2e445f68df7aaefb2d684609a08039b2329ef383e7e78ce9/contenido/seccion-002.md"
+unit_id: "591e0f1b4471a5838e7a2799ba9771b39d5c6313e8d0b71755ffe4c46159ae07/contenido/seccion-002.md"
 parent: "documento.md"
 previous: "contenido/seccion-001.md"
 next: "contenido/seccion-003.md"
@@ -18,17 +18,7 @@ source_spans:
     kind: "pdf_pages"
     from: 1
     to: 1
-  - id: "u-4"
-    source_id: "original"
-    kind: "pdf_pages"
-    from: 1
-    to: 1
-    boxes:
-      - page: 1
-        x0: 56.00
-        top: 176.50
-        x1: 532.26
-        bottom: 211.50
+block_spans: "/contenido/seccion-002.spans.json"
 ---
 
 # Resumen

@@ -1,6 +1,6 @@
 ---
 type: "Source Section"
-unit_id: "f3a2a95e9065bb6d2e445f68df7aaefb2d684609a08039b2329ef383e7e78ce9/contenido/seccion-005.md"
+unit_id: "591e0f1b4471a5838e7a2799ba9771b39d5c6313e8d0b71755ffe4c46159ae07/contenido/seccion-005.md"
 parent: "documento.md"
 previous: "contenido/seccion-004.md"
 next: "contenido/seccion-006.md"
@@ -18,83 +18,7 @@ source_spans:
     kind: "pdf_pages"
     from: 2
     to: 2
-  - id: "u-11"
-    source_id: "original"
-    kind: "pdf_pages"
-    from: 2
-    to: 2
-    boxes:
-      - page: 2
-        x0: 56.00
-        top: 182.00
-        x1: 278.91
-        bottom: 267.00
-  - id: "u-12"
-    source_id: "original"
-    kind: "pdf_pages"
-    from: 2
-    to: 2
-    boxes:
-      - page: 2
-        x0: 56.00
-        top: 772.35
-        x1: 240.39
-        bottom: 779.35
-  - id: "u-13"
-    source_id: "original"
-    kind: "pdf_pages"
-    from: 2
-    to: 2
-    boxes:
-      - page: 2
-        x0: 307.50
-        top: 60.50
-        x1: 537.60
-        bottom: 95.50
-  - id: "u-14"
-    source_id: "original"
-    kind: "pdf_pages"
-    from: 2
-    to: 2
-    boxes:
-      - page: 2
-        x0: 307.50
-        top: 111.95
-        x1: 473.54
-        bottom: 120.95
-  - id: "u-15"
-    source_id: "original"
-    kind: "pdf_pages"
-    from: 2
-    to: 2
-    boxes:
-      - page: 2
-        x0: 307.50
-        top: 129.95
-        x1: 499.50
-        bottom: 180.95
-  - id: "u-16"
-    source_id: "original"
-    kind: "pdf_pages"
-    from: 2
-    to: 2
-    boxes:
-      - page: 2
-        x0: 307.50
-        top: 195.50
-        x1: 539.00
-        bottom: 305.50
-  - id: "u-17"
-    source_id: "original"
-    kind: "pdf_pages"
-    from: 2
-    to: 2
-    boxes:
-      - page: 2
-        x0: 307.50
-        top: 311.95
-        x1: 535.52
-        bottom: 320.95
+block_spans: "/contenido/seccion-005.spans.json"
 ---
 
 # 3. Resultados

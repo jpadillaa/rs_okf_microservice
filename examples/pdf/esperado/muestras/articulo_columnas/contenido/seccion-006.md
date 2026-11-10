@@ -1,6 +1,6 @@
 ---
 type: "Source Section"
-unit_id: "f3a2a95e9065bb6d2e445f68df7aaefb2d684609a08039b2329ef383e7e78ce9/contenido/seccion-006.md"
+unit_id: "591e0f1b4471a5838e7a2799ba9771b39d5c6313e8d0b71755ffe4c46159ae07/contenido/seccion-006.md"
 parent: "documento.md"
 previous: "contenido/seccion-005.md"
 next: "contenido/seccion-007.md"
@@ -18,28 +18,7 @@ source_spans:
     kind: "pdf_pages"
     from: 3
     to: 3
-  - id: "u-19"
-    source_id: "original"
-    kind: "pdf_pages"
-    from: 3
-    to: 3
-    boxes:
-      - page: 3
-        x0: 56.00
-        top: 80.50
-        x1: 288.75
-        bottom: 153.00
-  - id: "u-20"
-    source_id: "original"
-    kind: "pdf_pages"
-    from: 3
-    to: 3
-    boxes:
-      - page: 3
-        x0: 307.50
-        top: 80.50
-        x1: 524.27
-        bottom: 128.00
+block_spans: "/contenido/seccion-006.spans.json"
 ---
 
 # 4. Conclusiones

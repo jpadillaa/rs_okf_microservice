@@ -740,6 +740,46 @@ pub(crate) fn page_with_aliases(
         .enumerate()
         .flat_map(|(k, s)| s.to_chars().into_iter().map(move |c| (c, k)))
         .collect();
+    // pdf_oxide alinea con la línea base de un glifo grande (comillas o capitular) los
+    // fragmentos menores que lo rodean: la primera línea de una cita con comillas de
+    // 30 pt quedaba casi en la línea de la segunda, se fundían y sus letras se
+    // intercalaban. `extract_chars` conserva la posición real de esos caracteres.
+    let mut direct: Option<Vec<TextChar>> = None;
+    let snapped: Vec<usize> = (0..spans.len())
+        .filter(|&k| {
+            let s = &spans[k];
+            spans.iter().any(|big| {
+                big.font_size >= 1.5 * s.font_size
+                    && (big.bbox.y - s.bbox.y).abs() < 0.05
+                    && (big.bbox.x - s.bbox.x).abs() < 3.0 * big.font_size
+            })
+        })
+        .collect();
+    if !snapped.is_empty() {
+        let real = direct.get_or_insert_with(|| doc.extract_chars(index).unwrap_or_default());
+        for &k in &snapped {
+            let size = spans[k].font_size;
+            let deltas: Vec<f32> = chars
+                .iter()
+                .filter(|(c, o)| *o == k && !c.char.is_whitespace())
+                .filter_map(|(c, _)| {
+                    real.iter()
+                        .find(|r| r.char == c.char && (r.bbox.x - c.bbox.x).abs() < 0.3 * size)
+                        .map(|r| r.origin_y - c.origin_y)
+                })
+                .collect();
+            let Some(&delta) = deltas.first() else {
+                continue;
+            };
+            let agree = deltas.iter().filter(|d| (*d - delta).abs() < 0.5).count();
+            if delta.abs() > 0.25 * size && agree * 2 > deltas.len() {
+                for (c, _) in chars.iter_mut().filter(|(_, o)| *o == k) {
+                    c.origin_y += delta;
+                    c.bbox.y += delta;
+                }
+            }
+        }
+    }
     let suspect: Vec<usize> = (0..spans.len())
         .filter(|&k| {
             let own: Vec<TextChar> = chars
@@ -751,7 +791,7 @@ pub(crate) fn page_with_aliases(
         })
         .collect();
     if !suspect.is_empty() {
-        let direct = doc.extract_chars(index).unwrap_or_default();
+        let direct = direct.unwrap_or_else(|| doc.extract_chars(index).unwrap_or_default());
         for &k in &suspect {
             let s = &spans[k];
             let same_line = |y: f32| (y - s.bbox.y).abs() <= 0.25 * s.font_size;
@@ -966,13 +1006,22 @@ pub(crate) fn encoded(
             let Some(h) = handles.get(k) else {
                 return Encoding::Failed;
             };
-            let jpeg = matches!(h.filter_chain.as_slice(), [PdfFilter::DCTDecode])
-                && !matches!(h.color_space, ColorSpace::DeviceCMYK);
+            let dct = matches!(h.filter_chain.as_slice(), [PdfFilter::DCTDecode]);
+            let cmyk = matches!(h.color_space, ColorSpace::DeviceCMYK);
+            let jpeg = dct && !cmyk;
             if !jpeg && u64::from(h.width).saturating_mul(u64::from(h.height)) > max_pixels {
                 return Encoding::TooLarge;
             }
             let encoded = if jpeg {
                 h.raw_compressed_bytes().ok().map(|b| (b, "jpg"))
+            } else if dct {
+                // Una foto en CMYK se pasa a RGB y vuelve a JPEG: como PNG ocupaba
+                // varias veces más y su codificación dominaba la de las imágenes.
+                h.decode()
+                    .ok()
+                    .and_then(|d| d.to_dynamic_image().ok())
+                    .and_then(|i| rgb_jpeg(&i.into_rgb8()))
+                    .map(|b| (b, "jpg"))
             } else {
                 h.decode()
                     .ok()
@@ -985,6 +1034,17 @@ pub(crate) fn encoded(
             }
         })
         .collect()
+}
+
+/// Calidad JPEG de las imágenes CMYK convertidas a RGB.
+const CMYK_JPEG_QUALITY: u8 = 90;
+
+fn rgb_jpeg(image: &image::RgbImage) -> Option<Vec<u8>> {
+    let mut out = Vec::new();
+    image::codecs::jpeg::JpegEncoder::new_with_quality(&mut out, CMYK_JPEG_QUALITY)
+        .encode_image(image)
+        .ok()?;
+    Some(out)
 }
 
 /// Fragmento armado de forma inconsistente: su rectángulo es mucho más ancho que la
@@ -1060,13 +1120,92 @@ fn utf8_in_winansi(chars: &[TextChar]) -> Option<(char, usize)> {
     }
 }
 
-/// Vista PNG de la página, con la mayor dimensión limitada a `max_px` píxeles.
-pub(crate) fn render_png(doc: &PdfDocument, index: usize, max_px: f32) -> Result<Vec<u8>> {
+/// Página renderizada en RGBA premultiplicado, sobre fondo blanco.
+pub(crate) struct Raster {
+    width: u32,
+    height: u32,
+    rgba: Vec<u8>,
+}
+
+impl Raster {
+    /// PNG sin pérdida con los canales que la página usa: gris si todos los píxeles lo
+    /// son (un escaneo en blanco y negro ocupa un cuarto) y sin alfa si es opaca.
+    pub(crate) fn png(&self) -> Result<Vec<u8>> {
+        use image::{
+            ExtendedColorType, ImageEncoder,
+            codecs::png::{CompressionType, FilterType, PngEncoder},
+        };
+        let pixels = self.rgba.as_chunks::<4>().0;
+        let opaque = pixels.iter().all(|p| p[3] == 255);
+        let gray = opaque && pixels.iter().all(|p| p[0] == p[1] && p[1] == p[2]);
+        let (data, color): (Vec<u8>, _) = if gray {
+            (pixels.iter().map(|p| p[0]).collect(), ExtendedColorType::L8)
+        } else if opaque {
+            (
+                pixels.iter().flat_map(|p| [p[0], p[1], p[2]]).collect(),
+                ExtendedColorType::Rgb8,
+            )
+        } else {
+            // El PNG espera alfa sin premultiplicar.
+            let straight = |c: u8, a: u8| match a {
+                0 | 255 => c,
+                a => ((u32::from(c) * 255 + u32::from(a) / 2) / u32::from(a)).min(255) as u8,
+            };
+            (
+                pixels
+                    .iter()
+                    .flat_map(|p| {
+                        [
+                            straight(p[0], p[3]),
+                            straight(p[1], p[3]),
+                            straight(p[2], p[3]),
+                            p[3],
+                        ]
+                    })
+                    .collect(),
+                ExtendedColorType::Rgba8,
+            )
+        };
+        let mut out = Vec::new();
+        PngEncoder::new_with_quality(&mut out, CompressionType::Fast, FilterType::Adaptive)
+            .write_image(&data, self.width, self.height, color)
+            .context("no se pudo codificar la vista en PNG")?;
+        Ok(out)
+    }
+
+    /// Píxeles RGB, compuestos sobre blanco.
+    pub(crate) fn rgb(&self) -> image::RgbImage {
+        let data = self
+            .rgba
+            .as_chunks::<4>()
+            .0
+            .iter()
+            .flat_map(|p| {
+                let under = 255 - p[3];
+                [p[0] + under, p[1] + under, p[2] + under]
+            })
+            .collect();
+        image::RgbImage::from_raw(self.width, self.height, data).expect("tamaño del raster")
+    }
+}
+
+/// Vista de la página, con la mayor dimensión limitada a `max_px` píxeles.
+pub(crate) fn render_view(doc: &PdfDocument, index: usize, max_px: f32) -> Result<Raster> {
     let (x0, y0, x1, y1) = media_box(doc, index);
     let dpi = (max_px * 72.0 / (x1 - x0).max(y1 - y0)).clamp(36.0, 150.0) as u32;
-    let img = render_page(doc, index, &RenderOptions::with_dpi(dpi))
+    let img = render_page(doc, index, &RenderOptions::with_dpi(dpi).as_raw())
         .map_err(|e| anyhow::anyhow!("no se pudo renderizar la página {}: {e}", index + 1))?;
-    Ok(img.data)
+    if img.data.len() != img.width as usize * img.height as usize * 4 {
+        anyhow::bail!(
+            "la página {} se renderizó con un tamaño inesperado",
+            index + 1
+        )
+    }
+    Ok(Raster {
+        width: img.width,
+        height: img.height,
+        rgba: img.data,
+    })
 }
 
 /// ¿La página renderizada es de un solo color fuera de los rectángulos indicados?

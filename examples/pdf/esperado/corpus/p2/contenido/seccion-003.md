@@ -1,6 +1,6 @@
 ---
 type: "Source Section"
-unit_id: "7c2d679c1e8d94fb01b20f514e0e82b4d4064718444eb22b9401c5c94d842df5/contenido/seccion-003.md"
+unit_id: "deececaf92dbda184b80f8f48b0f7ed3b03aff137641e43559589ff0caaa3fb4/contenido/seccion-003.md"
 parent: "documento.md"
 previous: "contenido/seccion-002.md"
 next: "contenido/seccion-004.md"
@@ -18,99 +18,7 @@ source_spans:
     kind: "pdf_pages"
     from: 1
     to: 2
-  - id: "u-10"
-    source_id: "original"
-    kind: "pdf_pages"
-    from: 1
-    to: 1
-    boxes:
-      - page: 1
-        x0: 56.62
-        top: 435.29
-        x1: 538.61
-        bottom: 541.61
-  - id: "u-11"
-    source_id: "original"
-    kind: "pdf_pages"
-    from: 1
-    to: 1
-    boxes:
-      - page: 1
-        x0: 56.69
-        top: 561.19
-        x1: 110.85
-        bottom: 568.69
-  - id: "u-12"
-    source_id: "original"
-    kind: "pdf_pages"
-    from: 1
-    to: 1
-    boxes:
-      - page: 1
-        x0: 56.69
-        top: 570.19
-        x1: 276.33
-        bottom: 649.69
-  - id: "u-13"
-    source_id: "original"
-    kind: "pdf_pages"
-    from: 1
-    to: 2
-    boxes:
-      - page: 1
-        x0: 304.72
-        top: 543.27
-        x1: 538.60
-        bottom: 637.09
-      - page: 2
-        x0: 56.69
-        top: 88.44
-        x1: 290.58
-        bottom: 158.21
-  - id: "u-14"
-    source_id: "original"
-    kind: "pdf_pages"
-    from: 1
-    to: 1
-    boxes:
-      - page: 1
-        x0: 180.54
-        top: 676.94
-        x1: 538.10
-        bottom: 739.94
-  - id: "u-15"
-    source_id: "original"
-    kind: "pdf_pages"
-    from: 2
-    to: 2
-    boxes:
-      - page: 2
-        x0: 56.69
-        top: 160.41
-        x1: 290.59
-        bottom: 314.23
-  - id: "u-16"
-    source_id: "original"
-    kind: "pdf_pages"
-    from: 2
-    to: 2
-    boxes:
-      - page: 2
-        x0: 56.69
-        top: 316.43
-        x1: 290.59
-        bottom: 494.23
-  - id: "u-17"
-    source_id: "original"
-    kind: "pdf_pages"
-    from: 2
-    to: 2
-    boxes:
-      - page: 2
-        x0: 56.69
-        top: 88.42
-        x1: 538.59
-        bottom: 722.22
+block_spans: "/contenido/seccion-003.spans.json"
 ---
 
 # Introduction

@@ -1,6 +1,6 @@
 ---
 type: "Source Section"
-unit_id: "2670da573f38b94708b33c6720fc15e23efedf95e1fbaff90dc6270364c47646/contenido/seccion-005.md"
+unit_id: "926510cb92f4446c311f3dc726406ce3d01f2731b565e30f67f1e8133c2a412a/contenido/seccion-005.md"
 parent: "documento.md"
 previous: "contenido/seccion-004.md"
 title: "4. Riesgos"
@@ -17,28 +17,7 @@ source_spans:
     kind: "pdf_pages"
     from: 2
     to: 2
-  - id: "u-25"
-    source_id: "original"
-    kind: "pdf_pages"
-    from: 2
-    to: 2
-    boxes:
-      - page: 2
-        x0: 72.00
-        top: 305.83
-        x1: 533.53
-        bottom: 343.33
-  - id: "u-26"
-    source_id: "original"
-    kind: "pdf_pages"
-    from: 2
-    to: 2
-    boxes:
-      - page: 2
-        x0: 72.00
-        top: 352.33
-        x1: 522.36
-        bottom: 389.83
+block_spans: "/contenido/seccion-005.spans.json"
 title_inferred: true
 ---
 

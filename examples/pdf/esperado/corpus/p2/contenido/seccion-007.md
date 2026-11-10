@@ -1,6 +1,6 @@
 ---
 type: "Source Section"
-unit_id: "7c2d679c1e8d94fb01b20f514e0e82b4d4064718444eb22b9401c5c94d842df5/contenido/seccion-007.md"
+unit_id: "deececaf92dbda184b80f8f48b0f7ed3b03aff137641e43559589ff0caaa3fb4/contenido/seccion-007.md"
 parent: "documento.md"
 previous: "contenido/seccion-006.md"
 next: "contenido/seccion-008.md"
@@ -18,83 +18,7 @@ source_spans:
     kind: "pdf_pages"
     from: 7
     to: 8
-  - id: "u-48"
-    source_id: "original"
-    kind: "pdf_pages"
-    from: 7
-    to: 7
-    boxes:
-      - page: 7
-        x0: 304.72
-        top: 159.69
-        x1: 538.61
-        bottom: 373.47
-  - id: "u-49"
-    source_id: "original"
-    kind: "pdf_pages"
-    from: 7
-    to: 7
-    boxes:
-      - page: 7
-        x0: 304.72
-        top: 375.66
-        x1: 538.61
-        bottom: 421.45
-  - id: "u-50"
-    source_id: "original"
-    kind: "pdf_pages"
-    from: 7
-    to: 7
-    boxes:
-      - page: 7
-        x0: 64.18
-        top: 457.10
-        x1: 531.10
-        bottom: 707.78
-  - id: "u-51"
-    source_id: "original"
-    kind: "pdf_pages"
-    from: 7
-    to: 7
-    boxes:
-      - page: 7
-        x0: 62.69
-        top: 711.88
-        x1: 402.53
-        bottom: 719.88
-  - id: "u-52"
-    source_id: "original"
-    kind: "pdf_pages"
-    from: 8
-    to: 8
-    boxes:
-      - page: 8
-        x0: 56.69
-        top: 87.69
-        x1: 290.58
-        bottom: 241.46
-  - id: "u-53"
-    source_id: "original"
-    kind: "pdf_pages"
-    from: 8
-    to: 8
-    boxes:
-      - page: 8
-        x0: 56.69
-        top: 251.42
-        x1: 102.35
-        bottom: 258.92
-  - id: "u-54"
-    source_id: "original"
-    kind: "pdf_pages"
-    from: 8
-    to: 8
-    boxes:
-      - page: 8
-        x0: 56.69
-        top: 260.42
-        x1: 213.03
-        bottom: 294.92
+block_spans: "/contenido/seccion-007.spans.json"
 ---
 
 # Summary and future directions

@@ -71,6 +71,8 @@ const FRAGMENT_GAP: f32 = 0.8;
 const SPAN_GAP: f32 = 3.0;
 /// Hueco máximo entre una viñeta o un número de lista y su texto.
 const MARKER_GAP: f32 = 3.0;
+/// Caracteres visibles máximos de un superíndice o subíndice que se une a su línea.
+const SCRIPT_CHARS: usize = 6;
 /// Distancia a partir de la cual se supone un espacio que el PDF no escribe.
 const IMPLICIT_SPACE: f32 = 0.3;
 
@@ -147,6 +149,8 @@ pub(crate) fn lines(glyphs: &[Glyph]) -> (Vec<Line>, Vec<Line>) {
     order.sort_by(|&a, &b| pieces[a].base.total_cmp(&pieces[b].base));
     let max_size = pieces.iter().map(|p| p.size).fold(0.0f32, f32::max);
     let mut parent: Vec<usize> = (0..pieces.len()).collect();
+    // Tramos de cada grupo, guardados en su raíz.
+    let mut members: Vec<Vec<usize>> = (0..pieces.len()).map(|i| vec![i]).collect();
     for (oi, &i) in order.iter().enumerate() {
         for &j in &order[oi + 1..] {
             let (a, b) = (&pieces[i], &pieces[j]);
@@ -166,16 +170,40 @@ pub(crate) fn lines(glyphs: &[Glyph]) -> (Vec<Line>, Vec<Line>) {
             let same_line = (a.base - b.base).abs() <= 0.25 * small
                 && gap <= reach * large
                 && gap >= -0.5 * large;
+            // Un superíndice o subíndice es una pieza corta (llamada de nota, exponente).
+            // Una capital grande de una o dos letras solo se une a la línea alineada con
+            // su borde superior: unida a las líneas de arriba y de abajo, las fundía en
+            // una e intercalaba sus letras.
             let script = small <= 0.85 * large && {
                 let (at, ab) = a.span();
                 let (bt, bb) = b.span();
                 let overlap = ab.min(bb) - at.max(bt);
-                overlap >= 0.3 * small * 1.0 && (-0.3 * large..=0.3 * large).contains(&gap)
+                let (minor, major) = if a.size <= b.size { (a, b) } else { (b, a) };
+                let visible = |p: &Piece| p.glyphs.iter().filter(|g| !g.c.is_whitespace()).count();
+                let fits = visible(minor) <= SCRIPT_CHARS
+                    || (visible(major) <= 2
+                        && (minor.span().0 - major.span().0).abs() <= 0.25 * large);
+                fits && overlap >= 0.3 * small && (-0.3 * large..=0.3 * large).contains(&gap)
             };
             if same_line || script {
                 let (x, y) = (find(&mut parent, i), find(&mut parent, j));
-                if x != y {
+                // Dos tramos de líneas base distintas que se solapan en horizontal no son
+                // de la misma línea: unir sus grupos intercalaría sus letras. El texto
+                // duplicado para simular negrita comparte la línea base y se descarta
+                // después.
+                let clash = x != y
+                    && members[x].iter().any(|&m| {
+                        members[y].iter().any(|&n| {
+                            let (p, q) = (&pieces[m], &pieces[n]);
+                            let size = p.size.min(q.size);
+                            p.x1.min(q.x1) - p.x0.max(q.x0) > 0.3 * size
+                                && (p.base - q.base).abs() > 0.1 * size
+                        })
+                    });
+                if x != y && !clash {
                     parent[x] = y;
+                    let moved = std::mem::take(&mut members[x]);
+                    members[y].extend(moved);
                 }
             }
         }
@@ -1687,13 +1715,24 @@ fn table(
                     append(cell, &text_of(it));
                 }
             }
+            let size = region.size(leaf.items[0]);
+            let close = |limit: f32| {
+                current.is_some_and(|r| previous_top.is_some_and(|p| r.top - p <= limit * size))
+            };
+            // Renglones que siguen el texto de la fila de arriba con interlineado normal:
+            // toda celda con texto empieza en minúscula o con paréntesis bajo una celda que
+            // no cierra la frase (rótulos de un diagrama o celdas de varias líneas).
+            let continues = rows.last().is_some_and(|above: &Vec<String>| {
+                row.iter().any(|t| !t.is_empty())
+                    && row.iter().zip(above).all(|(t, a)| {
+                        t.is_empty()
+                            || (!a.is_empty()
+                                && !terminal(a)
+                                && t.starts_with(|c: char| c.is_lowercase() || c == '('))
+                    })
+            });
             if !rows.is_empty()
-                && (row[0].is_empty()
-                    || (multiline
-                        && current.is_some_and(|r| {
-                            previous_top
-                                .is_some_and(|p| r.top - p <= 1.4 * region.size(leaf.items[0]))
-                        })))
+                && (row[0].is_empty() || (multiline && close(1.4)) || (continues && close(1.35)))
             {
                 for (cell, text) in rows.last_mut().unwrap().iter_mut().zip(row) {
                     if !text.is_empty() {

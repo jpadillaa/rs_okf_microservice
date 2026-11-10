@@ -744,6 +744,8 @@ mod tests {
     async fn test_app(root: &FsPath) -> App {
         let mut a = app(root.to_path_buf()).await.unwrap();
         Arc::make_mut(&mut a.cfg).retry_base_s = 0;
+        // El OCR, activo por defecto, depende de los modelos descargados.
+        Arc::make_mut(&mut a.cfg).ocr.enabled = false;
         a
     }
     async fn job(a: &App, id: &str) -> (String, i64, Option<String>, Option<String>) {
@@ -1290,7 +1292,7 @@ mod tests {
             let name = entry.name().to_string();
             let mut content = Vec::new();
             entry.read_to_end(&mut content).unwrap();
-            if name.ends_with(".md") || name.ends_with(".csv") {
+            if name.ends_with(".md") || name.ends_with(".csv") || name.ends_with(".json") {
                 content = edit(&name, String::from_utf8(content).unwrap()).into_bytes();
             }
             write_zip_file(&mut z, &name, &content).unwrap();
@@ -1611,9 +1613,9 @@ mod tests {
             (
                 "tiene un localizador de páginas fuera de su sección",
                 Box::new(only(
-                    "contenido/seccion-004.md",
-                    "id: \"u-9\"\n    source_id: \"original\"\n    kind: \"pdf_pages\"\n    from: 1\n    to: 1\n",
-                    "id: \"u-9\"\n    source_id: \"original\"\n    kind: \"pdf_pages\"\n    from: 3\n    to: 3\n",
+                    "contenido/seccion-004.spans.json",
+                    "\"id\": \"u-9\", \"source_id\": \"original\", \"kind\": \"pdf_pages\", \"from\": 1, \"to\": 1,",
+                    "\"id\": \"u-9\", \"source_id\": \"original\", \"kind\": \"pdf_pages\", \"from\": 3, \"to\": 3,",
                 )),
             ),
             (
@@ -1647,17 +1649,17 @@ mod tests {
             (
                 "la caja de u-9 en la página 1 sale de la página",
                 Box::new(only(
-                    "contenido/seccion-004.md",
-                    "x1: 173.84\n",
-                    "x1: 9173.84\n",
+                    "contenido/seccion-004.spans.json",
+                    "\"x1\": 173.84,",
+                    "\"x1\": 9173.84,",
                 )),
             ),
             (
                 "la caja de u-9 en la página 2 no corresponde a sus páginas",
                 Box::new(only(
-                    "contenido/seccion-004.md",
-                    "      - page: 1\n        x0: 56.00\n        top: 782.35\n",
-                    "      - page: 2\n        x0: 56.00\n        top: 782.35\n",
+                    "contenido/seccion-004.spans.json",
+                    "{\"page\": 1, \"x0\": 56.00, \"top\": 782.35,",
+                    "{\"page\": 2, \"x0\": 56.00, \"top\": 782.35,",
                 )),
             ),
             (

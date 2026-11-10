@@ -56,14 +56,10 @@ fn number_anchor(line: &Line) -> Option<(usize, f32)> {
 pub(super) fn recover(
     lines: &mut Vec<Line>,
     glyphs: &[Glyph],
-    png: &[u8],
+    image: &RgbImage,
     width: f32,
     height: f32,
 ) -> Vec<(Para, Rect)> {
-    let Ok(image) = image::load_from_memory(png) else {
-        return Vec::new();
-    };
-    let image = image.to_rgb8();
     let sx = image.width() as f32 / width;
     let sy = image.height() as f32 / height;
     let body_size = median(
@@ -208,7 +204,7 @@ pub(super) fn recover(
             }
             let base = median(row.iter().map(|g| g.base).collect());
             let size = median(row.iter().map(|g| g.size).collect());
-            let ink = ink_extent(&image, sx, sy, rect, cut, base, size);
+            let ink = ink_extent(image, sx, sy, rect, cut, base, size);
             if !text.is_empty()
                 && let Some((a, b)) = ink
             {
@@ -322,7 +318,6 @@ fn ink_extent(
 #[cfg(test)]
 mod tests {
     use super::*;
-    use std::io::Cursor;
     fn line(text: &str, x: f32, base: f32, size: f32) -> Line {
         Line {
             x0: x,
@@ -363,10 +358,6 @@ mod tests {
                     }
                 }
             }
-            let mut bytes = Cursor::new(Vec::new());
-            image::DynamicImage::ImageRgb8(im)
-                .write_to(&mut bytes, image::ImageFormat::Png)
-                .unwrap();
             let mut lines = vec![
                 line(
                     "A sufficiently long paragraph outside the numbered panel.",
@@ -404,7 +395,7 @@ mod tests {
                     });
                 }
             }
-            let result = recover(&mut lines, &glyphs, bytes.get_ref(), 220., 180.);
+            let result = recover(&mut lines, &glyphs, &im, 220., 180.);
             if colored {
                 assert_eq!(result.len(), 1);
                 assert_eq!(lines.len(), usize::from(with_body));

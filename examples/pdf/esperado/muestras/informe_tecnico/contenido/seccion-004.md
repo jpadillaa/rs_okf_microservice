@@ -1,6 +1,6 @@
 ---
 type: "Source Section"
-unit_id: "2670da573f38b94708b33c6720fc15e23efedf95e1fbaff90dc6270364c47646/contenido/seccion-004.md"
+unit_id: "926510cb92f4446c311f3dc726406ce3d01f2731b565e30f67f1e8133c2a412a/contenido/seccion-004.md"
 parent: "documento.md"
 previous: "contenido/seccion-003.md"
 next: "contenido/seccion-005.md"
@@ -18,66 +18,7 @@ source_spans:
     kind: "pdf_pages"
     from: 1
     to: 2
-  - id: "u-17"
-    source_id: "original"
-    kind: "pdf_pages"
-    from: 1
-    to: 2
-    boxes:
-      - page: 1
-        x0: 72.00
-        top: 661.72
-        x1: 528.92
-        bottom: 685.72
-      - page: 2
-        x0: 72.00
-        top: 72.53
-        x1: 536.44
-        bottom: 110.03
-  - id: "u-18"
-    source_id: "original"
-    kind: "pdf_pages"
-    from: 2
-    to: 2
-    boxes:
-      - page: 2
-        x0: 72.00
-        top: 127.10
-        x1: 208.00
-        bottom: 139.10
-  - id: "u-19-21"
-    source_id: "original"
-    kind: "pdf_pages"
-    from: 2
-    to: 2
-    boxes:
-      - page: 2
-        x0: 78.00
-        top: 146.22
-        x1: 407.09
-        bottom: 189.72
-  - id: "u-22"
-    source_id: "original"
-    kind: "pdf_pages"
-    from: 2
-    to: 2
-    boxes:
-      - page: 2
-        x0: 72.00
-        top: 209.80
-        x1: 194.66
-        bottom: 221.80
-  - id: "u-23"
-    source_id: "original"
-    kind: "pdf_pages"
-    from: 2
-    to: 2
-    boxes:
-      - page: 2
-        x0: 72.00
-        top: 228.92
-        x1: 526.57
-        bottom: 266.42
+block_spans: "/contenido/seccion-004.spans.json"
 title_inferred: true
 ---
 
