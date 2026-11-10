@@ -4693,29 +4693,8 @@ mod tests {
         assert_eq!(furniture_text("Página 2 de 2", 2), "Página N de 2");
     }
 
-    /// Configuración con el OCR activo y los modelos de `OKF_OCR_MODELS_DIR` o de
-    /// `models/ocr` (tools/ocr_models.sh). Sin modelos, las pruebas que los necesitan
-    /// se omiten, salvo con `OKF_REQUIRE_OCR_MODELS`, que la CI fija.
     fn ocr_config() -> Option<Config> {
-        let dir = std::env::var_os("OKF_OCR_MODELS_DIR")
-            .map(std::path::PathBuf::from)
-            .unwrap_or_else(|| "models/ocr".into());
-        if !ocr::MODEL_FILES.iter().all(|f| dir.join(f).is_file()) {
-            assert!(
-                std::env::var_os("OKF_REQUIRE_OCR_MODELS").is_none(),
-                "faltan los modelos de OCR en {}",
-                dir.display()
-            );
-            eprintln!(
-                "modelos de OCR ausentes en {}: prueba omitida",
-                dir.display()
-            );
-            return None;
-        }
-        let mut cfg = Config::default();
-        cfg.ocr.enabled = true;
-        cfg.ocr.models_dir = dir;
-        Some(cfg)
+        ocr::test_config()
     }
 
     /// Palabras de los conceptos de contenido, sin frontmatter, notas ni marcadores.

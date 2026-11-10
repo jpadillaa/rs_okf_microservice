@@ -27,6 +27,8 @@ mod coverage;
 #[cfg(not(test))]
 mod db;
 mod docx;
+#[cfg(test)]
+mod exactness;
 mod format;
 #[cfg(test)]
 mod golden;

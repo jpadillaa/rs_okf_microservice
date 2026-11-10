@@ -975,6 +975,14 @@ fn strip_marker(mut line: Line, label: &str) -> Line {
     line
 }
 
+/// ¿Termina el texto en un número, en cifras o en romanos en minúscula (una página)?
+fn ends_in_number(text: &str) -> bool {
+    text.split_whitespace().next_back().is_some_and(|w| {
+        w.chars().all(|c| c.is_ascii_digit())
+            || w.chars().all(|c| matches!(c, 'i' | 'v' | 'x' | 'l' | 'c'))
+    })
+}
+
 fn terminal(text: &str) -> bool {
     text.trim_end()
         .ends_with(['.', '!', '?', ':', ';', '…', '»', '"', '”'])
@@ -1721,9 +1729,12 @@ fn table(
             };
             // Renglones que siguen el texto de la fila de arriba con interlineado normal:
             // toda celda con texto empieza en minúscula o con paréntesis bajo una celda que
-            // no cierra la frase (rótulos de un diagrama o celdas de varias líneas).
+            // no cierra la frase (rótulos de un diagrama o celdas de varias líneas). Una
+            // fila con un número, o bajo uno (las páginas de un índice, en cifras o en
+            // romanos), es una entrada propia.
             let continues = rows.last().is_some_and(|above: &Vec<String>| {
                 row.iter().any(|t| !t.is_empty())
+                    && !row.iter().chain(above).any(|t| ends_in_number(t))
                     && row.iter().zip(above).all(|(t, a)| {
                         t.is_empty()
                             || (!a.is_empty()

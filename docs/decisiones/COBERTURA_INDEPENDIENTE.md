@@ -5,6 +5,8 @@
 
 ## 1. Método
 
+La cobertura compara bolsas de palabras y no detecta texto desordenado o mezclado; para PDF, la [exactitud del texto](EXACTITUD_DEL_TEXTO.md) mide además el orden frente a referencias exactas.
+
 `tools/coverage.py` convierte cada documento con el ejecutable del servicio (`okf-microservice convert`, el mismo subcomando que usa el worker) y compara las palabras del bundle con las de una extracción hecha con herramientas que no comparten código con los lectores del servicio:
 
 | Formato | Referencia | Partes leídas directamente del XML |

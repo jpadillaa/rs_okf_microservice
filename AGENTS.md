@@ -17,6 +17,7 @@
 - Los bundles se escriben solo a través de `src/output.rs` (frontmatter, índices, `documento.md`, informe). Ningún adaptador escribe frontmatter con plantillas de texto.
 - Las variables `OKF_*` se documentan en la tabla de la arquitectura técnica, §5.
 - Un cambio en un adaptador se mide también con `uv run tools/coverage.py` (ver [cobertura](docs/decisiones/COBERTURA_INDEPENDIENTE.md)). Si cambia una cifra, explícala o actualiza las listas con `--write-reference`; la cifra medida y el mínimo de `examples/coverage-thresholds.json` se actualizan a mano.
+- Un cambio en el adaptador PDF se mide además con `uv run tools/exactitud.py` (ver [exactitud](docs/decisiones/EXACTITUD_DEL_TEXTO.md)), con las muestras públicas y, en local, con los originales privados. Si cambia una cifra de `examples/exactitud-thresholds.json`, explícala; se actualiza a mano. Las referencias exactas de `examples/pdf/exactitud/` las regenera `examples/pdf/create_samples.py`.
 - Las pruebas del OCR necesitan los modelos en `models/ocr` (`tools/ocr_models.sh`); sin ellos se omiten en local, y la CI las exige con `OKF_REQUIRE_OCR_MODELS`. Un cambio en `src/pdf/ocr.rs` se mide también con escaneos (ver [OCR local](docs/decisiones/OCR_LOCAL.md)) y con `tools/smoke.sh`, que convierte un PDF escaneado con el OCR activo dentro de la imagen.
 
 ## Dependencias
