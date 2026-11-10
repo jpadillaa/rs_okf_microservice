@@ -1,6 +1,6 @@
 ---
 type: "Source Section"
-unit_id: "f3a2a95e9065bb6d2e445f68df7aaefb2d684609a08039b2329ef383e7e78ce9/contenido/seccion-004.md"
+unit_id: "591e0f1b4471a5838e7a2799ba9771b39d5c6313e8d0b71755ffe4c46159ae07/contenido/seccion-004.md"
 parent: "documento.md"
 previous: "contenido/seccion-003.md"
 next: "contenido/seccion-005.md"
@@ -18,33 +18,7 @@ source_spans:
     kind: "pdf_pages"
     from: 1
     to: 2
-  - id: "u-8"
-    source_id: "original"
-    kind: "pdf_pages"
-    from: 1
-    to: 2
-    boxes:
-      - page: 1
-        x0: 307.50
-        top: 329.50
-        x1: 534.20
-        bottom: 389.50
-      - page: 2
-        x0: 56.00
-        top: 60.50
-        x1: 286.08
-        bottom: 145.50
-  - id: "u-9"
-    source_id: "original"
-    kind: "pdf_pages"
-    from: 1
-    to: 1
-    boxes:
-      - page: 1
-        x0: 56.00
-        top: 782.35
-        x1: 173.84
-        bottom: 798.35
+block_spans: "/contenido/seccion-004.spans.json"
 ---
 
 # 2. Método

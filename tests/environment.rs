@@ -24,7 +24,9 @@ async fn environment_file_configures_postgres_and_process_environment_takes_prec
         command
             .args(["--env-file", config.to_str().unwrap(), "worker", "--once"])
             .env_remove("OKF_DATABASE_URL")
-            .env_remove("OKF_DATA_DIR");
+            .env_remove("OKF_DATA_DIR")
+            // El OCR está activo por defecto y estas pruebas no tienen sus modelos.
+            .env("OKF_OCR_ENABLED", "false");
         if let Some(url) = url {
             command.env("OKF_DATABASE_URL", url);
         }
@@ -82,4 +84,38 @@ async fn worker_refuses_to_start_with_ocr_enabled_and_no_models() {
     );
     assert!(run("false").status.success());
     db.close().await;
+}
+
+#[test]
+fn conversion_threads_and_cpu_limit_are_validated() {
+    let run = |name: &str, value: &str| {
+        Command::new(BIN)
+            .args(["validate", "inexistente.zip"])
+            .env(name, value)
+            .output()
+            .unwrap()
+    };
+    for (name, value, message) in [
+        (
+            "OKF_CONVERSION_THREADS",
+            "0",
+            "OKF_CONVERSION_THREADS debe estar entre 1 y 64",
+        ),
+        (
+            "OKF_CONVERSION_THREADS",
+            "65",
+            "OKF_CONVERSION_THREADS debe estar entre 1 y 64",
+        ),
+        (
+            "OKF_CONVERSION_THREADS",
+            "dos",
+            "OKF_CONVERSION_THREADS no es un número válido",
+        ),
+        ("OKF_MAX_CPU_S", "0", "OKF_MAX_CPU_S debe ser mayor que 0"),
+    ] {
+        let output = run(name, value);
+        assert!(!output.status.success(), "{name}={value}");
+        let stderr = String::from_utf8_lossy(&output.stderr);
+        assert!(stderr.contains(message), "{name}={value}: {stderr}");
+    }
 }

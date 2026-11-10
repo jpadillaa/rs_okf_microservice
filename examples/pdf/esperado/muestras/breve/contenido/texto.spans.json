@@ -1,0 +1,8 @@
+{
+  "concept": "contenido/texto.md",
+  "source_spans": [
+    {"id": "u-2", "source_id": "original", "kind": "pdf_pages", "from": 1, "to": 1, "boxes": [{"page": 1, "x0": 72.00, "top": 110.50, "x1": 541.83, "bottom": 145.50}]},
+    {"id": "u-3", "source_id": "original", "kind": "pdf_pages", "from": 1, "to": 1, "boxes": [{"page": 1, "x0": 72.00, "top": 158.00, "x1": 538.82, "bottom": 180.50}]},
+    {"id": "u-4-6", "source_id": "original", "kind": "pdf_pages", "from": 1, "to": 1, "boxes": [{"page": 1, "x0": 84.00, "top": 191.00, "x1": 370.85, "bottom": 234.00}]}
+  ]
+}

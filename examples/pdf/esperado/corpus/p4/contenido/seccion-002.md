@@ -1,6 +1,6 @@
 ---
 type: "Source Section"
-unit_id: "f98aad26887b3c3a6d1c53082e01a9b28e0553452136090e6609645ba3efca6d/contenido/seccion-002.md"
+unit_id: "fd8eed7b7dbc77c25be7436f2204edd9d556d30f2aa24dcc151e632ba18e5f71/contenido/seccion-002.md"
 parent: "documento.md"
 previous: "contenido/seccion-001.md"
 next: "contenido/seccion-003.md"
@@ -18,77 +18,7 @@ source_spans:
     kind: "pdf_pages"
     from: 1
     to: 2
-  - id: "u-4"
-    source_id: "original"
-    kind: "pdf_pages"
-    from: 1
-    to: 1
-    boxes:
-      - page: 1
-        x0: 85.03
-        top: 427.65
-        x1: 482.21
-        bottom: 457.65
-  - id: "u-5"
-    source_id: "original"
-    kind: "pdf_pages"
-    from: 1
-    to: 1
-    boxes:
-      - page: 1
-        x0: 85.03
-        top: 475.65
-        x1: 526.21
-        bottom: 613.70
-  - id: "u-6"
-    source_id: "original"
-    kind: "pdf_pages"
-    from: 1
-    to: 2
-    boxes:
-      - page: 1
-        x0: 85.03
-        top: 631.70
-        x1: 521.72
-        bottom: 715.72
-      - page: 2
-        x0: 85.03
-        top: 76.53
-        x1: 513.94
-        bottom: 142.55
-  - id: "u-7"
-    source_id: "original"
-    kind: "pdf_pages"
-    from: 2
-    to: 2
-    boxes:
-      - page: 2
-        x0: 85.03
-        top: 161.30
-        x1: 298.10
-        bottom: 173.30
-  - id: "u-8"
-    source_id: "original"
-    kind: "pdf_pages"
-    from: 2
-    to: 2
-    boxes:
-      - page: 2
-        x0: 85.03
-        top: 190.58
-        x1: 525.99
-        bottom: 274.57
-  - id: "u-9"
-    source_id: "original"
-    kind: "pdf_pages"
-    from: 2
-    to: 2
-    boxes:
-      - page: 2
-        x0: 85.03
-        top: 292.60
-        x1: 517.71
-        bottom: 304.60
+block_spans: "/contenido/seccion-002.spans.json"
 ---
 
 # ¿Qué es un agente? La pregunta que importa

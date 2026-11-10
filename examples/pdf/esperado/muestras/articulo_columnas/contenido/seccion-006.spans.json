@@ -1,0 +1,7 @@
+{
+  "concept": "contenido/seccion-006.md",
+  "source_spans": [
+    {"id": "u-19", "source_id": "original", "kind": "pdf_pages", "from": 3, "to": 3, "boxes": [{"page": 3, "x0": 56.00, "top": 80.50, "x1": 288.75, "bottom": 153.00}]},
+    {"id": "u-20", "source_id": "original", "kind": "pdf_pages", "from": 3, "to": 3, "boxes": [{"page": 3, "x0": 307.50, "top": 80.50, "x1": 524.27, "bottom": 128.00}]}
+  ]
+}

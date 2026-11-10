@@ -1,0 +1,8 @@
+{
+  "document": "examples/pdf/muestras/escaneado_mixto.pdf",
+  "source": "examples/pdf/create_samples.py",
+  "pages": {
+    "1": "Expediente digitalizado\nEste expediente reúne una página escrita directamente en el computador, una página escaneada sin\nreconocimiento de texto, una página en blanco, un diagrama sin texto y una página con una fotografía.\nSirve para comprobar la clasificación de las páginas.\nLa segunda página es la imagen de un documento en papel; su contenido no puede transcribirse sin\nreconocimiento óptico de caracteres.\nCopia controlada · no imprimir",
+    "5": "Registro fotográfico\nLa fotografía muestra el estado del archivo antes de la digitalización. Se conserva como imagen adjunta."
+  }
+}

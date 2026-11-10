@@ -1,0 +1,7 @@
+{
+  "concept": "contenido/texto.md",
+  "source_spans": [
+    {"id": "u-1", "source_id": "original", "kind": "pdf_pages", "from": 1, "to": 1, "boxes": [{"page": 1, "x0": 0.00, "top": 0.00, "x1": 612.00, "bottom": 792.48}]},
+    {"id": "u-2", "source_id": "original", "kind": "pdf_pages", "from": 2, "to": 2, "boxes": [{"page": 2, "x0": 0.00, "top": 0.00, "x1": 612.00, "bottom": 792.48}]}
+  ]
+}

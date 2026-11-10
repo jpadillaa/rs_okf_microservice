@@ -1,6 +1,6 @@
 ---
 type: "Source Section"
-unit_id: "7c2d679c1e8d94fb01b20f514e0e82b4d4064718444eb22b9401c5c94d842df5/contenido/seccion-006.md"
+unit_id: "deececaf92dbda184b80f8f48b0f7ed3b03aff137641e43559589ff0caaa3fb4/contenido/seccion-006.md"
 parent: "documento.md"
 previous: "contenido/seccion-005.md"
 next: "contenido/seccion-007.md"
@@ -18,28 +18,7 @@ source_spans:
     kind: "pdf_pages"
     from: 7
     to: 7
-  - id: "u-45"
-    source_id: "original"
-    kind: "pdf_pages"
-    from: 7
-    to: 7
-    boxes:
-      - page: 7
-        x0: 56.69
-        top: 112.17
-        x1: 290.58
-        bottom: 421.97
-  - id: "u-46"
-    source_id: "original"
-    kind: "pdf_pages"
-    from: 7
-    to: 7
-    boxes:
-      - page: 7
-        x0: 304.72
-        top: 87.68
-        x1: 538.61
-        bottom: 133.49
+block_spans: "/contenido/seccion-006.spans.json"
 ---
 
 # Author checklist for ethical use of AI generative tools

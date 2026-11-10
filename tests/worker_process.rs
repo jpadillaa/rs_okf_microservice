@@ -10,6 +10,7 @@ fn worker_once(root: &Path, env: &[(&str, &str)]) -> String {
     let out = Command::new(BIN)
         .args(["worker", "--once"])
         .env("OKF_DATA_DIR", root)
+        .env("OKF_OCR_ENABLED", "false")
         .env("OKF_DATABASE_URL", support::database_url(root))
         .env("RUST_LOG", "info")
         .env("NO_COLOR", "1")

@@ -29,7 +29,7 @@ pub(crate) fn resource_limits(cfg: &Config) -> Result<()> {
             .saturating_mul(1024 * 1024);
         limit(Resource::As, address, address)?;
     }
-    let cpu = cfg.timeout.as_secs().max(1);
+    let cpu = cfg.cpu_limit().as_secs();
     limit(Resource::Cpu, cpu, cpu.saturating_add(1))?;
     let file = cfg.max_output_mb.saturating_mul(1024 * 1024);
     limit(Resource::Fsize, file, file)?;
@@ -44,8 +44,13 @@ pub(crate) fn apply(cfg: &Config, original: &Path, attempt: &Path) -> Result<std
     // Landlock; esta ruta se comprueba también en los montajes de Docker Desktop.
     let input = std::fs::File::open(original).context("no se pudo abrir el original")?;
     // Los modelos de OCR se leen después de restringir el acceso, al llegar a la
-    // primera página escaneada.
-    let models = cfg.ocr.enabled.then_some(cfg.ocr.models_dir.as_path());
+    // primera página escaneada. Si faltan, no se autoriza la ruta: el OCR de cada página
+    // falla y se declara, y la conversión sigue.
+    let models = cfg
+        .ocr
+        .enabled
+        .then_some(cfg.ocr.models_dir.as_path())
+        .filter(|d| d.is_dir());
     restrict_files(original, attempt, models)?;
     restrict_network()?;
     Ok(input)
@@ -209,8 +214,8 @@ pub(crate) fn limit_failure(status: ExitStatus, stderr: &str, cfg: &Config) -> O
     use std::os::unix::process::ExitStatusExt;
     match status.signal() {
         Some(libc::SIGXCPU) => Some(format!(
-            "la conversión superó el límite de CPU de {} s",
-            cfg.timeout.as_secs()
+            "la conversión superó el límite de CPU de {} s (OKF_MAX_CPU_S)",
+            cfg.cpu_limit().as_secs()
         )),
         Some(libc::SIGXFSZ) => Some(format!(
             "la conversión superó el límite de archivo de {} MiB",

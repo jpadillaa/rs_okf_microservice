@@ -536,3 +536,72 @@ El ZIP de 8080 pasa el validador independiente sin red y sus **619 entradas coin
 El 10 de noviembre se actualizó Swagger para que `document_key` y `access` aparezcan vacíos y **Send empty value** desmarcado inicialmente. El formulario explica que solo `file` es obligatorio. La comprobación real desde el navegador en 8080 seleccionó únicamente un PDF de ejemplo, recibió `202` y terminó como `complete`, con ambos metadatos ausentes y ZIP aceptado por el validador independiente. Formato, Clippy y las 136 pruebas pasaron. La imagen operativa posterior es `sha256:382e2860374610048083206f21709be857f9f1e22e68f6688ed374dafa561060`; el perfil sigue siendo 1.16.0. El manifiesto y las evidencias están en `output/swagger-opcionales/`.
 
 A petición del usuario se limpiaron compilaciones y copias redundantes. Se retiraron los doce ZIP equivalentes de la carga final, los ZIP de cinco tandas intermedias y cinco duplicados exactos del primer PDF. Se conservaron sus huellas, validaciones, registros y métricas, los originales y el ZIP final de 8080 citado arriba. `output/limpieza-20261110/manifest.json` identifica cada archivo retirado y la razón; las imágenes activa y de reversión y los volúmenes persistentes se conservaron. Las afirmaciones de equivalencia describen las comparaciones realizadas antes de retirar esas copias.
+
+## Rendimiento de la conversión PDF (perfil 1.16.0)
+
+**10 de noviembre de 2026.** Se perfiló la conversión de los PDF lentos con `sample` de macOS sobre un binario `--release` con símbolos, en un Apple M2 de 8 núcleos, con el subcomando `convert`, los límites por defecto y el OCR local desactivado. El código propio de maquetación (`layout`, enlaces, encabezados y pies) no llega al 2 % del tiempo. La conversión usa un solo núcleo y el tiempo se reparte entre `pdf_oxide` y el empaquetado:
+
+| Original | Reparto antes del cambio |
+| --- | --- |
+| 575 páginas con OCR previo | Vistas 56 % (escalado de la imagen escaneada 44 %, texto invisible dibujado con color transparente 7 %, JBIG2 6 %); texto 27 %; reaperturas del documento 8 %; Deflate de las vistas y del original 5 %. |
+| 346 páginas | Texto 50 %; imágenes JPEG CMYK convertidas a PNG 36 %. |
+| Presentación de 53 páginas y 66 MB | Deflate del original al escribir el ZIP 42 %; descompresión, huella y relectura del original al validar 24 %. |
+| Cuaderno apaisado de 65 páginas | Vistas de todas las páginas 72 %. |
+
+Se aplicaron cuatro cambios que no alteran el texto extraído:
+
+1. **ZIP:** una entrada de más de 256 KiB se guarda sin comprimir si Deflate no reduce al menos un 5 % una muestra de 128 tramos de 2 KiB. La muestra de 16 tramos de 16 KiB se descartó: en la presentación estimaba 0,88 frente al 0,97 real. El validador reserva la memoria del original sin comprimir antes de leerlo; sin esa reserva, el pico de la presentación subía de 329 a 390 MiB.
+2. **Imágenes CMYK:** se convierten a RGB como antes y se adjuntan como JPEG de calidad 90, no como PNG. En las 196 imágenes afectadas del PDF de 346 páginas, el error absoluto medio frente al PNG anterior es 0,78 sobre 255 (máximo 2,95) y ocupan 24,1 MB en lugar de 63,8 MB.
+3. **Vistas:** se renderizan en crudo y se codifican una vez, en gris o RGB si la página no usa más canales; la recuperación de listados OCR usa esos píxeles en lugar de decodificar el PNG. Se midieron también la compresión PNG por defecto (99 s y 476 MiB en el PDF de 575 páginas) y el filtro `Sub` (94 s y 166 MB de ZIP); se mantiene la compresión rápida con filtro adaptativo.
+4. **Reaperturas:** por encima de 16 MiB, la codificación de imágenes y las vistas reutilizan el documento durante ocho páginas, como la lectura de texto, en lugar de reabrirlo en cada página.
+
+Comparación en la misma sesión, versión anterior frente a la nueva:
+
+| Original | Tiempo, s | CPU de usuario, s | Pico RSS, MiB | ZIP, MiB |
+| --- | ---: | ---: | ---: | ---: |
+| Presentación de 53 páginas | 3,87 → **2,15** | 3,14 → 1,47 | 329 → 330 | 75,0 → 77,1 |
+| Cuaderno de 65 páginas | 2,72 → 2,93 | 2,60 → 2,82 | 178 → 178 | 12,7 → 12,3 |
+| 346 páginas | 20,54 → **18,42** | 20,44 → 18,37 | 357 → 355 | 86,7 → **45,1** |
+| 575 páginas con OCR previo | 94,31 → **85,99** | 93,29 → 85,40 | 426 → 427 | 202,6 → **141,3** |
+
+Las tres conversiones de la presentación con la versión nueva tardaron entre 1,57 y 2,41 s. El cuaderno queda unos 0,2 s de CPU por encima: sus vistas en color pasan ahora por la conversión a RGB y el filtro adaptativo, y no se recuperó esa diferencia. Los PDF de menos de 3 MB no cambian de forma apreciable.
+
+El Markdown de siete PDF reales es idéntico al anterior al normalizar la fecha y la extensión de las imágenes CMYK, incluidos los 780 bloques de código recuperados de las vistas en el PDF de 575 páginas. Las muestras y el corpus PDF públicos conservan sus cifras de cobertura y los bundles de referencia de los cuatro formatos no cambian, porque las vistas solo se enumeran y ningún ejemplo tiene imágenes CMYK.
+
+**Pendiente.** Lo que queda del tiempo está en `pdf_oxide` y en el uso de un solo núcleo: el renderizado de las vistas, que escala la imagen del escaneo con filtro bilineal y dibuja también el texto invisible; la extracción de texto, que descomprime y analiza el contenido de cada página varias veces (fragmentos, caracteres, capa OCR, imágenes y vista); y el procesamiento en serie de páginas independientes. Paralelizar exige revisar antes la memoria de cada documento abierto, que se copia dos veces al abrirlo, y el límite de CPU del proceso (`RLIMIT_CPU` igual al plazo de conversión), que suma todos los hilos.
+
+## Calidad del Markdown PDF (perfil 1.17.0)
+
+**10 de noviembre de 2026.** A petición del usuario, que fija la completitud y la exactitud como requisitos máximos, se evaluó el Markdown de siete PDF privados. Por cada página se compararon las palabras de pdfium con las de los bloques del bundle localizados en ella, y se revisó el ruido que rodea al texto.
+
+**Diagnóstico.** Frente al texto que extrae pdfium, el texto digital llegaba casi completo: entre el 0 % y el 0,8 % de palabras ausentes por documento, casi todas fragmentos que pdfium deja al partir palabras con guion o letras que separa en una presentación. Los problemas reales eran otros:
+
+- **Ruido:** el frontmatter ocupaba entre el 49 % y el 68 % del Markdown en los PDF largos, por el localizador y la caja de cada bloque. En el PDF de 575 páginas con OCR previo, cada página insertaba una vista y una nota generada en mitad del texto y partía 184 párrafos.
+- **Escaneos sin texto:** con el OCR desactivado por defecto, un escaneo sin capa de texto no aportaba ninguna palabra.
+- **Exactitud:** pdf_oxide alinea con la línea base de un glifo grande (comillas de cita, capitulares) los fragmentos menores que lo rodean. La maquetación fundía entonces dos líneas e intercalaba sus letras. Los rótulos de diagramas y las celdas de varias líneas salían como filas de tabla con las frases partidas.
+
+**Cambios del perfil 1.17.0.** Los localizadores de bloque pasan a `contenido/<concepto>.spans.json`. Una nota por concepto declara su texto OCR, y la vista de una página con texto OCR ya no parte el párrafo que continúa en ella. Los elementos de lista se unen con su continuación en la página siguiente. Los fragmentos alineados por error con un glifo grande recuperan la línea base de `extract_chars`, y dos tramos de líneas base distintas que se solapan en horizontal ya no forman una línea. Las filas que continúan los rótulos o celdas de la fila anterior se unen a ella. El OCR está activo por defecto.
+
+| Original | Markdown, KB | Frontmatter | Notas generadas | Párrafos partidos |
+| --- | ---: | ---: | ---: | ---: |
+| Presentación de 53 páginas | 105 → 36 | 68 % → 6 % | 4 → 4 | 0 → 0 |
+| Artículo de 9 páginas | 61 → 48 | 32 % → 14 % | 0 → 0 | 0 → 0 |
+| PDF de 346 páginas | 1 706 → 809 | 54 % → 2 % | 1 → 1 | 0 → 0 |
+| Cuaderno de 65 páginas | 280 → 145 | 66 % → 34 % | 67 → 67 | 0 → 0 |
+| 575 páginas con OCR previo | 1 936 → 934 | 49 % → 3 % | 612 → 38 | 184 → 6 |
+| Escaneo de una página | sin texto → texto con OCR (confianza media 98 %) | | | |
+
+En el cuaderno se mantienen las 65 notas de sus vistas de diapositiva, que acompañan a diagramas. La completitud por página frente a pdfium no empeora en ningún documento (el PDF de 346 páginas pasa de 409 a 394 palabras ausentes). Las citas de la contraportada que salían con letras intercaladas se leen ahora enteras, y las tablas con frases partidas entre filas bajan de 12 a 6 en ese PDF y de 4 a 3 en la presentación. Las que quedan son maquetaciones complejas: un índice a dos columnas leído como tabla, capturas con texto dentro de una figura y diapositivas con cajas. Los errores de reconocimiento de una capa OCR previa o del OCR local (palabras unidas, signos) no se corrigen por inferencia.
+
+**Hilos.** `OKF_CONVERSION_THREADS` reparte por tramos de ocho páginas la lectura del texto, la codificación de imágenes y las vistas. Cada tramo abre su propio documento, porque compartir uno entre hilos hacía que pdf_oxide decodificara mal imágenes y texto (dos bundles salieron `partial` y con texto distinto en la primera prueba). Con documentos propios, los bundles con uno y con cuatro hilos son idénticos en todas sus entradas, vistas incluidas. `OKF_MAX_CPU_S` fija el `RLIMIT_CPU`; sin declarar, vale el plazo por los hilos.
+
+| Original | Antes | 1 hilo | 4 hilos | Pico RSS antes / 1 / 4 hilos, MiB |
+| --- | ---: | ---: | ---: | ---: |
+| Presentación de 53 páginas | 3,21 s | 1,55 s | 1,18 s | 327 / 333 / 739 |
+| Cuaderno de 65 páginas | 2,67 s | 2,77 s | 1,62 s | 178 / 184 / 304 |
+| PDF de 346 páginas | 20,26 s | 18,07 s | 8,01 s | 357 / 351 / 598 |
+| 575 páginas con OCR previo | 92,88 s | 83,41 s | 27,17 s | 472 / 476 / 1 002 |
+
+Cada hilo suma la memoria de su copia del documento y de sus páginas, así que cuatro hilos con estos originales necesitan subir `OKF_MAX_MEMORY_MB` (la medición usó 1 500). El pico del PDF de 575 páginas con un hilo varía unos 50 MiB entre ejecuciones del mismo binario (426–484 MiB) y ya rozaba el límite de 500 MiB antes de estos cambios. El valor por defecto sigue siendo un hilo.
+
+Las muestras y el corpus PDF públicos conservan exactamente sus cifras de cobertura. Las referencias golden cambian por el perfil, por el traslado de los localizadores a sus archivos y por dos mejoras de texto en el corpus: celdas que recuperan su texto entero y una referencia bibliográfica unida a su continuación. Pruebas: `cargo fmt`, `cargo clippy --all-targets --locked -- -D warnings` y `OKF_REQUIRE_OCR_MODELS=1 cargo test --locked`, con 134 pruebas de la biblioteca y las de integración sin fallos. No se ejecutó `tools/smoke.sh` con la imagen Docker.

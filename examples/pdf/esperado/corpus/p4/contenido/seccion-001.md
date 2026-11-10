@@ -1,6 +1,6 @@
 ---
 type: "Source Section"
-unit_id: "f98aad26887b3c3a6d1c53082e01a9b28e0553452136090e6609645ba3efca6d/contenido/seccion-001.md"
+unit_id: "fd8eed7b7dbc77c25be7436f2204edd9d556d30f2aa24dcc151e632ba18e5f71/contenido/seccion-001.md"
 parent: "documento.md"
 next: "contenido/seccion-002.md"
 title: "¿Qué es un agente de inteligencia artificial?"
@@ -17,17 +17,7 @@ source_spans:
     kind: "pdf_pages"
     from: 1
     to: 1
-  - id: "u-2"
-    source_id: "original"
-    kind: "pdf_pages"
-    from: 1
-    to: 1
-    boxes:
-      - page: 1
-        x0: 85.05
-        top: 153.81
-        x1: 526.95
-        bottom: 352.61
+block_spans: "/contenido/seccion-001.spans.json"
 ---
 
 # ¿Qué es un agente de inteligencia artificial?

@@ -4,7 +4,7 @@
 
 ## 1. Requisitos
 
-- **Activable desde `.env`:** `OKF_OCR_ENABLED`, desactivado por defecto. Apagado, los bundles son los de antes (salvo `profile_version`).
+- **Configurable desde `.env`:** `OKF_OCR_ENABLED`. Estuvo desactivado por defecto hasta el perfil 1.16.0; desde el 1.17.0 está activo si no se declara, porque la completitud del texto es el primer requisito de calidad. Apagado, los escaneos salen sin texto, con su vista y una nota. Las pruebas, los bundles de referencia y el fuzzing convierten sin OCR (`Config::default()`).
 - **Transparente para quien sube el archivo:** la API no cambia. La clasificación de páginas que ya existía decide qué páginas necesitan OCR: una página sin texto propio con una imagen que cubre al menos el 30 % de ella. No se aplica a páginas mixtas, solo visuales ni a escaneos que ya traen una capa de OCR.
 - **Liviano:** sin bibliotecas del sistema ni servicios externos, dentro del mismo proceso conversor y de sus restricciones (rlimits, Landlock y seccomp).
 - **Presupuesto propio** (stack, §4): `OKF_OCR_MAX_PAGES` páginas por documento (40), dos tercios del plazo de conversión en tiempo o en CPU y `OKF_OCR_MEMORY_MB` (256) adicionales al límite de memoria de un PDF. Cuando se agota, las páginas restantes quedan como vista y el bundle sale `partial`, en vez de fallar por el límite de CPU del hijo.

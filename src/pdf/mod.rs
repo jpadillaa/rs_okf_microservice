@@ -36,8 +36,8 @@ const VIEW_PX: f32 = 1600.0;
 /// Por encima de este tamaño se acotan las cachés de texto por grupos de páginas
 /// y las de imágenes por página, sin acumular las imágenes de todo el archivo.
 const REOPEN_BYTES: usize = 16 * 1024 * 1024;
-/// Reutiliza fuentes y objetos durante la lectura de un grupo acotado de páginas.
-/// La extracción y el renderizado de imágenes siguen reabriendo por página.
+/// Reutiliza fuentes y objetos durante un grupo acotado de páginas, al leer el texto
+/// y, después, al codificar imágenes y renderizar vistas.
 const TEXT_BATCH_PAGES: usize = 8;
 
 #[derive(Clone, Copy, Debug, PartialEq)]
@@ -99,7 +99,7 @@ pub(crate) enum Budget {
     /// Páginas transcritas por documento (`OKF_OCR_MAX_PAGES`).
     Pages,
     /// Tiempo y CPU: el OCR no empieza una página más tras consumir `OCR_TIME_SHARE`
-    /// del plazo de la conversión, que es también el límite de CPU del proceso.
+    /// del plazo de la conversión o del límite de CPU del proceso (`OKF_MAX_CPU_S`).
     Time,
 }
 
@@ -677,12 +677,104 @@ fn join_margin_headings(lines: &mut Vec<Line>, bookmarks: &[Bookmark], page: usi
 }
 
 /// Lee páginas, adjunta imágenes y devuelve unidades en orden de lectura.
+/// Imágenes y vista que se preparan para una página.
+struct Plan {
+    p: usize,
+    /// Imágenes que la página adjunta: posición en `pictures`, en la enumeración de
+    /// pdf_oxide y huella.
+    wanted: Vec<(usize, usize, String)>,
+    /// Imágenes de `wanted` aún no escritas, por su posición en pdf_oxide.
+    missing: Vec<usize>,
+    view: bool,
+    /// Recuperar listados de la capa OCR con los píxeles de la vista.
+    raster: bool,
+}
+
+/// `f` aplicado a cada página de `pages`, por tramos de `TEXT_BATCH_PAGES`, con hasta
+/// `threads` hilos y los resultados en orden. pdf_oxide no admite el uso simultáneo de un
+/// documento (decodifica mal imágenes y texto), así que cada tramo abre el suyo; con un
+/// solo hilo se usa `shared`, si está abierto, como antes de admitir varios hilos.
+fn by_chunks<R: Send>(
+    bytes: &[u8],
+    shared: Option<&PdfDocument>,
+    pages: std::ops::Range<usize>,
+    threads: usize,
+    f: impl Fn(&PdfDocument, usize) -> R + Sync,
+) -> Result<Vec<R>> {
+    let chunks: Vec<std::ops::Range<usize>> = pages
+        .clone()
+        .step_by(TEXT_BATCH_PAGES)
+        .map(|a| a..pages.end.min(a + TEXT_BATCH_PAGES))
+        .collect();
+    let done = parallel_map(&chunks, threads, |chunk| -> Result<Vec<R>> {
+        let own;
+        let d = match shared {
+            Some(d) if threads == 1 => d,
+            _ => {
+                own = read::open(bytes)?;
+                &own
+            }
+        };
+        Ok(chunk.clone().map(|p| f(d, p)).collect())
+    });
+    let mut out = Vec::with_capacity(pages.len());
+    for chunk in done {
+        out.extend(chunk?);
+    }
+    Ok(out)
+}
+
+/// `f` aplicado a cada elemento, con hasta `threads` hilos, y los resultados en el orden
+/// de `items`. Con un hilo, o un solo elemento, no se crea ninguno.
+fn parallel_map<T: Sync, R: Send>(
+    items: &[T],
+    threads: usize,
+    f: impl Fn(&T) -> R + Sync,
+) -> Vec<R> {
+    let threads = threads.min(items.len());
+    if threads <= 1 {
+        return items.iter().map(f).collect();
+    }
+    let next = std::sync::atomic::AtomicUsize::new(0);
+    let done: Vec<(usize, R)> = std::thread::scope(|scope| {
+        let workers: Vec<_> = (0..threads)
+            .map(|_| {
+                scope.spawn(|| {
+                    let mut out = Vec::new();
+                    loop {
+                        let i = next.fetch_add(1, std::sync::atomic::Ordering::Relaxed);
+                        let Some(item) = items.get(i) else {
+                            break out;
+                        };
+                        out.push((i, f(item)));
+                    }
+                })
+            })
+            .collect();
+        workers
+            .into_iter()
+            .flat_map(|w| w.join().unwrap_or_else(|e| std::panic::resume_unwind(e)))
+            .collect()
+    });
+    let mut slots: Vec<Option<R>> = (0..items.len()).map(|_| None).collect();
+    for (i, r) in done {
+        slots[i] = Some(r);
+    }
+    slots
+        .into_iter()
+        .map(|r| r.expect("resultado de cada elemento"))
+        .collect()
+}
+
 pub(crate) fn extract(
     bytes: &[u8],
     cfg: &Config,
     z: &mut ZipWriter<fs::File>,
 ) -> Result<Extraction> {
     let started = Instant::now();
+    // CPU de esta conversión: el proceso del servicio solo hace una, pero las pruebas
+    // comparten el suyo.
+    let cpu_started = cpu_time();
     let max_pages = cfg.max_pages;
     let reopen = bytes.len() > REOPEN_BYTES;
     let first = read::open(bytes)?;
@@ -726,66 +818,66 @@ pub(crate) fn extract(
         }
     };
     let mut tally = Tally::default();
-    // 1. Líneas e imágenes de cada página.
+    // 1. Líneas e imágenes de cada página. Con varios hilos (`OKF_CONVERSION_THREADS`)
+    //    se leen a la vez tantos tramos de páginas como hilos y se incorporan en orden.
     let mut pages: Vec<PageInfo> = Vec::with_capacity(n);
     let mut hints = Vec::with_capacity(n);
-    let mut text_doc = None;
-    for p in 0..n {
-        if reopen && p % TEXT_BATCH_PAGES == 0 {
-            // Libera la caché anterior antes de reservar la siguiente.
-            drop(text_doc.take());
-            text_doc = Some(read::open(bytes)?);
-        }
-        let mut raw = None;
-        let mut hint = (Vec::new(), Vec::new(), Vec::new());
-        let mut read_page = |d: &PdfDocument| {
-            raw = Some(read::page_with_aliases(d, p, &uri_aliases)?);
-            if slide_export {
-                hint = (
-                    read::rulings(d, p),
-                    read::small_controls(d, p),
-                    read::lateral_links(d, p),
-                );
-            }
-            Ok(())
-        };
-        match &text_doc {
-            Some(d) => read_page(d)?,
-            None => with_doc(&mut read_page)?,
-        }
-        hints.push(hint);
-        let raw = raw.expect("página leída");
-        if raw.glyphs.iter().any(|g| g.c == '\u{FFFD}') {
-            tally.unreadable.push(p + 1);
-        }
-        let (lines, rotated) = layout::lines(&raw.glyphs);
-        if !rotated.is_empty() {
-            tally.rotated.push(p + 1);
-        }
-        tally.decorative += raw.pictures.iter().filter(|x| x.hash.is_none()).count();
-        pages.push(PageInfo {
-            width: raw.width,
-            height: raw.height,
-            lines,
-            rotated,
-            pictures: raw.pictures,
-            ocr_layer: raw.ocr_layer,
-            ocr_glyphs: if raw.ocr_layer {
-                raw.glyphs
-            } else {
-                Vec::new()
+    let window = cfg.threads * TEXT_BATCH_PAGES;
+    for first in (0..n).step_by(window) {
+        let group: Vec<usize> = (first..n.min(first + window)).collect();
+        let read = by_chunks(
+            bytes,
+            doc.as_ref(),
+            first..n.min(first + window),
+            cfg.threads,
+            |d, p| -> Result<_> {
+                let raw = read::page_with_aliases(d, p, &uri_aliases)?;
+                let hint = if slide_export {
+                    (
+                        read::rulings(d, p),
+                        read::small_controls(d, p),
+                        read::lateral_links(d, p),
+                    )
+                } else {
+                    (Vec::new(), Vec::new(), Vec::new())
+                };
+                let (lines, rotated) = layout::lines(&raw.glyphs);
+                Ok((raw, hint, lines, rotated))
             },
-            ocr_code: Vec::new(),
-            ocr: None,
-            furniture: Vec::new(),
-            class: Class::Digital,
-            label: None,
-            view: None,
-            attached: HashMap::new(),
-            columns: false,
-        });
+        )?;
+        for (&p, result) in group.iter().zip(read) {
+            let (raw, hint, lines, rotated) = result?;
+            hints.push(hint);
+            if raw.glyphs.iter().any(|g| g.c == '\u{FFFD}') {
+                tally.unreadable.push(p + 1);
+            }
+            if !rotated.is_empty() {
+                tally.rotated.push(p + 1);
+            }
+            tally.decorative += raw.pictures.iter().filter(|x| x.hash.is_none()).count();
+            pages.push(PageInfo {
+                width: raw.width,
+                height: raw.height,
+                lines,
+                rotated,
+                pictures: raw.pictures,
+                ocr_layer: raw.ocr_layer,
+                ocr_glyphs: if raw.ocr_layer {
+                    raw.glyphs
+                } else {
+                    Vec::new()
+                },
+                ocr_code: Vec::new(),
+                ocr: None,
+                furniture: Vec::new(),
+                class: Class::Digital,
+                label: None,
+                view: None,
+                attached: HashMap::new(),
+                columns: false,
+            });
+        }
     }
-    drop(text_doc);
     let mut navigation: Vec<SideNavigation> = Vec::new();
     if slide_export {
         let mut slots: Vec<(Rect, HashSet<usize>)> = Vec::new();
@@ -903,7 +995,9 @@ pub(crate) fn extract(
                 page.ocr = Some(Ocr::Skipped(Budget::Pages));
                 continue;
             }
-            if started.elapsed() >= budget || cpu_time() >= budget {
+            if started.elapsed() >= budget
+                || cpu_time().saturating_sub(cpu_started) >= cfg.cpu_limit().mul_f64(OCR_TIME_SHARE)
+            {
                 page.ocr = Some(Ocr::Skipped(Budget::Time));
                 continue;
             }
@@ -1127,93 +1221,132 @@ pub(crate) fn extract(
     // 6. Imágenes adjuntas y vistas de las páginas que no se pueden transcribir.
     let mut written: HashMap<String, String> = HashMap::new();
     let mut furniture_images: Vec<(String, Vec<usize>)> = Vec::new();
-    for (p, page) in pages.iter_mut().enumerate() {
-        let class = page.class;
-        let wanted: Vec<(usize, usize, String)> = page
-            .pictures
-            .iter()
-            .enumerate()
-            .filter_map(|(k, x)| x.hash.clone().map(|h| (k, x.index, h)))
-            .filter(|(_, _, h)| template(h) || !class.needs_view())
+    // Se preparan a la vez tantos tramos de páginas como hilos (`OKF_CONVERSION_THREADS`)
+    // y después se escriben en orden, de modo que el bundle no depende de los hilos.
+    let window = cfg.threads * TEXT_BATCH_PAGES;
+    let mut first = 0;
+    while first < n {
+        let end = n.min(first + window);
+        // Imágenes que cada página adjunta y las que aún no se han escrito. Dos páginas
+        // del tramo que comparten una imagen nueva la preparan las dos, y la segunda
+        // usa la escrita por la primera, como al prepararlas una a una.
+        let plans: Vec<Plan> = (first..end)
+            .map(|p| {
+                let page = &pages[p];
+                let wanted: Vec<(usize, usize, String)> = page
+                    .pictures
+                    .iter()
+                    .enumerate()
+                    .filter_map(|(k, x)| x.hash.clone().map(|h| (k, x.index, h)))
+                    .filter(|(_, _, h)| template(h) || !page.class.needs_view())
+                    .collect();
+                let missing: Vec<usize> = wanted
+                    .iter()
+                    .filter(|(_, _, h)| !written.contains_key(h))
+                    .map(|(_, i, _)| *i)
+                    .collect();
+                Plan {
+                    p,
+                    wanted,
+                    missing,
+                    view: page.class.needs_view() || slide_export,
+                    raster: page.class == Class::ScannedOcr && !page.ocr_glyphs.is_empty(),
+                }
+            })
             .collect();
-        let missing: Vec<usize> = wanted
-            .iter()
-            .filter(|(_, _, h)| !written.contains_key(h))
-            .map(|(_, i, _)| *i)
-            .collect();
-        let mut encoded = Vec::new();
-        let mut view = None;
-        // En PDF grandes, with_doc reabre el original. Una página sin recursos
-        // nuevos ni vista no necesita volver a parsear todo el documento.
-        if !missing.is_empty() || class.needs_view() || slide_export {
-            with_doc(&mut |d| {
-                if !missing.is_empty() {
-                    encoded = read::encoded(d, p, &missing, cfg.max_image_pixels);
-                }
-                if class.needs_view() || slide_export {
-                    view = Some(read::render_png(d, p, VIEW_PX));
-                }
-                Ok(())
-            })?;
-        }
-        let mut encoded = missing.iter().zip(encoded);
-        let mut ordinal = 0;
-        for (k, index, hash) in wanted {
-            let path = match written.get(&hash) {
-                Some(path) => path.clone(),
-                None => {
-                    let Some((_, e)) = encoded.find(|(i, _)| **i == index) else {
-                        continue;
-                    };
-                    let e = match e {
-                        read::Encoding::Ready(e) => e,
-                        read::Encoding::TooLarge => {
-                            tally.oversized.push(p + 1);
+        // Una página sin recursos nuevos ni vista no necesita el documento: un tramo sin
+        // ninguna no lo abre.
+        let prepared = if plans.iter().any(|x| !x.missing.is_empty() || x.view) {
+            by_chunks(bytes, doc.as_ref(), first..end, cfg.threads, |d, p| {
+                let plan = &plans[p - first];
+                let page = &pages[p];
+                let encoded = if plan.missing.is_empty() {
+                    Vec::new()
+                } else {
+                    read::encoded(d, p, &plan.missing, cfg.max_image_pixels)
+                };
+                // Los listados de la capa OCR se recuperan aquí, con los píxeles de la
+                // vista, para no conservarlos hasta escribirla.
+                let view = plan.view.then(|| {
+                    read::render_view(d, p, VIEW_PX).and_then(|r| {
+                        let recovered = plan.raster.then(|| {
+                            let mut lines = page.lines.clone();
+                            let code = code::recover(
+                                &mut lines,
+                                &page.ocr_glyphs,
+                                &r.rgb(),
+                                page.width,
+                                page.height,
+                            );
+                            (lines, code)
+                        });
+                        Ok((r.png()?, recovered))
+                    })
+                });
+                (encoded, view)
+            })?
+        } else {
+            plans.iter().map(|_| (Vec::new(), None)).collect()
+        };
+        for (plan, (encoded, view)) in plans.into_iter().zip(prepared) {
+            let p = plan.p;
+            let page = &mut pages[p];
+            let mut encoded = plan.missing.iter().zip(encoded);
+            let mut ordinal = 0;
+            for (k, index, hash) in plan.wanted {
+                let path = match written.get(&hash) {
+                    Some(path) => path.clone(),
+                    None => {
+                        let Some((_, e)) = encoded.find(|(i, _)| **i == index) else {
                             continue;
-                        }
-                        read::Encoding::Failed => {
-                            tally.broken.push(p + 1);
-                            continue;
-                        }
-                    };
-                    ordinal += 1;
-                    let path = format!("assets/pagina-{:03}-imagen-{ordinal:02}.{}", p + 1, e.ext);
-                    write_zip_file(z, &path, &e.bytes)?;
-                    written.insert(hash.clone(), path.clone());
-                    path
+                        };
+                        let e = match e {
+                            read::Encoding::Ready(e) => e,
+                            read::Encoding::TooLarge => {
+                                tally.oversized.push(p + 1);
+                                continue;
+                            }
+                            read::Encoding::Failed => {
+                                tally.broken.push(p + 1);
+                                continue;
+                            }
+                        };
+                        ordinal += 1;
+                        let path =
+                            format!("assets/pagina-{:03}-imagen-{ordinal:02}.{}", p + 1, e.ext);
+                        write_zip_file(z, &path, &e.bytes)?;
+                        written.insert(hash.clone(), path.clone());
+                        path
+                    }
+                };
+                if template(&hash) {
+                    match furniture_images.iter_mut().find(|(x, _)| *x == path) {
+                        Some((_, v)) => v.push(p + 1),
+                        None => furniture_images.push((path, vec![p + 1])),
+                    }
+                } else {
+                    page.attached.insert(k, path);
                 }
-            };
-            if template(&hash) {
-                match furniture_images.iter_mut().find(|(x, _)| *x == path) {
-                    Some((_, v)) => v.push(p + 1),
-                    None => furniture_images.push((path, vec![p + 1])),
-                }
-            } else {
-                page.attached.insert(k, path);
             }
-        }
-        match view {
-            Some(Ok(png)) => {
-                if class == Class::ScannedOcr && !page.ocr_glyphs.is_empty() {
-                    page.ocr_code = code::recover(
-                        &mut page.lines,
-                        &page.ocr_glyphs,
-                        &png,
-                        page.width,
-                        page.height,
-                    );
-                    tally
-                        .ocr_code
-                        .extend(std::iter::repeat_n(p + 1, page.ocr_code.len()));
+            match view {
+                Some(Ok((png, recovered))) => {
+                    if let Some((lines, code)) = recovered {
+                        page.lines = lines;
+                        page.ocr_code = code;
+                        tally
+                            .ocr_code
+                            .extend(std::iter::repeat_n(p + 1, page.ocr_code.len()));
+                    }
+                    let path = format!("assets/pagina-{:03}.png", p + 1);
+                    write_zip_file(z, &path, &png)?;
+                    page.view = Some(path);
                 }
-                let path = format!("assets/pagina-{:03}.png", p + 1);
-                write_zip_file(z, &path, &png)?;
-                page.view = Some(path);
+                Some(Err(_)) => tally.views_failed.push(p + 1),
+                None => {}
             }
-            Some(Err(_)) => tally.views_failed.push(p + 1),
-            None => {}
+            drop(std::mem::take(&mut page.ocr_glyphs));
         }
-        drop(std::mem::take(&mut page.ocr_glyphs));
+        first = end;
     }
     tally.broken.dedup();
     tally.oversized.dedup();
@@ -1397,8 +1530,9 @@ pub(crate) fn extract(
         }
     }
     tally.tables.dedup();
-    // 8. Párrafos que continúan en otra columna o página: la línea anterior no termina
-    //    la frase y la siguiente empieza en minúscula, con el mismo formato. Las notas
+    // 8. Párrafos y elementos de lista que continúan en otra columna o página: la línea
+    //    anterior no termina la frase y la siguiente empieza en minúscula, con el mismo
+    //    formato y sin marcador de lista propio. Las notas
     //    en letra menor que quedan en medio (afiliaciones, notas al pie) se dejan
     //    después del párrafo unido.
     let mut merged: Vec<(Unit, (usize, usize))> = Vec::with_capacity(units.len());
@@ -1418,9 +1552,17 @@ pub(crate) fn extract(
                 .is_some_and(char::is_lowercase)
         {
             let mut j = merged.len();
+            // También queda detrás la vista de una página con texto OCR que empieza con
+            // la continuación.
             while j > 0
                 && merged.len() - j < 3
-                && matches!(&merged[j - 1].0.kind, Kind::Para(n) if n.size < 0.9 * b.size && merged[j - 1].0.from + 1 >= u.from)
+                && match &merged[j - 1].0.kind {
+                    Kind::Para(n) => n.size < 0.9 * b.size && merged[j - 1].0.from + 1 >= u.from,
+                    Kind::PageNote(n) => {
+                        *n == u.from && matches!(pages[n - 1].class, Class::ScannedOcr | Class::Ocr)
+                    }
+                    _ => false,
+                }
             {
                 j -= 1;
             }
@@ -1428,7 +1570,6 @@ pub(crate) fn extract(
                 && let (prev, prev_leaf) = &mut merged[j - 1]
                 && *prev_leaf != leaf
                 && let Kind::Para(a) = &mut prev.kind
-                && a.marker.is_none()
                 && (a.size - b.size).abs() < 0.5
                 && a.bold == b.bold
                 && !a.mono
@@ -2207,6 +2348,70 @@ impl Render<'_> {
         out.push_str(&format!("<!-- okf-source-span: {id} -->\n"));
     }
 
+    /// Nota única del concepto sobre su texto OCR: de qué páginas procede, de qué OCR y
+    /// que no se ha verificado. `elsewhere` son las páginas cuya vista está en el concepto
+    /// donde empiezan.
+    fn ocr_note(&self, transcribed: &[usize], elsewhere: &[usize]) -> Option<String> {
+        if transcribed.is_empty() {
+            return None;
+        }
+        let pages = |ns: &[usize]| {
+            let one = ns.len() == 1;
+            format!(
+                "{} {}",
+                if one { "la" } else { "las" },
+                pages_phrase(ns).to_lowercase()
+            )
+        };
+        let (mut layer, mut confidences, mut low) = (false, Vec::new(), 0);
+        for &p in transcribed {
+            match &self.ex.pages[p - 1].ocr {
+                Some(Ocr::Done {
+                    confidence,
+                    low_lines,
+                    ..
+                }) => {
+                    confidences.push(*confidence);
+                    low += low_lines;
+                }
+                _ => layer = true,
+            }
+        }
+        let local = match confidences.iter().copied().reduce(f32::min) {
+            Some(min) => {
+                let max = confidences.iter().copied().fold(min, f32::max);
+                let range = if percent(min) == percent(max) {
+                    percent(min)
+                } else {
+                    format!("entre {} y {}", percent(min), percent(max))
+                };
+                Some(format!("OCR local del servicio (confianza media {range})"))
+            }
+            None => None,
+        };
+        let origin = match (layer, local) {
+            (true, Some(local)) => format!("la capa de OCR previo del PDF y del {local}"),
+            (true, None) => "la capa de OCR previo del PDF".to_string(),
+            (false, Some(local)) => local,
+            (false, None) => unreachable!("hay páginas transcritas"),
+        };
+        let mut note = format!(
+            "> El texto de {} procede de {origin} y su exactitud no se ha verificado; la vista de cada página, en su posición, es la referencia.",
+            pages(transcribed)
+        );
+        if low > 0 {
+            note.push_str(&format!(" {low} línea(s) tienen confianza baja."));
+        }
+        if !elsewhere.is_empty() {
+            note.push_str(&format!(
+                " La vista de {} está en el concepto donde empieza.",
+                pages(elsewhere)
+            ));
+        }
+        note.push_str("\n\n");
+        Some(note)
+    }
+
     fn page_note(&self, p: usize) -> String {
         let page = &self.ex.pages[p - 1];
         let view = page
@@ -2214,23 +2419,20 @@ impl Render<'_> {
             .as_ref()
             .map(|v| format!("![Vista de la página {p}](../{v})\n"))
             .unwrap_or_default();
+        // Una página con texto OCR solo lleva su vista: la nota que declara ese texto
+        // como no verificado es una por concepto, bajo su título, y no parte el texto.
+        if matches!(page.class, Class::ScannedOcr | Class::Ocr) {
+            return match page.view {
+                Some(_) => view,
+                None => format!("{GENERATED}\n> No se pudo generar la vista de la página {p}.\n"),
+            };
+        }
         let note = match (page.class, &page.ocr) {
             (Class::Scanned, None) => "> Página escaneada sin capa de texto: su contenido solo está en la imagen; no se aplicó OCR.".to_string(),
             (Class::Scanned, Some(Ocr::Skipped(Budget::Pages))) => "> Página escaneada sin capa de texto: su contenido solo está en la imagen; no se aplicó OCR porque el documento supera el límite de páginas con OCR.".to_string(),
             (Class::Scanned, Some(Ocr::Skipped(Budget::Time))) => "> Página escaneada sin capa de texto: su contenido solo está en la imagen; no se aplicó OCR porque se agotó el tiempo reservado al OCR.".to_string(),
             (Class::Scanned, Some(Ocr::Empty)) => "> Página escaneada sin capa de texto: el OCR no reconoció texto; su contenido solo está en la imagen.".to_string(),
             (Class::Scanned, Some(_)) => "> Página escaneada sin capa de texto: el OCR falló; su contenido solo está en la imagen.".to_string(),
-            (Class::Ocr, Some(Ocr::Done { confidence, low_lines, .. })) => {
-                let mut note = format!(
-                    "> Página escaneada sin capa de texto: el texto que sigue se obtuvo con OCR local (confianza media {}) y su exactitud no se ha verificado; la vista de la página es la referencia.",
-                    percent(*confidence)
-                );
-                if *low_lines > 0 {
-                    note.push_str(&format!(" {low_lines} línea(s) tienen confianza baja."));
-                }
-                note
-            }
-            (Class::ScannedOcr, _) => "> Página escaneada con una capa de texto de OCR previo: el texto que sigue procede de esa capa y su exactitud no se ha verificado.".to_string(),
             (Class::Visual, _) => "> Página sin texto con contenido gráfico: se conserva su vista.".to_string(),
             _ if !page.furniture.is_empty() => format!("_Página {p} sin contenido propio: solo tiene encabezado, pie o número de página._"),
             _ => format!("_Página {p} en blanco._"),
@@ -2280,8 +2482,14 @@ impl Render<'_> {
         })
     }
 
-    /// Frontmatter y cuerpo del concepto de la sección `k`.
-    fn concept(&mut self, k: usize, filename: &str, generated: &str) -> (Fields, String) {
+    /// Frontmatter, cuerpo y localizadores de los bloques del concepto de la sección
+    /// `k`.
+    fn concept(
+        &mut self,
+        k: usize,
+        filename: &str,
+        generated: &str,
+    ) -> (Fields, String, Vec<Fields>) {
         let ex = self.ex;
         let outline = self.outline;
         let sec = &outline.sections[k];
@@ -2454,10 +2662,10 @@ impl Render<'_> {
             .copied()
             .filter(|p| !noted.contains(p))
             .collect();
+        let ocr_note = self.ocr_note(&transcribed, &elsewhere);
         let draft =
             !transcribed.is_empty() || noted.iter().any(|&p| ex.pages[p - 1].class.unverified());
-        let mut source_spans = vec![pages_span("seccion", pages_from, pages_to)];
-        source_spans.extend(spans.iter().map(Span::fields));
+        let source_spans = vec![pages_span("seccion", pages_from, pages_to)];
         let kind = if outline.split.is_some() {
             "Source Section"
         } else {
@@ -2472,22 +2680,15 @@ impl Render<'_> {
         if sec.inferred {
             out.push_str(&generated_note("> Encabezado inferido por su formato tipográfico: el PDF no lo marca como encabezado.\n\n"));
         }
-        if !elsewhere.is_empty() {
-            let one = elsewhere.len() == 1;
-            out.push_str(&generated_note(&format!(
-                "> El texto de {} {} procede de {} con OCR y su exactitud no se ha verificado; la nota y la vista de {} están en el concepto donde empieza.\n\n",
-                if one { "la" } else { "las" },
-                pages_phrase(&elsewhere).to_lowercase(),
-                if one { "un escaneo transcrito" } else { "escaneos transcritos" },
-                if one { "la página" } else { "cada página" },
-            )));
+        if let Some(note) = ocr_note {
+            out.push_str(&generated_note(&note));
         }
         if body.is_empty() {
             out.push_str(&generated_note("Sin texto extraído.\n"));
         } else {
             out.push_str(&body);
         }
-        (fields, out)
+        (fields, out, spans.iter().map(Span::fields).collect())
     }
 }
 
@@ -2560,14 +2761,16 @@ pub(crate) fn build_bundle(
     // Conceptos con enlaces internos sin destino y cuántos tiene cada uno.
     let mut unresolved: Vec<String> = Vec::new();
     for k in 0..outline.sections.len() {
-        let (fields, md) = r.concept(k, filename, &generated);
+        let (fields, md, spans) = r.concept(k, filename, &generated);
         let md = r.resolve_pages(&md, false);
         let file = outline.file(k);
         let n = md.matches(UNRESOLVED).count();
         if n > 0 {
             unresolved.push(format!("contenido/{file} ({n})"));
         }
-        out.concept(&format!("contenido/{file}"), &fields, &md)?;
+        let path = format!("contenido/{file}");
+        let fields = out.block_spans(&path, fields, spans)?;
+        out.concept(&path, &fields, &md)?;
         let sec = &outline.sections[k];
         entries.push_str(&index_entry(sec, &format!("contenido/{file}")));
         content_entries.push_str(&index_entry(sec, &file));
@@ -3291,10 +3494,10 @@ pub(crate) fn validate(
     for name in &expected {
         let md = read_text(z, name)?;
         let fm = frontmatter(&md)?;
-        let spans = fm
-            .get("source_spans")
-            .and_then(YamlValue::as_sequence)
-            .with_context(|| format!("{name} carece de source_spans"))?;
+        if fm.get("source_spans").is_none() {
+            bail!("{name} carece de source_spans")
+        }
+        let spans = concept_spans(z, names, name, &fm)?;
         let section = spans
             .iter()
             .find(|s| s.get("id").and_then(YamlValue::as_str) == Some("seccion"))
@@ -3314,7 +3517,7 @@ pub(crate) fn validate(
         }
         prev = Some(section);
         let mut ids: HashMap<String, (u64, u64)> = HashMap::new();
-        for s in spans {
+        for s in &spans {
             match span_range(s) {
                 Some((a, b)) if a >= section.0 && b <= section.1 => {
                     if let Some(id) = s.get("id").and_then(YamlValue::as_str) {
@@ -3996,7 +4199,7 @@ mod tests {
         for i in 0..z.len() {
             let mut e = z.by_index(i).unwrap();
             names.insert(e.name().to_string());
-            if e.name().ends_with(".md") {
+            if e.name().ends_with(".md") || e.name().ends_with(".json") {
                 let mut s = String::new();
                 e.read_to_string(&mut s).unwrap();
                 md.insert(e.name().to_string(), s);
@@ -4032,7 +4235,9 @@ mod tests {
     fn titles(md: &HashMap<String, String>) -> Vec<String> {
         let mut names: Vec<&String> = md
             .keys()
-            .filter(|k| k.starts_with("contenido/") && *k != "contenido/index.md")
+            .filter(|k| {
+                k.starts_with("contenido/") && k.ends_with(".md") && *k != "contenido/index.md"
+            })
             .collect();
         names.sort();
         names
@@ -4064,6 +4269,136 @@ mod tests {
     }
 
     #[test]
+    fn the_bundle_does_not_depend_on_the_number_of_threads() {
+        // 53 páginas: varios tramos de páginas, imágenes repetidas y vistas.
+        let path = "examples/pdf/corpus/p1.pdf";
+        let read = |threads: usize| {
+            let cfg = Config {
+                threads,
+                ..Config::default()
+            };
+            let bytes = fs::read(path).unwrap();
+            let tmp = tempfile::tempdir().unwrap();
+            let built = build_bundle(
+                &bytes,
+                "p1.pdf",
+                &crate::identity::Source::new(&hex(&Sha256::digest(&bytes))),
+                &cfg,
+                tmp.path(),
+            )
+            .unwrap();
+            let mut z = ZipArchive::new(fs::File::open(built.path).unwrap()).unwrap();
+            (0..z.len())
+                .map(|i| {
+                    let mut e = z.by_index(i).unwrap();
+                    let mut data = Vec::new();
+                    e.read_to_end(&mut data).unwrap();
+                    let text = String::from_utf8_lossy(&data);
+                    // Solo cambian la fecha de generación y las duraciones.
+                    let stable: String = text
+                        .lines()
+                        .filter(|l| !l.contains("at: \"") && !l.starts_with("- Duración"))
+                        .collect();
+                    (
+                        e.name().to_string(),
+                        hex(&Sha256::digest(stable.as_bytes())),
+                    )
+                })
+                .collect::<Vec<_>>()
+        };
+        assert_eq!(read(1), read(4));
+    }
+
+    #[test]
+    fn block_spans_must_belong_to_their_concept_and_resolve_every_marker() {
+        let bytes = fs::read("examples/pdf/muestras/breve.pdf").unwrap();
+        let tmp = tempfile::tempdir().unwrap();
+        let good = build_bundle(
+            &bytes,
+            "breve.pdf",
+            &crate::identity::Source::new(&hex(&Sha256::digest(&bytes))),
+            &Config::default(),
+            tmp.path(),
+        )
+        .unwrap()
+        .path;
+        crate::bundle::validate_bundle(&good).unwrap();
+        // Reescribe el bundle cambiando una entrada (o quitándola con `None`) y añadiendo
+        // otras.
+        let rewrite = |label: &str,
+                       change: &dyn Fn(&str, String) -> Option<String>,
+                       extra: &[(&str, &str)]| {
+            let mut original = ZipArchive::new(fs::File::open(&good).unwrap()).unwrap();
+            let bad = tmp.path().join(format!("{label}.zip"));
+            let mut z = ZipWriter::new(fs::File::create(&bad).unwrap());
+            for i in 0..original.len() {
+                let mut entry = original.by_index(i).unwrap();
+                let name = entry.name().to_string();
+                let mut content = Vec::new();
+                entry.read_to_end(&mut content).unwrap();
+                let content = match String::from_utf8(content.clone()) {
+                    Ok(text) if name.ends_with(".md") || name.ends_with(".json") => {
+                        match change(&name, text) {
+                            Some(t) => t.into_bytes(),
+                            None => continue,
+                        }
+                    }
+                    _ => content,
+                };
+                write_zip_file(&mut z, &name, &content).unwrap();
+            }
+            for (name, text) in extra {
+                write_zip_file(&mut z, name, text.as_bytes()).unwrap();
+            }
+            z.finish().unwrap();
+            crate::bundle::validate_bundle(&bad)
+        };
+        let spans = "contenido/texto.spans.json";
+        type Change<'a> = &'a dyn Fn(&str, String) -> Option<String>;
+        type Case<'a> = (&'a str, Change<'a>, &'a [(&'a str, &'a str)]);
+        let cases: [Case; 4] = [
+            // Sin su archivo, los marcadores del cuerpo no tienen localizador.
+            ("sin-archivo", &|n, t| (n != spans).then_some(t), &[]),
+            // El archivo nombra otro concepto.
+            (
+                "otro-concepto",
+                &|n, t| {
+                    Some(if n == spans {
+                        t.replace("texto.md", "otro.md")
+                    } else {
+                        t
+                    })
+                },
+                &[],
+            ),
+            // Un localizador del archivo ya no existe para su marcador.
+            (
+                "sin-localizador",
+                &|n, t| {
+                    Some(if n == spans {
+                        t.replace("\"u-2\"", "\"u-99\"")
+                    } else {
+                        t
+                    })
+                },
+                &[],
+            ),
+            // Un archivo de localizadores que ningún concepto declara.
+            (
+                "huerfano",
+                &|_, t| Some(t),
+                &[(
+                    "contenido/otro.spans.json",
+                    "{\"concept\": \"contenido/otro.md\"}",
+                )],
+            ),
+        ];
+        for (label, change, extra) in cases {
+            assert!(rewrite(label, change, extra).is_err(), "{label} aceptado");
+        }
+    }
+
+    #[test]
     fn brief_pdf_is_a_single_text_concept() {
         let (state, md, _) = sample("breve");
         assert_eq!(state, "complete");
@@ -4073,9 +4408,17 @@ mod tests {
         assert!(
             text.contains("- Las reservas se hacen con dos días de anticipación.\n- Los daños")
         );
-        // Cada bloque lleva su marcador, con su caja, aunque el concepto ocupe una página.
+        // Cada bloque lleva su marcador, aunque el concepto ocupe una página; su
+        // localizador, con la caja, está en el archivo de localizadores del concepto y el
+        // frontmatter solo conserva el del concepto.
         assert!(text.contains("<!-- okf-source-span: u-2 -->\n"));
-        assert!(text.contains("    boxes:\n      - page: 1\n"));
+        assert!(text.contains("block_spans: \"/contenido/texto.spans.json\"\n"));
+        assert!(!text.contains("boxes"));
+        let spans = &md["contenido/texto.spans.json"];
+        assert!(spans.starts_with("{\n  \"concept\": \"contenido/texto.md\",\n"));
+        assert!(spans.contains(
+            "{\"id\": \"u-2\", \"source_id\": \"original\", \"kind\": \"pdf_pages\", \"from\": 1, \"to\": 1, \"boxes\": [{\"page\": 1, \"x0\": "
+        ));
         assert!(
             md["documento.md"]
                 .contains("<!-- okf-source-span: titulo -->\n# Préstamo de equipos audiovisuales")
@@ -4354,36 +4697,18 @@ mod tests {
         assert_eq!(furniture_text("Página 2 de 2", 2), "Página N de 2");
     }
 
-    /// Configuración con el OCR activo y los modelos de `OKF_OCR_MODELS_DIR` o de
-    /// `models/ocr` (tools/ocr_models.sh). Sin modelos, las pruebas que los necesitan
-    /// se omiten, salvo con `OKF_REQUIRE_OCR_MODELS`, que la CI fija.
     fn ocr_config() -> Option<Config> {
-        let dir = std::env::var_os("OKF_OCR_MODELS_DIR")
-            .map(std::path::PathBuf::from)
-            .unwrap_or_else(|| "models/ocr".into());
-        if !ocr::MODEL_FILES.iter().all(|f| dir.join(f).is_file()) {
-            assert!(
-                std::env::var_os("OKF_REQUIRE_OCR_MODELS").is_none(),
-                "faltan los modelos de OCR en {}",
-                dir.display()
-            );
-            eprintln!(
-                "modelos de OCR ausentes en {}: prueba omitida",
-                dir.display()
-            );
-            return None;
-        }
-        let mut cfg = Config::default();
-        cfg.ocr.enabled = true;
-        cfg.ocr.models_dir = dir;
-        Some(cfg)
+        ocr::test_config()
     }
 
     /// Palabras de los conceptos de contenido, sin frontmatter, notas ni marcadores.
     fn content_words(md: &HashMap<String, String>) -> Vec<String> {
         let mut words = Vec::new();
         for (name, text) in md {
-            if !name.starts_with("contenido/") || name.ends_with("index.md") {
+            if !name.starts_with("contenido/")
+                || !name.ends_with(".md")
+                || name.ends_with("index.md")
+            {
                 continue;
             }
             let body = text.splitn(3, "---").nth(2).unwrap_or_default();
@@ -4446,18 +4771,30 @@ mod tests {
         assert!(doc.contains("1\\. Contexto"));
         let concepts: Vec<&String> = md
             .keys()
-            .filter(|k| k.starts_with("contenido/seccion-"))
+            .filter(|k| k.starts_with("contenido/seccion-") && k.ends_with(".md"))
             .collect();
         assert!(concepts.len() >= 2, "{concepts:?}");
         for c in &concepts {
             assert!(md[*c].contains("status: \"draft\""), "{c}");
         }
         let last = concepts.iter().max().unwrap();
-        assert!(md[*last].contains("> El texto de la página 2 procede de un escaneo transcrito con OCR y su exactitud no se ha verificado; la nota y la vista de la página están en el concepto donde empieza."), "{}", md[*last]);
+        // Una nota por concepto, bajo su título, declara su texto OCR; las vistas quedan
+        // en su posición, sin nota por página.
+        let last_md = &md[*last];
+        assert!(
+            last_md.contains(
+                "> El texto de la página 2 procede de OCR local del servicio (confianza media"
+            ) && last_md.contains("La vista de la página 2 está en el concepto donde empieza."),
+            "{last_md}"
+        );
         let first = &md["contenido/seccion-001.md"];
-        assert!(first.contains(
-            "> Página escaneada sin capa de texto: el texto que sigue se obtuvo con OCR local (confianza media"
-        ));
+        assert!(
+            first.contains("procede de OCR local del servicio (confianza media"),
+            "{first}"
+        );
+        assert!(first.contains("![Vista de la página 1](../assets/pagina-001.png)\n"));
+        assert!(!first.contains("> Página escaneada sin capa de texto: el texto que sigue"));
+        assert_eq!(first.matches("procede de OCR local").count(), 1);
         assert!(first.contains("lo que obliga a programarlas en fines de semana."));
         let all: String = md.values().cloned().collect();
         assert!(all.contains("1. El servicio de catálogo guarda la descripción"));
@@ -4510,6 +4847,26 @@ mod tests {
             all.contains(
                 "no se aplicó OCR porque el documento supera el límite de páginas con OCR."
             )
+        );
+    }
+
+    #[test]
+    fn ocr_budget_counts_only_the_cpu_of_this_conversion() {
+        // Las pruebas comparten un proceso: la CPU que otras ya consumieron no agota el
+        // presupuesto del OCR de esta conversión (en la CI dejaba los escaneos sin OCR).
+        let Some(mut cfg) = ocr_config() else { return };
+        cfg.timeout = std::time::Duration::from_secs(3);
+        let start = cpu_time();
+        let mut x = 0u64;
+        while cpu_time() - start < std::time::Duration::from_millis(2500) {
+            x = std::hint::black_box(x.wrapping_mul(31).wrapping_add(7));
+        }
+        let (_, md, _) = convert_with("examples/pdf/muestras/escaneado_ocr.pdf", &cfg);
+        assert!(
+            md.iter().any(|(n, t)| n.starts_with("contenido/")
+                && t.contains("procede de OCR local del servicio")),
+            "{}",
+            md["conversion-report.md"]
         );
     }
 

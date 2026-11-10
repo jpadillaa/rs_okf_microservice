@@ -1,6 +1,6 @@
 ---
 type: "Source Section"
-unit_id: "f98aad26887b3c3a6d1c53082e01a9b28e0553452136090e6609645ba3efca6d/contenido/seccion-004.md"
+unit_id: "fd8eed7b7dbc77c25be7436f2204edd9d556d30f2aa24dcc151e632ba18e5f71/contenido/seccion-004.md"
 parent: "documento.md"
 previous: "contenido/seccion-003.md"
 next: "contenido/seccion-005.md"
@@ -18,39 +18,7 @@ source_spans:
     kind: "pdf_pages"
     from: 5
     to: 6
-  - id: "u-42"
-    source_id: "original"
-    kind: "pdf_pages"
-    from: 5
-    to: 5
-    boxes:
-      - page: 5
-        x0: 85.03
-        top: 682.72
-        x1: 521.86
-        bottom: 712.72
-  - id: "u-43"
-    source_id: "original"
-    kind: "pdf_pages"
-    from: 6
-    to: 6
-    boxes:
-      - page: 6
-        x0: 85.03
-        top: 76.53
-        x1: 504.61
-        bottom: 124.55
-  - id: "u-44-47"
-    source_id: "original"
-    kind: "pdf_pages"
-    from: 6
-    to: 6
-    boxes:
-      - page: 6
-        x0: 103.05
-        top: 142.55
-        x1: 525.12
-        bottom: 514.68
+block_spans: "/contenido/seccion-004.spans.json"
 ---
 
 # Lo que un agente NO es

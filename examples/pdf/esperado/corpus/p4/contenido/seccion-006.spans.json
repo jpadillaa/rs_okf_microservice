@@ -1,0 +1,14 @@
+{
+  "concept": "contenido/seccion-006.md",
+  "source_spans": [
+    {"id": "u-68", "source_id": "original", "kind": "pdf_pages", "from": 9, "to": 9, "boxes": [{"page": 9, "x0": 85.03, "top": 634.70, "x1": 509.81, "bottom": 682.73}]},
+    {"id": "u-69", "source_id": "original", "kind": "pdf_pages", "from": 10, "to": 10, "boxes": [{"page": 10, "x0": 85.03, "top": 76.53, "x1": 521.09, "bottom": 142.55}]},
+    {"id": "u-70", "source_id": "original", "kind": "pdf_pages", "from": 10, "to": 10, "boxes": [{"page": 10, "x0": 85.03, "top": 160.55, "x1": 522.97, "bottom": 226.58}]},
+    {"id": "u-71", "source_id": "original", "kind": "pdf_pages", "from": 10, "to": 10, "boxes": [{"page": 10, "x0": 85.03, "top": 244.58, "x1": 523.27, "bottom": 310.60}]},
+    {"id": "u-72", "source_id": "original", "kind": "pdf_pages", "from": 10, "to": 10, "boxes": [{"page": 10, "x0": 85.03, "top": 328.60, "x1": 513.50, "bottom": 394.62}]},
+    {"id": "u-73", "source_id": "original", "kind": "pdf_pages", "from": 10, "to": 10, "boxes": [{"page": 10, "x0": 85.03, "top": 412.62, "x1": 525.74, "bottom": 460.65}]},
+    {"id": "u-74", "source_id": "original", "kind": "pdf_pages", "from": 10, "to": 10, "boxes": [{"page": 10, "x0": 85.03, "top": 478.65, "x1": 519.69, "bottom": 526.67}]},
+    {"id": "u-75", "source_id": "original", "kind": "pdf_pages", "from": 10, "to": 10, "boxes": [{"page": 10, "x0": 85.03, "top": 544.67, "x1": 523.23, "bottom": 610.70}]},
+    {"id": "u-76", "source_id": "original", "kind": "pdf_pages", "from": 10, "to": 10, "boxes": [{"page": 10, "x0": 85.03, "top": 628.70, "x1": 509.70, "bottom": 676.72}]}
+  ]
+}

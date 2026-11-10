@@ -1,6 +1,6 @@
 ---
 type: "Source Section"
-unit_id: "f3a2a95e9065bb6d2e445f68df7aaefb2d684609a08039b2329ef383e7e78ce9/contenido/seccion-007.md"
+unit_id: "591e0f1b4471a5838e7a2799ba9771b39d5c6313e8d0b71755ffe4c46159ae07/contenido/seccion-007.md"
 parent: "documento.md"
 previous: "contenido/seccion-006.md"
 title: "Referencias"
@@ -17,17 +17,7 @@ source_spans:
     kind: "pdf_pages"
     from: 4
     to: 4
-  - id: "u-22-24"
-    source_id: "original"
-    kind: "pdf_pages"
-    from: 4
-    to: 4
-    boxes:
-      - page: 4
-        x0: 56.00
-        top: 82.45
-        x1: 417.08
-        bottom: 121.95
+block_spans: "/contenido/seccion-007.spans.json"
 ---
 
 # Referencias

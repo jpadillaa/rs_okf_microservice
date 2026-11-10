@@ -227,6 +227,44 @@ fn emit_item(item: &Yaml, indent: usize, out: &mut String) {
     }
 }
 
+/// Valor en JSON compacto, con los campos en su orden y los decimales con dos cifras,
+/// como en el frontmatter.
+fn json(v: &Yaml, out: &mut String) {
+    match v {
+        Yaml::Str(s) => out.push_str(&serde_json::to_string(s).expect("cadena JSON")),
+        Yaml::Int(n) => out.push_str(&n.to_string()),
+        Yaml::Decimal(_) | Yaml::Bool(_) => out.push_str(&scalar(v).expect("escalar")),
+        Yaml::List(items) => {
+            out.push('[');
+            for (i, item) in items.iter().enumerate() {
+                if i > 0 {
+                    out.push_str(", ");
+                }
+                json(item, out);
+            }
+            out.push(']');
+        }
+        Yaml::Map(m) => {
+            out.push('{');
+            for (i, (k, item)) in m.0.iter().enumerate() {
+                if i > 0 {
+                    out.push_str(", ");
+                }
+                out.push_str(&serde_json::to_string(k).expect("clave JSON"));
+                out.push_str(": ");
+                json(item, out);
+            }
+            out.push('}');
+        }
+    }
+}
+
+/// Archivo de localizadores de bloque de un concepto: `contenido/x.md` →
+/// `contenido/x.spans.json`.
+pub(crate) fn block_spans_path(concept: &str) -> String {
+    format!("{}.spans.json", concept.trim_end_matches(".md"))
+}
+
 /// Marcador de una nota escrita por el conversor (plan 3, I8): se aplica solo al bloque
 /// siguiente, como `okf-source-span`, para que un consumidor la distinga del texto
 /// extraído.
@@ -468,6 +506,33 @@ impl BundleWriter {
     }
     pub(crate) fn file(&mut self, name: &str, data: &[u8]) -> Result<()> {
         write_zip_file(&mut self.zip, name, data)
+    }
+    /// Escribe los localizadores de los bloques del concepto `path` en su archivo
+    /// `.spans.json` (un localizador por línea) y devuelve sus campos con `block_spans`,
+    /// la ruta de ese archivo, detrás de `source_spans`. Sin localizadores no se escribe
+    /// nada. Así el frontmatter conserva solo el localizador del concepto y el Markdown no
+    /// queda dominado por las cajas de cada bloque (perfil 1.17.0).
+    pub(crate) fn block_spans(
+        &mut self,
+        path: &str,
+        fields: Fields,
+        spans: Vec<Fields>,
+    ) -> Result<Fields> {
+        if spans.is_empty() {
+            return Ok(fields);
+        }
+        let file = block_spans_path(path);
+        let mut text = format!(
+            "{{\n  \"concept\": {},\n  \"source_spans\": [\n",
+            serde_json::to_string(path)?
+        );
+        for (i, span) in spans.into_iter().enumerate() {
+            text.push_str(if i == 0 { "    " } else { ",\n    " });
+            json(&Yaml::Map(span), &mut text);
+        }
+        text.push_str("\n  ]\n}\n");
+        self.file(&file, text.as_bytes())?;
+        Ok(fields.insert_after("source_spans", "block_spans", format!("/{file}")))
     }
     /// Concepto: frontmatter, con su `unit_id` detrás de `type`, y cuerpo Markdown.
     /// Los conceptos de `contenido/` llevan además `parent`, `previous` y `next`, que el

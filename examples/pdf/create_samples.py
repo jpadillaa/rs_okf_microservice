@@ -26,12 +26,23 @@ muestras/escaneado_mixto.pdf        page classes: digital text with a rotated ma
                                     with text and a large photograph; internal page
                                     labels. Expected state: partial (the scanned page).
 
+The text of each page is also written, in reading order, to exactitud/muestras/<name>.json:
+the exact reference of tools/exactitud.py and of the exactness check of the tests. Running
+headers, footers and page numbers are left out (the bundle records them once in
+documento.md); rotated text goes at the end of its page, where the bundle writes it; a
+line-end hyphen is kept only if the compound appears whole elsewhere in the document, as
+the specification requires. muestras/escaneado_ocr.pdf (create_scans.py) is the image of
+informe_tecnico.pdf and shares its reference.
+
 Usage: python3 -I examples/pdf/create_samples.py
 """
 from pathlib import Path
+import json
+import re
 import zlib
 
 OUT = Path(__file__).parent / "muestras"
+TRUTH = Path(__file__).parent / "exactitud" / "muestras"
 
 # Widths of the standard fonts (AFM, thousandths of the font size) for ASCII; other
 # characters take the width of a similar one.
@@ -94,11 +105,23 @@ class Page:
         self.width, self.height = width, height
         self.ops = []
         self.images = []
+        # Text of the page in reading order (the order of the calls), and rotated text.
+        self.truth = []
+        self.rotated_truth = []
 
-    def text(self, x, top, text, font="F1", size=10):
-        """Text whose top is `top` points below the upper edge."""
+    def text(self, x, top, text, font="F1", size=10, furniture=False, truth_at=None):
+        """Text whose top is `top` points below the upper edge. `furniture` marks a
+        running header, footer or page number, which the reference leaves out; `truth_at`
+        places the text elsewhere in the reference (a footnote after the paragraph that
+        calls it, where the specification puts it)."""
         base = self.height - top - 0.8 * size
         self.ops.append(b"BT /%s %g Tf %.2f %.2f Td %s Tj ET" % (font.encode(), size, x, base, pdf_string(text)))
+        if furniture:
+            return
+        if truth_at is None:
+            self.truth.append(text)
+        else:
+            self.truth.insert(truth_at, text)
 
     def runs(self, x, top, runs, size=10):
         """A line written in several fonts: [(font, text), ...]."""
@@ -108,6 +131,7 @@ class Page:
             parts.append(b"/%s %g Tf %s Tj" % (font.encode(), size, pdf_string(text)))
         parts.append(b"ET")
         self.ops.append(b" ".join(parts))
+        self.truth.append("".join(text for _, text in runs))
 
     def paragraph(self, x, top, text, max_width, font="F1", size=10, leading=1.25, indent=0):
         lines = wrap(text, font, size, max_width - indent)
@@ -117,6 +141,7 @@ class Page:
 
     def rotated(self, x, y, text, font="F1", size=8):
         self.ops.append(b"BT /%s %g Tf 0 1 -1 0 %.2f %.2f Tm %s Tj ET" % (font.encode(), size, x, y, pdf_string(text)))
+        self.rotated_truth.append(text)
 
     def rect(self, x, top, w, h, gray):
         self.ops.append(b"%.2f g %.2f %.2f %.2f %.2f re f 0 g" % (gray, x, self.height - top - h, w, h))
@@ -128,6 +153,30 @@ class Page:
         name = b"Im%d" % (len(self.images) + 1)
         self.images.append((name, pixels, pw, ph))
         self.ops.append(b"q %.2f 0 0 %.2f %.2f %.2f cm /%s Do Q" % (w, h, x, self.height - top - h, name))
+
+
+def write_truth(names, pages):
+    """Reference text of each page with text, in reading order, for every name in `names`."""
+    lines = [page.truth + page.rotated_truth for page in pages]
+    whole = "\n".join(line for page in lines for line in page)
+
+    def join(match):
+        left, right = match.group(1), match.group(2)
+        return f"{left}-{right}" if f"{left}-{right}" in whole.replace(match.group(0), "") else left + right
+
+    texts = {}
+    for k, page in enumerate(lines, 1):
+        text = re.sub(r"(\w+)-\n(\w+)", join, "\n".join(page))
+        if text.strip():
+            texts[str(k)] = text
+    TRUTH.mkdir(parents=True, exist_ok=True)
+    for name in names:
+        data = {
+            "document": f"examples/pdf/muestras/{name}.pdf",
+            "source": "examples/pdf/create_samples.py",
+            "pages": texts,
+        }
+        (TRUTH / f"{name}.json").write_text(json.dumps(data, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
 
 
 def gradient(pw, ph, seed):
@@ -244,6 +293,7 @@ def breve():
         p.text(84, y + 8, "•", "F1", 10)
         y = p.paragraph(98, y + 8, item, 440) - 4
     Pdf().save(OUT / "breve.pdf", [p], {"Title": "Préstamo de equipos", "Author": "Biblioteca de prueba"})
+    write_truth(["breve"], [p])
 
 
 ARTICLE_HEADER = "Revista de Pruebas Documentales · Vol. 3 · 2026"
@@ -291,6 +341,7 @@ def articulo():
     p.text(left, yy + 14, "3. Resultados", "F2", 12)
     res = "El primer procedimiento conservó el orden de lectura en diecisiete de los veinte documentos; el segundo, en todos ellos. Las diferencias se concentraron en las páginas con notas al pie y en las tablas que ocupaban una sola columna, donde el primer procedimiento leía las celdas como si fueran texto corrido.¹"
     yy = p.paragraph(left, yy + 34, res, col)
+    called = len(p.truth)
     yy = p.paragraph(right, 60, "La tabla 1 resume los resultados por procedimiento. Las cifras son artificiales y solo ilustran el formato de una tabla sencilla con encabezado.", col)
     rows = [("Procedimiento", "Correctos", "Tiempo"), ("Primero", "17", "1,2 s"), ("Segundo", "20", "1,9 s"), ("Diferencia", "3", "0,7 s")]
     yy += 14
@@ -304,7 +355,7 @@ def articulo():
     p.image(right, yy, col, 110, gradient(240, 110, 40), 240, 110)
     yy += 116
     yy = p.paragraph(right, yy, "Figura 1. Distribución artificial de los tiempos de proceso.", col, "F3", 9)
-    p.text(left, H - 70, "¹ Los veinte documentos se crearon solo para esta prueba.", "F1", 7)
+    p.text(left, H - 70, "¹ Los veinte documentos se crearon solo para esta prueba.", "F1", 7, truth_at=called)
     # Página 3: conclusiones.
     p = pages[2]
     p.text(left, 60, "4. Conclusiones", "F2", 12)
@@ -321,12 +372,13 @@ def articulo():
         p.text(left, yy, f"{k}.", "F1", 9)
         yy = p.paragraph(left + 16, yy, ref, W - 2 * left - 16, size=9) + 4
     for k, page in enumerate(pages[1:], 2):
-        page.text(left, 30, ARTICLE_HEADER, "F3", 8)
-        page.text(W / 2 - 3, H - 34, str(k - 1), "F1", 9)
+        page.text(left, 30, ARTICLE_HEADER, "F3", 8, furniture=True)
+        page.text(W / 2 - 3, H - 34, str(k - 1), "F1", 9, furniture=True)
     outline = [("Lectura de documentos con varias columnas: un estudio con materiales artificiales", 0, 70, [
         ("Resumen", 0, 160, []), ("1. Introducción", 0, top, []), ("2. Método", 0, 400, []),
         ("3. Resultados", 1, 100, []), ("4. Conclusiones", 2, 60, []), ("Referencias", 3, 60, [])])]
     Pdf().save(OUT / "articulo_columnas.pdf", pages, {"Title": "Lectura de documentos con varias columnas", "Author": "Ana Ruiz; Tomás Peña"}, outline)
+    write_truth(["articulo_columnas"], pages)
 
 
 def informe():
@@ -409,9 +461,11 @@ def informe():
     used = pages[:page + 1]
     for k, p in enumerate(used, 1):
         label = f"Informe técnico — Página {k} de {len(used)}"
-        p.text(612 - 72 - width(label, "F1", 8), 36, label, "F1", 8)
-        p.text(72, 792 - 48, "Documento de prueba sin datos reales", "F3", 8)
+        p.text(612 - 72 - width(label, "F1", 8), 36, label, "F1", 8, furniture=True)
+        p.text(72, 792 - 48, "Documento de prueba sin datos reales", "F3", 8, furniture=True)
     Pdf().save(OUT / "informe_tecnico.pdf", used, {"Title": "Informe técnico de migración", "Author": "Equipo de pruebas"})
+    # escaneado_ocr.pdf (create_scans.py) es la imagen de estas mismas páginas.
+    write_truth(["informe_tecnico", "escaneado_ocr"], used)
 
 
 def escaneado():
@@ -437,8 +491,9 @@ def escaneado():
     p.paragraph(72, 100, "La fotografía muestra el estado del archivo antes de la digitalización. Se conserva como imagen adjunta.", 468)
     p.image(72, 150, 468, 360, gradient(234, 180, 90), 234, 180)
     for k in (1, 3, 4, 5):
-        pages[k - 1].text(300, 792 - 40, str(k), "F1", 9)
+        pages[k - 1].text(300, 792 - 40, str(k), "F1", 9, furniture=True)
     Pdf().save(OUT / "escaneado_mixto.pdf", pages, {"Title": "Expediente digitalizado"}, labels=b"0 << /S /D /P (Exp-) >>")
+    write_truth(["escaneado_mixto"], pages)
 
 
 if __name__ == "__main__":

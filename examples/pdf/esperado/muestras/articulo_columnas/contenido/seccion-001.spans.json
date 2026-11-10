@@ -1,0 +1,6 @@
+{
+  "concept": "contenido/seccion-001.md",
+  "source_spans": [
+    {"id": "u-2", "source_id": "original", "kind": "pdf_pages", "from": 1, "to": 1, "boxes": [{"page": 1, "x0": 56.00, "top": 128.55, "x1": 186.57, "bottom": 139.55}]}
+  ]
+}

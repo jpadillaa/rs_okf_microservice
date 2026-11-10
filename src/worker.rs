@@ -48,6 +48,13 @@ pub struct Config {
     pub max_pages: usize,
     /// Duración máxima de una conversión (`OKF_CONVERSION_TIMEOUT_S`).
     pub timeout: Duration,
+    /// Hilos con los que una conversión PDF lee el texto, codifica las imágenes y
+    /// renderiza las vistas de páginas independientes (`OKF_CONVERSION_THREADS`). El
+    /// resultado no depende de ellos; la memoria y la CPU por segundo, sí.
+    pub threads: usize,
+    /// Tiempo de CPU máximo del proceso de conversión, sumados sus hilos (RLIMIT_CPU),
+    /// en segundos (`OKF_MAX_CPU_S`). Sin declarar, el plazo de conversión por los hilos.
+    pub max_cpu_s: Option<u64>,
     /// Vigencia de la reserva en segundos; se renueva cada tercio. Fija, 60.
     pub lease_s: i64,
     /// Intentos máximos de un trabajo con fallos transitorios (`OKF_MAX_ATTEMPTS`).
@@ -74,7 +81,17 @@ pub struct Config {
     pub ocr: OcrSettings,
 }
 
-/// OCR local de las páginas PDF escaneadas; desactivado por defecto.
+/// Valor de `OKF_OCR_ENABLED` cuando no se declara: el OCR está activo, porque la
+/// completitud del texto es el primer requisito. `Config::default()`, que usan las
+/// pruebas, los bundles de referencia y el fuzzing, no lo activa: su resultado depende de
+/// los modelos descargados.
+const OCR_ENABLED_BY_DEFAULT: bool = true;
+
+/// Hilos máximos de una conversión (`OKF_CONVERSION_THREADS`).
+const MAX_THREADS: usize = 64;
+
+/// OCR local de las páginas PDF escaneadas; el servicio lo activa por defecto
+/// (`OCR_ENABLED_BY_DEFAULT`).
 #[derive(Clone, Debug)]
 pub struct OcrSettings {
     /// Aplicar OCR a las páginas escaneadas sin capa de texto (`OKF_OCR_ENABLED`).
@@ -114,6 +131,8 @@ impl Default for Config {
             max_cells: 1_000_000,
             max_pages: 2_000,
             timeout: Duration::from_secs(300),
+            threads: 1,
+            max_cpu_s: None,
             lease_s: 60,
             max_attempts: 3,
             retry_base_s: 30,
@@ -154,6 +173,11 @@ impl Config {
             max_cells: var("OKF_MAX_CELLS", d.max_cells)?,
             max_pages: var("OKF_MAX_PAGES", d.max_pages)?,
             timeout: Duration::from_secs(var("OKF_CONVERSION_TIMEOUT_S", d.timeout.as_secs())?),
+            threads: var("OKF_CONVERSION_THREADS", d.threads)?,
+            max_cpu_s: match std::env::var("OKF_MAX_CPU_S") {
+                Ok(v) if !v.trim().is_empty() => Some(var("OKF_MAX_CPU_S", 0)?),
+                _ => None,
+            },
             max_attempts: var("OKF_MAX_ATTEMPTS", d.max_attempts)?,
             max_upload_mb: var("OKF_MAX_UPLOAD_MB", d.max_upload_mb)?,
             max_queued: var("OKF_MAX_QUEUED", d.max_queued)?,
@@ -166,7 +190,7 @@ impl Config {
             max_image_pixels: var("OKF_MAX_IMAGE_PIXELS", d.max_image_pixels)?,
             max_access_bytes: var("OKF_MAX_ACCESS_BYTES", d.max_access_bytes)?,
             ocr: OcrSettings {
-                enabled: var("OKF_OCR_ENABLED", d.ocr.enabled)
+                enabled: var("OKF_OCR_ENABLED", OCR_ENABLED_BY_DEFAULT)
                     .map_err(|_| anyhow::anyhow!("OKF_OCR_ENABLED debe ser true o false"))?,
                 models_dir: std::env::var_os("OKF_OCR_MODELS_DIR")
                     .map(PathBuf::from)
@@ -179,6 +203,12 @@ impl Config {
         };
         if c.max_output_mb == 0 {
             bail!("OKF_MAX_OUTPUT_MB debe ser positivo")
+        }
+        if c.threads == 0 || c.threads > MAX_THREADS {
+            bail!("OKF_CONVERSION_THREADS debe estar entre 1 y {MAX_THREADS}")
+        }
+        if c.max_cpu_s == Some(0) {
+            bail!("OKF_MAX_CPU_S debe ser mayor que 0; sin declarar, vale el plazo por los hilos")
         }
         if c.max_attempts == 0 {
             bail!("OKF_MAX_ATTEMPTS debe ser al menos 1")
@@ -193,6 +223,17 @@ impl Config {
             )
         }
         Ok(c)
+    }
+    /// Tiempo de CPU máximo del proceso de conversión (RLIMIT_CPU): `OKF_MAX_CPU_S` o,
+    /// sin declarar, el plazo de conversión por los hilos, para que una conversión con
+    /// varios hilos no agote la CPU antes que el plazo.
+    pub(crate) fn cpu_limit(&self) -> Duration {
+        let threads = u64::try_from(self.threads).unwrap_or(1);
+        Duration::from_secs(
+            self.max_cpu_s
+                .unwrap_or_else(|| self.timeout.as_secs().saturating_mul(threads))
+                .max(1),
+        )
     }
     /// Memoria máxima, en MB, del proceso que convierte `filename`: la conversión de un
     /// PDF con OCR activo suma el presupuesto propio del OCR.
@@ -591,6 +632,8 @@ async fn run_child(
             "OKF_CONVERSION_TIMEOUT_S",
             a.cfg.timeout.as_secs().to_string(),
         )
+        .env("OKF_CONVERSION_THREADS", a.cfg.threads.to_string())
+        .env("OKF_MAX_CPU_S", a.cfg.cpu_limit().as_secs().to_string())
         .env("OKF_MAX_SLIDES", a.cfg.max_slides.to_string())
         .env("OKF_MAX_BLOCKS", a.cfg.max_blocks.to_string())
         .env("OKF_MAX_CELLS", a.cfg.max_cells.to_string())
@@ -1330,6 +1373,16 @@ mod tests {
     }
 
     // Se ejecuta en otro proceso, sin inyectar disparadores en el binario de producción.
+    #[test]
+    fn cpu_limit_scales_with_threads_unless_declared() {
+        let mut cfg = Config::default();
+        assert_eq!(cfg.cpu_limit(), Duration::from_secs(300));
+        cfg.threads = 4;
+        assert_eq!(cfg.cpu_limit(), Duration::from_secs(1200));
+        cfg.max_cpu_s = Some(500);
+        assert_eq!(cfg.cpu_limit(), Duration::from_secs(500));
+    }
+
     #[test]
     fn ocr_memory_budget_applies_only_to_pdf_with_ocr_enabled() {
         let mut cfg = Config::default();

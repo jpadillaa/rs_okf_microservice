@@ -1,6 +1,6 @@
 ---
 type: "Source Section"
-unit_id: "f3a2a95e9065bb6d2e445f68df7aaefb2d684609a08039b2329ef383e7e78ce9/contenido/seccion-001.md"
+unit_id: "591e0f1b4471a5838e7a2799ba9771b39d5c6313e8d0b71755ffe4c46159ae07/contenido/seccion-001.md"
 parent: "documento.md"
 next: "contenido/seccion-002.md"
 title: "Lectura de documentos con varias columnas: un estudio con materiales artificiales"
@@ -17,17 +17,7 @@ source_spans:
     kind: "pdf_pages"
     from: 1
     to: 1
-  - id: "u-2"
-    source_id: "original"
-    kind: "pdf_pages"
-    from: 1
-    to: 1
-    boxes:
-      - page: 1
-        x0: 56.00
-        top: 128.55
-        x1: 186.57
-        bottom: 139.55
+block_spans: "/contenido/seccion-001.spans.json"
 ---
 
 # Lectura de documentos con varias columnas: un estudio con materiales artificiales

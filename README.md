@@ -131,7 +131,7 @@ El significado de la ubicación cambia según `source_spans[].kind`:
 
 | Valor de `kind` | Cómo se localiza el contenido |
 | --- | --- |
-| `pdf_pages` | `from` y `to` indican páginas físicas, desde 1 e incluidas ambas. Los localizadores de bloques añaden `boxes`, con la página y las coordenadas del área ocupada. |
+| `pdf_pages` | `from` y `to` indican páginas físicas, desde 1 e incluidas ambas. Los localizadores de bloques añaden `boxes`, con la página y las coordenadas del área ocupada, y van en el archivo `contenido/<concepto>.spans.json` que el concepto declara en `block_spans`, para que el frontmatter no quede dominado por ellos. |
 | `docx_blocks` | `from` y `to` indican bloques en el orden estructural del Word, desde 1 e incluidos ambos. Son bloques, no páginas renderizadas. |
 | `xlsx_range` | `sheet` identifica la hoja y `range` el rango de celdas, por ejemplo `A1:D20`. |
 | `pptx_slide` | `slide_index` indica la posición de la diapositiva, desde 1 e incluidas las ocultas. `slide_id` conserva su identificador interno cuando existe. |
@@ -139,7 +139,7 @@ El significado de la ubicación cambia según `source_spans[].kind`:
 
 En PDF, `page_labels` en `documento.md` relaciona las páginas físicas con los números impresos cuando se reconocen. Así, una página física puede tener una etiqueta visible distinta.
 
-Los marcadores del cuerpo, como `<!-- okf-source-span: b-2 -->`, vinculan el bloque siguiente con el `id` correspondiente de `source_spans`. **Un pasaje se identifica mediante el `unit_id` de su concepto y el `id` de su localizador.** Las notas añadidas por el conversor se distinguen con `<!-- okf-generated -->`, aplicado al bloque siguiente.
+Los marcadores del cuerpo, como `<!-- okf-source-span: b-2 -->`, vinculan el bloque siguiente con el `id` correspondiente de `source_spans` (en PDF, el del archivo `block_spans`). **Un pasaje se identifica mediante el `unit_id` de su concepto y el `id` de su localizador.** Las notas añadidas por el conversor se distinguen con `<!-- okf-generated -->`, aplicado al bloque siguiente.
 
 ### Estado y señales de revisión
 
@@ -177,7 +177,7 @@ Los siguientes campos permiten comparar conversiones y distinguir documentos y v
 
 El mismo original, con el mismo perfil y la misma configuración, conserva sus identificadores de conversión y de unidad. Estos identificadores no incorporan el commit del conversor: una corrección del programa puede conservarlos, por lo que también conviene comparar `converter_commit`. Si aparece `reproducible: false`, el identificador tampoco garantiza que el resultado sea idéntico al repetir la conversión.
 
-Los campos opcionales, como `document_key` y `access`, aparecen solo cuando se reciben o se cumplen sus condiciones. La [especificación del perfil](docs/especificacion/ESPECIFICACION_OKF.md) define las reglas completas y el [esquema del frontmatter](docs/especificacion/perfil-1.16.0.schema.json) permite comprobar los campos y sus tipos automáticamente.
+Los campos opcionales, como `document_key` y `access`, aparecen solo cuando se reciben o se cumplen sus condiciones. La [especificación del perfil](docs/especificacion/ESPECIFICACION_OKF.md) define las reglas completas y el [esquema del frontmatter](docs/especificacion/perfil-1.17.0.schema.json) permite comprobar los campos y sus tipos automáticamente.
 
 </details>
 
@@ -377,7 +377,7 @@ docker compose up -d --no-deps --force-recreate api
 
 ## OCR de PDF escaneados
 
-Un escaneo contiene una imagen de las letras. El **OCR** intenta reconocerlas y convertirlas en texto. Se ejecuta localmente y está **apagado por defecto**.
+Un escaneo contiene una imagen de las letras. El **OCR** intenta reconocerlas y convertirlas en texto. Se ejecuta localmente y está **activo por defecto**.
 
 ```mermaid
 flowchart TD
@@ -398,13 +398,13 @@ flowchart TD
     linkStyle default stroke:#64748B,stroke-width:2px;
 ```
 
-Para activarlo, se cambia esta línea en `.env`:
+La imagen Docker ya incluye los modelos que necesita. Para apagarlo, se cambia esta línea en `.env`:
 
 ```dotenv
-OKF_OCR_ENABLED=true
+OKF_OCR_ENABLED=false
 ```
 
-Después se recrea el worker; la imagen Docker ya incluye los modelos que necesita:
+Después se recrea el worker:
 
 ```bash
 docker compose up -d --no-deps --force-recreate worker
@@ -418,10 +418,12 @@ docker compose up -d --no-deps --force-recreate worker
 | Ajuste | Valor inicial | Para qué sirve |
 | --- | ---: | --- |
 | `OKF_OCR_MAX_PAGES` | 40 | Máximo de páginas que se intentan transcribir por documento. |
-| `OKF_CONVERSION_TIMEOUT_S` | 300 segundos | Plazo de la conversión. El OCR deja de iniciar páginas al consumir dos tercios de ese plazo. |
+| `OKF_CONVERSION_TIMEOUT_S` | 300 segundos | Plazo de la conversión. El OCR deja de iniciar páginas al consumir dos tercios de ese plazo o del límite de CPU (`OKF_MAX_CPU_S`). |
 | `OKF_OCR_MEMORY_MB` | 256 MB | Memoria adicional al límite general cuando se convierte un PDF con OCR activo. |
 
-Con el plazo inicial, el rendimiento medido permite unas 12–40 páginas, según su densidad. Para escaneos largos puede ser necesario ampliar el plazo. Si se agota el presupuesto, las páginas restantes quedan como vistas y el bundle sale `partial`.
+Con el plazo inicial, el rendimiento medido permite unas 12–40 páginas, según su densidad.
+
+`OKF_CONVERSION_THREADS` reparte la lectura de texto, las imágenes y las vistas de un PDF entre varios hilos sin cambiar el bundle; cada hilo necesita memoria para su copia del documento. `OKF_MAX_CPU_S` fija el tiempo de CPU de una conversión, sumados sus hilos; sin declarar, es el plazo por el número de hilos. Para escaneos largos puede ser necesario ampliar el plazo. Si se agota el presupuesto, las páginas restantes quedan como vistas y el bundle sale `partial`.
 
 Para usar OCR al ejecutar el binario en el equipo local, primero se descargan los modelos:
 

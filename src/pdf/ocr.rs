@@ -394,6 +394,32 @@ fn rotate(gray: &GrayImage, degrees: f32) -> GrayImage {
     })
 }
 
+/// Configuración con el OCR activo y los modelos de `OKF_OCR_MODELS_DIR` o de
+/// `models/ocr` (tools/ocr_models.sh), para las pruebas. Sin modelos, las pruebas que los
+/// necesitan se omiten, salvo con `OKF_REQUIRE_OCR_MODELS`, que la CI fija.
+#[cfg(test)]
+pub(crate) fn test_config() -> Option<crate::worker::Config> {
+    let dir = std::env::var_os("OKF_OCR_MODELS_DIR")
+        .map(std::path::PathBuf::from)
+        .unwrap_or_else(|| "models/ocr".into());
+    if !MODEL_FILES.iter().all(|f| dir.join(f).is_file()) {
+        assert!(
+            std::env::var_os("OKF_REQUIRE_OCR_MODELS").is_none(),
+            "faltan los modelos de OCR en {}",
+            dir.display()
+        );
+        eprintln!(
+            "modelos de OCR ausentes en {}: prueba omitida",
+            dir.display()
+        );
+        return None;
+    }
+    let mut cfg = crate::worker::Config::default();
+    cfg.ocr.enabled = true;
+    cfg.ocr.models_dir = dir;
+    Some(cfg)
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

@@ -86,6 +86,10 @@ def audit(original, bundle):
         for name in concepts:
             fm, body = split_markdown(archive.read(name).decode())
             spans = {s["id"]: s for s in fm["source_spans"]}
+            # Desde el perfil 1.17.0, los localizadores de bloque están en su archivo.
+            if fm.get("block_spans"):
+                blocks = json.loads(archive.read(fm["block_spans"].lstrip("/")).decode())
+                spans.update({s["id"]: s for s in blocks["source_spans"]})
             # El título también pertenece al contenido localizado del concepto.
             for span in spans.values():
                 if span["id"] in ("seccion", "texto") and span["kind"] == "pdf_pages":

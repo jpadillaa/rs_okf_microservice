@@ -1,0 +1,8 @@
+{
+  "concept": "contenido/seccion-002.md",
+  "source_spans": [
+    {"id": "u-4", "source_id": "original", "kind": "pdf_pages", "from": 1, "to": 1, "boxes": [{"page": 1, "x0": 72.00, "top": 181.42, "x1": 534.77, "bottom": 218.92}]},
+    {"id": "u-5", "source_id": "original", "kind": "pdf_pages", "from": 1, "to": 1, "boxes": [{"page": 1, "x0": 72.00, "top": 227.92, "x1": 504.89, "bottom": 238.42}]},
+    {"id": "u-6", "source_id": "original", "kind": "pdf_pages", "from": 1, "to": 1, "boxes": [{"page": 1, "x0": 72.00, "top": 247.42, "x1": 538.74, "bottom": 271.42}]}
+  ]
+}

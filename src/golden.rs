@@ -105,6 +105,11 @@ fn normalize(text: &str) -> String {
 
 /// Archivos de la referencia de un bundle: textos normalizados y `recursos.tsv`.
 pub(crate) fn bundle_files(doc: &Path) -> BTreeMap<String, String> {
+    bundle_files_with(doc, &Config::default())
+}
+
+/// Como `bundle_files`, con otra configuración (el OCR activo, por ejemplo).
+pub(crate) fn bundle_files_with(doc: &Path, cfg: &Config) -> BTreeMap<String, String> {
     let bytes = fs::read(doc).unwrap();
     let filename = doc.file_name().unwrap().to_string_lossy().into_owned();
     let format = Format::from_filename(&filename).unwrap();
@@ -112,7 +117,7 @@ pub(crate) fn bundle_files(doc: &Path) -> BTreeMap<String, String> {
     let hash = hex(&Sha256::digest(&bytes));
     let built = format
         .convert(
-            &Config::default(),
+            cfg,
             &bytes,
             &filename,
             &crate::identity::Source::new(&hash),

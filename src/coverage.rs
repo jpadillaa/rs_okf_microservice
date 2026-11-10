@@ -11,7 +11,7 @@ static FIELDS: LazyLock<Regex> =
 static COMMENTS: LazyLock<Regex> = LazyLock::new(|| Regex::new(r"(?s)<!--.*?-->").unwrap());
 static TARGETS: LazyLock<Regex> = LazyLock::new(|| Regex::new(r"\]\([^)]*\)").unwrap());
 
-fn words(text: &str) -> Vec<String> {
+pub(crate) fn words(text: &str) -> Vec<String> {
     let normalized = text.nfkc().filter(|&c| c != '\u{ad}').collect::<String>();
     let folded = caseless::default_case_fold_str(&normalized);
     WORD.find_iter(&folded)
@@ -19,7 +19,7 @@ fn words(text: &str) -> Vec<String> {
         .collect()
 }
 
-fn markdown_text(md: &str) -> String {
+pub(crate) fn markdown_text(md: &str) -> String {
     let mut text = String::new();
     let mut body = md;
     if md.starts_with("---\n")
@@ -200,7 +200,7 @@ fn coverage_matches_python_and_detects_lost_text() {
 
 /// El Markdown sin las notas del conversor: cada marcador `okf-generated` y el bloque que
 /// lo sigue, hasta la siguiente línea en blanco.
-fn without_generated(md: &str) -> String {
+pub(crate) fn without_generated(md: &str) -> String {
     let mut out = String::with_capacity(md.len());
     let mut skipping = false;
     for line in md.split_inclusive('\n') {

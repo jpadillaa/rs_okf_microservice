@@ -1,6 +1,6 @@
 ---
 type: "Source Text"
-unit_id: "472d615e46a3b39b347d4f4371e1ffdee8555295e362248bce6fcb86d3cd421e/contenido/texto.md"
+unit_id: "1729dcdcae47d9cc64735d501bbd192700ffb92feb7d5d582338736a4c7569f5/contenido/texto.md"
 parent: "documento.md"
 title: "Informe técnico escaneado"
 description: "Texto completo de escaneado_ocr.pdf."
@@ -16,28 +16,7 @@ source_spans:
     kind: "pdf_pages"
     from: 1
     to: 2
-  - id: "u-1"
-    source_id: "original"
-    kind: "pdf_pages"
-    from: 1
-    to: 1
-    boxes:
-      - page: 1
-        x0: 0.00
-        top: 0.00
-        x1: 612.00
-        bottom: 792.48
-  - id: "u-2"
-    source_id: "original"
-    kind: "pdf_pages"
-    from: 2
-    to: 2
-    boxes:
-      - page: 2
-        x0: 0.00
-        top: 0.00
-        x1: 612.00
-        bottom: 792.48
+block_spans: "/contenido/texto.spans.json"
 status: "draft"
 ---
 
