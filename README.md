@@ -293,7 +293,7 @@ API y worker usan la misma imagen `okf-microservice:local`; basta construirla un
 
 La imagen final usa Distroless Debian 13, con fuentes, certificados y modelos OCR incluidos. Ejecuta el binario sin símbolos como UID 10001 y no contiene shell ni gestor de paquetes. Las imágenes base están fijadas por digest, que identifica su contenido exacto.
 
-El worker accede a PostgreSQL por una red interna. Cada conversión se ejecuta en un proceso separado, con límites de memoria y tiempo. En Linux, seccomp bloquea las conexiones de red del proceso de conversión y Landlock restringe las rutas a las que este puede acceder.
+El worker accede a PostgreSQL por una red interna. Cada conversión se ejecuta en un proceso separado, con límites de memoria y tiempo. En Linux, seccomp bloquea las conexiones de red del proceso de conversión y Landlock restringe las rutas a las que este puede acceder. El diagrama de esa frontera y el motivo de cada capa están en la [arquitectura técnica](docs/arquitectura/ARQUITECTURA_TECNICA_MICROSERVICIO_OKF.md#frontera-del-proceso-de-conversión-plan-2-c3-y-c4).
 
 Para registrar qué revisión de Git produjo la imagen, se construye a partir de una revisión ya confirmada con:
 

@@ -71,7 +71,7 @@ El formulario de `POST /jobs` indica que solo `file` es obligatorio y que basta 
 
 La primera entrega implementó la ruta completa con PPTX; la segunda añadió el adaptador DOCX, la tercera el adaptador XLSX y la cuarta el adaptador PDF, todos sobre la misma cola, el mismo worker y el mismo validador.
 
-**Conversión aislada.** El worker ejecuta cada conversión en un proceso hijo (`okf-microservice convert`, subcomando interno) y lo vigila cada 100 ms. Lo termina si su memoria residente supera el límite o si vence el plazo. La memoria se mide en `/proc` en Linux y con `ps` en otros sistemas; si no puede medirse, el worker no arranca. El límite de memoria es la garantía de recursos: el número de diapositivas no la predice, porque el consumo depende de las imágenes (ver [Decisión de renderizado PPTX](../decisiones/RENDERIZADO_PPTX_MEDICIONES.md)). Cada worker convierte un trabajo a la vez; la concurrencia se controla con el número de workers. La validación ocurre dentro de `processing`, antes de publicar, y no se registra como estado aparte.
+**Conversión aislada.** El worker ejecuta cada conversión en un proceso hijo (`okf-microservice convert`, subcomando interno) y lo vigila cada 100 ms. Lo termina si su memoria residente supera el límite o si vence el plazo. La memoria se mide en `/proc` en Linux y con `ps` en otros sistemas; si no puede medirse, el worker no arranca. El límite de memoria es la garantía de recursos: el número de diapositivas no la predice, porque el consumo depende de las imágenes (ver [Decisión de renderizado PPTX](../decisiones/RENDERIZADO_PPTX_MEDICIONES.md)). Cada worker convierte un trabajo a la vez; la concurrencia se controla con el número de workers. La validación ocurre dentro de `processing`, antes de publicar, y no se registra como estado aparte. El diagrama de esta frontera, lo que la cruza y el motivo de cada capa están en [Frontera del proceso de conversión](#frontera-del-proceso-de-conversión-plan-2-c3-y-c4).
 
 | Variable | Predeterminado | Efecto |
 | --- | ---: | --- |
@@ -187,6 +187,118 @@ Y según el formato del original:
 - **XLSX:** un concepto por hoja del original, incluidas las ocultas, con su nombre exacto y su `sheet_index` en el orden del libro; los conceptos de región pertenecen a su hoja; el localizador `hoja` coincide con el rango que ocupan las celdas con contenido, ningún otro rango sale de él y cada celda con contenido cae en alguna región; el CSV de cada región grande tiene tantas filas como su rango; ambos índices enumeran las hojas y sus regiones en orden.
 - **PDF:** los conceptos de `contenido/` siguen el orden de las páginas (cada uno empieza en la página en la que termina el anterior o en la siguiente) y, con el título de `documento.md`, cubren todas las páginas del original; cada localizador `pdf_pages` cae dentro del tramo de su concepto; en un concepto de varias páginas cada bloque lleva un marcador y todo localizador se usa; `documento.md` localiza todas las páginas y `page_labels` solo tiene páginas físicas existentes con una etiqueta no vacía; ambos índices enumeran los conceptos en orden.
 
+### Frontera del proceso de conversión (plan 2, C3 y C4)
+
+El worker separa dos papeles en dos procesos. El **supervisor** (el proceso `worker`)
+accede a PostgreSQL y a todo el almacén, pero nunca abre un documento. El **hijo**
+(`okf-microservice convert`) abre el documento y no accede a nada más. Esta sección
+reúne en una vista las reglas de «Conversión aislada», «Límites duros y rutas» y
+«Reintentos clasificados».
+
+```mermaid
+flowchart TB
+    subgraph SUP["Supervisor: proceso worker"]
+        R["Reclama el trabajo<br/>y renueva la asignación"]
+        V["Vigila RSS y tiempo<br/>cada 100 ms"]
+        P["Comprueba ruta, memoria, tiempo<br/>y asignación, y publica"]
+    end
+    subgraph HIJO["Hijo: okf-microservice convert"]
+        H0["0. Gancho de pánico"] --> H1["1. rlimits"]
+        H1 --> H2["2. Abre el original"]
+        H2 --> H3["3. Landlock"]
+        H3 --> H4["4. seccomp"]
+        H4 --> H5["5. Convierte, valida<br/>y escribe bundle.zip"]
+    end
+    DB[("PostgreSQL")]
+    PUB[("published/")]
+    R -- "argumentos, entorno mínimo<br/>y access.json" --> H0
+    H5 -- "una línea JSON por stdout,<br/>o código de salida y stderr" --> P
+    V -. "termina el proceso<br/>si supera un límite" .-> HIJO
+    R <--> DB
+    P --> DB
+    P --> PUB
+    HIJO -. "sin sockets: EPERM" .-x DB
+```
+
+**Qué cruza la frontera.** Nada más que lo que muestra la tabla; el hijo no recibe ni
+devuelve nada por otro canal.
+
+| Sentido | Qué | Cómo |
+| --- | --- | --- |
+| Supervisor → hijo | Ruta del original, carpeta del intento, nombre del archivo y, si existe, la clave del documento | Argumentos (`--document-key=<clave>`) |
+| Supervisor → hijo | Límites y opciones del OCR | Entorno vaciado (`env_clear`) con solo `PATH`, `TMPDIR`, `TMP`, `TEMP`, `OKF_FONT_PATH`, `RUST_LOG` y las variables `OKF_*` de límites y OCR. No recibe `OKF_DATABASE_URL` ni carga `.env`. |
+| Supervisor → hijo | Permisos recibidos (`access`) | Archivo `access.json` en la carpeta del intento (`--access-file`), no en los argumentos, que cualquier usuario del sistema ve |
+| Hijo → supervisor | Resultado: identidad, `conversion_id`, estado, etapas y memoria máxima | Una línea JSON por stdout; stdin es `/dev/null` |
+| Hijo → supervisor | Fallo | Código de salida (5 para un pánico, C3) y stderr; se conservan los últimos 64 KiB de cada flujo |
+| Hijo → supervisor | Bundle | `bundle.zip` dentro de la carpeta del intento; otra ruta es un fallo permanente |
+
+**Orden de las capas en el hijo** (`src/isolation.rs`, `src/worker.rs`). Cada una se
+instala antes de la siguiente y antes de leer el documento:
+
+0. **Gancho de pánico:** un pánico escribe su mensaje en stderr y sale con el código 5,
+   que el supervisor clasifica como fallo permanente («defecto del conversor»).
+1. **rlimits**, antes de crear hilos: `RLIMIT_AS` (solo Linux), `RLIMIT_CPU`,
+   `RLIMIT_FSIZE`, `RLIMIT_NOFILE` y `RLIMIT_CORE=0`. Nunca elevan un límite heredado.
+2. **Apertura del original:** el descriptor se conserva, así que no hace falta
+   reabrirlo después de restringir las rutas.
+3. **Landlock** (Linux): lectura del original, de las fuentes, de `/etc/localtime` y,
+   con el OCR activo, de sus modelos; lectura y escritura solo en la carpeta del
+   intento. No concede ejecución ni creación de enlaces o dispositivos.
+4. **seccomp** (Linux), con `PR_SET_NO_NEW_PRIVS`: `socket`, `socketpair`, `connect`,
+   `ptrace` e `io_uring_setup` devuelven `EPERM`, y una llamada de otra arquitectura
+   termina el proceso. Lo heredan todos los hilos. Si no puede instalarse, la
+   conversión falla en vez de seguir sin él.
+
+La validación del bundle (conformidad OKF e integridad editorial) se ejecuta dentro del
+hijo, al cerrar el bundle (`src/output.rs`), y su duración forma parte del resultado. El
+supervisor, por su parte, vigila RSS y tiempo de pared cada 100 ms y termina al hijo si
+supera un límite; al recibir el resultado comprueba la memoria máxima y el tiempo que
+informa el hijo, la ruta del bundle y que el trabajo siga asignado a su intento, y
+publica de forma atómica con la fila del trabajo bloqueada. Solo vuelve a validar el
+bundle al reconciliar una publicación interrumpida.
+
+**Por qué el hijo no tiene red ni credenciales.** Los documentos son datos no
+confiables (§4). El hijo los procesa con analizadores complejos, en buena parte
+externos al proyecto: `pdf_oxide`, los lectores OOXML, los decodificadores de imagen,
+el renderizador PPTX y el motor ONNX del OCR. El fuzzing ya encontró un pánico en
+`pdf_oxide` ([Fuzzing](../decisiones/FUZZING.md)). El diseño supone que un archivo
+malicioso puede llegar a controlar el hijo y limita lo que podría hacer entonces:
+
+- sin sockets, no puede enviar el documento fuera, descargar código ni conectarse a
+  PostgreSQL, que el supervisor sí alcanza por la red interna;
+- sin el entorno del servicio, no conoce la URL ni las credenciales de la base;
+- con Landlock, no lee otros originales ni bundles publicados, ni escribe fuera de su
+  intento;
+- con los rlimits y la vigilancia, no agota la memoria, la CPU, el disco ni los
+  descriptores del nodo;
+- el supervisor no confía en la ruta que devuelve: un hijo comprometido no puede hacer
+  que publique otro archivo.
+
+Queda un límite: como la validación del camino normal se ejecuta dentro del hijo, un
+hijo comprometido podría entregar en su carpeta un `bundle.zip` que no cumpla el perfil,
+y el supervisor lo publicaría. El daño se limita al bundle de ese trabajo y no alcanza
+a otros trabajos ni al servicio, pero sí llega a quien consuma ese bundle. Validarlo
+también en el supervisor, antes de publicar, cerraría este hueco.
+
+La conversión no necesita la red: las fuentes y los modelos del OCR van en la imagen, y
+las URI se resuelven sin consultarla (I5). Quitarla no resta ninguna función. La
+consecuencia para el diseño es que una etapa que necesite red o credenciales, como la
+llamada a un servicio externo, no puede ejecutarse en el hijo: va en otro proceso que
+trabaje sobre el bundle ya publicado y validado.
+
+**Plataformas.** El aislamiento completo solo existe en Linux, que es donde se ejecuta
+la imagen Docker. macOS sirve para desarrollar, no para convertir documentos no
+confiables.
+
+| Capa | Linux (imagen Docker) | macOS |
+| --- | --- | --- |
+| Gancho de pánico, `RLIMIT_CPU`, `RLIMIT_FSIZE`, `RLIMIT_NOFILE`, `RLIMIT_CORE` | Sí | Sí |
+| `RLIMIT_AS` | Sí | No |
+| Landlock | Sí (ABI 3, con degradación; si no está disponible se registra al arrancar) | No |
+| seccomp | Sí; si no se instala, la conversión falla | No |
+| Vigilancia de RSS y tiempo por el supervisor | Sí | Sí |
+| Entorno vaciado y comprobación de la ruta del bundle | Sí | Sí |
+
 ### Identidad de cada conversión (plan 2, C9)
 
 `documento.md`, el informe y `GET /jobs/{id}` incluyen `converter_version`,
@@ -228,6 +340,36 @@ configuración y la del original (especificación, §2). El escritor del bundle
 escritor de conceptos, lo añade en el ensamblador. El validador recalcula
 `conversion_id` con la huella real del original incluido y comprueba el `unit_id` de
 cada concepto; los bundles anteriores al perfil 1.4.0 no lo llevan.
+
+```mermaid
+flowchart LR
+    O["Bytes del original"] --> S1["source_sha256"]
+    CFG["conversion_settings<br/>en JSON canónico"] --> S2["settings_sha256"]
+    PV["profile_version"] --> CID
+    S1 --> CID["conversion_id<br/>SHA-256 de {profile_version,<br/>settings_sha256, source_sha256}"]
+    S2 --> CID
+    CID --> UID["unit_id<br/>conversion_id/ruta del concepto"]
+    UID --> PAS["Pasaje<br/>unit_id + source_spans[].id"]
+    JOB["job_id<br/>aleatorio, una ejecución"] -. "GET /jobs/{id} devuelve" .-> CID
+    VER["converter_version<br/>converter_commit"] -. "se declaran, pero<br/>no entran en el cálculo" .-> CID
+```
+
+Los identificadores dependen solo del contenido: cualquiera puede recalcularlos a partir
+del bundle, y el RAG los usa como clave estable de cada fragmento sin componerla con
+reglas propias (plan 3, I1).
+
+| Identificador | Qué identifica | Cambia si | No cambia si |
+| --- | --- | --- | --- |
+| `job_id` | Una subida y su ejecución en el servicio | Se sube de nuevo, aunque sea el mismo archivo | — |
+| `source_sha256` | Los bytes del original | Cambia un solo byte | Se renombra el archivo |
+| `settings_sha256` | La configuración que cambia el contenido del bundle (I3) | Cambia el OCR, sus modelos, `OKF_MAX_IMAGE_PIXELS` o la fuente de las vistas PPTX | Cambian límites que solo rechazan trabajo (memoria, tamaño, plazos fuera del OCR) |
+| `conversion_id` | El resultado de convertir ese original con ese perfil y esa configuración | Cambia cualquiera de los tres anteriores | Cambia la versión o el commit del conversor sin cambiar una regla del perfil |
+| `unit_id` | Un concepto del bundle | Cambia `conversion_id` o la ruta del concepto | — |
+
+Dos subidas del mismo archivo con la misma configuración tienen distinto `job_id` y el
+mismo `conversion_id`. La excepción es `reproducible: false` (I3): si el OCR agotó su
+plazo, la misma configuración puede dar otro contenido con el mismo identificador, y el
+bundle lo declara.
 
 El hijo devuelve `conversion_id` con su resultado, el worker lo guarda en la columna
 `conversion_id` de `jobs` (migración `0002`) al publicar, lo borra al reclamar un nuevo
