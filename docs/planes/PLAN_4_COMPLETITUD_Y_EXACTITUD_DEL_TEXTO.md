@@ -66,6 +66,15 @@ Va primero porque fija la vara con la que se miden `Q1` y `Q3`.
 
 El mayor hueco de completitud.
 
+**Estado:** hecho (11 de noviembre), perfil 1.18.0; mediciones en [OCR local](../decisiones/OCR_LOCAL.md#5-texto-de-las-imágenes-de-contenido-perfil-1180).
+- Las imágenes de contenido se transcriben detrás de cada imagen, con su nota, y se reorientan como las dibuja la página. La muestra `imagenes_con_texto.pdf` pasa del 45,9 % al 100 % de completitud, en orden, y su degradado sin texto no añade nada.
+- El OCR de páginas escaneadas va en paralelo con `OKF_CONVERSION_THREADS`. Un escaneo de 200 páginas sale `complete` con 4 hilos en 364 s, pero no con los valores por defecto: necesita `OKF_CONVERSION_TIMEOUT_S=900` y unos 2 GB de memoria (`OKF_MAX_MEMORY_MB=1500`).
+- **Desviaciones del trabajo previsto:**
+  - el límite de imágenes es una variable propia, `OKF_OCR_MAX_IMAGES` (300), en vez de contar imágenes en `OKF_OCR_MAX_PAGES`: una página escaneada cuesta varias veces lo que una captura, y un límite común dejaría sin OCR los escaneos de documentos con muchas figuras;
+  - las vistas no se transcriben. En las páginas con texto digital, el OCR de la vista entera duplicaría el texto que ya se lee y el de sus imágenes, que ahora se transcriben. Queda pendiente el texto dibujado como trazos vectoriales, sin capa de texto ni imagen, que solo la vista contiene; hace falta medir cuánto hay antes de abordarlo;
+  - los modelos se cargan una vez por documento y los comparten los hilos; la memoria crece por las páginas que se detectan a la vez, no por copias del motor.
+- **Falta:** comprobar con una muestra revisada de `Q2` que el texto de las imágenes de los originales privados no es ruido.
+
 **Problema.** El texto de diagramas, capturas de pantalla, diapositivas hechas como imagen y fotografías de documentos no llega al Markdown. Los escaneos de más de unas 40 páginas quedan sin texto en su mayor parte.
 
 **Trabajo.**

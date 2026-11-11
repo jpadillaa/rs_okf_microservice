@@ -1,0 +1,14 @@
+{
+  "document": "examples/pdf/muestras/imagenes_con_texto.pdf",
+  "source": "examples/pdf/create_samples.py",
+  "pages": {
+    "1": "Anexo de capturas\nEste anexo reúne capturas de pantalla de otros documentos de prueba. Su texto solo está en las\nimágenes.\nTabla 1. Resultados por procedimiento\nProcedimiento Correctos Tiempo\nPrimero 17 1,2 s\nSegundo 20 1,9 s\nDiferencia 3 0,7 s\nservicio: existencias\nreplicas: 2\nbase_de_datos:\nmotor: postgres\nversion: 16\nLa fotografía siguiente no contiene texto."
+  },
+  "blocks": [
+    {
+      "page": 1,
+      "type": "title",
+      "text": "Anexo de capturas"
+    }
+  ]
+}

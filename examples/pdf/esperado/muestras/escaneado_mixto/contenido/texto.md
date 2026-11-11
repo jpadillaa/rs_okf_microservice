@@ -1,6 +1,6 @@
 ---
 type: "Source Text"
-unit_id: "6b42ad1b11641dca677173a9153da1a4a0eaa2aee77f0e68a19ad257b0d3fa37/contenido/texto.md"
+unit_id: "635f59e0e840715ca96e14bc6726192dfb293e361c1d4689aca6f7c29fa1e668/contenido/texto.md"
 parent: "documento.md"
 title: "Expediente digitalizado"
 description: "Texto completo de escaneado_mixto.pdf. Este expediente reúne una página escrita directamente en el computador, una página escaneada sin reconocimiento de texto, una página en blanco, un diagrama sin…"

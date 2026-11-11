@@ -119,52 +119,18 @@ pub(crate) fn page(engine: &Engine, doc: &PdfDocument, index: usize) -> Result<P
         height_pt / gray.height().max(1) as f32,
     );
     let image = DynamicImage::ImageLuma8(gray);
-    let boxes = engine
-        .detector
-        .detect(&image)
-        .map_err(|e| anyhow!("falló la detección de texto del OCR: {e}"))?;
-    let chunk = boxes.len().div_ceil(THREADS).max(1);
-    let recognized: Vec<(DetectedBox, String, f32, Option<f32>)> = std::thread::scope(|scope| {
-        let workers: Vec<_> = boxes
-            .chunks(chunk)
-            .map(|part| {
-                let image = &image;
-                scope.spawn(move || {
-                    part.iter()
-                        .map(|b| {
-                            let crop = crop_text_region(image, &widened(b, image.width()))
-                                .map_err(|e| anyhow!("no se pudo recortar una línea: {e}"))?;
-                            let ink = ascent_px(&crop);
-                            let r = engine
-                                .recognizer
-                                .recognize(&padded(&crop))
-                                .map_err(|e| anyhow!("falló el reconocimiento del OCR: {e}"))?;
-                            Ok((b.clone(), r.text, r.confidence, ink))
-                        })
-                        .collect::<Result<Vec<_>>>()
-                })
-            })
-            .collect();
-        workers
-            .into_iter()
-            .map(|w| w.join().expect("hilo del OCR"))
-            .collect::<Result<Vec<_>>>()
-            .map(|v| v.into_iter().flatten().collect())
-    })?;
+    let recognized = recognize(engine, &image)?;
     // Tamaño de letra de cada línea: por la tinta medida a resolución completa o, si no
     // se puede medir, por la altura de la caja.
     let kept: Vec<(Bounds, String, f32, f32)> = recognized
         .into_iter()
-        .filter(|(_, text, confidence, _)| {
-            *confidence >= engine.min_confidence && !text.trim().is_empty()
-        })
         .map(|(b, text, confidence, ink)| {
             let bounds = Bounds::of(&b, sx, sy);
             let size = match ink {
                 Some(px) => px * sy / ASCENT,
                 None => (bounds.bottom - bounds.top) * 0.75,
             };
-            (bounds, text.trim().to_string(), confidence, size.max(1.0))
+            (bounds, text, confidence, size.max(1.0))
         })
         .collect();
     let mut sizes: Vec<f32> = kept.iter().map(|x| x.3).collect();
@@ -197,6 +163,148 @@ pub(crate) fn page(engine: &Engine, doc: &PdfDocument, index: usize) -> Result<P
         lines,
         low_lines,
     })
+}
+
+/// Texto reconocido en una imagen de contenido: sus líneas en orden de lectura.
+#[derive(Clone, Debug)]
+pub(crate) struct ImageText {
+    pub(crate) lines: Vec<String>,
+    /// Confianza media, ponderada por caracteres, de las líneas conservadas, y líneas
+    /// descartadas por su confianza baja.
+    pub(crate) confidence: f32,
+    pub(crate) low_lines: usize,
+}
+
+/// Reconoce el texto de una imagen de contenido (una captura, un diagrama). No se
+/// endereza: una imagen girada a propósito no es un escaneo torcido. Las cajas que se
+/// solapan en vertical forman una fila (las celdas de una tabla capturada, los rótulos
+/// alineados de un diagrama), que se lee de izquierda a derecha; las filas, de arriba
+/// abajo.
+pub(crate) fn image(engine: &Engine, image: &DynamicImage) -> Result<ImageText> {
+    let image = DynamicImage::ImageLuma8(canvas(image));
+    // Una línea de confianza baja en una imagen suele ser ruido (una fotografía, un
+    // trazo): se descarta y se cuenta, en vez de escribirla como en un escaneo.
+    let recognized = recognize(engine, &image)?;
+    let low_lines = recognized
+        .iter()
+        .filter(|(_, _, c, _)| *c < LOW_CONFIDENCE)
+        .count();
+    let mut boxes: Vec<(Bounds, String, f32)> = recognized
+        .into_iter()
+        .filter(|(_, _, c, _)| *c >= LOW_CONFIDENCE)
+        .map(|(b, text, confidence, _)| (Bounds::of(&b, 1.0, 1.0), text, confidence))
+        .collect();
+    boxes.sort_by(|a, b| a.0.top.total_cmp(&b.0.top));
+    let mut rows: Vec<Vec<(Bounds, String, f32)>> = Vec::new();
+    for item in boxes {
+        let center = (item.0.top + item.0.bottom) / 2.0;
+        match rows.last_mut() {
+            Some(row)
+                if row
+                    .iter()
+                    .any(|(b, _, _)| center > b.top && center < b.bottom) =>
+            {
+                row.push(item)
+            }
+            _ => rows.push(vec![item]),
+        }
+    }
+    let (mut weighted, mut chars) = (0.0f32, 0usize);
+    let mut lines = Vec::new();
+    for mut row in rows {
+        row.sort_by(|a, b| a.0.left.total_cmp(&b.0.left));
+        for (_, text, confidence) in &row {
+            let n = text.chars().count();
+            weighted += confidence * n as f32;
+            chars += n;
+        }
+        let texts: Vec<&str> = row.iter().map(|(_, t, _)| t.as_str()).collect();
+        lines.push(texts.join(" "));
+    }
+    Ok(ImageText {
+        lines,
+        confidence: if chars == 0 {
+            0.0
+        } else {
+            weighted / chars as f32
+        },
+        low_lines,
+    })
+}
+
+/// Lados de los lienzos cuadrados sobre los que se detecta el texto de una imagen. El
+/// detector prepara un plan por cada forma de entrada y solo reduce lo que supera 960
+/// px: con el tamaño propio de cada imagen, el PDF de 346 páginas (228 imágenes)
+/// llegaba a 1,8 GB de memoria y 157 s. Con estos lienzos hay tres formas; una imagen
+/// mayor va en un lienzo de su propio lado, que el detector reduce a 960.
+const IMAGE_CANVAS: [u32; 3] = [320, 640, 960];
+
+/// La imagen en gris, compuesta sobre blanco si tiene transparencia, en la esquina de
+/// un lienzo cuadrado blanco de `IMAGE_CANVAS`, a su resolución.
+fn canvas(image: &DynamicImage) -> GrayImage {
+    let rgba = image.to_rgba8();
+    let gray = GrayImage::from_fn(rgba.width(), rgba.height(), |x, y| {
+        let [r, g, b, a] = rgba.get_pixel(x, y).0;
+        let luma = (299 * u32::from(r) + 587 * u32::from(g) + 114 * u32::from(b)) / 1000;
+        let a = u32::from(a);
+        Luma([((luma * a + 255 * (255 - a)) / 255) as u8])
+    });
+    let longest = gray.width().max(gray.height());
+    let side = IMAGE_CANVAS
+        .iter()
+        .copied()
+        .find(|&s| s >= longest)
+        .unwrap_or(longest);
+    let mut out = GrayImage::from_pixel(side, side, Luma([255]));
+    image::imageops::overlay(&mut out, &gray, 0, 0);
+    out
+}
+
+/// Línea reconocida: su caja, su texto, su confianza y la altura de su tinta.
+type Recognized = (DetectedBox, String, f32, Option<f32>);
+
+/// Líneas detectadas en `image` y reconocidas, con su texto, su confianza y la altura de
+/// su tinta; solo las que superan el umbral de confianza del reconocedor y tienen texto.
+fn recognize(engine: &Engine, image: &DynamicImage) -> Result<Vec<Recognized>> {
+    let boxes = engine
+        .detector
+        .detect(image)
+        .map_err(|e| anyhow!("falló la detección de texto del OCR: {e}"))?;
+    let chunk = boxes.len().div_ceil(THREADS).max(1);
+    let recognized: Vec<Recognized> = std::thread::scope(|scope| {
+        let workers: Vec<_> = boxes
+            .chunks(chunk)
+            .map(|part| {
+                let image = &image;
+                scope.spawn(move || {
+                    part.iter()
+                        .map(|b| {
+                            let crop = crop_text_region(image, &widened(b, image.width()))
+                                .map_err(|e| anyhow!("no se pudo recortar una línea: {e}"))?;
+                            let ink = ascent_px(&crop);
+                            let r = engine
+                                .recognizer
+                                .recognize(&padded(&crop))
+                                .map_err(|e| anyhow!("falló el reconocimiento del OCR: {e}"))?;
+                            Ok((b.clone(), r.text, r.confidence, ink))
+                        })
+                        .collect::<Result<Vec<_>>>()
+                })
+            })
+            .collect();
+        workers
+            .into_iter()
+            .map(|w| w.join().expect("hilo del OCR"))
+            .collect::<Result<Vec<_>>>()
+            .map(|v| v.into_iter().flatten().collect())
+    })?;
+    Ok(recognized
+        .into_iter()
+        .filter(|(_, text, confidence, _)| {
+            *confidence >= engine.min_confidence && !text.trim().is_empty()
+        })
+        .map(|(b, text, confidence, ink)| (b, text.trim().to_string(), confidence, ink))
+        .collect())
 }
 
 /// Caja de una línea detectada, en puntos de la página.

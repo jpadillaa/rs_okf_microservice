@@ -101,6 +101,9 @@ pub struct OcrSettings {
     /// Páginas máximas con OCR por documento; las demás quedan como vista
     /// (`OKF_OCR_MAX_PAGES`).
     pub max_pages: usize,
+    /// Imágenes de contenido máximas con OCR por documento (capturas, diagramas); las
+    /// demás se adjuntan sin transcribir (`OKF_OCR_MAX_IMAGES`, plan 4, Q1).
+    pub max_images: usize,
     /// Memoria, en MB, que se suma a `OKF_MAX_MEMORY_MB` en la conversión de un PDF
     /// cuando el OCR está activo (`OKF_OCR_MEMORY_MB`).
     pub memory_mb: u64,
@@ -111,7 +114,8 @@ impl Default for OcrSettings {
             enabled: false,
             models_dir: PathBuf::from("/usr/local/share/okf/ocr"),
             max_pages: 40,
-            memory_mb: 256,
+            max_images: 300,
+            memory_mb: 512,
         }
     }
 }
@@ -196,6 +200,7 @@ impl Config {
                     .map(PathBuf::from)
                     .unwrap_or(d.ocr.models_dir.clone()),
                 max_pages: var("OKF_OCR_MAX_PAGES", d.ocr.max_pages)?,
+                max_images: var("OKF_OCR_MAX_IMAGES", d.ocr.max_images)?,
                 memory_mb: var("OKF_OCR_MEMORY_MB", d.ocr.memory_mb)?,
             },
             // Plazos internos y descriptores: fijos (arquitectura técnica, §5).
@@ -645,6 +650,7 @@ async fn run_child(
         .env("OKF_OCR_ENABLED", a.cfg.ocr.enabled.to_string())
         .env("OKF_OCR_MODELS_DIR", &a.cfg.ocr.models_dir)
         .env("OKF_OCR_MAX_PAGES", a.cfg.ocr.max_pages.to_string())
+        .env("OKF_OCR_MAX_IMAGES", a.cfg.ocr.max_images.to_string())
         .stdin(Stdio::null())
         .stdout(Stdio::piped())
         .stderr(Stdio::piped())
@@ -1388,8 +1394,8 @@ mod tests {
         let mut cfg = Config::default();
         assert_eq!(cfg.memory_limit_mb("a.pdf"), 500);
         cfg.ocr.enabled = true;
-        assert_eq!(cfg.memory_limit_mb("a.pdf"), 756);
-        assert_eq!(cfg.memory_limit_mb("A.PDF"), 756);
+        assert_eq!(cfg.memory_limit_mb("a.pdf"), 1012);
+        assert_eq!(cfg.memory_limit_mb("A.PDF"), 1012);
         assert_eq!(cfg.memory_limit_mb("a.docx"), 500);
         let err = crate::pdf::ocr::check_models(std::path::Path::new("/nonexistent/okf-ocr"))
             .unwrap_err()

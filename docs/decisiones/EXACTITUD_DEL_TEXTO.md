@@ -30,7 +30,7 @@ La subsecuencia común más larga se calcula por bits (Hyyrö, 2004) en Python y
 
 ## Referencias
 
-**Exactas.** `examples/pdf/exactitud/<grupo>/<nombre>.json` guarda el texto de cada página en orden de lectura: `{"document": ..., "source": ..., "pages": {"1": "texto…"}}`. Las de las muestras públicas las escribe `examples/pdf/create_samples.py` al dibujar cada PDF, así que son correctas por construcción y no cambian los bytes de los PDF. Omiten encabezados, pies y números de página, que el bundle registra una vez en `documento.md`. Colocan el texto girado al final de su página y la nota al pie detrás del párrafo que la llama, donde los pone la especificación. Las palabras partidas al final de línea se reúnen con la regla de la especificación. `escaneado_ocr.pdf` es la imagen de `informe_tecnico.pdf` y comparte su referencia, de modo que mide también el orden del texto que devuelve el OCR.
+**Exactas.** `examples/pdf/exactitud/<grupo>/<nombre>.json` guarda el texto de cada página en orden de lectura: `{"document": ..., "source": ..., "pages": {"1": "texto…"}}`. Las de las muestras públicas las escribe `examples/pdf/create_samples.py` al dibujar cada PDF, así que son correctas por construcción y no cambian los bytes de los PDF. Omiten encabezados, pies y números de página, que el bundle registra una vez en `documento.md`. Colocan el texto girado al final de su página y la nota al pie detrás del párrafo que la llama, donde los pone la especificación. Las palabras partidas al final de línea se reúnen con la regla de la especificación. `escaneado_ocr.pdf` es la imagen de `informe_tecnico.pdf` y comparte su referencia, de modo que mide también el orden del texto que devuelve el OCR. `imagenes_con_texto.pdf` (perfil 1.18.0, `examples/pdf/create_scans.py`) es una página digital con dos capturas de las otras muestras, una tabla y un bloque de código, y un degradado sin texto; su referencia pone el texto de cada captura detrás del párrafo que la precede, donde lo escribe el OCR de imágenes, y mide así su completitud y su orden.
 
 **Aproximadas.** Sin referencia exacta, la herramienta usa el texto de pdfium. Antes de comparar:
 - reúne las palabras que pdfium parte al final de línea (con guion, guion suave o el U+0002 con que marca el guion que inserta);
@@ -72,8 +72,9 @@ Por defecto convierte con `target/release/okf-microservice` (`--binary` cambia e
 | `escaneado_mixto.pdf` | 100 | 100 | 100 | 100 |
 | `escaneado_ocr.pdf`, con OCR | 100 | 100 | 100 | 100 |
 | `informe_tecnico.pdf` | 100 | 100 | 100 | 100 |
+| `imagenes_con_texto.pdf`, con OCR (perfil 1.18.0) | 100 | 100 | 100 | 100 |
 
-Estructura, con las mismas muestras (perfil 1.17.0): `articulo_columnas`, `breve`, `escaneado_mixto` e `informe_tecnico` dan el 100 % en todas sus métricas y ninguna tabla falsa. La muestra escaneada con OCR, cuyo texto es exacto, no conserva su estructura: encabezados 85,71 %, niveles 60 %, elementos de lista 66,67 % y líneas de código 0 %. Los niveles salen de tamaños de letra medidos por la tinta, que varían entre líneas; un encabezado de tercer nivel y un elemento de lista no se reconocen como tales, y el OCR no distingue la fuente monoespaciada del código. Los mínimos fijan estas cifras para que no empeoren; su corrección corresponde al plan 4.
+Estructura, con las mismas muestras (perfil 1.17.0): `articulo_columnas`, `breve`, `escaneado_mixto` e `informe_tecnico` dan el 100 % en todas sus métricas y ninguna tabla falsa. La muestra escaneada con OCR, cuyo texto es exacto, no conserva su estructura: encabezados 85,71 %, niveles 60 %, elementos de lista 66,67 % y líneas de código 0 %. Los niveles salen de tamaños de letra medidos por la tinta, que varían entre líneas; un encabezado de tercer nivel y un elemento de lista no se reconocen como tales, y el OCR no distingue la fuente monoespaciada del código. Los mínimos fijan estas cifras para que no empeoren; su corrección corresponde al plan 4. `imagenes_con_texto` da el 100 % en encabezados, su precisión y sus niveles, sin tablas falsas; el texto de las capturas es un bloque de líneas y su referencia no le declara estructura. Sin el OCR de imágenes (perfil 1.17.0), su completitud era del 45,9 %: solo el título y los párrafos digitales.
 
 En el artículo, la contigüidad pierde un par de palabras en el salto de la página 1 a la 2: la especificación coloca las afiliaciones detrás del párrafo que continúa en la página siguiente.
 
@@ -91,6 +92,6 @@ En el PDF de 346 páginas mejoran 26 páginas: la contraportada con citas interc
 
 ## Límites
 
-- Las referencias exactas cubren cuatro maquetaciones sintéticas. Los originales reales solo tienen referencia aproximada, hasta que se revisen a mano sus páginas difíciles.
+- Las referencias exactas cubren cinco maquetaciones sintéticas. Los originales reales solo tienen referencia aproximada, hasta que se revisen a mano sus páginas difíciles.
 - La estructura solo se mide con referencias exactas que declaran sus bloques: las muestras públicas y las referencias revisadas de originales privados. No mide el énfasis (negrita, cursiva), los enlaces ni las notas al pie.
 - Una referencia fija una convención de lectura: notas al pie detrás de su párrafo, texto girado al final de su página. Si la especificación cambia una convención, sus referencias cambian con ella.

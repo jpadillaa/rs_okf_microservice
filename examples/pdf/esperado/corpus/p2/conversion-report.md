@@ -1,15 +1,15 @@
 ---
 converter_version: "0.1.0"
 converter_commit: "<commit>"
-profile_version: "1.17.0"
+profile_version: "1.18.0"
 conversion_settings:
   max_image_pixels: 33554432
   ocr:
     enabled: false
 settings_sha256: "ad1d7709796a5172b6ad18d538b1bef5780b44279dd787d15ecc82ede959ef16"
-conversion_id: "deececaf92dbda184b80f8f48b0f7ed3b03aff137641e43559589ff0caaa3fb4"
+conversion_id: "03e9075caa89c69764a037025fa26299bf2a9aa61c887280d52a2e25e1e37ba5"
 type: "Conversion Report"
-unit_id: "deececaf92dbda184b80f8f48b0f7ed3b03aff137641e43559589ff0caaa3fb4/conversion-report.md"
+unit_id: "03e9075caa89c69764a037025fa26299bf2a9aa61c887280d52a2e25e1e37ba5/conversion-report.md"
 title: "Informe de conversión"
 generated:
   by: "process:document-conversion"
@@ -68,7 +68,7 @@ Sin pérdidas ni incertidumbres sustantivas.
 
 Información sobre la conversión que no afecta el estado.
 
-- Página 4: texto con imágenes grandes; las imágenes se adjuntan sin transcribir (no se aplicó OCR)
+- Página 4: texto con imágenes grandes; no se aplica OCR de página: se conserva su texto digital y sus imágenes se tratan como las demás imágenes de contenido
 - Páginas 2, 3, 6 y 8: varias columnas; el orden de lectura se infiere de la disposición (columna por columna, de izquierda a derecha)
 - 8 párrafo(s) unidos con su continuación en otra columna o página (la frase sigue en minúscula con el mismo formato): páginas 1, 1→2, 2, 2→3, 4, 5, 6, 8→9
 - 108 palabra(s) partidas con guion al final de línea, unidas sin el guion

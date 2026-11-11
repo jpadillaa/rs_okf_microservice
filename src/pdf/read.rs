@@ -6,7 +6,7 @@ use crate::worker::Rejected;
 use anyhow::{Context, Result};
 use pdf_oxide::{
     Destination, OutlineItem, PdfDocument,
-    content::{Operator, TextElement, parse_content_stream},
+    content::{Operator, TextElement, parse_content_stream, parse_content_stream_images_only},
     extractors::images::{ColorSpace, PdfFilter},
     layout::TextChar,
     object::Object,
@@ -1000,32 +1000,50 @@ pub(crate) fn encoded(
     max_pixels: u64,
 ) -> Vec<Encoding> {
     let handles = doc.page_image_handles(index).unwrap_or_default();
+    let turned = orientations(doc, index);
     wanted
         .iter()
         .map(|&k| {
             let Some(h) = handles.get(k) else {
                 return Encoding::Failed;
             };
+            let orientation = turned.get(k).copied().unwrap_or(Orientation::Upright);
             let dct = matches!(h.filter_chain.as_slice(), [PdfFilter::DCTDecode]);
             let cmyk = matches!(h.color_space, ColorSpace::DeviceCMYK);
-            let jpeg = dct && !cmyk;
+            // Un JPEG se copia tal cual si la página no lo voltea ni lo gira; si lo hace,
+            // se adjunta como lo ve el lector, con los píxeles reorientados.
+            let upright = orientation == Orientation::Upright;
+            let jpeg = dct && !cmyk && upright;
             if !jpeg && u64::from(h.width).saturating_mul(u64::from(h.height)) > max_pixels {
                 return Encoding::TooLarge;
             }
+            let pixels = || {
+                h.decode()
+                    .ok()?
+                    .to_dynamic_image()
+                    .ok()
+                    .map(|i| orientation.apply(i))
+            };
             let encoded = if jpeg {
                 h.raw_compressed_bytes().ok().map(|b| (b, "jpg"))
             } else if dct {
                 // Una foto en CMYK se pasa a RGB y vuelve a JPEG: como PNG ocupaba
                 // varias veces más y su codificación dominaba la de las imágenes.
-                h.decode()
-                    .ok()
-                    .and_then(|d| d.to_dynamic_image().ok())
+                pixels()
                     .and_then(|i| rgb_jpeg(&i.into_rgb8()))
                     .map(|b| (b, "jpg"))
-            } else {
+            } else if upright {
                 h.decode()
                     .ok()
                     .and_then(|d| d.to_png_bytes().ok())
+                    .map(|b| (b, "png"))
+            } else {
+                pixels()
+                    .and_then(|i| {
+                        let mut out = std::io::Cursor::new(Vec::new());
+                        i.write_to(&mut out, image::ImageFormat::Png).ok()?;
+                        Some(out.into_inner())
+                    })
                     .map(|b| (b, "png"))
             };
             match encoded {
@@ -1045,6 +1063,229 @@ fn rgb_jpeg(image: &image::RgbImage) -> Option<Vec<u8>> {
         .encode_image(image)
         .ok()?;
     Some(out)
+}
+
+/// Cómo dibuja la página una imagen respecto al orden de sus píxeles: la fila 0 es la de
+/// arriba cuando la matriz de la imagen no la voltea ni la gira. Algunos productores
+/// guardan los píxeles invertidos y los enderezan con la matriz.
+#[derive(Clone, Copy, Debug, PartialEq)]
+pub(crate) enum Orientation {
+    Upright,
+    FlipVertical,
+    FlipHorizontal,
+    Rotate180,
+    /// Giro de 90° en el sentido de las agujas del reloj.
+    Rotate90,
+    /// Giro de 90° en el sentido contrario.
+    Rotate270,
+    /// Giro de 90° en sentido contrario y espejo horizontal.
+    Transpose,
+    /// Giro de 90° en el sentido del reloj y espejo horizontal.
+    Transverse,
+}
+
+impl Orientation {
+    /// Orientación de la matriz `[a b c d]` (convención de PDF: `x' = a·x + c·y + e`,
+    /// `y' = b·x + d·y + f`, con la fila 0 de la imagen en `y = 1`).
+    fn of(m: [f32; 6]) -> Self {
+        let [a, b, c, d, _, _] = m;
+        if a.abs() + d.abs() >= b.abs() + c.abs() {
+            match (a >= 0.0, d >= 0.0) {
+                (true, true) => Orientation::Upright,
+                (true, false) => Orientation::FlipVertical,
+                (false, true) => Orientation::FlipHorizontal,
+                (false, false) => Orientation::Rotate180,
+            }
+        } else {
+            match (b >= 0.0, c >= 0.0) {
+                (true, false) => Orientation::Rotate270,
+                (false, true) => Orientation::Rotate90,
+                (true, true) => Orientation::Transpose,
+                (false, false) => Orientation::Transverse,
+            }
+        }
+    }
+    /// La imagen como la ve el lector de la página.
+    pub(crate) fn apply(self, image: image::DynamicImage) -> image::DynamicImage {
+        match self {
+            Orientation::Upright => image,
+            Orientation::FlipVertical => image.flipv(),
+            Orientation::FlipHorizontal => image.fliph(),
+            Orientation::Rotate180 => image.rotate180(),
+            Orientation::Rotate90 => image.rotate90(),
+            Orientation::Rotate270 => image.rotate270(),
+            Orientation::Transpose => image.rotate270().fliph(),
+            Orientation::Transverse => image.rotate90().fliph(),
+        }
+    }
+}
+
+type Placement = ([f32; 6], [f32; 4]);
+
+fn multiply(m: [f32; 6], n: [f32; 6]) -> [f32; 6] {
+    [
+        m[0] * n[0] + m[1] * n[2],
+        m[0] * n[1] + m[1] * n[3],
+        m[2] * n[0] + m[3] * n[2],
+        m[2] * n[1] + m[3] * n[3],
+        m[4] * n[0] + m[5] * n[2] + n[4],
+        m[4] * n[1] + m[5] * n[3] + n[5],
+    ]
+}
+
+/// Caja `[x, y, ancho, alto]` del cuadrado unidad transformado por `m`.
+fn unit_box(m: [f32; 6]) -> [f32; 4] {
+    let corners = [(0.0, 0.0), (1.0, 0.0), (0.0, 1.0), (1.0, 1.0)]
+        .map(|(x, y)| (m[0] * x + m[2] * y + m[4], m[1] * x + m[3] * y + m[5]));
+    let (x0, x1) = corners
+        .iter()
+        .fold((f32::MAX, f32::MIN), |(a, b), p| (a.min(p.0), b.max(p.0)));
+    let (y0, y1) = corners
+        .iter()
+        .fold((f32::MAX, f32::MIN), |(a, b), p| (a.min(p.1), b.max(p.1)));
+    [x0, y0, x1 - x0, y1 - y0]
+}
+
+/// Matriz y caja de cada imagen dibujada por `ops` (también dentro de Forms), con el
+/// mismo recorrido que la enumeración de pdf_oxide. Los límites evitan ciclos y
+/// expansiones en documentos hostiles.
+fn placements(
+    doc: &PdfDocument,
+    ops: Vec<Operator>,
+    resources: Option<&Object>,
+    ctm: [f32; 6],
+    depth: usize,
+    out: &mut Vec<Placement>,
+) {
+    let xobjects = resources
+        .and_then(|r| r.as_dict()?.get("XObject").cloned())
+        .and_then(|x| resolved(doc, &x));
+    let mut stack = vec![ctm];
+    for op in ops {
+        match op {
+            Operator::SaveState => stack.push(*stack.last().unwrap()),
+            Operator::RestoreState if stack.len() > 1 => {
+                stack.pop();
+            }
+            Operator::Cm { a, b, c, d, e, f } => {
+                let top = stack.last_mut().unwrap();
+                *top = multiply([a, b, c, d, e, f], *top);
+            }
+            Operator::InlineImage { .. } => {
+                let m = *stack.last().unwrap();
+                out.push((m, unit_box(m)));
+            }
+            Operator::Do { name } => {
+                let m = *stack.last().unwrap();
+                let Some(object) = xobjects
+                    .as_ref()
+                    .and_then(|x| x.as_dict()?.get(&name).cloned())
+                    .and_then(|o| resolved(doc, &o))
+                else {
+                    continue;
+                };
+                let Some(dict) = object.as_dict() else {
+                    continue;
+                };
+                match dict.get("Subtype").and_then(Object::as_name) {
+                    Some("Image") => out.push((m, unit_box(m))),
+                    Some("Form") if depth < 8 && out.len() < 4096 => {
+                        let form = dict
+                            .get("Matrix")
+                            .and_then(Object::as_array)
+                            .filter(|v| v.len() == 6)
+                            .and_then(|v| {
+                                let n: Vec<f32> = v
+                                    .iter()
+                                    .filter_map(|x| {
+                                        x.as_real()
+                                            .map(|r| r as f32)
+                                            .or_else(|| x.as_integer().map(|i| i as f32))
+                                    })
+                                    .collect();
+                                <[f32; 6]>::try_from(n).ok()
+                            })
+                            .unwrap_or([1.0, 0.0, 0.0, 1.0, 0.0, 0.0]);
+                        let own = dict.get("Resources").and_then(|r| resolved(doc, r));
+                        let Ok(data) = object.decode_stream_data() else {
+                            continue;
+                        };
+                        let Ok(inner) = parse_content_stream_images_only(&data) else {
+                            continue;
+                        };
+                        placements(
+                            doc,
+                            inner,
+                            own.as_ref().or(resources),
+                            multiply(form, m),
+                            depth + 1,
+                            out,
+                        );
+                    }
+                    _ => {}
+                }
+            }
+            _ => {}
+        }
+    }
+}
+
+/// Orientación de cada imagen de la página, en el orden de `page_image_handles`. Cada
+/// imagen se empareja con la colocación de su misma caja; sin una, se supone derecha.
+pub(crate) fn orientations(doc: &PdfDocument, index: usize) -> Vec<Orientation> {
+    let handles = doc.page_image_handles(index).unwrap_or_default();
+    let mut found = Vec::new();
+    if let (Ok(data), Ok(resources)) = (
+        doc.get_page_content_data(index),
+        doc.get_page_resources(index),
+    ) && let Ok(ops) = parse_content_stream_images_only(&data)
+    {
+        let resources = resolved(doc, &resources);
+        placements(
+            doc,
+            ops,
+            resources.as_ref(),
+            [1.0, 0.0, 0.0, 1.0, 0.0, 0.0],
+            0,
+            &mut found,
+        );
+    }
+    let mut used = vec![false; found.len()];
+    handles
+        .iter()
+        .map(|h| {
+            let b = [h.bbox.x, h.bbox.y, h.bbox.width, h.bbox.height];
+            let hit = (0..found.len())
+                .find(|&i| !used[i] && found[i].1.iter().zip(b).all(|(p, q)| (p - q).abs() < 0.5));
+            match hit {
+                Some(i) => {
+                    used[i] = true;
+                    Orientation::of(found[i].0)
+                }
+                None => Orientation::Upright,
+            }
+        })
+        .collect()
+}
+
+/// Píxeles de la imagen `wanted` (en la enumeración de pdf_oxide) de la página, para el
+/// OCR, si se pueden decodificar sin superar `max_pixels`.
+pub(crate) fn picture_pixels(
+    doc: &PdfDocument,
+    index: usize,
+    wanted: usize,
+    max_pixels: u64,
+) -> Option<image::DynamicImage> {
+    let handles = doc.page_image_handles(index).ok()?;
+    let h = handles.get(wanted)?;
+    if u64::from(h.width).saturating_mul(u64::from(h.height)) > max_pixels {
+        return None;
+    }
+    let orientation = orientations(doc, index)
+        .get(wanted)
+        .copied()
+        .unwrap_or(Orientation::Upright);
+    Some(orientation.apply(h.decode().ok()?.to_dynamic_image().ok()?))
 }
 
 /// Fragmento armado de forma inconsistente: su rectángulo es mucho más ancho que la
