@@ -39,6 +39,9 @@ jobs:
           # No restaurar las cachés antiguas con símbolos completos.
           prefix-key: v1-rust-ci-no-debug
           cache-bin: false
+          # Las PR leen la caché de `main` pero no escriben la suya: el límite de 10 GB
+          # del repositorio expulsaba las cachés del fuzzing nocturno.
+          save-if: ${{ github.ref == 'refs/heads/main' }}
       # El renderizador PPTX necesita una fuente TrueType (ver render_font en src/pptx/mod.rs);
       # la misma versión que instala el Dockerfile.
       - name: Instalar fuente para el renderizado
@@ -80,7 +83,9 @@ jobs:
           tags: okf-microservice:smoke
           build-args: OKF_BUILD_COMMIT=${{ github.sha }}
           cache-from: type=gha,scope=okf-image-linux-amd64
-          cache-to: type=gha,mode=max,scope=okf-image-linux-amd64
+          # Solo `main` escribe la caché de capas (las PR la leen); `mode=max` conserva la
+          # etapa de dependencias de cargo-chef, que es la que ahorra la compilación.
+          cache-to: ${{ github.ref == 'refs/heads/main' && 'type=gha,mode=max,scope=okf-image-linux-amd64' || '' }}
       # Una muestra de cada formato por la API, PostgreSQL, el conversor sin sockets y
       # la descarga de los cuatro bundles.
       - name: Prueba de humo
