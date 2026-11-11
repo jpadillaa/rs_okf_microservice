@@ -424,7 +424,7 @@ docker compose up -d --no-deps --force-recreate worker
 
 Con el plazo inicial, el rendimiento medido permite unas 12–40 páginas, según su densidad.
 
-`OKF_CONVERSION_THREADS` reparte la lectura de texto, las imágenes y las vistas de un PDF entre varios hilos sin cambiar el bundle; cada hilo necesita memoria para su copia del documento. `OKF_MAX_CPU_S` fija el tiempo de CPU de una conversión, sumados sus hilos; sin declarar, es el plazo por el número de hilos. Para escaneos largos hay que ampliar el plazo y la memoria: uno de 200 páginas se transcribe completo con 4 hilos, `OKF_CONVERSION_TIMEOUT_S=900` y `OKF_MAX_MEMORY_MB=1500` (unos 6 minutos y 2 GB). Si se agota el presupuesto, las páginas restantes quedan como vistas y el bundle sale `partial`.
+`OKF_CONVERSION_THREADS` reparte la lectura de texto, las imágenes y las vistas de un PDF entre varios hilos sin cambiar el bundle; cada hilo necesita memoria para su copia del documento. `OKF_MAX_CPU_S` fija el tiempo de CPU de una conversión, sumados sus hilos; sin declarar, es el plazo por el número de hilos. Para escaneos largos hay que ampliar el plazo y la memoria: uno de 200 páginas se transcribe completo con 4 hilos, `OKF_CONVERSION_TIMEOUT_S=900` y `OKF_MAX_MEMORY_MB=1500` (unos 6 minutos y 2 GB). `.env.example` trae ya estos valores, con `OKF_OCR_MAX_PAGES=200`, y explica cada variable; sin declararlas, rigen los valores por defecto del código (1 hilo, 300 s, 500 MB y 40 páginas). Si se agota el presupuesto, las páginas restantes quedan como vistas y el bundle sale `partial`.
 
 Para usar OCR al ejecutar el binario en el equipo local, primero se descargan los modelos:
 
