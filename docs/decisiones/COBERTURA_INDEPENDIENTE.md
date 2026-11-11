@@ -1,7 +1,8 @@
 # Cobertura frente a una referencia independiente
 
 **Fecha:** 1 de noviembre de 2026.  
-**Origen:** [plan 1, R2](../planes/PLAN_1_RECUPERACION_DEL_PLAN_ORIGINAL.md#r2-referencia-de-cobertura-independiente-m). Sustituye, como evidencia, la medición de Xberg que no se hizo en PPTX, DOCX y XLSX ([stack, §3](STACK_TECNOLOGICO_MICROSERVICIO_OKF.md#3-extracción-y-procedencia-por-formato), «Abandono de Xberg»).
+**Origen:** [plan 1, R2](../planes/PLAN_1_RECUPERACION_DEL_PLAN_ORIGINAL.md#r2-referencia-de-cobertura-independiente-m). Sustituye, como evidencia, la medición de Xberg que no se hizo en PPTX, DOCX y XLSX ([stack, §3](STACK_TECNOLOGICO_MICROSERVICIO_OKF.md#3-extracción-y-procedencia-por-formato), «Abandono de Xberg»).  
+**Contexto:** esta medición no se ejecuta en el servicio; qué corre en cada conversión, qué en las pruebas y qué en las herramientas está en [Medición de la calidad del bundle](MEDICION_DE_CALIDAD.md).
 
 ## 1. Método
 

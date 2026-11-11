@@ -1,6 +1,6 @@
 # Exactitud del texto PDF
 
-**10 de noviembre de 2026.** La [cobertura](COBERTURA_INDEPENDIENTE.md) compara bolsas de palabras: dice si una palabra llega al bundle, no si llega en su sitio. Un texto con las letras de dos líneas intercaladas, una tabla que parte una frase entre filas o un índice cuyas entradas se funden en una celda pueden conservar todas sus palabras y aprobarla. La completitud y la exactitud son los requisitos máximos de calidad, así que este documento fija cómo se mide la exactitud: el orden del texto y que no se mezcle.
+**10 de noviembre de 2026.** La [cobertura](COBERTURA_INDEPENDIENTE.md) compara bolsas de palabras: dice si una palabra llega al bundle, no si llega en su sitio. Un texto con las letras de dos líneas intercaladas, una tabla que parte una frase entre filas o un índice cuyas entradas se funden en una celda pueden conservar todas sus palabras y aprobarla. La completitud y la exactitud son los requisitos máximos de calidad, así que este documento fija cómo se mide la exactitud: el orden del texto y que no se mezcle. Como la cobertura, se mide fuera del servicio; la vista de conjunto y un diagrama del recorrido de `tools/exactitud.py` están en [Medición de la calidad del bundle](MEDICION_DE_CALIDAD.md).
 
 ## Métricas
 
