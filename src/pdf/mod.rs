@@ -98,10 +98,30 @@ pub(crate) enum Ocr {
 pub(crate) enum Budget {
     /// Páginas transcritas por documento (`OKF_OCR_MAX_PAGES`).
     Pages,
+    /// Imágenes de contenido transcritas por documento (`OKF_OCR_MAX_IMAGES`).
+    Images,
     /// Tiempo y CPU: el OCR no empieza una página más tras consumir `OCR_TIME_SHARE`
     /// del plazo de la conversión o del límite de CPU del proceso (`OKF_MAX_CPU_S`).
     Time,
 }
+
+/// Resultado del OCR de una imagen de contenido (plan 4, Q1).
+#[derive(Clone)]
+pub(crate) enum ImageOcr {
+    /// Líneas reconocidas, que se escriben debajo de la imagen.
+    Done(ocr::ImageText),
+    /// Sin texto reconocible: una fotografía o un dibujo.
+    Empty,
+    Skipped(Budget),
+    Failed(String),
+}
+
+/// Lado mínimo, en píxeles, de una imagen a la que se aplica el OCR: menor, no tiene
+/// líneas de texto legibles.
+const OCR_MIN_IMAGE_PX: (u32, u32) = (64, 16);
+/// Caracteres alfanuméricos mínimos para escribir el texto de una imagen: menos son
+/// ruido del reconocimiento sobre una fotografía o un dibujo.
+const OCR_MIN_IMAGE_CHARS: usize = 3;
 
 /// Fracción del plazo de conversión (`OKF_CONVERSION_TIMEOUT_S`) que puede consumir el
 /// OCR antes de dejar las páginas restantes como vista; el resto queda para ensamblar
@@ -143,6 +163,8 @@ pub(crate) struct PageInfo {
     pub(crate) view: Option<String>,
     /// Ruta adjunta de cada imagen de contenido, por su posición en `pictures`.
     pub(crate) attached: HashMap<usize, String>,
+    /// OCR de cada imagen de contenido, por su posición en `pictures` (plan 4, Q1).
+    pub(crate) image_ocr: HashMap<usize, ImageOcr>,
     pub(crate) columns: bool,
 }
 
@@ -193,6 +215,8 @@ pub(crate) enum Kind {
     PageNote(usize),
     Rotated(String),
     View(usize),
+    /// Texto reconocido con OCR en la imagen anterior (plan 4, Q1).
+    ImageText(ocr::ImageText),
 }
 
 /// Texto repetido en encabezados o pies de página, con las páginas donde aparece.
@@ -688,6 +712,46 @@ struct Plan {
     view: bool,
     /// Recuperar listados de la capa OCR con los píxeles de la vista.
     raster: bool,
+    /// Imágenes de contenido a las que se aplica el OCR: posición en `pictures`, en la
+    /// enumeración de pdf_oxide y huella; y las que se omiten por el presupuesto.
+    ocr: Vec<(usize, usize, String)>,
+    ocr_skipped: Vec<(usize, Budget)>,
+}
+
+/// OCR de la imagen `index` (en la enumeración de pdf_oxide) de la página `p`: sin
+/// texto si es demasiado pequeña o lo reconocido es ruido.
+fn image_ocr(
+    engine: &std::result::Result<&ocr::Engine, String>,
+    d: &PdfDocument,
+    p: usize,
+    index: usize,
+    cfg: &Config,
+) -> ImageOcr {
+    let engine = match engine {
+        Ok(e) => e,
+        Err(e) => return ImageOcr::Failed(e.clone()),
+    };
+    let Some(pixels) = read::picture_pixels(d, p, index, cfg.max_image_pixels) else {
+        return ImageOcr::Failed("no se pudo leer la imagen".into());
+    };
+    if pixels.width() < OCR_MIN_IMAGE_PX.0 || pixels.height() < OCR_MIN_IMAGE_PX.1 {
+        return ImageOcr::Empty;
+    }
+    match ocr::image(engine, &pixels) {
+        Ok(t) => {
+            let chars: usize = t
+                .lines
+                .iter()
+                .map(|l| l.chars().filter(|c| c.is_alphanumeric()).count())
+                .sum();
+            if chars < OCR_MIN_IMAGE_CHARS {
+                ImageOcr::Empty
+            } else {
+                ImageOcr::Done(t)
+            }
+        }
+        Err(e) => ImageOcr::Failed(e.to_string()),
+    }
 }
 
 /// `f` aplicado a cada página de `pages`, por tramos de `TEXT_BATCH_PAGES`, con hasta
@@ -874,6 +938,7 @@ pub(crate) fn extract(
                 label: None,
                 view: None,
                 attached: HashMap::new(),
+                image_ocr: HashMap::new(),
                 columns: false,
             });
         }
@@ -983,54 +1048,73 @@ pub(crate) fn extract(
     };
     // 3. OCR de los escaneos sin capa de texto, antes de buscar encabezados y pies para
     //    que también se separen los de las páginas escaneadas.
+    // Modelos del OCR, cargados al llegar al primer escaneo o a la primera imagen.
+    let mut engine: Option<std::result::Result<ocr::Engine, String>> = None;
     if cfg.ocr.enabled {
-        let mut engine: Option<std::result::Result<ocr::Engine, String>> = None;
-        let mut done = 0;
         let budget = cfg.timeout.mul_f64(OCR_TIME_SHARE);
+        let mut queue: Vec<usize> = Vec::new();
         for (p, page) in pages.iter_mut().enumerate() {
             if text_chars(page) > 0 || largest(page) < LARGE_PICTURE {
                 continue;
             }
-            if done >= cfg.ocr.max_pages {
+            if queue.len() >= cfg.ocr.max_pages {
                 page.ocr = Some(Ocr::Skipped(Budget::Pages));
-                continue;
+            } else {
+                queue.push(p);
             }
+        }
+        // Se reconocen a la vez tantas páginas como hilos (`OKF_CONVERSION_THREADS`), cada
+        // una con su propio documento salvo con un hilo; el presupuesto de tiempo se
+        // comprueba antes de cada grupo, que con un hilo es una página.
+        for group in queue.chunks(cfg.threads) {
             if started.elapsed() >= budget
                 || cpu_time().saturating_sub(cpu_started) >= cfg.cpu_limit().mul_f64(OCR_TIME_SHARE)
             {
-                page.ocr = Some(Ocr::Skipped(Budget::Time));
+                for &p in group {
+                    pages[p].ocr = Some(Ocr::Skipped(Budget::Time));
+                }
                 continue;
             }
-            let engine = engine.get_or_insert_with(|| {
+            let loaded = engine.get_or_insert_with(|| {
                 ocr::Engine::load(&cfg.ocr.models_dir).map_err(|e| e.to_string())
             });
-            let engine = match engine {
-                Ok(engine) => engine,
+            let loaded = match loaded {
+                Ok(engine) => &*engine,
                 Err(e) => {
-                    page.ocr = Some(Ocr::Failed(e.clone()));
+                    for &p in group {
+                        pages[p].ocr = Some(Ocr::Failed(e.clone()));
+                    }
                     continue;
                 }
             };
-            done += 1;
-            let mut text = None;
-            with_doc(&mut |d| {
-                text = Some(ocr::page(engine, d, p));
-                Ok(())
-            })?;
-            page.ocr = Some(match text.expect("OCR de la página") {
-                Ok(t) if t.lines == 0 => Ocr::Empty,
-                Ok(t) => {
-                    let (lines, rotated) = layout::lines(&t.glyphs);
-                    page.lines = lines;
-                    page.rotated = rotated;
-                    Ocr::Done {
-                        confidence: t.confidence,
-                        lines: t.lines,
-                        low_lines: t.low_lines,
+            let texts = parallel_map(group, cfg.threads, |&p| -> Result<ocr::PageText> {
+                let own;
+                let d = match &doc {
+                    Some(d) if cfg.threads == 1 => d,
+                    _ => {
+                        own = read::open(bytes)?;
+                        &own
                     }
-                }
-                Err(e) => Ocr::Failed(e.to_string()),
+                };
+                ocr::page(loaded, d, p)
             });
+            for (&p, text) in group.iter().zip(texts) {
+                let page = &mut pages[p];
+                page.ocr = Some(match text {
+                    Ok(t) if t.lines == 0 => Ocr::Empty,
+                    Ok(t) => {
+                        let (lines, rotated) = layout::lines(&t.glyphs);
+                        page.lines = lines;
+                        page.rotated = rotated;
+                        Ocr::Done {
+                            confidence: t.confidence,
+                            lines: t.lines,
+                            low_lines: t.low_lines,
+                        }
+                    }
+                    Err(e) => Ocr::Failed(e.to_string()),
+                });
+            }
         }
     }
     // 4. Encabezados y pies de página: textos de las franjas superior e inferior que se
@@ -1225,8 +1309,15 @@ pub(crate) fn extract(
     // y después se escriben en orden, de modo que el bundle no depende de los hilos.
     let window = cfg.threads * TEXT_BATCH_PAGES;
     let mut first = 0;
+    // OCR de las imágenes de contenido: resultado por huella (una imagen repetida se
+    // reconoce una vez) e imágenes planificadas, para el presupuesto.
+    let mut image_results: HashMap<String, ImageOcr> = HashMap::new();
+    let mut images_planned = 0;
     while first < n {
         let end = n.min(first + window);
+        let out_of_time = started.elapsed() >= cfg.timeout.mul_f64(OCR_TIME_SHARE)
+            || cpu_time().saturating_sub(cpu_started) >= cfg.cpu_limit().mul_f64(OCR_TIME_SHARE);
+        let mut planned_now: HashSet<String> = HashSet::new();
         // Imágenes que cada página adjunta y las que aún no se han escrito. Dos páginas
         // del tramo que comparten una imagen nueva la preparan las dos, y la segunda
         // usa la escrita por la primera, como al prepararlas una a una.
@@ -1245,21 +1336,57 @@ pub(crate) fn extract(
                     .filter(|(_, _, h)| !written.contains_key(h))
                     .map(|(_, i, _)| *i)
                     .collect();
+                // OCR de las imágenes de contenido: las adjuntas que no son de plantilla.
+                let (mut ocr_now, mut ocr_skipped) = (Vec::new(), Vec::new());
+                if cfg.ocr.enabled && !page.class.needs_view() {
+                    for (k, index, h) in wanted.iter().filter(|(_, _, h)| !template(h)) {
+                        if image_results.contains_key(h) || planned_now.contains(h) {
+                            continue;
+                        }
+                        if images_planned >= cfg.ocr.max_images {
+                            ocr_skipped.push((*k, Budget::Images));
+                        } else if out_of_time {
+                            ocr_skipped.push((*k, Budget::Time));
+                        } else {
+                            images_planned += 1;
+                            planned_now.insert(h.clone());
+                            ocr_now.push((*k, *index, h.clone()));
+                        }
+                    }
+                }
                 Plan {
                     p,
                     wanted,
                     missing,
                     view: page.class.needs_view() || slide_export,
                     raster: page.class == Class::ScannedOcr && !page.ocr_glyphs.is_empty(),
+                    ocr: ocr_now,
+                    ocr_skipped,
                 }
             })
             .collect();
-        // Una página sin recursos nuevos ni vista no necesita el documento: un tramo sin
-        // ninguna no lo abre.
-        let prepared = if plans.iter().any(|x| !x.missing.is_empty() || x.view) {
+        if plans.iter().any(|x| !x.ocr.is_empty()) && engine.is_none() {
+            engine = Some(ocr::Engine::load(&cfg.ocr.models_dir).map_err(|e| e.to_string()));
+        }
+        let ocr_engine = match &engine {
+            Some(Ok(e)) => Ok(e),
+            Some(Err(e)) => Err(e.clone()),
+            None => Err(String::new()),
+        };
+        // Una página sin recursos nuevos, vista ni OCR no necesita el documento: un tramo
+        // sin ninguna no lo abre.
+        let prepared = if plans
+            .iter()
+            .any(|x| !x.missing.is_empty() || x.view || !x.ocr.is_empty())
+        {
             by_chunks(bytes, doc.as_ref(), first..end, cfg.threads, |d, p| {
                 let plan = &plans[p - first];
                 let page = &pages[p];
+                let texts: Vec<(usize, String, ImageOcr)> = plan
+                    .ocr
+                    .iter()
+                    .map(|(k, index, h)| (*k, h.clone(), image_ocr(&ocr_engine, d, p, *index, cfg)))
+                    .collect();
                 let encoded = if plan.missing.is_empty() {
                     Vec::new()
                 } else {
@@ -1283,14 +1410,33 @@ pub(crate) fn extract(
                         Ok((r.png()?, recovered))
                     })
                 });
-                (encoded, view)
+                (encoded, view, texts)
             })?
         } else {
-            plans.iter().map(|_| (Vec::new(), None)).collect()
+            plans
+                .iter()
+                .map(|_| (Vec::new(), None, Vec::new()))
+                .collect()
         };
-        for (plan, (encoded, view)) in plans.into_iter().zip(prepared) {
+        for (plan, (encoded, view, texts)) in plans.into_iter().zip(prepared) {
             let p = plan.p;
             let page = &mut pages[p];
+            for (k, h, result) in texts {
+                image_results.insert(h, result.clone());
+                page.image_ocr.insert(k, result);
+            }
+            for (k, budget) in plan.ocr_skipped {
+                page.image_ocr.insert(k, ImageOcr::Skipped(budget));
+            }
+            // Una imagen repetida toma el resultado de su primera aparición.
+            for (k, _, h) in &plan.wanted {
+                if !page.image_ocr.contains_key(k)
+                    && !template(h)
+                    && let Some(result) = image_results.get(h)
+                {
+                    page.image_ocr.insert(*k, result.clone());
+                }
+            }
             let mut encoded = plan.missing.iter().zip(encoded);
             let mut ordinal = 0;
             for (k, index, hash) in plan.wanted {
@@ -1423,6 +1569,10 @@ pub(crate) fn extract(
             ));
         }
         for (block, rect, leaf) in blocks {
+            let block_picture = match &block {
+                Block::Picture(i) => Some(inline[*i].0),
+                _ => None,
+            };
             if let Block::Para(q) = &block
                 && q.lines.iter().any(|l| l.code.is_some_and(|c| c.wrapped))
             {
@@ -1436,6 +1586,7 @@ pub(crate) fn extract(
                 }
                 Block::Picture(i) => Kind::Image(page.attached[&inline[i].0].clone()),
             };
+            let picture = block_picture;
             page_units.push((
                 Unit {
                     kind,
@@ -1446,6 +1597,19 @@ pub(crate) fn extract(
                 rect,
                 leaf,
             ));
+            // El texto reconocido en la imagen va detrás de ella, con su misma caja.
+            if let Some(ImageOcr::Done(text)) = picture.and_then(|k| page.image_ocr.get(&k)) {
+                page_units.push((
+                    Unit {
+                        kind: Kind::ImageText(text.clone()),
+                        from: p + 1,
+                        to: p + 1,
+                        boxes: vec![(p + 1, rect)],
+                    },
+                    rect,
+                    leaf,
+                ));
+            }
         }
         for (para, rect) in std::mem::take(&mut page.ocr_code) {
             let at = page_units
@@ -1478,6 +1642,15 @@ pub(crate) fn extract(
                 .position(|(_, b, _)| b.top >= r.top - 1.0)
                 .unwrap_or(page_units.len());
             page_units.insert(at, (unit, r, usize::MAX - 1));
+            if let Some(ImageOcr::Done(text)) = page.image_ocr.get(&k) {
+                let unit = Unit {
+                    kind: Kind::ImageText(text.clone()),
+                    from: p + 1,
+                    to: p + 1,
+                    boxes: vec![(p + 1, r)],
+                };
+                page_units.insert(at + 1, (unit, r, usize::MAX - 1));
+            }
         }
         for (u, _, leaf) in page_units {
             units.push(u);
@@ -2605,7 +2778,33 @@ impl Render<'_> {
                 }
                 Kind::Image(path) => {
                     self.marker(&mut body, &mut spans, i, i);
-                    body.push_str(&format!("![Imagen de la página {}](../{path})\n\n", u.from));
+                    body.push_str(&format!("![Imagen de la página {}](../{path})\n", u.from));
+                    // La nota sobre el texto reconocido en la imagen va con ella; el
+                    // texto, en el bloque siguiente, con su propio marcador.
+                    if let Some(Kind::ImageText(t)) = units.get(i + 1).map(|n| &n.kind) {
+                        let mut note = format!(
+                            "> El texto que sigue se reconoció en esta imagen con OCR local (confianza media {}) y su exactitud no se ha verificado; la imagen es la referencia.",
+                            percent(t.confidence)
+                        );
+                        if t.low_lines > 0 {
+                            note.push_str(&format!(
+                                " Se descartaron {} línea(s) de confianza baja.",
+                                t.low_lines
+                            ));
+                        }
+                        body.push_str(&format!("{GENERATED}\n{note}\n"));
+                    }
+                    body.push('\n');
+                }
+                Kind::ImageText(t) => {
+                    self.marker(&mut body, &mut spans, i, i);
+                    let lines: Vec<String> = t
+                        .lines
+                        .iter()
+                        .map(|l| escape_line_start(&escape_inline(l)))
+                        .collect();
+                    body.push_str(&lines.join("\n"));
+                    body.push_str("\n\n");
                 }
                 Kind::PageNote(p) => {
                     self.marker(&mut body, &mut spans, i, i);
@@ -2663,8 +2862,12 @@ impl Render<'_> {
             .filter(|p| !noted.contains(p))
             .collect();
         let ocr_note = self.ocr_note(&transcribed, &elsewhere);
-        let draft =
-            !transcribed.is_empty() || noted.iter().any(|&p| ex.pages[p - 1].class.unverified());
+        // Un concepto con texto de OCR (de un escaneo o de una imagen) es un borrador.
+        let draft = !transcribed.is_empty()
+            || noted.iter().any(|&p| ex.pages[p - 1].class.unverified())
+            || range
+                .iter()
+                .any(|&i| matches!(units[i].kind, Kind::ImageText(_)));
         let source_spans = vec![pages_span("seccion", pages_from, pages_to)];
         let kind = if outline.split.is_some() {
             "Source Section"
@@ -3048,6 +3251,60 @@ pub(crate) fn build_bundle(
             "{pages}: escaneada sin capa de texto; texto obtenido con OCR local (confianza media {range}), sin verificar; se adjunta la vista"
         )));
     }
+    // OCR de las imágenes de contenido (plan 4, Q1): texto añadido sin verificar. Una
+    // imagen sin OCR no es una pérdida: su contenido sigue en la imagen adjunta.
+    let mut read_images: Vec<(usize, f32)> = Vec::new();
+    let mut skipped_images: Vec<(usize, Budget)> = Vec::new();
+    let mut failed_images: Vec<(String, Vec<usize>)> = Vec::new();
+    for (p, page) in ex.pages.iter().enumerate() {
+        let mut keys: Vec<&usize> = page.image_ocr.keys().collect();
+        keys.sort();
+        for k in keys {
+            match &page.image_ocr[k] {
+                ImageOcr::Done(t) => read_images.push((p + 1, t.confidence)),
+                ImageOcr::Empty => {}
+                ImageOcr::Skipped(b) => skipped_images.push((p + 1, *b)),
+                ImageOcr::Failed(e) => match failed_images.iter_mut().find(|(m, _)| m == e) {
+                    Some((_, v)) => v.push(p + 1),
+                    None => failed_images.push((e.clone(), vec![p + 1])),
+                },
+            }
+        }
+    }
+    if !read_images.is_empty() {
+        let (pages, range) = ocr_phrase(&read_images);
+        issues.push(Issue::note(format!(
+            "{pages}: {} imagen(es) de contenido con texto reconocido con OCR local (confianza media {range}), escrito debajo de cada imagen sin verificar",
+            read_images.len()
+        )));
+    }
+    for (budget, why) in [
+        (
+            Budget::Images,
+            "el documento supera el límite de imágenes con OCR (OKF_OCR_MAX_IMAGES)",
+        ),
+        (Budget::Time, "se agotó el tiempo reservado al OCR"),
+    ] {
+        let pages: Vec<usize> = skipped_images
+            .iter()
+            .filter(|x| x.1 == budget)
+            .map(|x| x.0)
+            .collect();
+        if !pages.is_empty() {
+            issues.push(Issue::note(format!(
+                "{}: {} imagen(es) de contenido sin OCR porque {why}; se adjuntan sin transcribir",
+                pages_phrase(&pages),
+                pages.len()
+            )));
+        }
+    }
+    for (e, pages) in failed_images {
+        issues.push(Issue::note(format!(
+            "{}: falló el OCR de {} imagen(es) de contenido ({e}); se adjuntan sin transcribir",
+            pages_phrase(&pages),
+            pages.len()
+        )));
+    }
     if !t.views_failed.is_empty() {
         issues.push(Issue::loss(format!(
             "{}: no se pudo generar la vista de una página sin texto transcribible",
@@ -3095,7 +3352,7 @@ pub(crate) fn build_bundle(
     let mixed = by_class(Class::Mixed);
     if !mixed.is_empty() {
         issues.push(Issue::note(format!(
-            "{}: texto con imágenes grandes; las imágenes se adjuntan sin transcribir (no se aplicó OCR)",
+            "{}: texto con imágenes grandes; no se aplica OCR de página: se conserva su texto digital y sus imágenes se tratan como las demás imágenes de contenido",
             pages_phrase(&mixed)
         )));
     }
@@ -3337,11 +3594,12 @@ pub(crate) fn build_bundle(
     );
     // El plazo del OCR depende del tiempo de ejecución: si dejó páginas sin transcribir,
     // la misma configuración puede dar otro bundle.
-    let settings = settings.time_dependent(
-        ex.pages
-            .iter()
-            .any(|p| p.ocr == Some(Ocr::Skipped(Budget::Time))),
-    );
+    let settings = settings.time_dependent(ex.pages.iter().any(|p| {
+        p.ocr == Some(Ocr::Skipped(Budget::Time))
+            || p.image_ocr
+                .values()
+                .any(|r| matches!(r, ImageOcr::Skipped(Budget::Time)))
+    }));
     let report = report(
         Format::Pdf,
         &generated,
@@ -3748,6 +4006,7 @@ mod tests {
                 label: None,
                 view: None,
                 attached: HashMap::new(),
+                image_ocr: HashMap::new(),
                 columns: false,
             })
             .collect();
@@ -4848,6 +5107,43 @@ mod tests {
                 "no se aplicó OCR porque el documento supera el límite de páginas con OCR."
             )
         );
+    }
+
+    #[test]
+    fn ocr_reads_text_inside_content_images_and_ignores_photographs() {
+        let Some(cfg) = ocr_config() else { return };
+        let (state, md, _) = convert_with("examples/pdf/muestras/imagenes_con_texto.pdf", &cfg);
+        assert_eq!(state, "complete");
+        let text = &md["contenido/texto.md"];
+        // Cada captura lleva su nota y, en el bloque siguiente, su texto; la tabla, fila a
+        // fila y de izquierda a derecha.
+        assert_eq!(
+            text.matches("se reconoció en esta imagen con OCR local")
+                .count(),
+            2,
+            "{text}"
+        );
+        assert!(
+            text.contains("Procedimiento Correctos Tiempo\nPrimero 17 1,2 s\n"),
+            "{text}"
+        );
+        assert!(text.contains("servicio: existencias"), "{text}");
+        // La fotografía no añade texto ni nota.
+        let photo = text.split("pagina-001-imagen-03").nth(1).unwrap();
+        assert!(!photo.contains("OCR"), "{photo}");
+        assert!(text.contains("status: \"draft\""));
+        assert!(
+            md["conversion-report.md"]
+                .contains("Página 1: 2 imagen(es) de contenido con texto reconocido con OCR local")
+        );
+        // Sin presupuesto de imágenes no hay OCR, y el informe lo declara.
+        let mut none = cfg.clone();
+        none.ocr.max_images = 0;
+        let (_, md, _) = convert_with("examples/pdf/muestras/imagenes_con_texto.pdf", &none);
+        assert!(!md["contenido/texto.md"].contains("OCR local"));
+        assert!(md["conversion-report.md"].contains(
+            r"sin OCR porque el documento supera el límite de imágenes con OCR (OKF\_OCR\_MAX\_IMAGES)"
+        ));
     }
 
     #[test]

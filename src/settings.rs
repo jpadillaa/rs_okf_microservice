@@ -44,13 +44,15 @@ impl Settings {
             reproducible: true,
         }
     }
-    /// PDF: el límite de píxeles de las imágenes y, con el OCR activo, su límite de
-    /// páginas, el plazo del que sale su presupuesto de tiempo y la huella de los modelos.
+    /// PDF: el límite de píxeles de las imágenes y, con el OCR activo, sus límites de
+    /// páginas y de imágenes, el plazo del que sale su presupuesto de tiempo y la huella
+    /// de los modelos.
     pub(crate) fn pdf(cfg: &Config) -> Self {
         let mut ocr = Fields::new().with("enabled", cfg.ocr.enabled);
         if cfg.ocr.enabled {
             ocr = ocr
                 .with("max_pages", cfg.ocr.max_pages)
+                .with("max_images", cfg.ocr.max_images)
                 .with("timeout_s", cfg.timeout.as_secs());
             for (key, file) in [
                 ("det_sha256", "det.onnx"),
@@ -190,7 +192,7 @@ pub(crate) fn check(format: Format, document: &YamlValue, report: &YamlValue) ->
         Format::Pptx if !is_sha256(settings.get("view_font_sha256")) => {
             bail!("conversion_settings.view_font_sha256 no es una huella SHA-256")
         }
-        Format::Pdf => check_pdf(settings)?,
+        Format::Pdf => check_pdf(settings, crate::version::declares_image_ocr(document))?,
         _ => {}
     }
     if document.get("settings_sha256").and_then(YamlValue::as_str)
@@ -207,7 +209,8 @@ pub(crate) fn check(format: Format, document: &YamlValue, report: &YamlValue) ->
     Ok(())
 }
 
-fn check_pdf(settings: &YamlValue) -> Result<()> {
+/// `images`: la configuración declara el límite de imágenes con OCR (perfil 1.18.0).
+fn check_pdf(settings: &YamlValue, images: bool) -> Result<()> {
     if settings
         .get("max_image_pixels")
         .and_then(YamlValue::as_u64)
@@ -217,9 +220,19 @@ fn check_pdf(settings: &YamlValue) -> Result<()> {
     }
     let ocr = &settings["ocr"];
     let enabled = ocr.get("enabled").and_then(YamlValue::as_bool);
-    let expected: &[&str] = match enabled {
-        Some(false) => &["enabled"],
-        Some(true) => &[
+    // El límite de imágenes con OCR existe desde el perfil 1.18.0 (plan 4, Q1).
+    let expected: &[&str] = match (enabled, images) {
+        (Some(false), _) => &["enabled"],
+        (Some(true), true) => &[
+            "det_sha256",
+            "dict_sha256",
+            "enabled",
+            "max_images",
+            "max_pages",
+            "rec_sha256",
+            "timeout_s",
+        ],
+        (Some(true), false) => &[
             "det_sha256",
             "dict_sha256",
             "enabled",
@@ -227,14 +240,14 @@ fn check_pdf(settings: &YamlValue) -> Result<()> {
             "rec_sha256",
             "timeout_s",
         ],
-        None => bail!("conversion_settings.ocr.enabled no es un booleano"),
+        (None, _) => bail!("conversion_settings.ocr.enabled no es un booleano"),
     };
     if keys(ocr).as_deref() != Some(expected) {
         bail!("conversion_settings.ocr no tiene las claves esperadas")
     }
     if enabled == Some(true) {
-        for k in ["max_pages", "timeout_s"] {
-            if ocr.get(k).and_then(YamlValue::as_u64).is_none() {
+        for k in ["max_pages", "max_images", "timeout_s"] {
+            if (k != "max_images" || images) && ocr.get(k).and_then(YamlValue::as_u64).is_none() {
                 bail!("conversion_settings.ocr.{k} no es un entero")
             }
         }
@@ -252,8 +265,10 @@ fn check_pdf(settings: &YamlValue) -> Result<()> {
 mod tests {
     use super::*;
 
+    /// Frontmatter con la configuración, como el de un bundle del perfil actual.
     fn parsed(s: &Settings) -> YamlValue {
-        crate::bundle::frontmatter(&s.annotate(Fields::new()).frontmatter()).unwrap()
+        let fields = Fields::new().with("profile_version", crate::version::PROFILE);
+        crate::bundle::frontmatter(&s.annotate(fields).frontmatter()).unwrap()
     }
 
     #[test]
@@ -284,6 +299,9 @@ mod tests {
         let mut pages = ocr.clone();
         pages.ocr.max_pages += 1;
         assert_ne!(with_ocr, Settings::pdf(&pages).sha256());
+        let mut images = ocr.clone();
+        images.ocr.max_images += 1;
+        assert_ne!(with_ocr, Settings::pdf(&images).sha256());
         let mut pixels = cfg.clone();
         pixels.max_image_pixels -= 1;
         assert_ne!(base, Settings::pdf(&pixels).sha256());
@@ -313,6 +331,21 @@ mod tests {
         let mut claimed = late.clone();
         claimed["reproducible"] = true.into();
         assert!(check(Format::Pdf, &claimed, &claimed).is_err());
+        // Antes del perfil 1.18.0, la configuración del OCR no declara el límite de
+        // imágenes; desde él, lo exige.
+        let mut previous = late.clone();
+        previous["profile_version"] = "1.17.0".into();
+        assert!(check(Format::Pdf, &previous, &previous).is_err());
+        let ocr_settings = previous["conversion_settings"]["ocr"]
+            .as_mapping_mut()
+            .unwrap();
+        ocr_settings.remove("max_images");
+        let digest_now = digest(&previous["conversion_settings"]).unwrap();
+        previous["settings_sha256"] = digest_now.into();
+        check(Format::Pdf, &previous, &previous).unwrap();
+        let mut current = previous.clone();
+        current["profile_version"] = crate::version::PROFILE.into();
+        assert!(check(Format::Pdf, &current, &current).is_err());
         let pptx = parsed(&Settings::pptx(b"fuente"));
         check(Format::Pptx, &pptx, &pptx).unwrap();
         let none = parsed(&Settings::none());

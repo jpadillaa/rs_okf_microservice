@@ -81,7 +81,7 @@ fn the_schema_accepts_optional_fields_and_rejects_changes() {
     // Campos que ningún ejemplo activa: OCR, conversión no reproducible, clave y permisos.
     let mut full = document.clone();
     full["conversion_settings"]["ocr"] = json!({
-        "enabled": true, "max_pages": 40, "timeout_s": 300,
+        "enabled": true, "max_pages": 40, "max_images": 200, "timeout_s": 300,
         "det_sha256": "a".repeat(64), "rec_sha256": "ausente", "dict_sha256": "b".repeat(64)
     });
     full["reproducible"] = json!(false);

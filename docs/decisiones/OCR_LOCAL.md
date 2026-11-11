@@ -5,9 +5,9 @@
 ## 1. Requisitos
 
 - **Configurable desde `.env`:** `OKF_OCR_ENABLED`. Estuvo desactivado por defecto hasta el perfil 1.16.0; desde el 1.17.0 está activo si no se declara, porque la completitud del texto es el primer requisito de calidad. Apagado, los escaneos salen sin texto, con su vista y una nota. Las pruebas, los bundles de referencia y el fuzzing convierten sin OCR (`Config::default()`).
-- **Transparente para quien sube el archivo:** la API no cambia. La clasificación de páginas que ya existía decide qué páginas necesitan OCR: una página sin texto propio con una imagen que cubre al menos el 30 % de ella. No se aplica a páginas mixtas, solo visuales ni a escaneos que ya traen una capa de OCR.
+- **Transparente para quien sube el archivo:** la API no cambia. La clasificación de páginas que ya existía decide qué páginas necesitan OCR: una página sin texto propio con una imagen que cubre al menos el 30 % de ella. El OCR de página no se aplica a páginas mixtas, solo visuales ni a escaneos que ya traen una capa de OCR. Desde el perfil 1.18.0 se transcriben además las imágenes de contenido de cualquier página (§5).
 - **Liviano:** sin bibliotecas del sistema ni servicios externos, dentro del mismo proceso conversor y de sus restricciones (rlimits, Landlock y seccomp).
-- **Presupuesto propio** (stack, §4): `OKF_OCR_MAX_PAGES` páginas por documento (40), dos tercios del plazo de conversión en tiempo o en CPU y `OKF_OCR_MEMORY_MB` (256) adicionales al límite de memoria de un PDF. Cuando se agota, las páginas restantes quedan como vista y el bundle sale `partial`, en vez de fallar por el límite de CPU del hijo.
+- **Presupuesto propio** (stack, §4): `OKF_OCR_MAX_PAGES` páginas (40) y `OKF_OCR_MAX_IMAGES` imágenes (300) por documento, dos tercios del plazo de conversión en tiempo o en CPU y `OKF_OCR_MEMORY_MB` (512 desde el perfil 1.18.0; antes, 256) adicionales al límite de memoria de un PDF. Cuando se agota, las páginas restantes quedan como vista y el bundle sale `partial`, en vez de fallar por el límite de CPU del hijo.
 - **Sin ocultar la incertidumbre:** la vista de la página se adjunta, una nota da la confianza junto al texto y los conceptos con texto de OCR son `draft`.
 
 ## 2. Motor elegido
@@ -79,7 +79,7 @@ Con los anchos de 320 px de la prueba de concepto, los picos eran de 256–314 M
 
 Con 2 hilos, una página densa consume unos 15 s de CPU, y el hijo tiene un límite de CPU igual al plazo de conversión (300 s). Sin un presupuesto de tiempo, un documento de 20 a 40 páginas densas fallaría entero. Por eso el OCR no empieza una página más tras consumir dos tercios del plazo: con `OKF_CONVERSION_TIMEOUT_S=45`, `p2` degradado salió `partial` en 20 s, con 2 páginas transcritas y 6 como vista, sin fallar. Con el plazo por defecto se transcriben entre unas 12 páginas densas y 40 ligeras; para documentos escaneados largos hay que subir el plazo.
 
-El pico de memoria en Linux llega a 469 MB, conversión incluida, y en macOS a 567 MB con `p2` degradado. Un PDF grande ya ocupaba 306 MB sin OCR. `OKF_OCR_MEMORY_MB=256` (756 MB en total) cubre estos casos; se comprobó con todos los documentos de la tabla en Linux.
+El pico de memoria en Linux llega a 469 MB, conversión incluida, y en macOS a 567 MB con `p2` degradado. Un PDF grande ya ocupaba 306 MB sin OCR. `OKF_OCR_MEMORY_MB=256` (756 MB en total) cubría estos casos; se comprobó con todos los documentos de la tabla en Linux. El texto de las imágenes lo subió a 512 (§5).
 
 Integrado en el servicio, la muestra `examples/pdf/muestras/escaneado_ocr.pdf` (las dos páginas de `informe_tecnico.pdf`, degradadas por `create_scans.py`) sale `complete` y tiene:
 
@@ -92,11 +92,46 @@ La prueba `ocr_transcribes_scanned_pages_through_the_common_layout` exige que re
 
 **Primer escaneo real (7 de noviembre).** Es un documento privado de `datos_de_prueba/`, que no entra al repositorio: una página generada como imagen JPEG de 1493 × 1570 px, sin capa de texto, con un título y tres párrafos en español en letra monoespaciada, con tildes y paréntesis. Sin OCR sale `partial`; con OCR, `complete`, con confianza media del 98 %, el título y los párrafos bien separados y todas las tildes correctas. Comparado con el texto de la vista, transcrito a mano, tiene dos errores: falta un espacio entre dos palabras del título, y una sigla en mayúsculas sale con dos de sus letras en minúscula. Con anchos de 320 px faltaban además los espacios de una línea entera; ese hallazgo llevó a los anchos de 64 px. Probar márgenes derechos de 0, 0,08, 0,1 y 0,12 no dio una tendencia: el espacio del título aparece o falta según el margen. Se mantuvo 0,15, el único que no pierde puntos finales en la muestra sintética.
 
-## 5. Límites conocidos
+## 5. Texto de las imágenes de contenido (perfil 1.18.0)
+
+El plan 4, Q1, extendió el OCR a las imágenes que se adjuntan en páginas con texto digital: capturas de pantalla, diagramas, tablas pegadas como imagen. Antes, ese texto no llegaba al Markdown y ninguna métrica lo veía. Las reglas están en la [especificación, §5](../especificacion/ESPECIFICACION_OKF.md).
+
+**Qué imágenes.** Las adjuntas que no son decorativas ni de plantilla, de al menos 64 × 16 píxeles. Una imagen repetida se transcribe una vez. Las de una página escaneada no, porque el OCR de página ya las lee.
+
+**Ajustes:**
+1. **Lienzos fijos.** Como con los anchos de línea (§3), tract prepara un plan por cada forma de entrada, y la detección sobre imágenes de tamaños distintos hacía crecer la memoria con cada imagen. Cada imagen se coloca, sobre fondo blanco y con su transparencia compuesta sobre blanco, en un lienzo cuadrado de 320, 640 o 960 píxeles (el primero que la contiene; si es mayor, su lado). Tres formas acotan los planes.
+2. **Orientación.** Algunos PDF guardan las imágenes volteadas y las enderezan con la matriz con que las dibujan; `pdf_oxide` no la entrega. Sin corregirla, el OCR del PDF de 346 páginas daba texto al revés con confianza mediana del 66 %; leyendo la matriz del flujo de contenido y reorientando los píxeles, sube al 97–98 %. La misma corrección se aplica a las imágenes adjuntas, que antes salían volteadas en el bundle.
+3. **Filtro de ruido.** Se descartan las líneas de confianza inferior al 80 %, y una imagen con menos de tres caracteres alfanuméricos no añade texto: así las fotografías no meten ruido. Las líneas que se solapan en vertical forman una fila, leída de izquierda a derecha.
+
+**Resultados.** La muestra `imagenes_con_texto.pdf` (dos capturas de las otras muestras y un degradado sin texto) pasa del 45,9 % al 100 % de completitud, orden, orden interno y contigüidad, y el degradado no añade texto ([exactitud](EXACTITUD_DEL_TEXTO.md)). Con los originales privados (macOS arm64, un hilo, OCR activo, el binario de `--release`):
+
+| Original | Imágenes con texto | Confianza mediana | Tiempo antes → ahora | Pico de memoria |
+| --- | ---: | ---: | ---: | ---: |
+| Artículo de 9 páginas | 3 de 3 | 99 % | 0,6 s → 7,8 s | 660 MB |
+| Exportación de Word, 13 páginas | 3 de 3 | 97 % | 0,1 s → 3,9 s | 418 MB |
+| Presentación de 53 páginas | 9 de 24 | 99 % | 1,6 s → 19 s | 854 MB |
+| Cuaderno de 65 páginas | 0 de 10 | — | 2,9 s → 7,5 s | 508 MB |
+| PDF de 346 páginas | 116 de 228 | 98 % | 18 s → 165 s | 914 MB |
+
+En el PDF de 346 páginas, 114 de los 116 bloques superan el 90 % de confianza, y 95 imágenes quedaron sin OCR al agotarse el presupuesto de CPU con un hilo; el informe las declara. Las demás no tienen texto legible (fotografías, iconos). El cuaderno no gana texto: sus diagramas son vectoriales y su texto ya es digital. Que el texto añadido no sea ruido se comprobará con las referencias revisadas del plan 4, Q2.
+
+**Escaneos largos.** El OCR de las páginas escaneadas va ahora en grupos de tantas páginas como `OKF_CONVERSION_THREADS`, con un solo motor compartido. Las líneas de cada página se reconocen además en 2 hilos, así que con un hilo de conversión el OCR consume 1,5 veces su tiempo en CPU y el límite de CPU se agota antes que el plazo. Un escaneo de 200 páginas (la muestra escaneada repetida, con motas distintas en cada página para que no se tome como plantilla):
+
+| Hilos | Plazo | Páginas con OCR | Tiempo | CPU | Pico de memoria |
+| ---: | ---: | ---: | ---: | ---: | ---: |
+| 1 | 300 s | 37 de 200 | 135 s | 208 s | 870 MB |
+| 4 | 300 s | 96 de 200 | 170 s | 815 s | 1 923 MB |
+| 4 | 900 s | 200 de 200, `complete` | 364 s | 1 844 s | 1 969 MB |
+
+Con 4 hilos, la memoria se estabiliza en unos 1 800 MB desde el primer minuto: es la detección de cuatro páginas a la vez, no una acumulación. Cada hilo cuesta más CPU por página (9,2 s frente a 5,6 s con uno) porque comparten núcleos con los hilos del reconocimiento. Para escaneos de cientos de páginas hace falta subir el plazo (`OKF_CONVERSION_TIMEOUT_S`, al menos 700 s para 200 páginas con 4 hilos) y la memoria (`OKF_MAX_MEMORY_MB=1500` con los 512 del OCR); con los valores por defecto el bundle sale `partial` con las primeras páginas transcritas.
+
+## 6. Límites conocidos
 
 - Se ha medido con escaneos sintéticos y con un solo escaneo real, limpio y de una página. Faltan escaneos con fotografías, baja resolución, papel manchado o varias columnas (plan 1, R6); darán peores resultados. El texto manuscrito no se reconoce.
 - En letra monoespaciada, el hueco entre palabras apenas se distingue del hueco entre letras, y alguna línea puede perder un espacio. El OCR puede confundir mayúsculas y minúsculas en siglas.
 - El OCR no distingue negrita ni cursiva. Un subtítulo apenas mayor que el cuerpo puede no reconocerse como encabezado, y los niveles de los encabezados inferidos pueden variar entre secciones del mismo nivel.
 - Las viñetas pueden leerse como guiones («—», «–») y la letra monoespaciada no se reconoce como código.
+- El texto de una imagen es un bloque de líneas: no se reconstruyen sus tablas ni su código, y en un diagrama el orden de los rótulos es el de sus filas.
+- El texto dibujado como trazos vectoriales, sin capa de texto ni imagen, no se transcribe.
 - Un pánico dentro del OCR termina la conversión como fallo permanente, igual que cualquier pánico del conversor.
 - Una página con un número de página digital añadido sobre el escaneo (por ejemplo, un sello Bates) tiene texto propio, no se clasifica como escaneo y no se transcribe.

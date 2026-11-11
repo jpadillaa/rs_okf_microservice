@@ -1,15 +1,15 @@
 ---
 converter_version: "0.1.0"
 converter_commit: "<commit>"
-profile_version: "1.17.0"
+profile_version: "1.18.0"
 conversion_settings:
   max_image_pixels: 33554432
   ocr:
     enabled: false
 settings_sha256: "ad1d7709796a5172b6ad18d538b1bef5780b44279dd787d15ecc82ede959ef16"
-conversion_id: "a57148758e0c83bccc4cab2014540f9733b82e61ad2bbd99b95af88bdf7603cd"
+conversion_id: "07a91e01c7171129e48a351d91ed6ba96203da119fe7e620877fbe8795627a31"
 type: "Conversion Report"
-unit_id: "a57148758e0c83bccc4cab2014540f9733b82e61ad2bbd99b95af88bdf7603cd/conversion-report.md"
+unit_id: "07a91e01c7171129e48a351d91ed6ba96203da119fe7e620877fbe8795627a31/conversion-report.md"
 title: "Informe de conversión"
 generated:
   by: "process:document-conversion"
@@ -79,7 +79,7 @@ Sin pérdidas ni incertidumbres sustantivas.
 
 Información sobre la conversión que no afecta el estado.
 
-- Páginas 5–8, 11, 23, 24, 36, 42, 46 y 50–52: texto con imágenes grandes; las imágenes se adjuntan sin transcribir (no se aplicó OCR)
+- Páginas 5–8, 11, 23, 24, 36, 42, 46 y 50–52: texto con imágenes grandes; no se aplica OCR de página: se conserva su texto digital y sus imágenes se tratan como las demás imágenes de contenido
 - Página 40: en blanco o solo con encabezado, pie o número de página
 - Páginas 8, 10, 11, 30, 37, 38 y 42: varias columnas; el orden de lectura se infiere de la disposición (columna por columna, de izquierda a derecha)
 - 3 párrafo(s) unidos con su continuación en otra columna o página (la frase sigue en minúscula con el mismo formato): páginas 4, 31, 45

@@ -410,7 +410,7 @@ Después se recrea el worker:
 docker compose up -d --no-deps --force-recreate worker
 ```
 
-**El PDF se sube de la misma manera.** El servicio selecciona las páginas sin capa de texto que contienen una imagen grande; no aplica OCR a las páginas mixtas con texto digital. El resultado identifica el texto obtenido por OCR e indica la confianza del reconocimiento. Si el servicio no logra transcribir una página, el resultado queda en `partial`; una confianza baja también puede producir ese estado.
+**El PDF se sube de la misma manera.** El servicio selecciona las páginas sin capa de texto que contienen una imagen grande; no aplica OCR de página a las páginas mixtas con texto digital. Además transcribe el texto de las imágenes de contenido (capturas de pantalla, diagramas, tablas pegadas como imagen) y lo coloca detrás de cada imagen, marcado como reconocido por OCR. El resultado identifica el texto obtenido por OCR e indica la confianza del reconocimiento. Si el servicio no logra transcribir una página, el resultado queda en `partial`; una confianza baja también puede producir ese estado.
 
 <details>
 <summary><strong>Límites del OCR y ejecución fuera de Docker</strong></summary>
@@ -419,11 +419,12 @@ docker compose up -d --no-deps --force-recreate worker
 | --- | ---: | --- |
 | `OKF_OCR_MAX_PAGES` | 40 | Máximo de páginas que se intentan transcribir por documento. |
 | `OKF_CONVERSION_TIMEOUT_S` | 300 segundos | Plazo de la conversión. El OCR deja de iniciar páginas al consumir dos tercios de ese plazo o del límite de CPU (`OKF_MAX_CPU_S`). |
-| `OKF_OCR_MEMORY_MB` | 256 MB | Memoria adicional al límite general cuando se convierte un PDF con OCR activo. |
+| `OKF_OCR_MAX_IMAGES` | 300 | Máximo de imágenes de contenido cuyo texto se transcribe por documento. |
+| `OKF_OCR_MEMORY_MB` | 512 MB | Memoria adicional al límite general cuando se convierte un PDF con OCR activo. |
 
 Con el plazo inicial, el rendimiento medido permite unas 12–40 páginas, según su densidad.
 
-`OKF_CONVERSION_THREADS` reparte la lectura de texto, las imágenes y las vistas de un PDF entre varios hilos sin cambiar el bundle; cada hilo necesita memoria para su copia del documento. `OKF_MAX_CPU_S` fija el tiempo de CPU de una conversión, sumados sus hilos; sin declarar, es el plazo por el número de hilos. Para escaneos largos puede ser necesario ampliar el plazo. Si se agota el presupuesto, las páginas restantes quedan como vistas y el bundle sale `partial`.
+`OKF_CONVERSION_THREADS` reparte la lectura de texto, las imágenes y las vistas de un PDF entre varios hilos sin cambiar el bundle; cada hilo necesita memoria para su copia del documento. `OKF_MAX_CPU_S` fija el tiempo de CPU de una conversión, sumados sus hilos; sin declarar, es el plazo por el número de hilos. Para escaneos largos hay que ampliar el plazo y la memoria: uno de 200 páginas se transcribe completo con 4 hilos, `OKF_CONVERSION_TIMEOUT_S=900` y `OKF_MAX_MEMORY_MB=1500` (unos 6 minutos y 2 GB). Si se agota el presupuesto, las páginas restantes quedan como vistas y el bundle sale `partial`.
 
 Para usar OCR al ejecutar el binario en el equipo local, primero se descargan los modelos:
 
