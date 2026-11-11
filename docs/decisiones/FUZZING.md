@@ -25,7 +25,9 @@ CARGO_NET_OFFLINE=true cargo +nightly-2026-11-01 fuzz run docx --codegen-units 1
   -max_total_time=300 -timeout=300 -rss_limit_mb=500 -max_len=104857600
 ```
 
-Se repite con `pptx`, `xlsx` y `pdf`. `fuzz/Cargo.lock` conserva las dependencias del
+Se repite con `pptx`, `xlsx` y `pdf`; para `pdf`, la CI usa `-max_total_time=600` y
+añade `-entropic_scale_per_exec_time=1` (ver [Carga del corpus PDF](#carga-del-corpus-pdf)).
+`fuzz/Cargo.lock` conserva las dependencias del
 servicio más libFuzzer; tras cambiar dependencias del servicio se revisa también
 este lockfile. `cargo-fuzz` no ofrece `--locked` en `run`: se descargan antes las
 dependencias con `--locked`, se ejecuta sin red y la CI verifica que ningún lockfile
@@ -46,7 +48,7 @@ C3/C4 y se documentan para comunicar su caso mínimo aguas arriba.
 ## CI y criterio de cierre
 
 El flujo `scheduled.yml` mantiene la auditoría diaria de dependencias y añade una
-matriz de cuatro objetivos: cinco minutos de fuzzing por formato, con un tope de
+matriz de cuatro objetivos: cinco minutos de fuzzing por formato (diez en PDF), con un tope de
 75 minutos por trabajo que incluye instalación, compilación y el guardado de la caché.
 El tope era de 45 minutos hasta la ejecución del 11 de noviembre (Programado #12): la
 caché de compilación de `pdf` había sido expulsada, el trabajo compiló sin ella durante
@@ -80,11 +82,61 @@ sin fallos; su máximo residente, 482 MB, queda cerca del límite de 500 MB del 
 sus cinco minutos (DOCX, 53 932 ejecuciones; XLSX, 84 048; PPTX, 3356, con dos
 entradas lentas registradas por el renderizado).
 
+### Carga del corpus PDF
+
+Antes de mutar, libFuzzer ejecuta una vez cada entrada del corpus; la línea `INITED`
+del log marca el final de esa carga, y `-max_total_time` la incluye. Con ASan, las
+entradas PDF son lentas: las mutaciones de `p1.pdf` (1,5 MB) tardan de segundos a más
+de un minuto. El corpus de la caché pasó en tres noches de las 8 semillas a 126
+entradas, casi todas mutaciones de `p1.pdf` y `p2.pdf`, y con el presupuesto de 300 s
+la carga acabó ocupándolo entero. Tiempos medidos con las marcas del log de Actions:
+
+| Ejecución | Corpus al cargar | Carga | Mutación (ejecuciones) |
+| --- | ---: | ---: | ---: |
+| 7 nov., manual | 8 (3,2 MB) | 36 s | 266 s (50) |
+| 7 nov. | 46 (20,8 MB) | 162 s | 142 s (99) |
+| 8 nov. | 120 (41,8 MB) | 247 s | 80 s (8) |
+| 9 nov. | 125 (43,6 MB) | 317 s | 0 |
+| 10 nov. | 125 (43,6 MB) | 341 s | 0 |
+| 11 nov., manual (`claude/fuzz-timeout-cache`) | 126 (43,7 MB) | 503 s | 0 |
+
+El 11 de noviembre, la carga terminó a los 502 s con `#159 INITED … exec/s: 0` y el
+objetivo no mutó nada. Las dos entradas lentas que escribió (12 y 56 s) no son fallos.
+La ejecución programada de ese día no llegó a `INITED`: compiló en frío y el tope de
+45 minutos la canceló durante la carga.
+
+Desde el 11 de noviembre:
+
+- `tools/fuzz_seeds.py` acota lo que se restaura de la caché. De las entradas que
+  añadió libFuzzer (nombradas por el SHA-1 de su contenido) conserva las de hasta
+  128 KiB, de menor a mayor, hasta sumar 4 MiB, y retira las demás. Las semillas de
+  `examples/` y las regresiones se copian siempre. La carga queda cerca de la de las
+  semillas solas (36 s en la CI) más la de esas entradas pequeñas, y deja de crecer con
+  las noches. Las mutaciones grandes que añada una noche se pierden en la siguiente;
+  los fallos se conservan como artefactos y la cobertura de `p1.pdf` y `p2.pdf` sigue
+  llegando por las semillas.
+- PDF fuzzea 600 s, y `-entropic_scale_per_exec_time=1` reparte la energía de
+  mutación en favor de las entradas rápidas. En frío, el trabajo cabe en los 75
+  minutos: unos 42 de compilación, 4 de herramientas, 10 de fuzzing y hasta 5 más si
+  la última ejecución llega al `-timeout` de 300 s.
+
+Se descartaron otras opciones. `-merge=1` y `cargo fuzz cmin` ejecutan cada entrada
+como la carga: minimizar antes de cada noche costaría otros ocho minutos y el corpus
+volvería a crecer. Bajar `-max_len` trunca al cargar las entradas más largas, también
+las semillas `p1.pdf` y `p2.pdf`, que perderían la tabla de referencias del final.
+Bajar `-timeout` convertiría en fallo cualquier entrada lenta, como las de 12 y 56 s.
+Subir solo `-max_total_time` aplazaba el problema: la carga crecía cada noche.
+
 **Criterio de cierre:** cada objetivo debe acumular dos horas de fuzzing sin fallos
 nuevos, con las opciones de la CI (las de [Ejecutar y reproducir](#ejecutar-y-reproducir)).
 Cuentan las ejecuciones nocturnas y las campañas locales que se registren aquí con su
 fecha, duración y resultado, a partir del 6 de noviembre; no hace falta que sean
-consecutivas. Un fallo nuevo
+consecutivas. Solo cuenta la fase de mutación, desde `INITED` hasta `DONE`, medida con
+las marcas de tiempo del log: una noche que solo cargó el corpus ejecutó entradas ya
+conocidas y no exploró nada. La regla vale para los cuatro objetivos; en PPTX, DOCX y
+XLSX la carga dura segundos. Con ella, PDF acumulaba al 11 de noviembre 488 s de
+mutación sin fallos nuevos (las dos ejecuciones del 7 y la noche del 8); las noches del
+9 y el 10, y la ejecución manual del 11, no cuentan. Un fallo nuevo
 reinicia la cuenta de su objetivo cuando queda corregido y reducido como regresión. Si
 `pdf` reencuentra el pánico conocido de `pdf_oxide`, identificado por su ubicación en la
 dependencia, la ejecución cuenta hasta ese punto y no reinicia la cuenta. Además, C5
