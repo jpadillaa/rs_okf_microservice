@@ -6,5 +6,93 @@
     "2": "diferencia en el orden o en el contenido. La conversión se consideró correcta cuando todos los\npárrafos aparecían completos y en su orden. Para\ncada documento se anotó también el tiempo de\nproceso y la memoria utilizada, con el fin de estimar\nel costo-beneficio de cada procedimiento.\n3. Resultados\nEl primer procedimiento conservó el orden de\nlectura en diecisiete de los veinte documentos; el\nsegundo, en todos ellos. Las diferencias se\nconcentraron en las páginas con notas al pie y en\nlas tablas que ocupaban una sola columna, donde\nel primer procedimiento leía las celdas como si\nfueran texto corrido.¹\n¹ Los veinte documentos se crearon solo para esta prueba.\nLa tabla 1 resume los resultados por procedimiento.\nLas cifras son artificiales y solo ilustran el formato\nde una tabla sencilla con encabezado.\nTabla 1. Resultados por procedimiento\nProcedimiento\nCorrectos\nTiempo\nPrimero\n17\n1,2 s\nSegundo\n20\n1,9 s\nDiferencia\n3\n0,7 s\nFigura 1. Distribución artificial de los tiempos de proceso.",
     "3": "4. Conclusiones\nReconstruir el orden de lectura a partir de la\nposición de las líneas permite convertir documentos\nen dos columnas sin mezclar su contenido. Las\nnotas al pie y las tablas siguen siendo los casos\nmás delicados y conviene declararlos en el informe\nde conversión.\nComo trabajo futuro se propone repetir la prueba\ncon documentos escaneados, que exigen\nreconocimiento óptico de caracteres antes de\ncualquier análisis de la disposición.",
     "4": "Referencias\n1.\nRuiz A. Documentos de prueba para conversores. Rev Pruebas Doc. 2025;2(1):1–10.\n2.\nPeña T. Orden de lectura en páginas con columnas. Cuad Doc. 2024;7:33–41.\n3.\nGómez L, Ruiz A. Tablas sencillas en archivos PDF. Rev Pruebas Doc. 2026;3(1):5–9."
-  }
+  },
+  "blocks": [
+    {
+      "page": 1,
+      "type": "title",
+      "text": "Lectura de documentos con varias columnas: un estudio con materiales artificiales"
+    },
+    {
+      "page": 1,
+      "type": "heading",
+      "level": 1,
+      "text": "Resumen"
+    },
+    {
+      "page": 1,
+      "type": "heading",
+      "level": 1,
+      "text": "1. Introducción"
+    },
+    {
+      "page": 1,
+      "type": "heading",
+      "level": 1,
+      "text": "2. Método"
+    },
+    {
+      "page": 2,
+      "type": "heading",
+      "level": 1,
+      "text": "3. Resultados"
+    },
+    {
+      "page": 2,
+      "type": "table",
+      "rows": [
+        [
+          "Procedimiento",
+          "Correctos",
+          "Tiempo"
+        ],
+        [
+          "Primero",
+          "17",
+          "1,2 s"
+        ],
+        [
+          "Segundo",
+          "20",
+          "1,9 s"
+        ],
+        [
+          "Diferencia",
+          "3",
+          "0,7 s"
+        ]
+      ]
+    },
+    {
+      "page": 3,
+      "type": "heading",
+      "level": 1,
+      "text": "4. Conclusiones"
+    },
+    {
+      "page": 4,
+      "type": "heading",
+      "level": 1,
+      "text": "Referencias"
+    },
+    {
+      "page": 4,
+      "type": "list",
+      "ordered": true,
+      "items": [
+        {
+          "label": "1",
+          "text": "Ruiz A. Documentos de prueba para conversores. Rev Pruebas Doc. 2025;2(1):1–10."
+        },
+        {
+          "label": "2",
+          "text": "Peña T. Orden de lectura en páginas con columnas. Cuad Doc. 2024;7:33–41."
+        },
+        {
+          "label": "3",
+          "text": "Gómez L, Ruiz A. Tablas sencillas en archivos PDF. Rev Pruebas Doc. 2026;3(1):5–9."
+        }
+      ]
+    }
+  ]
 }

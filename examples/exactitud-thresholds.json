@@ -15,6 +15,36 @@
     "contiguity": {
       "measured": 99.8,
       "minimum": 99.3
+    },
+    "structure": {
+      "false_tables": {
+        "measured": 0,
+        "maximum": 0
+      },
+      "heading_levels": {
+        "measured": 100.0,
+        "minimum": 99.5
+      },
+      "heading_precision": {
+        "measured": 100.0,
+        "minimum": 99.5
+      },
+      "headings": {
+        "measured": 100.0,
+        "minimum": 99.5
+      },
+      "list_items": {
+        "measured": 100.0,
+        "minimum": 99.5
+      },
+      "list_numbers": {
+        "measured": 100.0,
+        "minimum": 99.5
+      },
+      "table_cells": {
+        "measured": 100.0,
+        "minimum": 99.5
+      }
     }
   },
   "examples/pdf/muestras/breve.pdf": {
@@ -33,6 +63,32 @@
     "contiguity": {
       "measured": 100.0,
       "minimum": 99.5
+    },
+    "structure": {
+      "false_tables": {
+        "measured": 0,
+        "maximum": 0
+      },
+      "heading_levels": {
+        "measured": 100.0,
+        "minimum": 99.5
+      },
+      "heading_precision": {
+        "measured": 100.0,
+        "minimum": 99.5
+      },
+      "headings": {
+        "measured": 100.0,
+        "minimum": 99.5
+      },
+      "list_items": {
+        "measured": 100.0,
+        "minimum": 99.5
+      },
+      "list_numbers": {
+        "measured": 100.0,
+        "minimum": 99.5
+      }
     }
   },
   "examples/pdf/muestras/escaneado_mixto.pdf": {
@@ -51,6 +107,24 @@
     "contiguity": {
       "measured": 100.0,
       "minimum": 99.5
+    },
+    "structure": {
+      "false_tables": {
+        "measured": 0,
+        "maximum": 0
+      },
+      "heading_levels": {
+        "measured": 100.0,
+        "minimum": 99.5
+      },
+      "heading_precision": {
+        "measured": 100.0,
+        "minimum": 99.5
+      },
+      "headings": {
+        "measured": 100.0,
+        "minimum": 99.5
+      }
     }
   },
   "examples/pdf/muestras/escaneado_ocr.pdf": {
@@ -70,6 +144,36 @@
     "contiguity": {
       "measured": 100.0,
       "minimum": 99.5
+    },
+    "structure": {
+      "code_lines": {
+        "measured": 0.0,
+        "minimum": 0.0
+      },
+      "false_tables": {
+        "measured": 0,
+        "maximum": 0
+      },
+      "heading_levels": {
+        "measured": 60.0,
+        "minimum": 59.5
+      },
+      "heading_precision": {
+        "measured": 100.0,
+        "minimum": 99.5
+      },
+      "headings": {
+        "measured": 85.71,
+        "minimum": 85.21
+      },
+      "list_items": {
+        "measured": 66.67,
+        "minimum": 66.17
+      },
+      "list_numbers": {
+        "measured": 100.0,
+        "minimum": 99.5
+      }
     }
   },
   "examples/pdf/muestras/informe_tecnico.pdf": {
@@ -88,6 +192,40 @@
     "contiguity": {
       "measured": 100.0,
       "minimum": 99.5
+    },
+    "structure": {
+      "code_indent": {
+        "measured": 100.0,
+        "minimum": 99.5
+      },
+      "code_lines": {
+        "measured": 100.0,
+        "minimum": 99.5
+      },
+      "false_tables": {
+        "measured": 0,
+        "maximum": 0
+      },
+      "heading_levels": {
+        "measured": 100.0,
+        "minimum": 99.5
+      },
+      "heading_precision": {
+        "measured": 100.0,
+        "minimum": 99.5
+      },
+      "headings": {
+        "measured": 100.0,
+        "minimum": 99.5
+      },
+      "list_items": {
+        "measured": 100.0,
+        "minimum": 99.5
+      },
+      "list_numbers": {
+        "measured": 100.0,
+        "minimum": 99.5
+      }
     }
   }
 }

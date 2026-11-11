@@ -155,8 +155,11 @@ class Page:
         self.ops.append(b"q %.2f 0 0 %.2f %.2f %.2f cm /%s Do Q" % (w, h, x, self.height - top - h, name))
 
 
-def write_truth(names, pages):
-    """Reference text of each page with text, in reading order, for every name in `names`."""
+def write_truth(names, pages, blocks=()):
+    """Reference text of each page with text, in reading order, for every name in `names`,
+    and the structural blocks of the document in order: {"page", "type": "title" |
+    "heading" (with "level", 1 for the highest below the title) | "list" ("ordered",
+    "items" with "label" and "text") | "table" ("rows" of cells) | "code" ("lines")}."""
     lines = [page.truth + page.rotated_truth for page in pages]
     whole = "\n".join(line for page in lines for line in page)
 
@@ -175,6 +178,7 @@ def write_truth(names, pages):
             "document": f"examples/pdf/muestras/{name}.pdf",
             "source": "examples/pdf/create_samples.py",
             "pages": texts,
+            "blocks": list(blocks),
         }
         (TRUTH / f"{name}.json").write_text(json.dumps(data, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
 
@@ -293,7 +297,14 @@ def breve():
         p.text(84, y + 8, "•", "F1", 10)
         y = p.paragraph(98, y + 8, item, 440) - 4
     Pdf().save(OUT / "breve.pdf", [p], {"Title": "Préstamo de equipos", "Author": "Biblioteca de prueba"})
-    write_truth(["breve"], [p])
+    write_truth(["breve"], [p], [
+        {"page": 1, "type": "title", "text": "Préstamo de equipos audiovisuales"},
+        {"page": 1, "type": "list", "ordered": False, "items": [
+            {"label": "•", "text": t} for t in [
+                "Las reservas se hacen con dos días de anticipación.",
+                "Los daños se reportan el mismo día de la devolución.",
+                "Las devoluciones tardías suspenden el servicio una semana."]]},
+    ])
 
 
 ARTICLE_HEADER = "Revista de Pruebas Documentales · Vol. 3 · 2026"
@@ -378,7 +389,19 @@ def articulo():
         ("Resumen", 0, 160, []), ("1. Introducción", 0, top, []), ("2. Método", 0, 400, []),
         ("3. Resultados", 1, 100, []), ("4. Conclusiones", 2, 60, []), ("Referencias", 3, 60, [])])]
     Pdf().save(OUT / "articulo_columnas.pdf", pages, {"Title": "Lectura de documentos con varias columnas", "Author": "Ana Ruiz; Tomás Peña"}, outline)
-    write_truth(["articulo_columnas"], pages)
+    references = ["Ruiz A. Documentos de prueba para conversores. Rev Pruebas Doc. 2025;2(1):1–10.",
+                  "Peña T. Orden de lectura en páginas con columnas. Cuad Doc. 2024;7:33–41.",
+                  "Gómez L, Ruiz A. Tablas sencillas en archivos PDF. Rev Pruebas Doc. 2026;3(1):5–9."]
+    write_truth(["articulo_columnas"], pages, [
+        {"page": 1, "type": "title", "text": "Lectura de documentos con varias columnas: un estudio con materiales artificiales"},
+        *({"page": page, "type": "heading", "level": 1, "text": text} for page, text in [
+            (1, "Resumen"), (1, "1. Introducción"), (1, "2. Método"), (2, "3. Resultados")]),
+        {"page": 2, "type": "table", "rows": [list(r) for r in rows]},
+        {"page": 3, "type": "heading", "level": 1, "text": "4. Conclusiones"},
+        {"page": 4, "type": "heading", "level": 1, "text": "Referencias"},
+        {"page": 4, "type": "list", "ordered": True, "items": [
+            {"label": str(k), "text": ref} for k, ref in enumerate(references, 1)]},
+    ])
 
 
 def informe():
@@ -414,6 +437,7 @@ def informe():
     ]
     sizes = {"h1": 20, "h2": 14, "h3": 12}
     page, y = 0, 72
+    blocks = []
     bottom = 792 - 90
 
     def need(h):
@@ -429,6 +453,8 @@ def informe():
             p = pages[page]
             y += 8 if y > 72 else 0
             p.text(x, y, value, "F2", sizes[kind])
+            blocks.append({"page": page + 1, "type": "title", "text": value} if kind == "h1"
+                          else {"page": page + 1, "type": "heading", "level": int(kind[1]) - 1, "text": value})
             y += sizes[kind] * 1.6
         elif kind == "p":
             lines = wrap(value, "F1", 10.5, w)
@@ -442,6 +468,8 @@ def informe():
             p.runs(x, y, value, 10.5)
             y += 19.5
         elif kind in ("ol", "ul"):
+            blocks.append({"page": page + 1, "type": "list", "ordered": kind == "ol", "items": [
+                {"label": f"{k}." if kind == "ol" else "–", "text": item} for k, item in enumerate(value, 1)]})
             for k, item in enumerate(value, 1):
                 label = f"{k}." if kind == "ol" else "–"
                 lines = wrap(item, "F1", 10.5, w - 24)
@@ -454,6 +482,7 @@ def informe():
             y += 6
         elif kind == "code":
             need(12 * len(value))
+            blocks.append({"page": page + 1, "type": "code", "lines": list(value)})
             for line in value:
                 pages[page].text(x + 12, y, line, "F4", 9)
                 y += 11.5
@@ -465,7 +494,7 @@ def informe():
         p.text(72, 792 - 48, "Documento de prueba sin datos reales", "F3", 8, furniture=True)
     Pdf().save(OUT / "informe_tecnico.pdf", used, {"Title": "Informe técnico de migración", "Author": "Equipo de pruebas"})
     # escaneado_ocr.pdf (create_scans.py) es la imagen de estas mismas páginas.
-    write_truth(["informe_tecnico", "escaneado_ocr"], used)
+    write_truth(["informe_tecnico", "escaneado_ocr"], used, blocks)
 
 
 def escaneado():
@@ -493,7 +522,10 @@ def escaneado():
     for k in (1, 3, 4, 5):
         pages[k - 1].text(300, 792 - 40, str(k), "F1", 9, furniture=True)
     Pdf().save(OUT / "escaneado_mixto.pdf", pages, {"Title": "Expediente digitalizado"}, labels=b"0 << /S /D /P (Exp-) >>")
-    write_truth(["escaneado_mixto"], pages)
+    write_truth(["escaneado_mixto"], pages, [
+        {"page": 1, "type": "title", "text": "Expediente digitalizado"},
+        {"page": 5, "type": "heading", "level": 1, "text": "Registro fotográfico"},
+    ])
 
 
 if __name__ == "__main__":
