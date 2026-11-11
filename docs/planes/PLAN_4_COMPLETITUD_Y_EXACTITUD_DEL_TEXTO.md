@@ -28,6 +28,18 @@ Este plan tiene tres trabajos, uno por hueco. Tamaños relativos, como en los pl
 
 ### Q2. Referencias revisadas de originales reales y exactitud de la estructura (M)
 
+**Estado:** en curso.
+- **Hecho (10 de noviembre):**
+  - las referencias de las muestras declaran sus bloques;
+  - las métricas de estructura están en `tools/exactitud.py` y en `src/exactness.rs`, con sus mínimos;
+  - `--draft` escribe borradores con vistas y hoja de revisión;
+  - ya hay borradores de 67 páginas de los siete originales privados en `datos_de_prueba/referencias/`.
+- **Falta:**
+  - la revisión humana de esos borradores;
+  - los mínimos locales de los originales privados.
+
+La estructura ya detectó que la muestra escaneada con OCR conserva el texto, pero no sus niveles de encabezado, un elemento de lista ni el código ([exactitud](../decisiones/EXACTITUD_DEL_TEXTO.md#línea-base-perfil-1170)).
+
 Va primero porque fija la vara con la que se miden `Q1` y `Q3`.
 
 **Problema.** Sin referencias exactas de originales reales, una mejora o una regresión en un PDF real solo se ve con métricas aproximadas o a mano; así se encontró la regresión del índice del libro (perfil 1.17.0). Y ninguna métrica cubre la estructura.

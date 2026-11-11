@@ -13,6 +13,19 @@
 | Orden interno | Lo mismo dentro de cada bloque, frente a la referencia de las páginas que ocupa, sin importar dónde está el bloque. Se cuenta en la primera página del bloque. | Un párrafo, una celda o una línea que mezcla texto de sitios distintos. |
 | Contigüidad | Pares de palabras consecutivas de la referencia que el bundle conserva juntos. | Líneas o celdas intercaladas. |
 
+**Estructura.** Con una referencia exacta que declara sus bloques, se mide además la estructura del documento, con el Markdown de los conceptos sin marcadores ni notas del conversor:
+
+| Métrica | Qué mide |
+| --- | --- |
+| Encabezados | Encabezados de la referencia (el título y los demás) presentes como encabezados en el bundle, en orden. |
+| Precisión de encabezados | Encabezados del bundle que lo son en la referencia; el `#` de un concepto que repite el título del documento no cuenta como otro. |
+| Niveles | Pares de encabezados consecutivos con la misma relación de nivel (más profundo, igual o menos profundo) en la referencia y en el bundle. Los niveles absolutos dependen del nivel por el que se divide el documento y no se comparan. |
+| Elementos de lista y numeración | Elementos de la referencia presentes como elementos de lista, en orden; en las listas ordenadas, con el mismo número. |
+| Celdas y tablas falsas | Celdas de cada tabla de la referencia en su fila y columna de la tabla del bundle con más palabras en común (al menos la mitad), y tablas del bundle que no corresponden a ninguna de la referencia. |
+| Líneas de código y sangría | Líneas de cada bloque de código presentes, en orden, en un bloque cercado del bundle, y con la misma sangría relativa al bloque. |
+
+Con una referencia de algunas páginas, la estructura del bundle se toma solo de los bloques que empiezan en ellas.
+
 La subsecuencia común más larga se calcula por bits (Hyyrö, 2004) en Python y por programación dinámica en Rust; ambas dan las mismas cifras en las muestras.
 
 ## Referencias
@@ -26,7 +39,9 @@ La subsecuencia común más larga se calcula por bits (Hyyrö, 2004) en Python y
 
 pdfium sigue el flujo de contenido: deja los rótulos de una figura al final de la página y, en exportaciones como las de Canva, separa letras. Por eso su **orden** global no prueba un error. El **orden interno** y la **contigüidad**, que no dependen de dónde está cada bloque, sí son significativos.
 
-**Revisadas a mano.** Para un original privado se puede escribir una referencia exacta de algunas páginas, con el mismo formato, y pasarla con `--reference`; se guarda fuera del repositorio, junto al original en `datos_de_prueba/`. Solo se miden sus páginas.
+Las referencias de las muestras declaran también sus bloques (`"blocks"`): título, encabezados con su nivel (1 para el más alto bajo el título), listas con sus rótulos, tablas por filas y código por líneas.
+
+**Revisadas a mano (plan 4, Q2).** Para un original privado, `--draft DIR` escribe un borrador de referencia de algunas páginas: las difíciles por defecto (peor orden interno y contigüidad frente a pdfium y las que tienen tablas o código; `--count`) o las de `--pages`. Junto al borrador, `<nombre>.json`, quedan la vista de cada página y una hoja de revisión, `<nombre>-revision.md`, con el texto del borrador y el de pdfium. El borrador toma el texto y la estructura del bundle; un bloque que cruza páginas se reparte por la palabra que mejor separa su texto entre el de pdfium de cada página. Lleva `"reviewed": false` y la herramienta no mide con él, porque compararía el bundle consigo mismo. Una persona corrige el texto de cada página en orden de lectura y sus bloques mirando la vista, y pone `"reviewed": true`; después se mide con `--reference`. Las referencias de los originales privados se guardan en `datos_de_prueba/referencias/`, que no se versiona; la documentación las describe por su forma y sus cifras.
 
 ## Uso
 
@@ -38,11 +53,15 @@ uv run tools/exactitud.py examples/pdf/muestras/*.pdf
 uv run tools/exactitud.py --bundle bundle.zip --reference revisada.json --json salida.json --worst 10 original.pdf
 ```
 
+```bash
+uv run tools/exactitud.py --draft datos_de_prueba/referencias --count 15 datos_de_prueba/original.pdf
+```
+
 Por defecto convierte con `target/release/okf-microservice` (`--binary` cambia el ejecutable) y la configuración del entorno: con `OKF_OCR_ENABLED=false` la muestra escaneada no tiene texto. Lista las peores páginas con el primer tramo en que el bundle se aparta de la referencia; `--json` guarda las cifras de cada página.
 
 ## Comprobación en las pruebas
 
-`src/exactness.rs` repite el cálculo con las referencias exactas y lo compara con `examples/exactitud-thresholds.json`: por documento y métrica, la cifra medida y un mínimo medio punto por debajo, que se actualizan a mano como los de la cobertura. Regenerar los golden no los cambia. La muestra escaneada se convierte con el OCR si están los modelos (la CI los exige). Otra prueba comprueba que el cálculo detecta texto perdido, bloques reordenados y líneas intercaladas, y que ignora notas y rótulos del conversor.
+`src/exactness.rs` repite el cálculo con las referencias exactas, también el de estructura, y lo compara con `examples/exactitud-thresholds.json`: por documento y métrica, la cifra medida y un mínimo medio punto por debajo (sin bajar de cero); para las tablas falsas, un máximo. Se actualizan a mano como los de la cobertura. Regenerar los golden no los cambia. La muestra escaneada se convierte con el OCR si están los modelos (la CI los exige). Otra prueba comprueba que el cálculo detecta texto perdido, bloques reordenados y líneas intercaladas, y que ignora notas y rótulos del conversor.
 
 ## Línea base (perfil 1.17.0)
 
@@ -53,6 +72,8 @@ Por defecto convierte con `target/release/okf-microservice` (`--binary` cambia e
 | `escaneado_mixto.pdf` | 100 | 100 | 100 | 100 |
 | `escaneado_ocr.pdf`, con OCR | 100 | 100 | 100 | 100 |
 | `informe_tecnico.pdf` | 100 | 100 | 100 | 100 |
+
+Estructura, con las mismas muestras (perfil 1.17.0): `articulo_columnas`, `breve`, `escaneado_mixto` e `informe_tecnico` dan el 100 % en todas sus métricas y ninguna tabla falsa. La muestra escaneada con OCR, cuyo texto es exacto, no conserva su estructura: encabezados 85,71 %, niveles 60 %, elementos de lista 66,67 % y líneas de código 0 %. Los niveles salen de tamaños de letra medidos por la tinta, que varían entre líneas; un encabezado de tercer nivel y un elemento de lista no se reconocen como tales, y el OCR no distingue la fuente monoespaciada del código. Los mínimos fijan estas cifras para que no empeoren; su corrección corresponde al plan 4.
 
 En el artículo, la contigüidad pierde un par de palabras en el salto de la página 1 a la 2: la especificación coloca las afiliaciones detrás del párrafo que continúa en la página siguiente.
 
@@ -71,5 +92,5 @@ En el PDF de 346 páginas mejoran 26 páginas: la contraportada con citas interc
 ## Límites
 
 - Las referencias exactas cubren cuatro maquetaciones sintéticas. Los originales reales solo tienen referencia aproximada, hasta que se revisen a mano sus páginas difíciles.
-- La métrica mide el texto, no su marcado: no comprueba que un encabezado sea encabezado, que una tabla tenga las celdas correctas o que un bloque de código conserve su sangría.
+- La estructura solo se mide con referencias exactas que declaran sus bloques: las muestras públicas y las referencias revisadas de originales privados. No mide el énfasis (negrita, cursiva), los enlaces ni las notas al pie.
 - Una referencia fija una convención de lectura: notas al pie detrás de su párrafo, texto girado al final de su página. Si la especificación cambia una convención, sus referencias cambian con ella.

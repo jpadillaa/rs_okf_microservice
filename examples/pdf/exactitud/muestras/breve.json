@@ -3,5 +3,31 @@
   "source": "examples/pdf/create_samples.py",
   "pages": {
     "1": "Préstamo de equipos audiovisuales\nLa biblioteca presta cámaras, micrófonos y trípodes a estudiantes y profesores para actividades\nacadémicas. El préstamo dura como máximo tres días hábiles y se renueva una sola vez si nadie más ha\nreservado el equipo.\nPara solicitar un equipo se presenta el carné vigente en el mostrador de servicios. Antes de entregarlo, el\npersonal revisa con el usuario que el equipo funcione y que tenga todos sus accesorios.\n•\nLas reservas se hacen con dos días de anticipación.\n•\nLos daños se reportan el mismo día de la devolución.\n•\nLas devoluciones tardías suspenden el servicio una semana."
-  }
+  },
+  "blocks": [
+    {
+      "page": 1,
+      "type": "title",
+      "text": "Préstamo de equipos audiovisuales"
+    },
+    {
+      "page": 1,
+      "type": "list",
+      "ordered": false,
+      "items": [
+        {
+          "label": "•",
+          "text": "Las reservas se hacen con dos días de anticipación."
+        },
+        {
+          "label": "•",
+          "text": "Los daños se reportan el mismo día de la devolución."
+        },
+        {
+          "label": "•",
+          "text": "Las devoluciones tardías suspenden el servicio una semana."
+        }
+      ]
+    }
+  ]
 }
