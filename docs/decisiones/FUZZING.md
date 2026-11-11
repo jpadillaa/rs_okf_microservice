@@ -126,11 +126,30 @@ La primera ejecución con estos cambios (11 de noviembre, lanzada a mano en la r
 179 s y mutó durante 378 s, a 1-3 ejecuciones por segundo, con el corpus en aumento de
 86 a 988 entradas. Se detuvo al reencontrar el pánico conocido en
 `pdf_oxide-0.3.78/src/document.rs:25363` (el corte de un `str` dentro de U+FFFD), que
-dejó el trabajo en rojo. Mientras la dependencia no se corrija, es de esperar que
-otras noches de PDF terminen igual; no es un fallo nuevo y la noche cuenta hasta ese
-punto. En macOS, con las opciones de la CI, el corpus local acotado (93 entradas,
+dejó el trabajo en rojo; el caso (1657 bytes, una mutación de `breve.pdf`) reproduce
+el mismo pánico en local. No es un fallo nuevo y la noche cuenta hasta ese punto.
+En macOS, con las opciones de la CI, el corpus local acotado (93 entradas,
 5,7 MB) cargó en 56 s, y el completo (177 entradas, 53 MB) en 147 s, con la misma
 cobertura.
+
+### Defectos conocidos en la CI
+
+Como PDF ya muta, es de esperar que reencuentre ese pánico muchas noches mientras la
+dependencia no se corrija. Para que el rojo siga señalando solo fallos nuevos, cuando
+cargo-fuzz falla, el paso de fuzzing pasa el log por `tools/fuzz_triage.py`. Si el log
+termina en un pánico cuya ubicación está en `KNOWN_PANICS` para ese formato, y el único
+informe de error es el `deadly signal` con que libFuzzer registra un pánico, el trabajo
+termina en verde con un aviso en el resumen de la ejecución. Cualquier otro caso
+conserva el código de salida de cargo-fuzz: un pánico en otra línea, en otra versión o
+en el propio servicio, un segundo pánico distinto, o un informe de ASan, de memoria o
+de tiempo.
+
+La ubicación incluye la versión de la dependencia
+(`pdf_oxide-0.3.78/src/document.rs:25363:`). Al actualizar `pdf_oxide` deja de
+coincidir, y si el defecto persiste la noche vuelve a fallar. El caso se sube como
+artefacto igual que antes. Como el trabajo termina en verde, la caché también guarda el
+corpus de la noche, que antes se perdía con el fallo. Para la cuenta de C5 nada
+cambia: la noche cuenta hasta el pánico, y el aviso lo identifica.
 
 Se descartaron otras opciones. `-merge=1` y `cargo fuzz cmin` ejecutan cada entrada
 como la carga: minimizar antes de cada noche costaría otros ocho minutos y el corpus
@@ -219,7 +238,8 @@ actualiza la dependencia y se comprueba con
 contención C3/C4: `failed` en el primer intento, diagnóstico conservado, ningún bundle
 publicado y procesamiento posterior de un documento válido. El objetivo de fuzzing
 no captura el defecto, pero excluye ese caso de las semillas hasta que la
-corrección llegue a la dependencia; entonces se retira de `OPEN`.
+corrección llegue a la dependencia; entonces se retira de `OPEN` y de `KNOWN_PANICS`
+(`tools/fuzz_triage.py`).
 
 **C5 no está cerrado.** Falta corregir o actualizar la dependencia, sustituir la
 prueba de contención por una regresión sin pánico y acumular las dos horas por objetivo.

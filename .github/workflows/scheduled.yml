@@ -69,17 +69,28 @@ jobs:
           cargo fetch --manifest-path fuzz/Cargo.toml --locked
       - name: Fuzzing por formato
         # `shell: bash` añade pipefail: sin él, `tee` ocultaba el fallo de cargo-fuzz y
-        # un objetivo con pánico terminaba en verde.
+        # un objetivo con pánico terminaba en verde. Un fallo que solo reencuentra un defecto
+        # abierto de KNOWN_PANICS (tools/fuzz_triage.py) deja un aviso en lugar del rojo; el
+        # caso se sube igualmente y la caché guarda el corpus de la noche.
         shell: bash
         env:
           CARGO_NET_OFFLINE: 'true'
           # Acota la cuarentena del instrumentador sin ampliar el límite RSS del servicio.
           ASAN_OPTIONS: quarantine_size_mb=32:thread_local_quarantine_size_kb=256:malloc_context_size=10
         run: |
-          cargo +nightly-2026-11-01 fuzz run ${{ matrix.format }} --codegen-units 16 -- \
+          if cargo +nightly-2026-11-01 fuzz run ${{ matrix.format }} --codegen-units 16 -- \
             -max_total_time=${{ matrix.max_total_time || 300 }} -timeout=300 -rss_limit_mb=500 \
             -max_len=104857600 ${{ matrix.options }} \
-            2>&1 | tee fuzz/${{ matrix.format }}.log
+            2>&1 | tee fuzz/${{ matrix.format }}.log; then
+            exit 0
+          else
+            status=$?
+          fi
+          if python3 tools/fuzz_triage.py ${{ matrix.format }} fuzz/${{ matrix.format }}.log; then
+            echo "::warning title=fuzz (${{ matrix.format }})::La noche terminó en un defecto conocido; ver tools/fuzz_triage.py"
+            exit 0
+          fi
+          exit "$status"
       - name: Comprobar el lockfile
         if: always()
         run: git diff --exit-code -- Cargo.lock fuzz/Cargo.lock

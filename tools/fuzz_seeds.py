@@ -7,7 +7,8 @@ import shutil
 ROOT = Path(__file__).resolve().parent.parent
 # Regresiones de defectos aún abiertos. Como semilla harían caer el objetivo al cargar
 # el corpus, sin llegar a mutar; su contención la comprueba tests/worker_process.rs.
-# Se quitan de aquí cuando la corrección llega a la dependencia.
+# Se quitan de aquí, y de KNOWN_PANICS en tools/fuzz_triage.py, cuando la corrección
+# llega a la dependencia.
 OPEN = {"pdf/utf8-object-header.pdf"}
 # Entradas que libFuzzer añadió al corpus en noches anteriores: tamaño máximo de cada una
 # y suma máxima, en bytes. Las semillas no cuentan. libFuzzer ejecuta cada entrada al
