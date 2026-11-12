@@ -17,7 +17,10 @@ jobs:
 
   fuzz:
     runs-on: ubuntu-24.04
-    timeout-minutes: 45
+    # Sin caché, la compilación tardó 42 min (pdf) y 35 (docx) el 11-11-2026; con caché, el
+    # trabajo entero dura unos 11. Con los 5 min de fuzzing y el guardado, 45 no bastaban.
+    # Un trabajo cancelado no guarda su caché, así que el siguiente vuelve a empezar en frío.
+    timeout-minutes: 75
     strategy:
       fail-fast: false
       matrix:
@@ -32,10 +35,14 @@ jobs:
       - uses: dtolnay/rust-toolchain@master
         with:
           toolchain: nightly-2026-11-01
+      # Los cuatro objetivos son binarios del mismo crate con las mismas dependencias:
+      # comparten una caché (antes, una de 1,1-1,5 GB por formato) y basta que un
+      # trabajo termine para que la guarde. Solo `main` la escribe.
       - uses: Swatinem/rust-cache@v2
         with:
           workspaces: fuzz -> target
-          key: fuzz-${{ matrix.format }}
+          shared-key: fuzz
+          save-if: ${{ github.ref == 'refs/heads/main' }}
       - name: Herramientas y fuente
         run: |
           cargo +1.99 install cargo-fuzz --version 0.13.1 --locked

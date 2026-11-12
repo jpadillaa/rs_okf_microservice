@@ -47,7 +47,18 @@ C3/C4 y se documentan para comunicar su caso mínimo aguas arriba.
 
 El flujo `scheduled.yml` mantiene la auditoría diaria de dependencias y añade una
 matriz de cuatro objetivos: cinco minutos de fuzzing por formato, con un tope de
-45 minutos por trabajo que incluye instalación y compilación. Conserva el corpus
+75 minutos por trabajo que incluye instalación, compilación y el guardado de la caché.
+El tope era de 45 minutos hasta la ejecución del 11 de noviembre (Programado #12): la
+caché de compilación de `pdf` había sido expulsada, el trabajo compiló sin ella durante
+42 minutos, fuzzeó minuto y medio sin fallos y se canceló; `docx`, también sin caché,
+compiló en 35 minutos y terminó a tiempo, y los objetivos con caché tardaron unos 11.
+Un trabajo cancelado no guarda su caché, así que la noche siguiente habría vuelto a
+empezar en frío. Los cuatro objetivos son binarios del mismo crate y comparten una
+caché de compilación (`shared-key: fuzz`) que solo escribe `main`; antes había una de
+1,1 a 1,5 GB por formato. Las cachés del repositorio sumaban 10,4 GB frente al límite
+de 10 GB de GitHub, que expulsa primero las menos usadas: las del fuzzing, leídas una
+vez al día. Por eso las PR ya no escriben las cachés de `ci.yml` (la de Rust y la de
+capas de Docker, ver [Compilación Docker](COMPILACION_DOCKER.md)). Conserva el corpus
 en caché y sube logs y casos fallidos durante 14 días, incluso cuando el objetivo
 falla. Nightly se limita a compilar y ejecutar los objetivos; la CI normal sigue
 con Rust 1.99. `cargo-fuzz` se instala con Rust 1.99: su lockfile fija `rustix`
