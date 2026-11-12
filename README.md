@@ -28,8 +28,8 @@ Por ejemplo, el origen de una tabla de Excel puede indicarse como «hoja Ventas,
 flowchart LR
     accTitle: De un documento a un paquete OKF
     accDescr: Un archivo PDF, DOCX, XLSX o PPTX entra al microservicio, que extrae y organiza su contenido y entrega un ZIP descargable.
-    d1_input["📄 PDF · DOCX<br/>📊 XLSX · PPTX"] --> d1_service("<b>Microservicio OKF</b><br/>Extrae y organiza")
-    d1_service --> d1_output["📦 <b>ZIP descargable</b><br/>Texto + recursos + original"]
+    d1_input["PDF · DOCX<br/>XLSX · PPTX"] --> d1_service("<b>Microservicio OKF</b><br/>Extrae y organiza")
+    d1_service --> d1_output["<b>ZIP descargable</b><br/>Texto + recursos + original"]
     classDef input fill:#DBEAFE,stroke:#2563EB,color:#1E3A8A,stroke-width:2px;
     classDef process fill:#EDE9FE,stroke:#7C3AED,color:#4C1D95,stroke-width:2px;
     classDef output fill:#CCFBF1,stroke:#0F766E,color:#134E4A,stroke-width:2px;
@@ -51,7 +51,7 @@ El ZIP funciona como una carpeta de lectura con su material de respaldo. **`inde
 flowchart LR
     accTitle: Qué hay dentro del ZIP
     accDescr: El paquete incluye un índice, una ficha del documento, el contenido convertido, los recursos cuando los hay, el original y un informe de conversión.
-    subgraph d2_zip["📦 Paquete OKF"]
+    subgraph d2_zip["Paquete OKF"]
         direction TB
         d2_index["<b>index.md</b><br/>La puerta de entrada"] ~~~ d2_doc["<b>documento.md</b><br/>Ficha y estructura"]
         d2_doc ~~~ d2_content["<b>contenido/</b><br/>Texto organizado"]
@@ -71,10 +71,10 @@ Dentro de esa estructura común, el contenido se organiza según el formato del 
 
 | Formato de entrada | Contenido del resultado | Consideraciones |
 | --- | --- | --- |
-| 📄 **PDF** | Texto por secciones, referencias a páginas y recursos extraídos. | Para transcribir escaneos sin capa de texto, se debe activar el OCR. |
-| 📝 **Word · DOCX** | Secciones con títulos, listas, tablas, imágenes y notas. | Las referencias señalan bloques del documento, no páginas de Word. |
-| 📊 **Excel · XLSX** | Hojas y regiones de datos; las regiones grandes incluyen archivos CSV y, cuando corresponde, detalle por celda. | Conserva las fórmulas y sus valores guardados; no recalcula el libro. |
-| 🖼️ **PowerPoint · PPTX** | Una parte por diapositiva, con texto, notas y una vista PNG. | Las vistas son estáticas; las animaciones no se reproducen. |
+| **PDF** | Texto por secciones, referencias a páginas y recursos extraídos. | Para transcribir escaneos sin capa de texto, se debe activar el OCR. |
+| **Word · DOCX** | Secciones con títulos, listas, tablas, imágenes y notas. | Las referencias señalan bloques del documento, no páginas de Word. |
+| **Excel · XLSX** | Hojas y regiones de datos; las regiones grandes incluyen archivos CSV y, cuando corresponde, detalle por celda. | Conserva las fórmulas y sus valores guardados; no recalcula el libro. |
+| **PowerPoint · PPTX** | Una parte por diapositiva, con texto, notas y una vista PNG. | Las vistas son estáticas; las animaciones no se reproducen. |
 
 El conversor extrae y organiza el contenido sin resumirlo. Sus notas se distinguen del texto original. Si detecta pérdidas o incertidumbre, las declara en el informe.
 
@@ -212,9 +212,9 @@ flowchart TD
     accTitle: Estados de un trabajo y qué hacer en cada caso
     accDescr: Un trabajo pasa de queued a processing. Puede terminar complete, partial o failed. Un fallo temporal puede devolverlo a la cola para un reintento limitado.
     d4_queue("<b>queued</b><br/>Esperando turno") --> d4_work("<b>processing</b><br/>Convirtiendo y comprobando")
-    d4_work --> d4_complete["✅ <b>complete</b><br/>Sin pérdidas detectadas<br/>Descarga disponible"]
-    d4_work --> d4_partial["⚠️ <b>partial</b><br/>Hay pérdidas o incertidumbre<br/>Descargar y revisar el informe"]
-    d4_work --> d4_failed["⛔ <b>failed</b><br/>La conversión falló<br/>Consultar el error"]
+    d4_work --> d4_complete["<b>complete</b><br/>Sin pérdidas detectadas<br/>Descarga disponible"]
+    d4_work --> d4_partial["<b>partial</b><br/>Hay pérdidas o incertidumbre<br/>Descargar y revisar el informe"]
+    d4_work --> d4_failed["<b>failed</b><br/>La conversión falló<br/>Consultar el error"]
     d4_work -.->|Fallo temporal: reintento limitado| d4_queue
     classDef input fill:#DBEAFE,stroke:#2563EB,color:#1E3A8A,stroke-width:2px;
     classDef process fill:#EDE9FE,stroke:#7C3AED,color:#4C1D95,stroke-width:2px;
@@ -259,7 +259,7 @@ La primera construcción puede tardar porque incluye la compilación del servici
 flowchart LR
     accTitle: Despliegue local con Docker Compose
     accDescr: El navegador habla con la API en localhost 8080. API y worker comparten PostgreSQL para los trabajos y un volumen de archivos para originales y resultados. Compose ejecuta tres servicios en el mismo equipo.
-    d5_browser["🌐 <b>Navegador</b><br/>localhost:8080"] <--> d5_api
+    d5_browser["<b>Navegador</b><br/>localhost:8080"] <--> d5_api
     subgraph d5_local["Equipo local · Docker Compose"]
         d5_api("<b>API</b><br/>Recibe y entrega")
         d5_worker("<b>Worker</b><br/>Convierte en segundo plano")
@@ -291,7 +291,7 @@ El acceso al servicio se limita a `127.0.0.1` en esta configuración, pensada pa
 
 API y worker usan la misma imagen `okf-microservice:local`; basta construirla una vez. BuildKit y `cargo-chef` reutilizan las dependencias cuando solo cambia el código.
 
-La imagen final usa Distroless Debian 13, con fuentes, certificados y modelos OCR incluidos. Ejecuta el binario sin símbolos como UID 10001 y no contiene shell ni gestor de paquetes. Las imágenes base están fijadas por digest, que identifica su contenido exacto.
+La imagen final parte de `scratch` (una imagen vacía) y contiene solo el binario sin símbolos, las tres bibliotecas del sistema que enlaza, una fuente, los certificados y los modelos OCR. Ejecuta como UID 10001 y no contiene shell ni gestor de paquetes. Ocupa unos 88 MB en disco y unos 29 MB al descargarla. Las imágenes base de compilación están fijadas por digest, que identifica su contenido exacto.
 
 El worker accede a PostgreSQL por una red interna. Cada conversión se ejecuta en un proceso separado, con límites de memoria y tiempo. En Linux, seccomp bloquea las conexiones de red del proceso de conversión y Landlock restringe las rutas a las que este puede acceder. El diagrama de esa frontera y el motivo de cada capa están en la [arquitectura técnica](docs/arquitectura/ARQUITECTURA_TECNICA_MICROSERVICIO_OKF.md#frontera-del-proceso-de-conversión-plan-2-c3-y-c4).
 
@@ -383,9 +383,9 @@ Un escaneo contiene una imagen de las letras. El **OCR** intenta reconocerlas y 
 flowchart TD
     accTitle: Qué ocurre con una página escaneada
     accDescr: Una página escaneada sin capa de texto se conserva como vista si el OCR está apagado. Con OCR activo se intenta reconocer el texto; si no se consigue o se agota el presupuesto, se conserva la vista y se informa de la pérdida.
-    d7_scan["📄 <b>Página escaneada</b><br/>Sin capa de texto"] -->|OCR activo| d7_ocr("<b>Reconocimiento local</b><br/>Intenta leer las letras")
-    d7_scan -->|OCR apagado| d7_view["🖼️ <b>Vista de la página</b><br/>Aviso en el informe"]
-    d7_ocr -->|Texto reconocido| d7_text["📝 <b>Texto transcrito</b><br/>Con procedencia y confianza"]
+    d7_scan["<b>Página escaneada</b><br/>Sin capa de texto"] -->|OCR activo| d7_ocr("<b>Reconocimiento local</b><br/>Intenta leer las letras")
+    d7_scan -->|OCR apagado| d7_view["<b>Vista de la página</b><br/>Aviso en el informe"]
+    d7_ocr -->|Texto reconocido| d7_text["<b>Texto transcrito</b><br/>Con procedencia y confianza"]
     d7_ocr -->|Sin texto o sin presupuesto| d7_view
     classDef input fill:#DBEAFE,stroke:#2563EB,color:#1E3A8A,stroke-width:2px;
     classDef process fill:#EDE9FE,stroke:#7C3AED,color:#4C1D95,stroke-width:2px;

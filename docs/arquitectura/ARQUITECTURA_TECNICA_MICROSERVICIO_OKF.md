@@ -18,6 +18,33 @@ flowchart TD
 
 El despliegue inicial ocupa un solo nodo. Si se añaden workers en ese nodo, todos deben coordinar la asignación de trabajos sobre el mismo registro. Un despliegue multinodo exige almacenamiento compartido y coordinación distribuida; queda fuera de este alcance inicial.
 
+### Procesos y frontera de aislamiento
+
+Las etapas de la [arquitectura conceptual](ARQUITECTURA_CONCEPTUAL_MICROSERVICIO_OKF.md) se reparten entre tres procesos. Solo el proceso de conversión abre el documento, y es el único sin red ni credenciales.
+
+```mermaid
+flowchart LR
+    CLI["Cliente"] <--> API
+    subgraph RED["Con acceso a PostgreSQL por la red interna"]
+        API["API<br/>Recepción y registro<br/>consulta y descarga"]
+        SUP["Worker (supervisor)<br/>reclama, vigila<br/>y publica"]
+    end
+    subgraph AISLADO["Sin red ni credenciales"]
+        CONV["okf-microservice convert<br/>inspección, extracción, OCR,<br/>reconciliación, ensamblado<br/>y validación"]
+    end
+    DB[("PostgreSQL<br/>trabajos")]
+    FS[("Almacén<br/>originales, intentos<br/>y publicados")]
+    API <--> DB
+    SUP <--> DB
+    API <--> FS
+    SUP <--> FS
+    SUP -- "lanza un hijo por trabajo" --> CONV
+    CONV -- "resultado y bundle.zip" --> SUP
+    CONV -. "solo el original y<br/>su carpeta de intento" .-> FS
+```
+
+El detalle de esta frontera (qué la cruza, el orden de las capas, el motivo de cada una y las diferencias entre Linux y macOS) está en [Frontera del proceso de conversión](#frontera-del-proceso-de-conversión-plan-2-c3-y-c4). La derivación de `conversion_id` y `unit_id`, y su diferencia con `job_id`, está en [Identificadores de la conversión y de sus unidades](#identificadores-de-la-conversión-y-de-sus-unidades-plan-3-i1).
+
 ## 2. Componentes y responsabilidades
 
 | Componente | Responsabilidad |

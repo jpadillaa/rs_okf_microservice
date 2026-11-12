@@ -1,58 +1,105 @@
 # Documentación del microservicio OKF
 
-Si llegas por primera vez, empieza por la [guía visual del repositorio](../README.md): explica qué recibe, qué entrega, cómo funciona y cómo desplegarlo. Para convertir tu primer archivo desde el navegador, ve a [Probar los endpoints con Swagger UI](../README.md#probar-los-endpoints-con-swagger-ui).
+**Qué hace el servicio, cómo lo hace y por qué se hizo así.**
 
-Este directorio es el punto de entrada para implementar el conversor de PDF, DOCX, XLSX y PPTX a bundles OKF v0.2. Los documentos describen el **resultado**, el **comportamiento del servicio** y las **herramientas elegidas**. Léelos en el orden de la tabla antes de escribir código.
+Esta carpeta explica el resultado que entrega el microservicio (un bundle OKF), el comportamiento del servicio y las herramientas elegidas. Si llegas por primera vez, empieza por la [guía visual del repositorio](../README.md): explica qué recibe el servicio, qué entrega, cómo funciona y cómo desplegarlo. Para convertir tu primer archivo desde el navegador, ve a [Probar los endpoints con Swagger UI](../README.md#probar-los-endpoints-con-swagger-ui).
 
-## Mapa y orden de lectura
+## Por dónde empezar
 
-| Orden | Ubicación en el repositorio | Documento actual | Qué resuelve |
-| --- | --- | --- | --- |
-| 1 | `docs/especificacion/ESPECIFICACION_OKF.md` | [Especificación OKF documental](especificacion/ESPECIFICACION_OKF.md) | Contrato del bundle: archivos, frontmatter, recursos, procedencia, reglas por formato y validación. |
-| 1a | `docs/especificacion/perfil-1.18.0.schema.json` | [Esquema del frontmatter, perfil 1.18.0](especificacion/perfil-1.18.0.schema.json) | JSON Schema de los campos de `documento.md`, el informe y cada tipo de concepto, y del archivo de localizadores de bloque PDF, para comprobarlos mecánicamente. Hay uno por versión del perfil; los anteriores siguen en la misma carpeta. |
-| 1a-17 | `docs/especificacion/perfil-1.17.0.schema.json` | [Esquema del frontmatter, perfil 1.17.0](especificacion/perfil-1.17.0.schema.json) | Esquema anterior compatible para los bundles ya publicados, sin `ocr.max_images` en la configuración. |
-| 1a-16 | `docs/especificacion/perfil-1.16.0.schema.json` | [Esquema del frontmatter, perfil 1.16.0](especificacion/perfil-1.16.0.schema.json) | Esquema anterior compatible para los bundles ya publicados, con los localizadores de bloque PDF en el frontmatter. |
-| 1a-15 | `docs/especificacion/perfil-1.15.0.schema.json` | [Esquema del frontmatter, perfil 1.15.0](especificacion/perfil-1.15.0.schema.json) | JSON Schema de los campos de `documento.md`, el informe y cada tipo de concepto, para comprobarlos mecánicamente. Hay uno por versión del perfil. |
-| 1a-previo | `docs/especificacion/perfil-1.14.0.schema.json` | [Esquema del frontmatter, perfil 1.14.0](especificacion/perfil-1.14.0.schema.json) | Esquema anterior compatible para los bundles ya publicados. |
-| 1b | `docs/especificacion/perfil-1.13.0.schema.json` | [Esquema del frontmatter, perfil 1.13.0](especificacion/perfil-1.13.0.schema.json) | Esquema anterior compatible para los bundles ya publicados. |
-| 1c | `docs/especificacion/perfil-1.12.0.schema.json` | [Esquema del frontmatter, perfil 1.12.0](especificacion/perfil-1.12.0.schema.json) | Esquema anterior compatible para los bundles ya publicados. |
-| 1d | `docs/especificacion/perfil-1.11.0.schema.json` | [Esquema del frontmatter, perfil 1.11.0](especificacion/perfil-1.11.0.schema.json) | Esquema de la versión anterior, cuyos bundles siguen siendo válidos. |
-| 1e | `docs/especificacion/perfil-1.10.0.schema.json` | [Esquema del frontmatter, perfil 1.10.0](especificacion/perfil-1.10.0.schema.json) | Esquema anterior compatible para los bundles ya publicados. |
-| 2 | `docs/arquitectura/ARQUITECTURA_CONCEPTUAL_MICROSERVICIO_OKF.md` | [Arquitectura conceptual](arquitectura/ARQUITECTURA_CONCEPTUAL_MICROSERVICIO_OKF.md) | Responsabilidades, etapas de conversión, modelos de lectura y de salida, y estados. |
-| 3 | `docs/arquitectura/ARQUITECTURA_TECNICA_MICROSERVICIO_OKF.md` | [Arquitectura técnica](arquitectura/ARQUITECTURA_TECNICA_MICROSERVICIO_OKF.md) | Dos procesos, almacenamiento local, trabajo durable, reintentos, límites y publicación; frontera y aislamiento del proceso de conversión (por qué no tiene red ni credenciales) y derivación de los identificadores deterministas. |
-| 3a | `docs/arquitectura/DIAGRAMA_MICROSERVICIO_OKF.md` | [Diagrama conceptual](arquitectura/DIAGRAMA_MICROSERVICIO_OKF.md) | Vista del flujo descrito por las dos arquitecturas y de los procesos que lo ejecutan, con la frontera de aislamiento del proceso de conversión. |
-| 4 | `docs/decisiones/STACK_TECNOLOGICO_MICROSERVICIO_OKF.md` | [Stack tecnológico](decisiones/STACK_TECNOLOGICO_MICROSERVICIO_OKF.md) | Rust, bibliotecas, persistencia, renderizado y pruebas necesarias antes de cerrar los adaptadores. |
-| 4a | `docs/decisiones/RENDERIZADO_PPTX_MEDICIONES.md` | [Decisión de renderizado PPTX](decisiones/RENDERIZADO_PPTX_MEDICIONES.md) | Renderizador PPTX elegido y mediciones con ejemplos sintéticos y con el corpus real. |
-| 4b | `docs/decisiones/MEDICION_DE_CALIDAD.md` | [Medición de la calidad del bundle](decisiones/MEDICION_DE_CALIDAD.md) | Qué se comprueba en cada conversión y qué solo en las pruebas y las herramientas; por qué la medición está en Python y cómo llega a la CI sin Python; cómo funciona `tools/exactitud.py`, con diagramas. Léelo antes de los dos siguientes. |
-| 4b-0 | `docs/decisiones/COBERTURA_INDEPENDIENTE.md` | [Cobertura frente a una referencia independiente](decisiones/COBERTURA_INDEPENDIENTE.md) | Método y resultados de la comparación de cada bundle con pdfium, python-docx, python-pptx y openpyxl; hallazgos. |
-| 4b-1 | `docs/decisiones/EXACTITUD_DEL_TEXTO.md` | [Exactitud del texto PDF](decisiones/EXACTITUD_DEL_TEXTO.md) | Métricas de orden, orden interno, contigüidad y estructura (encabezados, listas, tablas y código) frente a referencias exactas (generadas con las muestras o revisadas a mano) o aproximadas (pdfium); borradores de referencia, comprobación en las pruebas y línea base. |
-| 4c | `docs/decisiones/FUZZING.md` | [Fuzzing de los lectores](decisiones/FUZZING.md) | Objetivos, límites, semillas, reproducción y criterio de estabilidad nocturna. |
-| 4d | `docs/decisiones/MIGRACION_POSTGRESQL.md` | [Migración a PostgreSQL](decisiones/MIGRACION_POSTGRESQL.md) | Configuración desde `.env`, concurrencia y despliegue. |
-| 4e | `docs/decisiones/COMPILACION_DOCKER.md` | [Compilación y empaquetado Docker](decisiones/COMPILACION_DOCKER.md) | Caché de dependencias, BuildKit local y en CI, runtime Distroless y mediciones de tamaño y reconstrucción. |
-| 4f | `docs/decisiones/OCR_LOCAL.md` | [OCR local](decisiones/OCR_LOCAL.md) | OCR opcional de los PDF escaneados: motor y modelos elegidos, alternativas, ajustes medidos (enderezado, anchos fijos, tamaño por la tinta), exactitud, tiempo y memoria. |
-| 4g | `docs/decisiones/PRUEBAS_PDF_REALES.md` | [Pruebas de calidad y carga con PDF reales](decisiones/PRUEBAS_PDF_REALES.md) | Método repetible, evaluación de texto y estructura, recursos y carga; PDF privados de 346 páginas y cuaderno apaisado de 65 páginas y documento de 575 páginas con OCR previo; formularios, tablas, diagramas, capturas, listados OCR, carga sostenida y rendimiento de la conversión. |
-| 5 | `docs/estado/ESTADO_DEL_PROYECTO.md` | [Estado del proyecto](estado/ESTADO_DEL_PROYECTO.md) | Qué está implementado, con qué evidencia de calidad, brechas frente a la arquitectura, comparación con el plan inicial y roadmap pendiente. |
-| 5a | `docs/planes/PLAN_1_RECUPERACION_DEL_PLAN_ORIGINAL.md` | [Plan 1: recuperar del plan original](planes/PLAN_1_RECUPERACION_DEL_PLAN_ORIGINAL.md) | Decisiones del plan inicial que se recuperan (modelo de salida común, referencia de cobertura, imagen reproducible, límites y admisión, registro, corpus, división en capítulos, auditoría de dependencias) y las que se cierran en la documentación. |
-| 5b | `docs/planes/PLAN_2_CALIDAD_Y_ROBUSTEZ.md` | [Plan 2: calidad y robustez](planes/PLAN_2_CALIDAD_Y_ROBUSTEZ.md) | Regresión, entradas hostiles, operación y contrato: bundles de referencia, aislamiento, fuzzing, salud, retención y versiones. |
-| 5c | `docs/planes/PLAN_3_CONTRATO_DE_SALIDA_PARA_RAG.md` | [Plan 3: contrato de salida para el RAG](planes/PLAN_3_CONTRATO_DE_SALIDA_PARA_RAG.md) | Lo que falta del contrato que pide el pipeline RAG: identificadores de conversión y de unidad, versiones del documento, configuración usada, relaciones entre unidades, referencias no resueltas, coordenadas, permisos, texto generado y esquema del frontmatter. |
-| 5d | `docs/planes/PLAN_4_COMPLETITUD_Y_EXACTITUD_DEL_TEXTO.md` | [Plan 4: completitud y exactitud del texto](planes/PLAN_4_COMPLETITUD_Y_EXACTITUD_DEL_TEXTO.md) | Tres trabajos: referencias revisadas de originales reales y métricas de estructura, texto dentro de imágenes y escaneos largos, y defectos de maquetación residuales. |
+Elige según lo que necesites.
 
-Los documentos están guardados en las ubicaciones indicadas y se enlazan mediante rutas relativas para que funcionen dentro del repositorio y en Obsidian.
+| Si quieres... | Lee primero | Después |
+| --- | --- | --- |
+| Probar el servicio | [Guía visual del repositorio](../README.md) | [Estado del proyecto](estado/ESTADO_DEL_PROYECTO.md), para saber qué esperar de cada formato |
+| Saber exactamente qué contiene un bundle | [Especificación OKF documental](especificacion/ESPECIFICACION_OKF.md) | [Esquema del frontmatter](especificacion/perfil-1.18.0.schema.json), para comprobarlo con una máquina |
+| Leer los bundles desde un sistema RAG | [Especificación, §2 y §3](especificacion/ESPECIFICACION_OKF.md) (identidad, procedencia y citas) | [Plan 3](planes/PLAN_3_CONTRATO_DE_SALIDA_PARA_RAG.md), que explica por qué existe cada campo |
+| Entender cómo está diseñado | [Arquitectura conceptual](arquitectura/ARQUITECTURA_CONCEPTUAL_MICROSERVICIO_OKF.md) | [Arquitectura técnica](arquitectura/ARQUITECTURA_TECNICA_MICROSERVICIO_OKF.md) |
+| Saber por qué se eligió una biblioteca o un método | [Stack tecnológico](decisiones/STACK_TECNOLOGICO_MICROSERVICIO_OKF.md) | Las [decisiones y mediciones](#decisiones-y-mediciones) |
+| Saber cómo va el proyecto y qué falta | [Estado del proyecto](estado/ESTADO_DEL_PROYECTO.md) | Los [planes](#estado-y-planes) |
+| Cambiar el código | [Instrucciones para agentes](../AGENTS.md) (verificación y reglas de documentación) | El documento que regula la parte que vas a tocar |
+
+## Mapa de la documentación
+
+La documentación tiene cuatro capas. Las de arriba mandan sobre las de abajo.
+
+```mermaid
+flowchart TD
+    accTitle: Capas de la documentación
+    accDescr: La especificación define el contrato del bundle. Las arquitecturas describen cómo el servicio lo cumple. Las decisiones registran las herramientas y mediciones. El estado y los planes registran el avance.
+    m1("<b>Contrato</b><br/>Especificación y esquemas<br/>Qué contiene un bundle") --> m2("<b>Diseño</b><br/>Arquitectura conceptual y técnica<br/>Cómo lo produce el servicio")
+    m2 --> m3("<b>Decisiones y mediciones</b><br/>Stack, OCR, cobertura, exactitud, fuzzing<br/>Con qué y con qué evidencia")
+    m3 --> m4["<b>Estado y planes</b><br/>Qué está hecho y qué falta"]
+    classDef input fill:#DBEAFE,stroke:#2563EB,color:#1E3A8A,stroke-width:2px;
+    classDef process fill:#EDE9FE,stroke:#7C3AED,color:#4C1D95,stroke-width:2px;
+    classDef output fill:#CCFBF1,stroke:#0F766E,color:#134E4A,stroke-width:2px;
+    classDef review fill:#FEF3C7,stroke:#B45309,color:#78350F,stroke-width:2px;
+    class m1 input;
+    class m2 process;
+    class m3 output;
+    class m4 review;
+    linkStyle default stroke:#64748B,stroke-width:2px;
+```
+
+### Contrato
+
+| Documento | Qué resuelve |
+| --- | --- |
+| [Especificación OKF documental](especificacion/ESPECIFICACION_OKF.md) | Archivos, frontmatter, recursos, procedencia, reglas por formato y validación, con el registro de cambios de cada versión del perfil. |
+| [Esquema del frontmatter, perfil 1.18.0](especificacion/perfil-1.18.0.schema.json) | JSON Schema de los campos de `documento.md`, el informe y cada tipo de concepto, y del archivo de localizadores de bloque PDF, para comprobarlos mecánicamente. La carpeta guarda el de la versión actual y los anteriores cuyo contenido difiere; los de 1.10.0 a 1.15.0 eran idénticos al 1.16.0 salvo su número y siguen en el historial de Git. |
+| [Esquema del frontmatter, perfil 1.17.0](especificacion/perfil-1.17.0.schema.json) | Esquema anterior compatible para los bundles ya publicados, sin `ocr.max_images` en la configuración. |
+| [Esquema del frontmatter, perfil 1.16.0](especificacion/perfil-1.16.0.schema.json) | Esquema anterior compatible para los bundles ya publicados, con los localizadores de bloque PDF en el frontmatter; vale también para los perfiles 1.10.0 a 1.15.0. |
+
+### Diseño
+
+| Documento | Qué resuelve |
+| --- | --- |
+| [Arquitectura conceptual](arquitectura/ARQUITECTURA_CONCEPTUAL_MICROSERVICIO_OKF.md) | Responsabilidades, recorrido de una conversión, modelos de lectura y de salida, y estados. Incluye el diagrama del flujo. |
+| [Arquitectura técnica](arquitectura/ARQUITECTURA_TECNICA_MICROSERVICIO_OKF.md) | Dos procesos, almacenamiento local, trabajo durable, reintentos, límites y publicación; diagrama de los procesos, frontera y aislamiento del proceso de conversión (por qué no tiene red ni credenciales) y derivación de los identificadores deterministas. |
+
+### Decisiones y mediciones
+
+| Documento | Qué resuelve |
+| --- | --- |
+| [Stack tecnológico](decisiones/STACK_TECNOLOGICO_MICROSERVICIO_OKF.md) | Rust, bibliotecas, persistencia, renderizado y pruebas necesarias antes de cerrar los adaptadores. |
+| [Decisión de renderizado PPTX](decisiones/RENDERIZADO_PPTX_MEDICIONES.md) | Renderizador PPTX elegido y mediciones con ejemplos sintéticos y con el corpus real. |
+| [Medición de la calidad del bundle](decisiones/MEDICION_DE_CALIDAD.md) | Qué se comprueba en cada conversión y qué solo en las pruebas y las herramientas; por qué la medición está en Python y cómo llega a la CI sin Python; cómo funciona `tools/exactitud.py`, con diagramas. Léelo antes de los dos siguientes. |
+| [Cobertura frente a una referencia independiente](decisiones/COBERTURA_INDEPENDIENTE.md) | Método y resultados de la comparación de cada bundle con pdfium, python-docx, python-pptx y openpyxl; hallazgos. |
+| [Exactitud del texto PDF](decisiones/EXACTITUD_DEL_TEXTO.md) | Métricas de orden, orden interno, contigüidad y estructura (encabezados, listas, tablas y código) frente a referencias exactas (generadas con las muestras o revisadas a mano) o aproximadas (pdfium); borradores de referencia, comprobación en las pruebas y línea base. |
+| [Fuzzing de los lectores](decisiones/FUZZING.md) | Objetivos, límites, semillas, reproducción y criterio de estabilidad nocturna. |
+| [Migración a PostgreSQL](decisiones/MIGRACION_POSTGRESQL.md) | Configuración desde `.env`, concurrencia y despliegue. |
+| [Compilación y empaquetado Docker](decisiones/COMPILACION_DOCKER.md) | Caché de dependencias, BuildKit local y en CI, runtime sobre `scratch` y mediciones de tamaño y reconstrucción. |
+| [OCR local](decisiones/OCR_LOCAL.md) | OCR opcional de los PDF escaneados: motor y modelos elegidos, alternativas, ajustes medidos (enderezado, anchos fijos, tamaño por la tinta), exactitud, tiempo y memoria. |
+| [Pruebas de calidad y carga con PDF reales](decisiones/PRUEBAS_PDF_REALES.md) | Método repetible, evaluación de texto y estructura, recursos y carga con tres PDF privados (346, 65 y 575 páginas); formularios, tablas, diagramas, capturas, listados OCR, carga sostenida y rendimiento de la conversión. |
+
+### Estado y planes
+
+| Documento | Qué resuelve |
+| --- | --- |
+| [Estado del proyecto](estado/ESTADO_DEL_PROYECTO.md) | Qué está implementado, con qué evidencia de calidad, brechas frente a la arquitectura, comparación con el plan inicial y roadmap pendiente. |
+| [Plan 1: recuperar del plan original](planes/PLAN_1_RECUPERACION_DEL_PLAN_ORIGINAL.md) | Decisiones del plan inicial que se recuperan (modelo de salida común, referencia de cobertura, imagen reproducible, límites y admisión, registro, corpus, división en capítulos, auditoría de dependencias) y las que se cierran en la documentación. |
+| [Plan 2: calidad y robustez](planes/PLAN_2_CALIDAD_Y_ROBUSTEZ.md) | Regresión, entradas hostiles, operación y contrato: bundles de referencia, aislamiento, fuzzing, salud, retención y versiones. |
+| [Plan 3: contrato de salida para el RAG](planes/PLAN_3_CONTRATO_DE_SALIDA_PARA_RAG.md) | Lo que faltaba del contrato que pide el pipeline RAG: identificadores de conversión y de unidad, versiones del documento, configuración usada, relaciones entre unidades, referencias no resueltas, coordenadas, permisos, texto generado y esquema del frontmatter. |
+| [Plan 4: completitud y exactitud del texto](planes/PLAN_4_COMPLETITUD_Y_EXACTITUD_DEL_TEXTO.md) | Tres trabajos: referencias revisadas de originales reales y métricas de estructura, texto dentro de imágenes y escaneos largos, y defectos de maquetación residuales. |
+
+## Ejemplos por formato
+
+Cada formato tiene su carpeta en `examples/`. Los documentos de `corpus/` son copias reducidas de originales reales (se generan con `reduce_corpus.py`), los de `muestras/` son documentos artificiales que cubren casos concretos y `esperado/` guarda el bundle de referencia de cada uno, que las pruebas comparan archivo por archivo.
+
+| Formato | Carpeta | Qué contiene |
+| --- | --- | --- |
+| PPTX | `examples/pptx/` | Cuatro presentaciones mínimas y el corpus real reducido. |
+| DOCX | `examples/docx/` | Dos documentos mínimos, el corpus real reducido y cuatro muestras con tablas complejas, notas, comentarios, control de cambios, ecuaciones, gráficos, contenido no representable y un documento sin estilos de encabezado ni listas reales. |
+| XLSX | `examples/xlsx/` | Tres libros artificiales (`create_samples.py`): ventas con fórmulas, tabla grande, gráfico y comentarios; inventario con varias regiones, tabla dinámica y hoja de gráfico; y un libro con contenido no representable (vínculo externo, fórmulas sin valor, objeto incrustado). |
+| PDF | `examples/pdf/` | Corpus real reducido (artículo científico a dos columnas, exportación de Word con marcadores y presentación de Canva), cuatro muestras (un documento breve, un artículo con tabla y figura, un informe con listas y código, y un expediente con páginas escaneada, en blanco, solo visual y mixta) y `escaneado_ocr.pdf`, el informe convertido en un escaneo para el OCR local. |
 
 ## Precedencia
 
+Si dos documentos parecen decir cosas distintas, manda el de la capa superior:
+
 1. La [especificación oficial de OKF v0.2](https://github.com/GoogleCloudPlatform/open-knowledge-format/blob/main/SPEC.md) y el perfil documental del proyecto rigen el bundle. El perfil añade requisitos de este conversor; no debe invalidar la especificación oficial.
 2. Las arquitecturas rigen el flujo y las garantías operativas. El diagrama sirve para orientarse; si un detalle del dibujo difiere del texto, se sigue el texto.
-3. El documento de stack selecciona herramientas para cumplir los contratos anteriores. Una limitación de una librería no autoriza a eliminar una referencia, un recurso o una validación exigidos por el perfil.
+3. El documento de stack selecciona herramientas para cumplir los contratos anteriores. Una limitación de una biblioteca no autoriza a eliminar una referencia, un recurso o una validación exigidos por el perfil.
 
-Si encuentras una contradicción real entre documentos, registra el caso concreto y corrige primero el documento que define ese contrato; después actualiza los documentos dependientes. No resuelvas el conflicto con una suposición silenciosa en el código.
+Si encuentras una contradicción real entre documentos, registra el caso concreto y corrige primero el documento que define ese contrato; después actualiza los dependientes. No resuelvas el conflicto con una suposición silenciosa en el código.
 
-## Para comenzar la implementación
-
-- **Primera entrega: PPTX de extremo a extremo.** Prepara solo sus archivos de ejemplo y expectativas. Implementa recepción, worker, extracción de diapositivas, notas, recursos y vistas; genera y valida el bundle OKF. Define únicamente el modelo intermedio común que esta entrega necesite.
-- **Segunda entrega: DOCX.** Reutiliza la cola, el worker, el validador y el lector OOXML; añade el adaptador DOCX con bloques numerados, división por encabezados y contenido auxiliar (§5 de la especificación). Sus ejemplos están en `examples/docx/`: dos fixtures mínimos, el corpus real reducido y cuatro documentos artificiales (`muestras/`) con tablas complejas, notas, comentarios, control de cambios, ecuaciones, gráficos, contenido no representable y un documento sin estilos de encabezado, con formato directo y listas escritas como texto.
-- **Tercera entrega: XLSX.** Añade el adaptador XLSX con el mismo lector OOXML: un concepto por hoja, regiones con localizadores `xlsx_range`, conceptos propios con CSV y registros por celda para las regiones grandes, y fórmulas separadas de su valor almacenado (§5 de la especificación). Sus ejemplos son tres libros artificiales en `examples/xlsx/muestras/`, generados por `create_samples.py`: ventas con fórmulas, tabla de Excel grande, gráfico, comentarios y hoja oculta; inventario con varias regiones por hoja, tabla dinámica, formatos y hoja de gráfico; y un libro con contenido no representable (vínculo externo, fórmulas sin valor, objeto incrustado).
-- **Cuarta entrega: PDF.** Añade el adaptador PDF (`src/pdf/`), que lee las páginas con `pdf_oxide` y reconstruye con una maquetación propia el orden de lectura, las columnas, los párrafos, las listas y las tablas sencillas; separa encabezados y pies, registra los números de página impresos en `page_labels`, clasifica cada página (texto digital, mixta, escaneo, solo visual o en blanco) y adjunta la vista de las que no pueden transcribirse (§5 de la especificación). Sus ejemplos están en `examples/pdf/`: el corpus real reducido (`corpus/`, generado por `reduce_corpus.py`: un artículo científico a dos columnas, una exportación de Word con marcadores y una presentación de Canva) y cuatro documentos artificiales (`muestras/`, generados por `create_samples.py`): uno breve, un artículo a dos columnas con marcadores, tabla, figura y numeración que empieza en la segunda página, un informe sin marcadores con listas y código, y un expediente con páginas escaneada, en blanco, solo visual y mixta; además, `escaneado_ocr.pdf` (generado por `create_scans.py`) es el informe convertido en un escaneo sin capa de texto, para el OCR local.
-- Conserva `slide_index`, `slide_id` cuando exista y los demás localizadores antes de generar Markdown. Comprueba también diapositivas ocultas y sin título, vínculos, cobertura e informe.
-- Cierra la entrega cuando pasen sus pruebas de aceptación y funcionen los estados `complete`, `partial` y `failed` según corresponda. Después prepara ejemplos, pruebas y adaptador de **un solo formato adicional**. Repite hasta completar PDF, DOCX y XLSX.
-- Activa las dependencias por etapa según el stack. Las alternativas de bibliotecas se eligen con mediciones del formato en curso, no se instalan todas desde el inicio.
+Los documentos se enlazan con rutas relativas para que funcionen dentro del repositorio y en Obsidian.
