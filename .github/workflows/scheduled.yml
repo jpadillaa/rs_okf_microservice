@@ -2,11 +2,30 @@ name: Programado
 
 on:
   schedule:
+    # Auditoría de dependencias, cada día.
     - cron: "0 5 * * *"
+    # Fuzzing semanal, los lunes: un formato por semana (ver el paso «Formato de la semana»).
+    - cron: "0 6 * * 1"
   workflow_dispatch:
+    inputs:
+      formato:
+        description: Formato que se fuzzea; «rotacion» toma el de la semana
+        type: choice
+        options: [rotacion, xlsx, pptx, docx, pdf]
+        default: rotacion
+      minutos:
+        description: Minutos de fuzzing
+        type: number
+        default: 120
+
+permissions:
+  contents: read
+  # Para descargar el corpus que dejó la última ejecución del mismo formato.
+  actions: read
 
 jobs:
   advisories:
+    if: github.event.schedule != '0 6 * * 1'
     runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v5
@@ -16,27 +35,31 @@ jobs:
           command: check advisories
 
   fuzz:
+    if: github.event_name == 'workflow_dispatch' || github.event.schedule == '0 6 * * 1'
     runs-on: ubuntu-24.04
-    # Sin caché, la compilación tardó 42 min (pdf) y 35 (docx) el 11-11-2026; con caché, el
-    # trabajo entero dura unos 11. Con los 5 min de fuzzing y el guardado, 45 no bastaban.
-    # PDF fuzzea 10 min y su última ejecución puede alargarlos hasta 5 más (-timeout=300):
-    # en frío, unos 42 + 4 de herramientas + 15, dentro de los 75.
-    # Un trabajo cancelado no guarda su caché, así que el siguiente vuelve a empezar en frío.
-    timeout-minutes: 75
-    strategy:
-      fail-fast: false
-      matrix:
-        format: [pptx, docx, xlsx, pdf]
-        include:
-          # libFuzzer cuenta la carga del corpus dentro de max_total_time, y cada entrada
-          # PDF tarda de segundos a más de un minuto con ASan. Con 300 s, las noches del 9
-          # al 11 de noviembre terminaron al cargar, sin mutar. tools/fuzz_seeds.py acota
-          # el corpus restaurado y el tiempo de ejecución pesa en la energía de cada entrada.
-          - format: pdf
-            max_total_time: 600
-            options: -entropic_scale_per_exec_time=1
+    # Una semana sin uso basta para que GitHub expulse la caché de compilación, así que se
+    # cuenta con compilar en frío: unos 42 min, 4 de herramientas, los 120 de fuzzing y hasta
+    # 5 más si la última entrada llega al -timeout de 300 s.
+    timeout-minutes: 190
+    env:
+      MINUTOS: ${{ inputs.minutos || 120 }}
     steps:
       - uses: actions/checkout@v5
+      # Un formato por semana, en el orden acordado: XLSX, PPTX, DOCX y PDF; la rotación
+      # empieza el lunes 16 de noviembre de 2026 y se repite cada cuatro semanas.
+      - name: Formato de la semana
+        id: plan
+        env:
+          ELEGIDO: ${{ inputs.formato || 'rotacion' }}
+        run: |
+          formatos=(xlsx pptx docx pdf)
+          if [ "$ELEGIDO" = rotacion ]; then
+            dias=$(( ($(date -u +%s) - $(date -u -d 2026-11-16 +%s)) / 86400 ))
+            (( dias < 0 )) && dias=0
+            ELEGIDO=${formatos[$(( dias / 7 % 4 ))]}
+          fi
+          echo "formato=$ELEGIDO" >> "$GITHUB_OUTPUT"
+          echo "Formato de esta ejecución: $ELEGIDO ($MINUTOS min)"
       # cargo-fuzz se compila con la versión estable de la CI normal: su lockfile fija
       # rustix 0.36.5, que en Linux activa `rustc_attrs` con nightly y no compila.
       - uses: dtolnay/rust-toolchain@master
@@ -45,9 +68,8 @@ jobs:
       - uses: dtolnay/rust-toolchain@master
         with:
           toolchain: nightly-2026-11-01
-      # Los cuatro objetivos son binarios del mismo crate con las mismas dependencias:
-      # comparten una caché (antes, una de 1,1-1,5 GB por formato) y basta que un
-      # trabajo termine para que la guarde. Solo `main` la escribe.
+      # Los cuatro objetivos son binarios del mismo crate con las mismas dependencias y
+      # comparten una caché. Solo `main` la escribe.
       - uses: Swatinem/rust-cache@v2
         with:
           workspaces: fuzz -> target
@@ -58,48 +80,68 @@ jobs:
           cargo +1.99 install cargo-fuzz --version 0.13.1 --locked
           sudo apt-get update
           sudo apt-get install -y --no-install-recommends fonts-dejavu-core=2.37-8
-      - uses: actions/cache@v5
-        with:
-          path: fuzz/corpus/${{ matrix.format }}
-          key: fuzz-corpus-${{ matrix.format }}-${{ github.run_id }}
-          restore-keys: fuzz-corpus-${{ matrix.format }}-
+      # Cada formato vuelve a fuzzearse cuatro semanas después, cuando la caché de Actions
+      # ya habría expulsado su corpus; se conserva como artefacto de 35 días.
+      - name: Corpus de la ejecución anterior
+        env:
+          GH_TOKEN: ${{ github.token }}
+          FORMATO: ${{ steps.plan.outputs.formato }}
+        run: |
+          id=$(gh api "repos/$GITHUB_REPOSITORY/actions/artifacts?name=fuzz-corpus-$FORMATO&per_page=50" \
+            --jq '[.artifacts[] | select(.expired | not) | select(.workflow_run.head_branch == "main")][0].workflow_run.id // empty')
+          if [ -n "$id" ]; then
+            gh run download "$id" -n "fuzz-corpus-$FORMATO" -D "fuzz/corpus/$FORMATO"
+            echo "Corpus restaurado de la ejecución $id"
+          else
+            echo "Sin corpus anterior: se empieza por las semillas"
+          fi
       - name: Semillas y dependencias fijadas
         run: |
-          python3 tools/fuzz_seeds.py
+          python3 tools/fuzz_seeds.py ${{ steps.plan.outputs.formato }}
           cargo fetch --manifest-path fuzz/Cargo.toml --locked
-      - name: Fuzzing por formato
-        # `shell: bash` añade pipefail: sin él, `tee` ocultaba el fallo de cargo-fuzz y
-        # un objetivo con pánico terminaba en verde. Un fallo que solo reencuentra un defecto
-        # abierto de KNOWN_PANICS (tools/fuzz_triage.py) deja un aviso en lugar del rojo; el
-        # caso se sube igualmente y la caché guarda el corpus de la noche.
-        shell: bash
+      - name: Compilar el objetivo
         env:
           CARGO_NET_OFFLINE: 'true'
+        run: cargo +nightly-2026-11-01 fuzz build ${{ steps.plan.outputs.formato }} --codegen-units 16
+      # tools/fuzz_run.py mide la carga y la mutación, escribe el log y el resultado, y añade
+      # una fila al resumen. Un intento que solo reencuentra un defecto abierto de
+      # KNOWN_PANICS (tools/fuzz_triage.py) conserva el caso y vuelve a empezar con el tiempo
+      # que quede; cualquier otro fallo deja el trabajo en rojo.
+      - name: Fuzzing
+        env:
+          FORMATO: ${{ steps.plan.outputs.formato }}
           # Acota la cuarentena del instrumentador sin ampliar el límite RSS del servicio.
           ASAN_OPTIONS: quarantine_size_mb=32:thread_local_quarantine_size_kb=256:malloc_context_size=10
         run: |
-          if cargo +nightly-2026-11-01 fuzz run ${{ matrix.format }} --codegen-units 16 -- \
-            -max_total_time=${{ matrix.max_total_time || 300 }} -timeout=300 -rss_limit_mb=500 \
-            -max_len=104857600 ${{ matrix.options }} \
-            2>&1 | tee fuzz/${{ matrix.format }}.log; then
-            exit 0
-          else
-            status=$?
-          fi
-          if python3 tools/fuzz_triage.py ${{ matrix.format }} fuzz/${{ matrix.format }}.log; then
-            echo "::warning title=fuzz (${{ matrix.format }})::La noche terminó en un defecto conocido; ver tools/fuzz_triage.py"
-            exit 0
-          fi
-          exit "$status"
+          opciones=(-timeout=300 -rss_limit_mb=500 -max_len=104857600)
+          # Cada entrada PDF tarda de segundos a más de un minuto con ASan: el tiempo de
+          # ejecución pesa en la energía de cada entrada.
+          [ "$FORMATO" = pdf ] && opciones+=(-entropic_scale_per_exec_time=1)
+          python3 tools/fuzz_run.py "$FORMATO" --minutos "$MINUTOS" -- "${opciones[@]}"
       - name: Comprobar el lockfile
         if: always()
         run: git diff --exit-code -- Cargo.lock fuzz/Cargo.lock
+      - name: Acotar el corpus que se guarda
+        run: python3 tools/fuzz_seeds.py ${{ steps.plan.outputs.formato }}
+      - uses: actions/upload-artifact@v6
+        with:
+          name: fuzz-corpus-${{ steps.plan.outputs.formato }}
+          path: fuzz/corpus/${{ steps.plan.outputs.formato }}/
+          retention-days: 35
+      # El resultado de cada semana (tools/fuzz_report.py lo acumula por formato).
       - uses: actions/upload-artifact@v6
         if: always()
         with:
-          name: fuzz-${{ matrix.format }}-${{ github.run_id }}
-          path: |
-            fuzz/artifacts/${{ matrix.format }}/
-            fuzz/${{ matrix.format }}.log
+          name: fuzz-resultado
+          path: fuzz/${{ steps.plan.outputs.formato }}-resultado.json
           if-no-files-found: ignore
-          retention-days: 14
+          retention-days: 90
+      - uses: actions/upload-artifact@v6
+        if: always()
+        with:
+          name: fuzz-${{ steps.plan.outputs.formato }}-${{ github.run_id }}
+          path: |
+            fuzz/artifacts/${{ steps.plan.outputs.formato }}/
+            fuzz/${{ steps.plan.outputs.formato }}.log
+          if-no-files-found: ignore
+          retention-days: 90
