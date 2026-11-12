@@ -100,6 +100,7 @@ la carga acabó ocupándolo entero. Tiempos medidos con las marcas del log de Ac
 | 10 nov. | 125 (43,6 MB) | 341 s | 0 |
 | 11 nov., manual (`claude/fuzz-timeout-cache`) | 126 (43,7 MB) | 503 s | 0 |
 | 11 nov., manual, con el corpus acotado (`claude/fuzz-pdf-corpus`) | 86 (7,4 MB) | 179 s | 378 s (más de 1900), hasta el pánico conocido |
+| 12 nov., manual, con el triaje (`claude/fuzz-pdf-corpus`) | 86 (7,4 MB) | 196 s | 200 s (más de 400), hasta el pánico conocido; en verde con aviso |
 
 El 11 de noviembre, la carga terminó a los 502 s con `#159 INITED … exec/s: 0` y el
 objetivo no mutó nada. Las dos entradas lentas que escribió (12 y 56 s) no son fallos.
@@ -149,7 +150,9 @@ La ubicación incluye la versión de la dependencia
 coincidir, y si el defecto persiste la noche vuelve a fallar. El caso se sube como
 artefacto igual que antes. Como el trabajo termina en verde, la caché también guarda el
 corpus de la noche, que antes se perdía con el fallo. Para la cuenta de C5 nada
-cambia: la noche cuenta hasta el pánico, y el aviso lo identifica.
+cambia: la noche cuenta hasta el pánico, y el aviso lo identifica. La ejecución del 12
+de noviembre (Programado #15) lo comprobó: reencontró el pánico tras 200 s de mutación,
+terminó en verde con el aviso, subió el caso y guardó el corpus en la caché.
 
 Se descartaron otras opciones. `-merge=1` y `cargo fuzz cmin` ejecutan cada entrada
 como la carga: minimizar antes de cada noche costaría otros ocho minutos y el corpus
@@ -165,9 +168,9 @@ fecha, duración y resultado, a partir del 6 de noviembre; no hace falta que sea
 consecutivas. Solo cuenta la fase de mutación, desde `INITED` hasta `DONE`, medida con
 las marcas de tiempo del log: una noche que solo cargó el corpus ejecutó entradas ya
 conocidas y no exploró nada. La regla vale para los cuatro objetivos; en PPTX, DOCX y
-XLSX la carga dura segundos. Con ella, PDF acumulaba al 11 de noviembre 866 s de
-mutación sin fallos nuevos: las dos ejecuciones del 7, la noche del 8 y la ejecución
-manual del 11 con el corpus acotado, hasta el pánico conocido. Las noches del 9 y el 10,
+XLSX la carga dura segundos. Con ella, PDF acumulaba al 12 de noviembre 1066 s de
+mutación sin fallos nuevos: las dos ejecuciones del 7, la noche del 8 y las dos
+ejecuciones manuales con el corpus acotado (11 y 12), cada una hasta el pánico conocido. Las noches del 9 y el 10,
 y la ejecución manual anterior del 11, no cuentan. Un fallo nuevo
 reinicia la cuenta de su objetivo cuando queda corregido y reducido como regresión. Si
 `pdf` reencuentra el pánico conocido de `pdf_oxide`, identificado por su ubicación en la
