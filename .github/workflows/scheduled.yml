@@ -19,12 +19,22 @@ jobs:
     runs-on: ubuntu-24.04
     # Sin caché, la compilación tardó 42 min (pdf) y 35 (docx) el 11-11-2026; con caché, el
     # trabajo entero dura unos 11. Con los 5 min de fuzzing y el guardado, 45 no bastaban.
+    # PDF fuzzea 10 min y su última ejecución puede alargarlos hasta 5 más (-timeout=300):
+    # en frío, unos 42 + 4 de herramientas + 15, dentro de los 75.
     # Un trabajo cancelado no guarda su caché, así que el siguiente vuelve a empezar en frío.
     timeout-minutes: 75
     strategy:
       fail-fast: false
       matrix:
         format: [pptx, docx, xlsx, pdf]
+        include:
+          # libFuzzer cuenta la carga del corpus dentro de max_total_time, y cada entrada
+          # PDF tarda de segundos a más de un minuto con ASan. Con 300 s, las noches del 9
+          # al 11 de noviembre terminaron al cargar, sin mutar. tools/fuzz_seeds.py acota
+          # el corpus restaurado y el tiempo de ejecución pesa en la energía de cada entrada.
+          - format: pdf
+            max_total_time: 600
+            options: -entropic_scale_per_exec_time=1
     steps:
       - uses: actions/checkout@v5
       # cargo-fuzz se compila con la versión estable de la CI normal: su lockfile fija
@@ -57,18 +67,30 @@ jobs:
         run: |
           python3 tools/fuzz_seeds.py
           cargo fetch --manifest-path fuzz/Cargo.toml --locked
-      - name: Cinco minutos por formato
+      - name: Fuzzing por formato
         # `shell: bash` añade pipefail: sin él, `tee` ocultaba el fallo de cargo-fuzz y
-        # un objetivo con pánico terminaba en verde.
+        # un objetivo con pánico terminaba en verde. Un fallo que solo reencuentra un defecto
+        # abierto de KNOWN_PANICS (tools/fuzz_triage.py) deja un aviso en lugar del rojo; el
+        # caso se sube igualmente y la caché guarda el corpus de la noche.
         shell: bash
         env:
           CARGO_NET_OFFLINE: 'true'
           # Acota la cuarentena del instrumentador sin ampliar el límite RSS del servicio.
           ASAN_OPTIONS: quarantine_size_mb=32:thread_local_quarantine_size_kb=256:malloc_context_size=10
         run: |
-          cargo +nightly-2026-11-01 fuzz run ${{ matrix.format }} --codegen-units 16 -- \
-            -max_total_time=300 -timeout=300 -rss_limit_mb=500 -max_len=104857600 \
-            2>&1 | tee fuzz/${{ matrix.format }}.log
+          if cargo +nightly-2026-11-01 fuzz run ${{ matrix.format }} --codegen-units 16 -- \
+            -max_total_time=${{ matrix.max_total_time || 300 }} -timeout=300 -rss_limit_mb=500 \
+            -max_len=104857600 ${{ matrix.options }} \
+            2>&1 | tee fuzz/${{ matrix.format }}.log; then
+            exit 0
+          else
+            status=$?
+          fi
+          if python3 tools/fuzz_triage.py ${{ matrix.format }} fuzz/${{ matrix.format }}.log; then
+            echo "::warning title=fuzz (${{ matrix.format }})::La noche terminó en un defecto conocido; ver tools/fuzz_triage.py"
+            exit 0
+          fi
+          exit "$status"
       - name: Comprobar el lockfile
         if: always()
         run: git diff --exit-code -- Cargo.lock fuzz/Cargo.lock
