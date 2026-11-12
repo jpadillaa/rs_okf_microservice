@@ -293,7 +293,7 @@ API y worker usan la misma imagen `okf-microservice:local`; basta construirla un
 
 La imagen final usa Distroless Debian 13, con fuentes, certificados y modelos OCR incluidos. Ejecuta el binario sin símbolos como UID 10001 y no contiene shell ni gestor de paquetes. Las imágenes base están fijadas por digest, que identifica su contenido exacto.
 
-El worker accede a PostgreSQL por una red interna. Cada conversión se ejecuta en un proceso separado, con límites de memoria y tiempo. En Linux, seccomp bloquea las conexiones de red del proceso de conversión y Landlock restringe las rutas a las que este puede acceder.
+El worker accede a PostgreSQL por una red interna. Cada conversión se ejecuta en un proceso separado, con límites de memoria y tiempo. En Linux, seccomp bloquea las conexiones de red del proceso de conversión y Landlock restringe las rutas a las que este puede acceder. El diagrama de esa frontera y el motivo de cada capa están en la [arquitectura técnica](docs/arquitectura/ARQUITECTURA_TECNICA_MICROSERVICIO_OKF.md#frontera-del-proceso-de-conversión-plan-2-c3-y-c4).
 
 Para registrar qué revisión de Git produjo la imagen, se construye a partir de una revisión ya confirmada con:
 
@@ -520,7 +520,7 @@ cargo run --locked -- --env-file /ruta/conexion.env worker
 
 ## Verificación
 
-El proyecto compara sus conversiones con resultados de referencia y mide cuánto texto conserva frente a lectores independientes. También prueba el servicio, la recuperación de trabajos y el rechazo de bundles alterados. El [estado del proyecto](docs/estado/ESTADO_DEL_PROYECTO.md) reúne la evidencia y las limitaciones conocidas.
+El proyecto compara sus conversiones con resultados de referencia y mide cuánto texto conserva frente a lectores independientes. Esas mediciones no se ejecutan en el servicio, sino en las pruebas y en herramientas en Python; [Medición de la calidad del bundle](docs/decisiones/MEDICION_DE_CALIDAD.md) explica qué corre dónde y por qué. También prueba el servicio, la recuperación de trabajos y el rechazo de bundles alterados. El [estado del proyecto](docs/estado/ESTADO_DEL_PROYECTO.md) reúne la evidencia y las limitaciones conocidas.
 
 <details>
 <summary><strong>Ejecutar las comprobaciones de desarrollo</strong></summary>
@@ -553,5 +553,6 @@ En la CI son obligatorias. Las pruebas de persistencia crean esquemas aislados d
 | Qué está hecho y qué falta | [Estado del proyecto](docs/estado/ESTADO_DEL_PROYECTO.md) |
 | Las reglas exactas del resultado | [Especificación OKF](docs/especificacion/ESPECIFICACION_OKF.md) |
 | Los componentes y las decisiones de operación | [Arquitectura técnica](docs/arquitectura/ARQUITECTURA_TECNICA_MICROSERVICIO_OKF.md) |
+| Qué se mide en el servicio y qué solo en las pruebas | [Medición de la calidad del bundle](docs/decisiones/MEDICION_DE_CALIDAD.md) |
 | Cómo se mide la conservación del texto | [Cobertura independiente](docs/decisiones/COBERTURA_INDEPENDIENTE.md) |
 | El mapa completo de documentación | [Índice de documentación](docs/README.md) |
