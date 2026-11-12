@@ -146,8 +146,9 @@ Desktop, el montaje de una carpeta del host produjo `Permission denied` al
 escribir con Landlock activo; el volumen Linux pasó la misma conversión. No se
 desactiva Landlock para admitir ese montaje.
 
-La API y el worker comparten una imagen Distroless Debian 13 (`cc`, sin shell ni
-gestor de paquetes), con el ejecutable, las fuentes DejaVu y los certificados CA.
+La API y el worker comparten una imagen mínima sobre `scratch` (sin shell ni
+gestor de paquetes), con el ejecutable, las tres bibliotecas del sistema que enlaza,
+una fuente DejaVu y los certificados CA.
 El UID 10001 se conserva para acceder a los volúmenes existentes; los nuevos se
 inicializan con propietario 10001:10001. La compilación separa dependencias mediante
 `cargo-chef`, conserva su capa en la caché de BuildKit/CI y elimina los símbolos del
