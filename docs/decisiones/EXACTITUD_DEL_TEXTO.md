@@ -90,8 +90,48 @@ Con referencia aproximada (pdfium), antes (perfil 1.16.0) y después de los camb
 
 En el PDF de 346 páginas mejoran 26 páginas: la contraportada con citas intercaladas pasa de 85 a 95 de contigüidad, y las páginas con rótulos de diagramas de 84 y 89 a 100 de orden interno. La métrica destapó además una regresión de esos mismos cambios: en el índice del libro, la regla que une filas de tabla que continúan su texto fundía entradas en minúscula («acknowledgments», «about this book») con sus páginas en romanos. Se corrigió antes de publicar el perfil: una fila con un número, en cifras o en romanos, o bajo uno, es una entrada propia. Otra página que parecía empeorar era una mejora mal atribuida: una lista ahora unida con su continuación se cuenta en su primera página.
 
+## Referencias revisadas de los originales privados (plan 4, Q2)
+
+Las 67 páginas de los siete originales privados con borrador se revisaron contra su vista el 13 de noviembre de 2026 (perfil 1.18.0) y se midieron con el OCR activo y cuatro hilos. La revisión la hizo un agente, no una persona; las páginas de texto corrido del artículo y de parte del documento de 13 páginas se compararon con pdfium por palabras, orden y bordes de página, sin leerlas línea a línea. Las cifras son una línea base; sus mínimos locales (medio punto por debajo, y un máximo para las tablas falsas) están en `datos_de_prueba/referencias/exactitud-thresholds.local.json`, que no se versiona.
+
+| Original privado | Páginas revisadas | Palabras | Completitud | Orden | Orden interno | Contigüidad |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: |
+| Escaneo de 1 página | 1 | 80 | 97,50 | 100,00 | 100,00 | 96,20 |
+| Presentación de 53 páginas | 12 | 1 050 | 98,86 | 84,87 | 94,93 | 90,08 |
+| Artículo de 9 páginas | 9 | 5 627 | 100,00 | 98,97 | 98,78 | 99,89 |
+| Documento de 13 páginas | 8 | 2 136 | 99,81 | 99,53 | 99,35 | 99,06 |
+| PDF de 346 páginas | 15 | 3 461 | 99,86 | 75,32 | 91,14 | 89,84 |
+| Cuaderno de 65 páginas | 10 | 1 701 | 99,47 | 94,86 | 99,18 | 95,62 |
+| PDF de 575 páginas con OCR previo | 12 | 2 105 | 96,86 | 98,09 | 97,91 | 92,93 |
+
+Estructura:
+
+| Original privado | Encabezados | Elementos de lista | Celdas de tabla | Tablas falsas | Líneas de código |
+| --- | ---: | ---: | ---: | ---: | ---: |
+| Escaneo de 1 página | 0 | - | - | 0 | - |
+| Presentación de 53 páginas | - | 0 | 0 | 9 | - |
+| Artículo de 9 páginas | 100 | 100 | 100 | 0 | - |
+| Documento de 13 páginas | 100 | 100 | - | 0 | - |
+| PDF de 346 páginas | 52,38 | - | 0 | 30 | 100 |
+| Cuaderno de 65 páginas | 100 | - | 67,58 | 1 | - |
+| PDF de 575 páginas con OCR previo | 0 | 40 | - | 0 | 31,63 |
+
+Sin el OCR, el escaneo de una página da el 3,75 % de completitud; las medidas sin OCR no sirven para él. En el PDF de 575 páginas el OCR no cambia las cifras.
+
+Lo que la revisión encontró, por forma y sin reproducir contenido:
+
+- **Texto corrido y artículo:** completitud del 99,8 % al 100 % y estructura al 100 %. El orden interno baja por párrafos que cruzan de página: el conversor reparte las palabras del final de una página en el inicio de la siguiente (se vio en el artículo, el documento de 13 páginas, el PDF de 346 y el de 575).
+- **Índices de dos columnas (PDF de 346 páginas):** las entradas de la columna izquierda y la derecha salen intercaladas y las letras de sección quedan dentro de tablas. Es la causa de las 30 tablas falsas y del orden del 75 %.
+- **Diapositivas con diagramas y notas (presentación):** las notas adhesivas contiguas se funden en tablas línea a línea, dos capas de texto solapadas producen palabras mezcladas, y el texto de los diagramas llega en orden de fila entre columnas.
+- **Capturas de código (PDF de 575 páginas):** el texto de las capturas lleva errores de OCR en el código, las comillas y los números; es la causa del 31,63 % de líneas de código.
+- **Encabezados:** el título de un documento sin capa de texto o sin título visible se toma de los metadatos y no de la página, de ahí el 0 % en el escaneo y en el PDF de 575 páginas.
+- **Formularios y tablas de seguimiento (cuaderno):** una palabra pegada a la siguiente en un formulario, una palabra en la celda equivocada de una tabla de cinco columnas y una tabla de trece columnas casi vacía.
+- **Texto que el PDF contiene pero la vista no muestra:** dos diapositivas de la presentación traen palabras que no se ven. La referencia las deja fuera; que el contrato las conserve o no es una decisión pendiente.
+
+Convenciones de las referencias: el texto dentro de imágenes cuenta; los errores de ortografía del autor se conservan; se omiten logotipos, números de página, encabezados corrientes y la navegación lateral; las palabras partidas por un salto de línea se reúnen; cada columna o bloque va seguido, no intercalado por filas.
+
 ## Límites
 
-- Las referencias exactas cubren cinco maquetaciones sintéticas. Los originales reales solo tienen referencia aproximada, hasta que se revisen a mano sus páginas difíciles.
+- Las referencias exactas cubren cinco maquetaciones sintéticas y, de los originales reales, 67 páginas revisadas por un agente (sección anterior); el resto de sus páginas solo tiene referencia aproximada (pdfium).
 - La estructura solo se mide con referencias exactas que declaran sus bloques: las muestras públicas y las referencias revisadas de originales privados. No mide el énfasis (negrita, cursiva), los enlaces ni las notas al pie.
 - Una referencia fija una convención de lectura: notas al pie detrás de su párrafo, texto girado al final de su página. Si la especificación cambia una convención, sus referencias cambian con ella.
