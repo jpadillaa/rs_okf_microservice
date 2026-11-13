@@ -18,15 +18,20 @@ es 100 MiB. Cada conversión usa un directorio temporal independiente.
 ```bash
 rustup toolchain install nightly-2026-11-01 --profile minimal
 cargo +1.99 install cargo-fuzz --version 0.13.1 --locked
-python3 tools/fuzz_seeds.py
+python3 tools/fuzz_seeds.py docx
 cargo fetch --manifest-path fuzz/Cargo.toml --locked
+CARGO_NET_OFFLINE=true cargo +nightly-2026-11-01 fuzz build docx --codegen-units 16
 ASAN_OPTIONS='quarantine_size_mb=32:thread_local_quarantine_size_kb=256:malloc_context_size=10' \
-CARGO_NET_OFFLINE=true cargo +nightly-2026-11-01 fuzz run docx --codegen-units 16 -- \
-  -max_total_time=300 -timeout=300 -rss_limit_mb=500 -max_len=104857600
+python3 tools/fuzz_run.py docx --minutos 120 -- -timeout=300 -rss_limit_mb=500 -max_len=104857600
 ```
 
-Se repite con `pptx`, `xlsx` y `pdf`; para `pdf`, la CI usa `-max_total_time=600` y
-añade `-entropic_scale_per_exec_time=1` (ver [Carga del corpus PDF](#carga-del-corpus-pdf)).
+Se repite con `pptx`, `xlsx` y `pdf`; para `pdf` se añade
+`-entropic_scale_per_exec_time=1` (ver [Carga del corpus PDF](#carga-del-corpus-pdf)).
+`tools/fuzz_run.py` ejecuta el objetivo compilado con esas opciones durante los minutos
+indicados, vuelve a empezar tras un defecto conocido y deja el log y el resultado en
+`fuzz/` (ver [Rotación semanal por formato](#rotación-semanal-por-formato)). Para una
+prueba breve sigue sirviendo `cargo +nightly-2026-11-01 fuzz run FORMATO --codegen-units 16
+-- -max_total_time=300 …` con las mismas opciones.
 `fuzz/Cargo.lock` conserva las dependencias del
 servicio más libFuzzer; tras cambiar dependencias del servicio se revisa también
 este lockfile. `cargo-fuzz` no ofrece `--locked` en `run`: se descargan antes las
@@ -47,9 +52,11 @@ C3/C4 y se documentan para comunicar su caso mínimo aguas arriba.
 
 ## CI y criterio de cierre
 
-El flujo `scheduled.yml` mantiene la auditoría diaria de dependencias y añade una
+Desde el 16 de noviembre, `scheduled.yml` fuzzea un formato por semana durante dos
+horas ([Rotación semanal por formato](#rotación-semanal-por-formato)); la auditoría de
+dependencias sigue siendo diaria. Hasta el 12 de noviembre ejecutaba cada noche una
 matriz de cuatro objetivos: cinco minutos de fuzzing por formato (diez en PDF), con un tope de
-75 minutos por trabajo que incluye instalación, compilación y el guardado de la caché.
+75 minutos por trabajo que incluía instalación, compilación y el guardado de la caché.
 El tope era de 45 minutos hasta la ejecución del 11 de noviembre (Programado #12): la
 caché de compilación de `pdf` había sido expulsada, el trabajo compiló sin ella durante
 42 minutos, fuzzeó minuto y medio sin fallos y se canceló; `docx`, también sin caché,
@@ -60,9 +67,9 @@ caché de compilación (`shared-key: fuzz`) que solo escribe `main`; antes habí
 1,1 a 1,5 GB por formato. Las cachés del repositorio sumaban 10,4 GB frente al límite
 de 10 GB de GitHub, que expulsa primero las menos usadas: las del fuzzing, leídas una
 vez al día. Por eso las PR ya no escriben las cachés de `ci.yml` (la de Rust y la de
-capas de Docker, ver [Compilación Docker](COMPILACION_DOCKER.md)). Conserva el corpus
-en caché y sube logs y casos fallidos durante 14 días, incluso cuando el objetivo
-falla. Nightly se limita a compilar y ejecutar los objetivos; la CI normal sigue
+capas de Docker, ver [Compilación Docker](COMPILACION_DOCKER.md)). Conservaba el corpus
+en caché y subía logs y casos fallidos durante 14 días, incluso cuando el objetivo
+fallaba. Nightly se limita a compilar y ejecutar los objetivos; la CI normal sigue
 con Rust 1.99. `cargo-fuzz` se instala con Rust 1.99: su lockfile fija `rustix`
 0.36.5, que en Linux activa `rustc_attrs` al detectar nightly y no compila con
 `nightly-2026-11-01`. Ese error detuvo las ejecuciones programadas del 3 y el 4 de
@@ -191,6 +198,71 @@ asignación), manteniendo activas sus comprobaciones y el límite RSS de 500 MiB
 Con esa configuración PPTX, XLSX y PDF completaron la comprobación breve sin nuevos
 fallos. Los artefactos `oom` iniciales corresponden a ese presupuesto del arnés;
 las dos semillas ya forman parte de las pruebas de regresión ordinarias.
+
+## Rotación semanal por formato
+
+El 12 de noviembre, la ejecución programada (Programado #16) no llegó a empezar: GitHub
+rechazó sus trabajos porque la cuenta había agotado los minutos de Actions o su límite
+de gasto. El repositorio es privado y los minutos se cobran. Una noche con caché costaba
+unos 48 minutos (cuatro trabajos de 10 a 16), cerca de 1450 al mes, y una noche en frío
+unos 180. Además, cinco minutos repartidos entre la carga y la mutación daban poca
+evidencia: PPTX tenía el mismo problema que PDF, con 445 entradas (44 MB) de hasta 73 s
+cada una por el renderizado, y desde el 6 de noviembre solo había mutado 69 s.
+
+Desde el 16 de noviembre, el fuzzing se ejecuta **una vez por semana, un formato cada
+vez**, en este orden: XLSX, PPTX, DOCX y PDF. El paso «Formato de la semana» cuenta las
+semanas desde el lunes 16 de noviembre de 2026 (XLSX) y repite la rotación cada cuatro
+semanas. Cada ejecución fuzzea **120 minutos**, lo que el criterio pide por formato, de
+modo que una semana puede completar las dos horas de su formato. Una semana sin uso
+basta para que GitHub expulse la caché de compilación, así que el trabajo cuenta con
+compilar en frío: unos 42 minutos más 4 de herramientas, los 120 de fuzzing y hasta 5
+si la última entrada llega al `-timeout`, con un tope de 190. Son unos 175 minutos por
+semana, unos 750 al mes. A mano (`workflow_dispatch`) se puede elegir el formato y los
+minutos.
+
+- **Corpus.** Cada formato vuelve cuatro semanas después, cuando la caché de Actions ya
+  lo habría expulsado. El corpus se guarda como artefacto `fuzz-corpus-FORMATO` durante
+  35 días, y cada ejecución descarga el último que dejó `main`. `tools/fuzz_seeds.py` lo
+  acota al restaurarlo y antes de guardarlo: el límite de PDF se aplica también a PPTX, y
+  XLSX y DOCX conservan las entradas de hasta 256 KiB hasta sumar 16 MiB. En una prueba
+  local de cuatro minutos, XLSX pasó de 3 entradas a 1439 (22 MB); minimizarlas con
+  `-merge=1` solo las redujo a 998, así que el límite por tamaño es el que acota el
+  almacenamiento de artefactos.
+- **Reinicios.** `tools/fuzz_run.py` ejecuta el binario compilado en lugar de
+  `cargo fuzz run`, que tras un fallo vuelve a ejecutar un caso para mostrarlo (el 12 de
+  noviembre eligió una entrada lenta y añadió cuatro minutos y medio). Si un intento
+  termina en un defecto conocido después de `INITED`, conserva el caso, acota el corpus
+  y vuelve a empezar con el tiempo que quede, hasta 30 veces. Un defecto conocido antes
+  de mutar, o cualquier otro fallo, deja el trabajo en rojo.
+- **Resultados.** Cada ejecución deja `fuzz/FORMATO-resultado.json` (formato, fecha,
+  ejecución, commit, carga, mutación, ejecuciones, defectos conocidos y resultado) en el
+  artefacto `fuzz-resultado`, durante 90 días, y una fila en el resumen de la ejecución.
+  `tools/fuzz_report.py` los suma por formato a lo acumulado antes de la rotación y
+  muestra lo que falta para las dos horas. Como los artefactos caducan, el registro que
+  perdura es la tabla de abajo, que se actualiza con esa salida.
+
+**XLSX solo con contenido estático.** El servicio se prueba con libros de contenido
+estático: texto, tablas de valores fijos y gráficos con sus datos ya calculados. Un libro
+con macros o fórmulas no tiene sentido como fuente para el RAG. `tools/fuzz_seeds.py`
+genera las semillas XLSX a partir de las muestras de `examples/xlsx/`: quita las
+fórmulas de las hojas y conserva el valor guardado de cada celda, retira `calcChain.xml`
+y la orden de recalcular al abrir, y descarta un libro con macros (`vbaProject.bin` u
+hojas de macros de Excel 4). Las mutaciones siguen cambiando bytes al azar; lo que
+cambia es la zona que explora el fuzzer. Las noches anteriores usaban semillas con
+fórmulas y no cuentan para XLSX: sumaban 1821 s de mutación sin fallos.
+
+### Registro de C5
+
+Mutación sin fallos nuevos por formato, desde el 6 de noviembre (objetivo: 7200 s). Se
+actualiza con `python3 tools/fuzz_report.py` tras cada
+ejecución semanal:
+
+| Formato | Acumulado | Origen | Estado |
+| --- | ---: | --- | --- |
+| XLSX | 0 s | Empieza con las semillas estáticas el 16 de noviembre. | Pendiente |
+| PPTX | 69 s | Noche del 7 de noviembre; las demás solo cargaron el corpus. | Pendiente |
+| DOCX | 1796 s | Ocho ejecuciones, del 7 al 12 de noviembre. | Pendiente |
+| PDF | 1066 s | Cuatro ejecuciones, cada una hasta el pánico conocido. | Pendiente; además espera la corrección de `pdf_oxide` |
 
 ## Primera campaña completa y hallazgo pendiente
 
