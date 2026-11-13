@@ -10,7 +10,7 @@ El `Dockerfile` usa el mismo toolchain Rust 1.99.1 en todas las etapas de compil
 2. `planner` genera una receta con los manifiestos, el lockfile, los targets y el perfil de compilación. Copia también `build.rs`, `src/` y `migrations/`.
 3. `dependencies` compila la receta con `cargo chef cook --release --locked`. Un cambio solo en el contenido del código deja la receta intacta y permite reutilizar esta capa.
 4. `build` incorpora las fuentes reales y las migraciones SQL embebidas, fija `OKF_BUILD_COMMIT` y compila el ejecutable. Cambiar el SHA no invalida las dependencias.
-5. `assets` instala las fuentes y certificados fijados por versión en Debian. `runtime` copia únicamente esos archivos, sus avisos de licencia, el directorio de datos y el ejecutable sobre Distroless.
+5. `assets` instala las fuentes y certificados fijados por versión en Debian. `rootfs` toma de la imagen de compilación el ejecutable y, con `ldd`, las bibliotecas que enlaza. `runtime` parte de `scratch` y copia esas bibliotecas, una sola fuente, los certificados, sus avisos de licencia, el directorio de datos, los modelos del OCR y el ejecutable.
 
 Los mounts de BuildKit conservan el registro de Cargo y los repositorios Git entre construcciones del mismo builder, con acceso exclusivo (`sharing=locked`). **`/src/target` permanece en la capa de dependencias**, de modo que su contenido compilado se exporta a la caché de CI. No depende de un mount que GitHub Actions no conserva automáticamente.
 
@@ -22,9 +22,9 @@ El job `test` mantiene una caché Rust independiente de Docker. Se configura con
 
 ## Imagen de ejecución
 
-La base es `gcr.io/distroless/cc-debian13:nonroot`, fijada por digest en el Dockerfile y el stack. La variante `cc` incluye las bibliotecas dinámicas que requiere el binario Rust; no se usa `static` porque el ejecutable enlaza con glibc y libgcc. La imagen no incluye Cargo, compilador, shell ni gestor de paquetes. `ENTRYPOINT` ejecuta una ruta absoluta en formato JSON.
+La base es `scratch`, una imagen vacía. El ejecutable enlaza solo `libc.so.6`, `libm.so.6` y `libgcc_s.so.1`, además del cargador dinámico (`ldd` y la tabla de entradas `DT_NEEDED` del binario); la etapa `rootfs` copia esos cuatro archivos con sus rutas, de la misma imagen que compila el binario, de modo que la glibc de ejecución es exactamente la de compilación. Quedan fuera lo que la base Distroless `cc` traía y el binario no usa: `libssl` (la conexión TLS es `rustls` con `ring`), `libstdc++`, `libgomp`, `tzdata` (no se usa la zona horaria local) y el resto de paquetes de Debian. La imagen no incluye Cargo, compilador, shell ni gestor de paquetes, y no tiene `/etc/passwd`: el proceso usa el UID numérico. `ENTRYPOINT` ejecuta una ruta absoluta en formato JSON. Se añaden `/tmp` (modo 1777) y un `/etc/nsswitch.conf` con `hosts: files dns`; la resolución del servidor PostgreSQL funciona como antes.
 
-Se conservan las fuentes DejaVu 2.37-8 y el paquete de certificados 20250419. El proceso usa UID/GID 10001:10001; el UID coincide con el de los volúmenes anteriores. `/data` se prepara con ese propietario para volúmenes nuevos. `WORKDIR /` mantiene un directorio accesible para buscar el `.env` opcional: el directorio predeterminado `/home/nonroot` de Distroless pertenece al UID 65532. La conexión PostgreSQL, la activación de Swagger y los límites siguen siendo configuración de ejecución desde `.env`.
+Se conservan la fuente DejaVu Sans de la versión 2.37-8 y el paquete de certificados 20250419. El renderizado PPTX lee un solo archivo, el de `OKF_FONT_PATH`, por lo que solo se copia `DejaVuSans.ttf` y no el resto de variantes; se mantiene el aviso de licencia. El proceso usa UID/GID 10001:10001; el UID coincide con el de los volúmenes anteriores. `/data` se prepara con ese propietario para volúmenes nuevos. `WORKDIR /` mantiene un directorio accesible para buscar el `.env` opcional. La conexión PostgreSQL, la activación de Swagger y los límites siguen siendo configuración de ejecución desde `.env`. Al abandonar Distroless, las actualizaciones de la base ya no llegan con su digest: la glibc ahora sale de la imagen `rust` fijada, y actualizar sus parches exige cambiar ese digest (y el de `debian` para fuentes y certificados).
 
 `[profile.release] strip = "symbols"` elimina los símbolos del ejecutable distribuido; las pruebas y el perfil de desarrollo conservan su configuración. Los diagnósticos explícitos del servicio y del gancho de pánicos siguen en el código. No se activa LTO adicional ni se cambia la estrategia de pánico: requerirían mediciones separadas de compilación y comportamiento.
 
@@ -77,6 +77,24 @@ Por capas de `docker history` (misma máquina, Linux arm64), frente a la imagen 
 
 Al añadir tract cambia la receta de `cargo-chef`, así que la primera construcción vuelve a compilar las dependencias. `tools/smoke.sh` termina con una fase de OCR que convierte `escaneado_ocr.pdf` con `OKF_OCR_ENABLED=true` dentro del contenedor y la valida.
 
+## Base mínima sobre `scratch` (10 de noviembre)
+
+Mediciones locales, Docker Desktop sobre Apple M2 (Linux arm64), con la misma imagen de compilación y el mismo código; una sola observación de cada una. El almacén de imágenes de Docker Desktop es containerd; `docker image inspect .Size` es la misma métrica de las tablas anteriores.
+
+| Medida | Distroless `cc` (antes) | `scratch` (después) |
+| --- | ---: | ---: |
+| Imagen local (`docker image inspect .Size`) | 142 456 164 bytes (142,5 MB) | 88 185 672 bytes (88,2 MB), −38,1 % |
+| Suma de las capas (`docker history`) | unos 102 MB | unos 59 MB |
+| Descarga comprimida (`docker save`) | 40,4 MB | 29,1 MB, −28 % |
+| Capa de la base y bibliotecas | unos 43 MB | 2,7 MB |
+| Capa de fuentes | 3,4 MB | 0,8 MB |
+
+El ejecutable y los modelos (45 MB y 10,4 MB) son los mismos. La suma de las capas y el `.Size` de Docker Desktop difieren en unos 40 MB en ambas imágenes; no sé explicar del todo esa diferencia, por lo que las proporciones deben tomarse de la misma métrica. La construcción completa sin caché, incluida la descarga de las bases, tardó 5 min 9 s; la compilación de las dependencias, 3 min 44 s.
+
+`tools/smoke.sh okf-microservice:minimal` pasó entero: PostgreSQL aislado, recepción por API, conversión en el proceso hijo de los cuatro formatos, descarga y validación independiente de cada ZIP, y el PDF escaneado con el OCR activo. Eso cubre la resolución del servidor `postgres` y el arranque del hijo con seccomp y Landlock. Pendiente: construir y probar la variante `linux/amd64` (la CI lo hará, y el `ldd` se ejecuta en cada arquitectura) y repetir con Compose sobre los volúmenes existentes.
+
+Opciones consideradas y no aplicadas: `lto = "fat"` con `codegen-units = 1` (no medida), `opt-level = "s"` global (restaría rendimiento al OCR y a la maquetación), `panic = "abort"` (el diseño trata los pánicos del hijo como fallo permanente con mensaje y ubicación), UPX (cada proceso hijo cargaría su copia entera en memoria), musl con base estática (casi el mismo tamaño que `scratch` con glibc, con riesgo en el asignador) y una variante sin OCR (unos 23 MB menos, pero exige una característica de Cargo).
+
 ## Verificación de CI y caché remota
 
 La [ejecución de `c4f76d9`](https://github.com/jpadillaa/rs_okf_microservice/actions/runs/41833194408) construyó la imagen sin una caché Docker previa, convirtió y validó los cuatro formatos y exportó 42 objetos de caché, 922 359 565 bytes en total. Su job `test` falló antes de ejecutar pruebas al restaurar la caché Rust antigua y agotar el disco; el fallo motivó la configuración sin símbolos y el prefijo nuevo descritos arriba.
@@ -100,4 +118,4 @@ Con la corrección, `test` pasó las **75 pruebas Linux**, formato y Clippy. Al 
 - [Docker: caché en GitHub Actions y límites de los mounts](https://docs.docker.com/build/ci/github-actions/cache/).
 - [cargo-chef: receta y reutilización de dependencias](https://github.com/LukeMathWalker/cargo-chef).
 - [Cargo: perfiles y strip](https://doc.rust-lang.org/cargo/reference/profiles.html).
-- [Distroless: imágenes y ejecución sin shell](https://github.com/GoogleContainerTools/distroless).
+- [Distroless: imágenes y ejecución sin shell](https://github.com/GoogleContainerTools/distroless), la base anterior a la del 10 de noviembre.

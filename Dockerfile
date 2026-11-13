@@ -1,8 +1,9 @@
 # Imagen única de la API y el worker. Bases por digest, herramientas y paquetes
 # por versión, dependencias por Cargo.lock. Ver docs/decisiones/COMPILACION_DOCKER.md.
+# El runtime parte de `scratch`: solo el binario, las tres bibliotecas que enlaza y los
+# archivos de datos que usa.
 ARG RUST_IMAGE=rust:1.99.1-slim-trixie@sha256:b8e062b1c3a80183df83d9ba187cadd2b5ab84bc78d453dbfeb2fccd5f982247
 ARG ASSETS_IMAGE=debian:trixie-slim@sha256:f6b08b09a05725f9431502d3b5714f5c4576e82c1a84fa1debe0c24a7e0c3ec4
-ARG RUNTIME_IMAGE=gcr.io/distroless/cc-debian13:nonroot@sha256:08476c244888bfb425bae1ae4dd7c17f093e972aab8426883d97f3c6f280f7c1
 
 FROM ${RUST_IMAGE} AS chef
 RUN --mount=type=cache,id=okf-cargo-registry,target=/usr/local/cargo/registry,sharing=locked \
@@ -61,11 +62,27 @@ ADD --checksum=sha256:783815b2d4127bbdf2847fac50d4dfa3b4ec58508324e43a7b41de6699
 RUN cp /usr/share/common-licenses/Apache-2.0 /ocr/LICENSE \
     && chmod 755 /ocr && chmod 644 /ocr/*
 
-FROM ${RUNTIME_IMAGE} AS runtime
-# Distroless nonroot parte de /home/nonroot (UID 65532); nuestro UID es 10001.
-# Un directorio accesible permite buscar el .env opcional como en el runtime anterior.
+FROM ${RUST_IMAGE} AS rootfs
+# Las bibliotecas salen de la misma imagen que compila el binario, así que la glibc del
+# runtime es exactamente la de la compilación. `ldd` lista lo que el ejecutable enlaza
+# (libc, libm, libgcc_s y el cargador dinámico); `cp --parents -L` conserva cada ruta
+# y resuelve los enlaces simbólicos.
+COPY --from=build /okf-microservice /okf-microservice
+RUN mkdir -p /rootfs/tmp /rootfs/etc \
+    && chmod 1777 /rootfs/tmp \
+    && printf 'hosts: files dns\n' > /rootfs/etc/nsswitch.conf \
+    && ldd /okf-microservice \
+        | awk '$2 == "=>" && $3 ~ /^\// { print $3 } $1 ~ /^\// { print $1 }' \
+        | sort -u \
+        | xargs cp --parents -L -t /rootfs
+
+FROM scratch AS runtime
+# Sin passwd ni shell: el proceso usa el UID 10001 numérico. /tmp y nsswitch.conf vienen
+# de la etapa rootfs; un directorio de trabajo accesible permite buscar el .env opcional.
 WORKDIR /
-COPY --from=assets /usr/share/fonts/truetype/dejavu /usr/share/fonts/truetype/dejavu
+COPY --from=rootfs /rootfs /
+# El renderizado PPTX lee solo OKF_FONT_PATH (una fuente); se conserva el aviso de licencia.
+COPY --from=assets /usr/share/fonts/truetype/dejavu/DejaVuSans.ttf /usr/share/fonts/truetype/dejavu/DejaVuSans.ttf
 COPY --from=assets /usr/share/doc/fonts-dejavu-core /usr/share/doc/fonts-dejavu-core
 COPY --from=assets /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/ca-certificates.crt
 COPY --from=assets --chown=10001:10001 /data /data

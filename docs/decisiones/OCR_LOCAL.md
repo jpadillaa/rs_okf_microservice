@@ -26,8 +26,8 @@ Modelos, de [monkt/paddleocr-onnx](https://huggingface.co/monkt/paddleocr-onnx) 
 
 **Alternativas descartadas:**
 
-- **pdf_oxide con ONNX Runtime** (función `ocr`): más rápido, pero carga una biblioteca C++ nativa que habría que llevar a la imagen Distroless y abrir dentro del hijo aislado, con efecto sobre Landlock y `RLIMIT_AS`.
-- **Tesseract:** muy maduro para texto impreso en español, pero exige instalar Tesseract, Leptonica y sus bibliotecas en Distroless y ejecutar otro programa desde el hijo, que Landlock y seccomp restringen.
+- **pdf_oxide con ONNX Runtime** (función `ocr`): más rápido, pero carga una biblioteca C++ nativa que habría que llevar a la imagen mínima y abrir dentro del hijo aislado, con efecto sobre Landlock y `RLIMIT_AS`.
+- **Tesseract:** muy maduro para texto impreso en español, pero exige instalar Tesseract, Leptonica y sus bibliotecas en la imagen mínima y ejecutar otro programa desde el hijo, que Landlock y seccomp restringen.
 - **`ocrs`:** Rust puro y ligero, pero entrenado sobre todo en inglés.
 - **Detección PP-OCRv5 móvil** (4,8 MB): la misma exactitud que la v3 en las pruebas, con el doble de tamaño. La detección v5 de servidor ocupa 88 MB.
 

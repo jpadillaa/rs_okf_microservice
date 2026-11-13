@@ -38,218 +38,49 @@ El script crea trabajos reales y exige un directorio de salida nuevo. Una espera
 target/release/okf-microservice validate output/carga-pdf-01/bundle-001.zip
 ```
 
-## Primer PDF largo: forma y referencia
+## Primer PDF largo: tres evaluaciones (perfiles 1.11.0 a 1.13.0)
 
-Original de 31 483 036 bytes (30,02 MiB), 346 páginas, sin cifrado, con marcadores y numeración impresa. PDFium obtiene 98 493 palabras normalizadas y detecta una página sin texto (la 4). El conversor clasifica 319 páginas como texto digital, 26 como mixtas y una en blanco; no detecta páginas escaneadas. Contiene prosa, índices, diagramas, capturas, tablas y listados de código con anotaciones laterales.
+Resumen de las tres primeras evaluaciones, que mejoraron el mismo original. Sus cifras y la comparación completa están en la [calidad del Markdown 1.17.0](#calidad-del-markdown-pdf-perfil-1170) y en las secciones siguientes; los resultados privados de cada tanda se conservan fuera de Git en `output/calidad-pdf-dificil1/` (`layout-1.12/` y `margins-1.13/`).
 
-La instancia local que estaba ejecutándose usaba un perfil antiguo (1.0.0), distinto al código del repositorio (1.10.0). Su intento por la API falló a los 165,672 s, con 195 MiB de pico, al confundir una llamada de código con un enlace interno. El diagnóstico guardado en el error del trabajo creció aproximadamente a 13 MB por los mensajes repetidos de las bibliotecas. La API y su salud siguieron disponibles.
+**Forma del original.** 31 483 036 bytes (30,02 MiB), 346 páginas, sin cifrado, con marcadores y numeración impresa. PDFium obtiene 98 493 palabras normalizadas. El conversor clasifica 319 páginas como texto digital, 26 como mixtas y una en blanco, y no detecta escaneadas. Contiene prosa, índices, diagramas, capturas, tablas y listados de código con anotaciones laterales.
 
-La compilación inicial del repositorio (1.10.0), ejecutada directamente en macOS, falló también: una anotación URI sin esquema se emitía como enlace relativo al ZIP. El bundle generado antes del rechazo permitió medir la conservación del texto. Esos tiempos pertenecen a plataformas y configuraciones de registro distintas; no constituyen una comparación de velocidad antes/después.
+**Perfil 1.11.0: de no entregar bundle a `complete`.** La instancia local usaba el perfil 1.0.0 y falló a los 165,672 s al confundir una llamada de código con un enlace interno; el diagnóstico guardado en el error creció a unos 13 MB. Con el repositorio (1.10.0) falló también una anotación URI sin esquema, que se emitía como enlace relativo. Las correcciones:
 
-El código evaluado es el árbol de trabajo con estas correcciones sobre la revisión `31a76800d588c30286fda24fca2164f788d428a1`, todavía sin un commit nuevo. El identificador de revisión del binario no incluye por sí solo los cambios sin commit; el manifiesto local `output/calidad-pdf-dificil1/source-manifest.json` conserva las huellas de los fuentes y herramientas evaluados.
+- El inventario y el validador de enlaces ignoran el código literal cercado e inline.
+- Una anotación URI sin esquema conserva su texto con la marca de referencia no resuelta y se declara; no se inventa un protocolo.
+- Los títulos de los marcadores se reconstruyen desde hasta cuatro párrafos contiguos de la misma página, o por su título exacto sin prefijo numérico en la página de destino. El mínimo de cuatro quintos de marcadores encontrados no se rebaja.
+- El supervisor conserva solo los últimos 64 KiB de cada salida del hijo.
+- En PDF mayores de 16 MiB se evitan las reaperturas del paso de recursos que no hacen falta.
 
-## Correcciones comprobadas (perfil 1.11.0)
+**Perfil 1.12.0: tablas y código.** Las bandas de tabla exigen tres filas con tres o más celdas alineadas, y las columnas se fijan por los inicios de dos filas compatibles; las continuaciones de celda y las etiquetas de varias líneas se reúnen. Los listados de código conservan espacios, sangría y líneas vacías, separan las anotaciones laterales y continúan entre páginas. La regresión del artículo a dos columnas detectó una confusión entre una tabla de abreviaturas y la bibliografía; una prueba directa exige mantenerlas separadas. La cobertura global bajó una décima (palabras 98,68 % → 98,65 %): la mejora demostrada es estructural, no de palabras.
 
-- El inventario y el validador de enlaces ignoran el código literal cercado e inline. Una llamada con corchetes y paréntesis no provoca un falso enlace roto. Los enlaces reales que siguen al bloque continúan comprobándose.
-- Una anotación URI sin esquema conserva su texto con la marca de referencia no resuelta y se declara. No se inventa un protocolo ni se interpreta la ruta respecto de `contenido/`.
-- Los títulos de los marcadores pueden reconstruirse desde hasta cuatro párrafos contiguos de la misma página si el texto completo coincide. También se admite el título exacto sin el prefijo numérico del marcador, únicamente en su página de destino; el número impreso se conserva. Se mantiene el mínimo de cuatro quintos de marcadores encontrados.
-- El supervisor drena las salidas del hijo conservando solo los últimos 64 KiB de cada flujo, en vez de acumular todo el diagnóstico en memoria y en la respuesta del trabajo.
-- En PDF mayores de 16 MiB se evitan las reaperturas del paso de recursos cuando una página no necesita imágenes nuevas ni vista. Se mantiene la reapertura que limita la acumulación de cachés.
+**Perfil 1.13.0: cabeceras variables.** Las cabeceras corridas de capítulo no alcanzaban el 30 % de repetición y se confundían con el título real. Se separan por su alineación con un folio confirmado y un puesto tipográfico recurrente en al menos tres páginas, se registran una vez con todas sus páginas, y el título del cuerpo se reúne con su número lateral si reproduce el marcador completo. La referencia independiente (PDFium, franja de 43 puntos desde el borde superior en las páginas 25–345) fija 303 cabeceras y 152 títulos numerados.
 
-Estas reglas de salida corresponden al perfil **1.11.0**, con su esquema de frontmatter y compatibilidad de validación con 1.0.0–1.10.0. Los 27 bundles de referencia se regeneraron: fuera de `profile_version`, `conversion_id` y `unit_id` no cambian sus textos. La cobertura independiente de los ocho ejemplos PDF conserva sus cifras y mínimos.
+| Propiedad | 1.11.0 | 1.12.0 | 1.13.0 |
+| --- | ---: | ---: | ---: |
+| Palabras conservadas (medidor corregido) | 98,68 % | 98,65 % | 98,29 % global; 98,65 % sin cabeceras repetidas |
+| Texto ajustado | 99,55 % | 99,53 % | 99,56 % |
+| Marcadores reconocidos | 179/214 | 199/214 | 201/214 |
+| Conceptos / páginas / imágenes | 21 / 346 / 228 | 21 / 346 / 228 | 21 / 346 / 228 |
+| Tabla de la página 85 (7 filas × 3 columnas) | mezcladas | 21/21 celdas | 21/21 celdas |
+| Tabla de la página 251 | fragmentada | 21/21 celdas | 21/21 celdas |
+| Listado de las páginas 109–110 | 10 bloques | 1 bloque, texto y sangría iguales a PDFium | igual |
+| Cabeceras completas con sus páginas | — | 0/303 | 303/303 |
+| Bloques de cuerpo en la franja de cabecera | — | 549 | 0 |
+| Títulos con número lateral en el cuerpo | — | 93/152 | 152/152 |
+| Conversión en el worker de 8080 / pico del hijo | 86,356 s / 199 MiB | 85,990 s / 202 MiB | 87,401 s / 202 MiB |
 
-## Calidad del bundle final del perfil 1.11.0
+La caída de la cobertura global de 1.13.0 es por diseño: retira repeticiones de cabecera del cuerpo y las conserva en el inventario. En todas las tandas el bundle fue `complete`, de un intento, aceptado por `validate` sin red y con 0 fallos de salud en 89 sondeos.
 
-| Propiedad | Resultado |
-| --- | --- |
-| Conformidad | `complete`; ZIP descargado aceptado también por `validate` |
-| Páginas representadas | 346 de 346 |
-| Palabras conservadas frente a PDFium | 98,66 % (1 323 apariciones sin correspondencia exacta) |
-| Texto, con palabras reagrupadas | 99,54 % |
-| Conceptos | 21; antes eran 6, con un concepto que abarcaba las páginas 5–342 |
-| Marcadores reconocidos | 179 de 214 (83,64 %); antes se descartaba el esquema y se inferían 31 encabezados |
-| Imágenes adjuntas | 228, con 65 473 301 bytes sin comprimir dentro del ZIP |
-| ZIP descargado en macOS | 90 923 157 bytes (86,71 MiB), incluido el original |
+**Carga y recursos (macOS, Apple M2).** Con un worker, una conversión tarda unos 82 s y dos simultáneas, 162 s (0,73 bundles/min); con dos workers, 83 s (1,44 bundles/min), sin fallos de salud y con p95 de `/health` inferior a 4 ms. Cada conversión usa aproximadamente un núcleo y su hijo llega a 293–351 MiB, por debajo de los límites de 500 MiB y 300 s; dos workers requieren reservar memoria para ambos hijos y el resto del servicio, y no es una recomendación universal de concurrencia. Los cinco bundles de la tanda son idénticos tras excluir la fecha y la duración del informe. Una imagen Linux de prueba, sin red, con un núcleo, cgroup de 600 MiB y los límites sin aumentar, convierte el PDF completo en 86,95 s con 202 MiB de RSS máxima; la prueba de humo de los cuatro formatos y del escaneo con OCR pasó.
 
-Los once capítulos principales tienen ahora límites de concepto coherentes con sus páginas de comienzo; la organización sigue la jerarquía de los marcadores del original. La recuperación de títulos añade texto a la estructura de `documento.md`, por lo que el número de palabras adicionales aumenta: esa cifra incluye los títulos de navegación y las etiquetas generadas; no demuestra duplicación de párrafos del cuerpo.
-
-### Límites observados en la revisión visual
-
-- **Tablas:** en la página física 85, una tabla visual de tres columnas se reconstruye parcialmente en dos, se mezcla con el encabezado de página y pierde relaciones entre celdas. Que sus palabras sobrevivan no preserva su significado tabular. El contador del informe suma 168 páginas con candidatos tabulares; no identifica 168 tablas verificadas.
-- **Código con llamadas laterales:** en las páginas físicas 109–110 el texto monoespaciado queda fragmentado por las anotaciones explicativas y los encabezados. La sangría se reinicia en algunos fragmentos. El contenido no debe tratarse como código ejecutable reconstruido.
-- **Encabezados de capítulos:** los que cambian entre capítulos no siempre alcanzan la frecuencia global del 30 % y quedan dentro del contenido; algunos contaminan una tabla o separan un listado. También quedan números de sección separados por la lectura de columnas de margen.
-- **Marcadores pendientes:** 35 no se reconocen como encabezado; el texto puede existir dentro de una tabla o separado por la maquetación. No se reduce el mínimo de reconocimiento para ocultarlo.
-- **Contraportada:** la página 346 es la peor en la comparación por página (91,74 % de texto ajustado), con tipografías decorativas, letra capitular y columnas. Requiere un tratamiento distinto al de la prosa corriente.
-- **Figuras y páginas mixtas:** se conservan imágenes y original, pero no se aplica OCR al texto que está solo dentro de capturas de páginas mixtas. PDFium tampoco lo ve; la cobertura medida no evalúa ese contenido.
-
-La prueba demuestra una mejora de navegabilidad y corrige fallos que impedían entregar el bundle. La fidelidad de tablas complejas y de código con anotaciones sigue siendo un trabajo pendiente; no se declara resuelta por el estado `complete`.
-
-## Carga medida en macOS
-
-API, workers y archivos de prueba aislados del servicio habitual; esquema propio en la base desechable `okf_test`. Cinco conversiones, todas en un intento, `complete`, con validación antes de publicar. Los cinco bundles tienen exactamente las mismas entradas y bytes después de excluir la fecha de generación y la duración del informe.
-
-| Escenario | Tiempo de la tanda, s | Bundles/min | p95 de `/health`, ms | Fallos / sondeos de salud |
-| --- | ---: | ---: | ---: | ---: |
-| 1 solicitud, 1 worker | 82.59 | 0.73 | 3.68 | 0 / 162 |
-| 2 solicitudes simultáneas, 1 worker | 162.04 | 0.74 | 3.58 | 0 / 319 |
-| 2 solicitudes simultáneas, 2 workers | 83.26 | 1.44 | 3.18 | 0 / 165 |
-
-Con un worker, el segundo trabajo empezó a observarse en `processing` a los 81,58 s y terminó a los 161,76 s; aumentar el plazo de conversión no reduce esa espera. Con dos workers ambos se observaron en `processing` a los 0,62 s y terminaron a los 82,84 s. Las subidas tardaron 0,106–0,117 s y las descargas de cada ZIP de 86,71 MiB, 0,278–0,417 s, en loopback.
-
-El registro del worker mide conversiones de 80,503–82,446 s, de los que 79,991–81,916 s corresponden al ensamblado (incluye la lectura de páginas PDF) y 0,410–0,427 s a validación. El pico por hijo fue de 293–312 MiB con un worker y 351 MiB en cada conversión simultánea. No se alcanzan los límites de 500 MiB y 300 s.
-
-El muestreo de procesos cada 0,5 s observó hasta 644,97 MiB sumados entre los dos hijos y 681,03 MiB entre API, workers e hijos (sin PostgreSQL ni el sistema). La carga es principalmente de CPU: aproximadamente un núcleo por conversión y dos con dos workers; la suma de `%CPU` llegó a 213,3 % en una muestra. El último tiempo acumulado de CPU observado por hijo estuvo entre 80,66 y 82,29 s; son muestras, no medidas exactas de CPU al terminar. Dos workers casi duplicaron la capacidad para este PDF; eso requiere reservar memoria para ambos hijos y el resto del servicio. No es una recomendación universal de concurrencia.
-
-## Comprobación de la imagen Linux
-
-Se construyó una imagen de prueba separada, `okf-microservice:pdf-quality`, Linux arm64, con las bases y modelos fijados del Dockerfile. Su identidad local es `sha256:df4cdd9308ccb1319e73443da96eadfc87d408aa57496025679ec7b184cc1547`. La comprobación inicial de las correcciones se hizo en instancias de prueba. Después, por petición del usuario, esta misma imagen se promovió a la instancia habitual de Compose en `8080`, conservando sus volúmenes y la imagen anterior con la etiqueta local `okf-microservice:before-profile-1.11-20261109`.
-
-`tools/smoke.sh okf-microservice:pdf-quality` completó el recorrido API → PostgreSQL → worker → descarga → validación de los cuatro formatos y del escaneo con OCR. Sus contenedores, red y volúmenes temporales se eliminaron al terminar.
-
-El PDF privado completo se convirtió además con el subcomando `convert` de esa imagen, **sin red, con un núcleo, cgroup de 600 MiB y los límites del conversor sin aumentar** (500 MiB configurados y 300 s). Se usó un volumen Linux temporal para que Landlock aplicara sus reglas de escritura. Dio `complete` en **86,95 s de pared**, con **202 MiB de RSS máxima** informada por el hijo; lectura 3 ms, ensamblado 86 163 ms y validación 430 ms. El subcomando directo impone Landlock, seccomp y rlimits; no tiene el supervisor de RSS del worker, que sí se ejercita en la prueba de humo. El ZIP recuperado, de 90 923 236 bytes (86,71 MiB), se aceptó también mediante `validate` en otro contenedor sin red; la auditoría PDFium confirmó las mismas cifras globales (98,66 % de palabras y 99,54 % de texto), los mismos 21 tramos de conceptos y 228 imágenes que en macOS. El contenedor y el volumen de esta conversión se eliminaron después de recuperar el resultado.
-
-La cifra de CPU de `/usr/bin/time` aplicada a `docker run` pertenece al cliente Docker, por lo que no se usa como CPU del conversor. La evidencia de CPU por conversión procede del muestreo de los hijos nativos descrito arriba. La latencia Linux es un ensayo con cuota explícita, no una comparación de velocidad con la instancia antigua durante la compilación del host.
-
-## Verificación desde la instancia habitual de 8080 (perfil 1.11.0)
-
-El 9 de noviembre, a petición del usuario, se actualizó la instancia habitual con la imagen ya validada. Se comprobó que no había trabajos `queued` ni `processing`, se conservó la imagen anterior con su etiqueta de recuperación y se promovió la imagen de perfil 1.11.0 a `okf-microservice:local`. Se recrearon únicamente API y worker mediante `docker compose up -d --no-build --no-deps --force-recreate api worker`; PostgreSQL y los volúmenes existentes se conservaron. La identidad de imagen de ambos contenedores coincide con la del apartado anterior. Se mantuvo la configuración habitual, incluido `RUST_LOG=info`.
-
-Se subió de nuevo el original con su nombre real mediante `POST http://127.0.0.1:8080/jobs`, se observó su estado en esa API y se descargó el ZIP publicado por esa instancia. Resultado:
-
-| Comprobación | Resultado |
-| --- | --- |
-| Estado / intentos / perfil | `complete` / 1 / `1.11.0` |
-| Conversión, según el worker | 86.356 s |
-| Etapas de lectura / ensamblado / validación | 3 / 85801 / 416 ms |
-| Pico residente del hijo | 199 MiB |
-| Hasta observar el resultado desde el envío | 87.728 s |
-| Subida / descarga | 0.201 / 1.142 s |
-| Salud durante la conversión | 0 fallos en 89 sondeos; p95 2.65 ms |
-| Bundle descargado | 90,923,236 bytes |
-| Validación independiente | Aceptado por `validate` en otro contenedor sin red |
-| Auditoría frente al original | 346 páginas, 21 conceptos, 228 imágenes; 98,66 % de palabras y 99,54 % de texto ajustado |
-
-La auditoría confirma el mismo SHA-256 del original, las mismas cifras globales y los mismos tramos de conceptos que en la prueba Linux anterior. Los resultados, la identidad de despliegue, el resumen del worker y el ZIP de esta ejecución se conservan solo en `output/calidad-pdf-dificil1/instance-8080/`. Los límites de tablas y código descritos arriba siguen vigentes.
-
-## Segunda evaluación: tablas y código (perfil 1.12.0)
-
-Esta evaluación corrige los defectos estructurales de la primera. La tabla de la página física 85 se usa para comprobar tres columnas, seis filas de datos y continuaciones de celda. La de la página 251 añade filas altas, etiquetas partidas y parámetros monoespaciados. En ambos casos la referencia se obtiene con PDFium por rectángulos de celda leídos del original; solo se normalizan espacios, escapes Markdown y guiones de maquetación. El verificador privado y sus resultados quedan en `output/calidad-pdf-dificil1/layout-1.12/`, sin incorporar texto del original al repositorio.
-
-### Cambios de maquetación
-
-- Una banda requiere al menos tres filas con tres o más celdas alineadas y canales de anchura comparable. Las columnas se fijan por los inicios de las celdas de dos filas compatibles. Una continuación más larga que el texto usado como anclaje no desplaza el separador hacia la columna vecina.
-- Las bandas se identifican antes de agrupar código. Los parámetros monoespaciados de una celda siguen perteneciendo a esa tabla. El espacio vertical distingue las continuaciones de etiquetas de las filas nuevas, y se incluyen todas las líneas finales de cada celda.
-- Las líneas de un listado se reúnen por posición, con los espacios interiores y la sangría conservados. Las anotaciones laterales mantienen su texto y procedencia fuera del código. Un listado puede continuar en la página siguiente con un margen físico diferente; sus cajas de origen no se desplazan al normalizar la sangría.
-- Los saltos editoriales que parten un literal simple se reúnen bajo las condiciones del perfil y se declaran. Los bloques cercados admiten líneas vacías con el mismo localizador; el validador conserva esa distinción.
-
-La regresión del artículo a dos columnas detectó una confusión entre una tabla de abreviaturas de la columna izquierda y la bibliografía de la derecha. Se añadió una prueba directa que exige mantenerlas separadas, además de conservar los nueve conceptos y las citas del artículo. Otra regresión pública exige que los renglones consecutivos de tarjetas alineadas conserven la lectura por columnas: los dos anclajes iniciales requieren separación vertical entre sus cajas. Las pruebas sintéticas nuevas incluyen continuaciones más anchas que la semilla de columna, etiquetas de varias líneas, filas altas y texto monoespaciado dentro de celdas.
-
-### Medición comparable
-
-La limpieza de Markdown de los medidores Python y Rust también se corrigió: antes interpretaba llamadas de código como enlaces y excluía sus argumentos, o quitaba comentarios literales del código. Para esta comparación se vuelven a medir tanto el ZIP publicado por 1.11.0 como el nuevo con la limpieza corregida. La medición histórica de 1.11.0 de la primera evaluación (98,66 % / 99,54 %) se conserva arriba; con el medidor corregido es **98,68 % de palabras y 99,55 % de texto ajustado**.
-
-La conservación de palabras sigue siendo un multiconjunto, no una prueba de exactitud de tablas ni de validez del código. La comprobación estructural usa celdas concretas y la comparación de caracteres y sangría del listado con las posiciones y fuentes de PDFium. El análisis sintáctico de los dos listados Python se hace con `ast.parse`, sin ejecutarlos ni instalar sus dependencias.
-
-### Resultado final servido por 8080
-
-La imagen final del perfil **1.12.0** está instalada en la API y el worker habituales. Ambos ejecutan la imagen `sha256:5a735d5c5ab13893fbe764efdcae7d273bd017081a715105a67252166b73d5bc`. La conversión verificada corresponde al trabajo `8a373d54-81b6-41d4-b728-a1bc482bf6b3`. El ZIP y las evidencias privadas se conservan en `output/calidad-pdf-dificil1/layout-1.12/verified-8080/`; el manifiesto de fuentes está en `output/calidad-pdf-dificil1/layout-1.12/source-manifest.json`. La compilación final declara `converter_commit: unknown`: el manifiesto registra el commit base y las huellas del árbol sin commit que realmente se compiló.
-
-| Propiedad | Perfil 1.11.0 | Perfil 1.12.0 |
-| --- | ---: | ---: |
-| Palabras conservadas, medidor corregido | 98,68 % | 98,65 % |
-| Texto ajustado, medidor corregido | 99,55 % | 99,53 % |
-| Apariciones sin correspondencia exacta | 1 301 | 1 333 |
-| Marcadores reconocidos | 179/214 | 199/214 |
-| Conceptos / páginas / imágenes | 21 / 346 / 228 | 21 / 346 / 228 |
-| Tabla de página 85 | Columnas mezcladas y cabecera incorporada | 7 filas × 3 columnas; 21/21 celdas verificadas |
-| Tabla de página 251 | Filas y columnas fragmentadas | 7 filas × 3 columnas; 21/21 celdas verificadas |
-| Listado de páginas 109–110 | 10 bloques cercados | Un bloque; 28 líneas no vacías y 3 vacías, con texto y sangría iguales a PDFium |
-| Dos listados Python seleccionados | Fragmentación editorial | Un bloque por listado; ambos aceptados por `ast.parse` |
-| Intento / estado / validación independiente | 1 / `complete` / válido | 1 / `complete` / válido |
-| Conversión en el worker de 8080 | 86,356 s | 85,990 s |
-| Pico del hijo | 199 MiB | 202 MiB |
-
-La cobertura global baja ligeramente: los anclajes nuevos reúnen palabras que antes quedaban partidas en celdas y cambian la recuperación de encabezados. Los fragmentos cortos que conserva PDFium no siempre se compensan en el ajuste de palabras reagrupadas, que exige al menos cuatro caracteres. La mejora demostrada aquí es la estructura de las tablas y listados auditados; no se declara una mejora de la cobertura global de palabras.
-
-La última solicitud terminó en 87,713 s desde el comienzo de la subida; la descarga añadió 1,158 s. Hubo **0 fallos en 89 sondeos de salud**, con p95 de 3,184 ms. El intento dedicó 3 ms a lectura, 85 461 ms a ensamblado y 418 ms a validación; el total incluye el resto de operaciones. El ZIP mide 90 921 822 bytes y su SHA-256 es `eb0fa33f0b4e700df600f4ebd79001a76336a3da6ef9eab7c4e418f211d2d22f`. La validación independiente se hizo desde otro contenedor, sin red.
-
-### Verificación del perfil 1.12.0
-
-- `cargo fmt --check`, `cargo clippy --all-targets --locked -- -D warnings` y `OKF_REQUIRE_OCR_MODELS=1 cargo test --locked`: correctos; **122 pruebas**, sin fallos ni omisiones, incluidas OCR y PostgreSQL.
-- `cargo deny check`: correcto; sin dependencias ni excepciones nuevas.
-- Las 27 referencias golden se regeneraron y revisaron. Además del perfil y sus identificadores, cambian tres archivos de `p1`: la agrupación tabular, sus localizadores y el informe. Los anclajes disjuntos recuperan columnas antes separadas y descartan agrupaciones inestables. Una tabla parcial de cinco columnas pasa a líneas al no disponer de dos filas compatibles; conserva sus palabras, pero su estructura sigue pendiente. Las tarjetas alineadas y la bibliografía conservan la lectura por columnas.
-- `uv run tools/coverage.py` sobre los **27 documentos**: coberturas y mínimos sin cambios; no se regeneran listas ni se rebajan umbrales.
-- `tools/smoke.sh` con la imagen final: conversiones de los cuatro formatos y PDF escaneado con OCR, con descarga y validación correctas.
-- El ZIP final descargado de 8080 se vuelve a auditar contra el SHA-256 del original y con el verificador de 42 celdas y código. Este último compara texto y sangría del listado por posiciones y fuente de caracteres de PDFium; no usa los anclajes del adaptador Rust como referencia.
-
-## Tercera evaluación: márgenes y cabeceras variables (perfil 1.13.0)
-
-**Fecha:** 10 de noviembre de 2026. Las cabeceras corridas de capítulo o sección cambiaban de texto con frecuencia y no alcanzaban el mínimo global del 30 %. Algunas se confundían con el título real de la sección, desplazando el encabezado a la parte superior de la página; el número lateral del título del cuerpo quedaba separado.
-
-La corrección separa cabeceras por su alineación con un folio confirmado y un puesto tipográfico que se repite en al menos tres páginas. Admite prefijos en letra menor, reúne los fragmentos de una fila y registra cada texto una vez en `documento.md`, con todas sus páginas. El título del cuerpo se reúne con su número lateral antes del corte por columnas solo si reproduce el marcador completo en su página de destino. El informe declara las páginas afectadas; se conservan las coordenadas y no se rebajan los mínimos de reconocimiento de marcadores.
-
-### Comprobación independiente
-
-La referencia se extrae del original con PDFium. La inspección visual fija una franja de evaluación de 43 puntos desde el borde superior en las páginas físicas 25–345; esta franja contiene las cabeceras corridas y sus folios, mientras que los títulos y la prosa comienzan debajo. Se obtiene texto de cabecera en **303 páginas**, con el folio separado, y se contrasta su inventario y sus páginas con `documento.md`. También se exige que ningún bloque textual del contenido conserve una caja dentro de esa franja.
-
-Los marcadores leídos con PDFium y la presencia del número en el margen del original dan **152 títulos numerados** para contrastar (144 decimales y ocho con letra de apéndice): el título completo debe aparecer como encabezado en la página de destino y tener su caja en el cuerpo, abarcando el número lateral. En el ZIP de 1.12.0 solo **93/152** cumplían este criterio; había **549 bloques** localizados en la franja de cabecera y ninguna de las 303 cabeceras se registraba íntegra con su página. La referencia geométrica es independiente de las líneas y los cortes del adaptador Rust.
-
-Se repiten además las comprobaciones anteriores de 42 celdas y de los listados, para detectar efectos sobre las tablas, las anotaciones y el código que continúa entre páginas. El verificador y los datos privados se conservan en `output/calidad-pdf-dificil1/margins-1.13/`.
-
-### Cómo comparar la cobertura
-
-La cobertura global sigue comparando todo el texto de PDFium, incluidas las cabeceras repetidas, con el contenido del bundle y el inventario que las registra una vez. Separarlas cambia esa métrica por diseño. Se añade una segunda medición con la misma referencia geométrica para ambos ZIP: las páginas 25–345 se leen debajo de los 43 puntos de cabecera y las demás páginas completas. Esta referencia contiene **96 178 palabras**; el ZIP anterior conserva el **98,65 % de palabras y el 99,56 % de texto ajustado**. La medición del cuerpo complementa el inventario completo de cabeceras y la conservación de `page_labels`; no sustituye la cifra global.
-
-### Resultado final servido por 8080
-
-La API y el worker habituales ejecutan la imagen `sha256:9aeecb584b44f76833e4b5ee2d689714d33e9d772e1575ad47b8a52176d92243`, perfil **1.13.0**. La comprobación final corresponde al trabajo `a6714392-277a-4f46-9527-6b13365731d1`; el ZIP, la identidad de los contenedores y las auditorías quedan en `output/calidad-pdf-dificil1/margins-1.13/verified-8080/`. El manifiesto de fuentes está en `output/calidad-pdf-dificil1/margins-1.13/source-manifest.json`: conserva la revisión base y las huellas del árbol sin commit que se compiló; la revisión del binario no identifica por sí sola esas modificaciones.
-
-| Propiedad | Perfil 1.12.0 | Perfil 1.13.0 |
-| --- | ---: | ---: |
-| Cabeceras completas registradas con sus páginas | 0/303 | **303/303** |
-| Bloques textuales con caja en la franja de cabecera | 549 | **0** |
-| Títulos con número lateral y localizador en el cuerpo | 93/152 | **152/152** |
-| Marcadores reconocidos | 199/214 | 201/214 |
-| Páginas / conceptos / imágenes | 346 / 21 / 228 | 346 / 21 / 228 |
-| Etiquetas impresas `page_labels` | 334 | 334, exactamente iguales |
-| Cobertura global de palabras (con cabeceras repetidas en la referencia) | 98,65 % | 98,29 % |
-| Texto global ajustado | 99,53 % | 99,56 % |
-| Cobertura de palabras de la referencia sin cabeceras corridas | 98,65 % | 98,65 % |
-| Texto ajustado de esa referencia | 99,56 % | 99,56 % |
-| Apariciones sin correspondencia exacta en esa referencia | 1 298 | 1 298 |
-| Celdas de las dos tablas comprobadas | 42/42 | 42/42 |
-| Listados Python comprobados | Dos válidos por análisis sintáctico | Dos válidos; se mantienen texto, sangría y líneas vacías del listado comparado con PDFium |
-| Intento / estado / validación independiente | 1 / `complete` / válido | 1 / `complete` / válido |
-| Tiempo del worker / pico del hijo | 85,990 s / 202 MiB | 87,401 s / 202 MiB |
-
-La reducción de la cobertura global de palabras corresponde a retirar repeticiones de cabecera del cuerpo, conservando cada texto con todas sus páginas en el inventario. El control de la referencia sin esas cabeceras mantiene exactamente su número de apariciones ausentes y sus dos porcentajes. El detalle no es idéntico: tres fragmentos breves pasan a palabras reunidas y se recuperan tres números de página; la igualdad del total no implica identidad de las ausencias. El incremento de títulos correctamente localizados se comprueba por texto, página y caja de origen, además del contador de marcadores.
-
-La solicitud final terminó en 87,913 s desde el comienzo de la subida; la descarga añadió 1,111 s. Se registraron **0 fallos en 89 sondeos de salud**, con p95 de 2,927 ms. El intento dedicó 3 ms a lectura, 86 832 ms a ensamblado y 434 ms a validación; el total incluye las demás operaciones. El ZIP mide 90 910 473 bytes y su SHA-256 es `433e2448eb1836b431c2a6276ab648262e6962bcd136f991887e233e8d6ef010`.
-
-### Verificación y límites
-
-- `cargo fmt --check`, `cargo clippy --all-targets --locked -- -D warnings` y `OKF_REQUIRE_OCR_MODELS=1 cargo test --locked`: correctos; **126 pruebas**, sin fallos ni omisiones, incluidas OCR y PostgreSQL. Las regresiones cubren cabeceras variables, versalitas pequeñas, necesidad de folio confirmado y tres páginas, exclusión de código y letra grande, títulos de varias líneas y numeración de apéndices, y rechazo de títulos incompletos, desalineados o de otra página.
-- `cargo deny check`: correcto; sin dependencias ni excepciones nuevas.
-- Las 27 referencias golden se regeneraron y revisaron. Fuera del perfil y sus identificadores derivados, solo cambia una observación del informe del artículo `p2`; el contenido y los localizadores de todos los ejemplos permanecen iguales a 1.12.0.
-- `uv run tools/coverage.py` sobre los 27 ejemplos: cifras en ambos sentidos y mínimos sin cambios; no se regeneran listas ni se rebajan umbrales.
-- `tools/smoke.sh` con la imagen final: cuatro formatos y PDF escaneado con OCR, con descarga y validación correctas. El ZIP final de 8080 pasa también `validate` en otro contenedor sin red y las comprobaciones privadas de cabeceras, títulos, tablas y código.
-
-Los casos de cabecera corrida y numeración lateral de este original quedan comprobados. El detector exige folio confirmado y recurrencia de posición, por lo que no cubre cabeceras aisladas, desalineadas con el folio o con otros formatos. Se mantienen los límites de rotación, tablas sin anclajes estables o celdas combinadas, texto solo en capturas de páginas mixtas y tipografías decorativas de la contraportada. Quedan 13 marcadores sin reconocer; no se reduce el umbral del perfil ni se presupone correcta toda la maquetación del libro.
+**Límites que la primera evaluación dejó abiertos y siguen siendo ciertos:** una tabla con significado tabular que sobrevive solo como palabras no demuestra su estructura; el texto monoespaciado con anotaciones no debe tratarse como código ejecutable reconstruido; las cabeceras sin folio o sin posición recurrente no se detectan; el texto solo dentro de capturas de páginas mixtas no se transcribe ni lo evalúa PDFium; la contraportada (letra capitular y tipografías decorativas) es la peor página (91,74 % de texto ajustado); y 13 marcadores siguen sin reconocerse, sin rebajar el umbral del perfil.
 
 ## Parámetros y criterio operativo
 
 Para este documento se conservan los límites por defecto: `OKF_MAX_MEMORY_MB=500`, `OKF_CONVERSION_TIMEOUT_S=300`, `OKF_MAX_PAGES=2000`, `OKF_MAX_IMAGE_PIXELS=33554432`, `OKF_MAX_OUTPUT_MB=512` y `OKF_OCR_ENABLED=false`. No hay páginas sin texto que necesiten OCR; aumentar sus páginas o su memoria no corrige los problemas de maquetación encontrados. Tampoco se suben memoria o plazo para esconder un fallo de validación.
 
 La instancia de pruebas usa `RUST_LOG=okf_microservice=info`, que conserva los registros por intento sin el diagnóstico detallado de todas las fuentes de `pdf_oxide`. La captura acotada protege al supervisor incluso si se habilitan registros más verbosos. Los tiempos locales se miden en macOS arm64 sobre Apple M2 (8 núcleos, 16 GiB de RAM), con PostgreSQL local en Docker; no equivalen a capacidad garantizada del contenedor de producción. Las cifras de salud corresponden solo a esta carga de cinco trabajos, no a una prueba de saturación sostenida.
-
-## Verificación de la primera evaluación (1.11.0)
-
-- `cargo fmt --check` y `cargo clippy --all-targets --locked -- -D warnings`: correctos.
-- `OKF_REQUIRE_OCR_MODELS=1 cargo test --locked`: 114 pruebas pasadas, incluidas OCR y PostgreSQL; además se ejecutó la regresión específica de títulos tras ampliar sus casos negativos.
-- `cargo deny check`: avisos de seguridad, licencias, orígenes y duplicados aceptados, sin excepciones nuevas.
-- `OKF_UPDATE_GOLDEN=1 cargo test --locked golden`: 27 referencias regeneradas y revisadas; solo cambian perfil e identificadores derivados.
-- `uv run tools/coverage.py` sobre los ocho PDF de `examples/`: cifras y mínimos sin cambios.
-- `validate` independiente sobre los ZIP descargados, comparación de los cinco bundles bajo carga y prueba de humo de la imagen Linux: correctos.
 
 ## Próximas pruebas
 
