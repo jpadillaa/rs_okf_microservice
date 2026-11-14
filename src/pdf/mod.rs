@@ -5152,6 +5152,8 @@ mod tests {
         // presupuesto del OCR de esta conversión (en la CI dejaba los escaneos sin OCR).
         let Some(mut cfg) = ocr_config() else { return };
         cfg.timeout = std::time::Duration::from_secs(3);
+        // El límite de CPU sale del plazo, como en el servicio sin `OKF_MAX_CPU_S`.
+        cfg.max_cpu_s = None;
         let start = cpu_time();
         let mut x = 0u64;
         while cpu_time() - start < std::time::Duration::from_millis(2500) {
