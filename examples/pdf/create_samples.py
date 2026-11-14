@@ -20,6 +20,11 @@ muestras/informe_tecnico.pdf        a report of several pages in one column with
                                     bulleted lists with hanging indents, a code block in
                                     Courier, bold and italic words and a paragraph that
                                     crosses a page.
+muestras/indice_columnas.pdf        a back-of-book index in two columns (plan 4, Q3):
+                                    bold section letters, entries with their page
+                                    numbers and indented subentries. The lines of both
+                                    columns are aligned row by row, but each column is
+                                    read whole, left then right, and is not a table.
 muestras/escaneado_mixto.pdf        page classes: digital text with a rotated margin
                                     note, a scanned page without text, a page with only
                                     its number, a vector drawing without text and a page
@@ -528,9 +533,54 @@ def escaneado():
     ])
 
 
+# Index columns: ("#", letter) opens a section, ("", text) is an entry at the margin and
+# ("-", text) an indented subentry. The sections of the two columns start at different
+# heights, as in a real index.
+INDEX_LEFT = [
+    ("#", "A"), ("", "acceso abierto 12"), ("-", "licencias 14"), ("-", "repositorios 15–17"),
+    ("", "actas de congreso 21"), ("", "anexos 30"), ("-", "numeración 31"),
+    ("-", "tablas en anexos 33"),
+    ("#", "B"), ("", "bibliografía 40"), ("-", "estilos de cita 41"), ("-", "orden alfabético 43"),
+    ("", "boletines 47"), ("", "búsqueda de texto 52"), ("-", "por palabras 53"),
+    ("-", "por frases exactas 55"),
+]
+INDEX_RIGHT = [
+    ("#", "C"), ("", "cabeceras de página 60"), ("-", "folios 61"), ("-", "títulos corrientes 62"),
+    ("", "capítulos 64"), ("-", "numeración 65"), ("", "columnas 70"), ("-", "de texto corrido 71"),
+    ("-", "de tablas 73"), ("", "cuadros 75"),
+    ("#", "D"), ("", "diagramas 80"), ("-", "rótulos 81"), ("", "documentos escaneados 85"),
+    ("-", "reconocimiento de caracteres 86"), ("-", "resolución 88"),
+]
+
+
+def indice():
+    W, H = 595, 842
+    left, gutter = 56, 24
+    right = left + (W - 2 * left - gutter) / 2 + gutter
+    p = Page(W, H)
+    p.text(left, 60, "Índice analítico", "F2", 18)
+    for x, column in ((left, INDEX_LEFT), (right, INDEX_RIGHT)):
+        y = 110
+        for kind, text in column:
+            if kind == "#":
+                y += 8
+                p.text(x, y, text, "F2", 12)
+                y += 16
+            else:
+                p.text(x + (12 if kind == "-" else 0), y, text, "F1", 10)
+                y += 13
+    Pdf().save(OUT / "indice_columnas.pdf", [p], {"Title": "Índice analítico"})
+    write_truth(["indice_columnas"], [p], [
+        {"page": 1, "type": "title", "text": "Índice analítico"},
+        *({"page": 1, "type": "heading", "level": 1, "text": t}
+          for kind, t in INDEX_LEFT + INDEX_RIGHT if kind == "#"),
+    ])
+
+
 if __name__ == "__main__":
     OUT.mkdir(parents=True, exist_ok=True)
     breve()
     articulo()
     informe()
+    indice()
     escaneado()

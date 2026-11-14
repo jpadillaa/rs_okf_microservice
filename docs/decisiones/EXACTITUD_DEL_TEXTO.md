@@ -73,6 +73,7 @@ Por defecto convierte con `target/release/okf-microservice` (`--binary` cambia e
 | `escaneado_ocr.pdf`, con OCR | 100 | 100 | 100 | 100 |
 | `informe_tecnico.pdf` | 100 | 100 | 100 | 100 |
 | `imagenes_con_texto.pdf`, con OCR (perfil 1.18.0) | 100 | 100 | 100 | 100 |
+| `indice_columnas.pdf` (perfil 1.19.0) | 100 | 100 | 100 | 100 |
 
 Estructura, con las mismas muestras (perfil 1.17.0): `articulo_columnas`, `breve`, `escaneado_mixto` e `informe_tecnico` dan el 100 % en todas sus métricas y ninguna tabla falsa. La muestra escaneada con OCR, cuyo texto es exacto, no conserva su estructura: encabezados 85,71 %, niveles 60 %, elementos de lista 66,67 % y líneas de código 0 %. Los niveles salen de tamaños de letra medidos por la tinta, que varían entre líneas; un encabezado de tercer nivel y un elemento de lista no se reconocen como tales, y el OCR no distingue la fuente monoespaciada del código. Los mínimos fijan estas cifras para que no empeoren; su corrección corresponde al plan 4. `imagenes_con_texto` da el 100 % en encabezados, su precisión y sus niveles, sin tablas falsas; el texto de las capturas es un bloque de líneas y su referencia no le declara estructura. Sin el OCR de imágenes (perfil 1.17.0), su completitud era del 45,9 %: solo el título y los párrafos digitales.
 
@@ -129,6 +130,21 @@ Lo que la revisión encontró, por forma y sin reproducir contenido:
 - **Texto que el PDF contiene pero la vista no muestra:** dos diapositivas de la presentación traen palabras que no se ven. La referencia las deja fuera; que el contrato las conserve o no es una decisión pendiente.
 
 Convenciones de las referencias: el texto dentro de imágenes cuenta; los errores de ortografía del autor se conservan; se omiten logotipos, números de página, encabezados corrientes y la navegación lateral; las palabras partidas por un salto de línea se reúnen; cada columna o bloque va seguido, no intercalado por filas.
+
+## Columnas de texto corrido (plan 4, Q3, perfil 1.19.0)
+
+Un índice a dos columnas tiene sus líneas alineadas fila a fila y muchas son breves, así que la regla que distingue tablas de columnas lo tomaba por una tabla de dos columnas: intercalaba las entradas de la izquierda y la derecha y metía las letras de sección en las celdas. Desde el perfil 1.19.0, dos partes de texto corrido de ancho parecido cuyos bloques no empiezan a la vez se leen como columnas (especificación, §5): cada parte tiene al menos seis líneas y en la mitad o más una línea continúa la anterior; la más estrecha mide al menos el 60 % de la más ancha; y las líneas que abren un bloque tras un hueco no coinciden en las dos partes, como sí coinciden en las filas de una tabla.
+
+La muestra `indice_columnas.pdf` (`create_samples.py`) es un índice de una página con letras de sección, entradas con su página y subentradas sangradas, y da el 100 % en todas sus métricas, con sus cuatro encabezados y ninguna tabla falsa. Una tabla de dos columnas con celdas de dos líneas y un hueco entre filas sigue siendo tabla (prueba `wrapped_two_column_table_keeps_its_rows`).
+
+En los originales privados (OCR activo):
+
+| Original privado | Orden | Orden interno | Contigüidad | Encabezados | Tablas falsas |
+| --- | ---: | ---: | ---: | ---: | ---: |
+| PDF de 346 páginas | 75,32 → 87,91 | 91,14 → 94,99 | 89,84 → 94,14 | 52,38 → 95,24 | 30 → 16 |
+| Presentación de 53 páginas | 84,87 → 85,65 | 94,93 → 96,27 | 90,08 → 91,43 | - | 9 → 8 |
+
+Los otros cinco originales no cambian. En la presentación mejoran dos diapositivas: dos notas de una cuadrícula de cuatro y la mitad derecha de un diagrama se leen ya como texto. Las tablas falsas que quedan salen de figuras y diagramas (13), tablas de contenido (5), diapositivas (8) y un formulario (1). Las entradas de un índice se escriben seguidas en un párrafo por sección, no una por línea.
 
 ## Límites
 

@@ -2,7 +2,7 @@
 use crate::output::Fields;
 use serde::{Deserialize, Serialize};
 
-pub(crate) const PROFILE: &str = "1.18.0";
+pub(crate) const PROFILE: &str = "1.19.0";
 /// Perfiles anteriores cuyos bundles siguen siendo válidos: 1.1.0 añadió reglas para
 /// páginas que un bundle 1.0.0 no puede contener (OCR del servicio), 1.2.0 solo cambia
 /// qué guiones de fin de línea conserva el texto PDF, que el validador no comprueba,
@@ -18,12 +18,17 @@ pub(crate) const PROFILE: &str = "1.18.0";
 /// invisible y 1.16.0 recupera listados de esa capa. 1.17.0 lleva los localizadores de
 /// bloque PDF a su archivo `.spans.json`; los anteriores los tienen en el frontmatter.
 /// 1.18.0 transcribe con OCR el texto de las imágenes de contenido y declara su límite.
-const PREVIOUS_PROFILES: [&str; 18] = [
+/// 1.19.0 lee como columnas, y no como tabla, dos columnas de texto corrido (un índice),
+/// sin cambiar la validación de los bundles anteriores.
+const PREVIOUS_PROFILES: [&str; 19] = [
+    "1.0.0", "1.1.0", "1.2.0", "1.3.0", "1.4.0", "1.5.0", "1.6.0", "1.7.0", "1.8.0", "1.9.0",
+    "1.10.0", "1.11.0", "1.12.0", "1.13.0", "1.14.0", "1.15.0", "1.16.0", "1.17.0", "1.18.0",
+];
+/// Perfiles anteriores al OCR de imágenes y a su límite (plan 4, Q1).
+const WITHOUT_IMAGE_OCR: [&str; 18] = [
     "1.0.0", "1.1.0", "1.2.0", "1.3.0", "1.4.0", "1.5.0", "1.6.0", "1.7.0", "1.8.0", "1.9.0",
     "1.10.0", "1.11.0", "1.12.0", "1.13.0", "1.14.0", "1.15.0", "1.16.0", "1.17.0",
 ];
-/// Perfiles anteriores al OCR de imágenes y a su límite (plan 4, Q1).
-const WITHOUT_IMAGE_OCR: [&str; 18] = PREVIOUS_PROFILES;
 /// Perfiles anteriores a `conversion_settings` (plan 3, I3).
 const WITHOUT_SETTINGS: [&str; 3] = ["1.0.0", "1.1.0", "1.2.0"];
 /// Perfiles anteriores a `conversion_id` y `unit_id` (plan 3, I1).

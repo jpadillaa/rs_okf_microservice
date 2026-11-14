@@ -68,6 +68,10 @@
     "measured": 100.0,
     "minimum": 99.5
   },
+  "examples/pdf/muestras/indice_columnas.pdf": {
+    "measured": 100.0,
+    "minimum": 99.5
+  },
   "examples/pdf/muestras/informe_tecnico.pdf": {
     "measured": 99.35,
     "minimum": 98.85

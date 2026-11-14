@@ -1,0 +1,38 @@
+{
+  "document": "examples/pdf/muestras/indice_columnas.pdf",
+  "source": "examples/pdf/create_samples.py",
+  "pages": {
+    "1": "Índice analítico\nA\nacceso abierto 12\nlicencias 14\nrepositorios 15–17\nactas de congreso 21\nanexos 30\nnumeración 31\ntablas en anexos 33\nB\nbibliografía 40\nestilos de cita 41\norden alfabético 43\nboletines 47\nbúsqueda de texto 52\npor palabras 53\npor frases exactas 55\nC\ncabeceras de página 60\nfolios 61\ntítulos corrientes 62\ncapítulos 64\nnumeración 65\ncolumnas 70\nde texto corrido 71\nde tablas 73\ncuadros 75\nD\ndiagramas 80\nrótulos 81\ndocumentos escaneados 85\nreconocimiento de caracteres 86\nresolución 88"
+  },
+  "blocks": [
+    {
+      "page": 1,
+      "type": "title",
+      "text": "Índice analítico"
+    },
+    {
+      "page": 1,
+      "type": "heading",
+      "level": 1,
+      "text": "A"
+    },
+    {
+      "page": 1,
+      "type": "heading",
+      "level": 1,
+      "text": "B"
+    },
+    {
+      "page": 1,
+      "type": "heading",
+      "level": 1,
+      "text": "C"
+    },
+    {
+      "page": 1,
+      "type": "heading",
+      "level": 1,
+      "text": "D"
+    }
+  ]
+}

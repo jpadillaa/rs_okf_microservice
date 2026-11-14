@@ -1,6 +1,6 @@
 ---
 type: "Source Document"
-unit_id: "186e109be22c61513ee4a68d3851f086693f21c3559835a060828b833f2e237b/documento.md"
+unit_id: "fe14e3b3fdd7d84b581871fb2d5f604bd49884b7e334cde5419f0b24a76dae3f/documento.md"
 title: "Harness en agentes de inteligencia artificial"
 description: "Documento fuente d3.docx convertido a conceptos OKF por secciones."
 sources:
@@ -11,10 +11,10 @@ generated:
   at: "<generado>"
 converter_version: "0.1.0"
 converter_commit: "<commit>"
-profile_version: "1.18.0"
+profile_version: "1.19.0"
 conversion_settings: {}
 settings_sha256: "44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a"
-conversion_id: "186e109be22c61513ee4a68d3851f086693f21c3559835a060828b833f2e237b"
+conversion_id: "fe14e3b3fdd7d84b581871fb2d5f604bd49884b7e334cde5419f0b24a76dae3f"
 source_file:
   path: "references/original.docx"
   sha256: "9a68ae57c666128a9b729096d5c2ba1fd100e5edfc46b5fb9a77d3c4b4911fbe"
