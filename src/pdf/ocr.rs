@@ -505,6 +505,12 @@ fn rotate(gray: &GrayImage, degrees: f32) -> GrayImage {
 /// Configuración con el OCR activo y los modelos de `OKF_OCR_MODELS_DIR` o de
 /// `models/ocr` (tools/ocr_models.sh), para las pruebas. Sin modelos, las pruebas que los
 /// necesitan se omiten, salvo con `OKF_REQUIRE_OCR_MODELS`, que la CI fija.
+///
+/// El presupuesto de CPU del OCR mide la CPU del proceso. En el servicio cada conversión
+/// tiene su proceso, pero las pruebas comparten uno: la CPU que otras pruebas gastan a la
+/// vez agotaba el presupuesto y el OCR se saltaba páginas (fallaba con `--test-threads
+/// 16`). Aquí el límite de CPU no cuenta; queda el plazo, que es lo que declara el bundle.
+/// La prueba del presupuesto de CPU restituye el límite que sale del plazo.
 #[cfg(test)]
 pub(crate) fn test_config() -> Option<crate::worker::Config> {
     let dir = std::env::var_os("OKF_OCR_MODELS_DIR")
@@ -525,6 +531,7 @@ pub(crate) fn test_config() -> Option<crate::worker::Config> {
     let mut cfg = crate::worker::Config::default();
     cfg.ocr.enabled = true;
     cfg.ocr.models_dir = dir;
+    cfg.max_cpu_s = Some(24 * 3600);
     Some(cfg)
 }
 
