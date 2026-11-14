@@ -99,6 +99,11 @@ El mayor hueco de completitud.
 
 Defectos ya localizados, cada uno con su muestra y su mínimo.
 
+**Estado:** en curso.
+- **Hecho (14 de noviembre, perfil 1.19.0):** el trabajo 1 en los índices de dos columnas. Dos partes de texto corrido de ancho parecido cuyos bloques no empiezan a la vez se leen como columnas; muestra `indice_columnas.pdf` con mínimos. En el PDF de 346 páginas las tablas falsas pasan de 30 a 16, el orden del 75,32 % al 87,91 % y los encabezados del 52,38 % al 95,24 %; en la presentación, de 9 a 8 tablas falsas; los demás originales no cambian ([exactitud](../decisiones/EXACTITUD_DEL_TEXTO.md#columnas-de-texto-corrido-plan-4-q3-perfil-1190)).
+- **Descartado:** los párrafos que cruzan de página salen unidos y con su localizador en las dos páginas; las palabras desplazadas venían de los borradores de `--draft`.
+- **Falta:** el resto del trabajo 1 (figuras y diagramas convertidos en tabla, tablas de contenido, notas y diagramas de diapositivas, formularios) y los trabajos 2 a 5. Las tablas de contenido necesitan antes una convención: hoy se escriben como tabla y las referencias de `Q2` no las tratan igual en todas sus páginas.
+
 **Problema.** Quedan defectos de exactitud concretos que la medición de `Q2` puede comprobar:
 - tablas falsas en índices a dos columnas, capturas y cajas de diapositivas;
 - letras capitales separadas de su palabra;

@@ -691,8 +691,94 @@ fn cut(region: &Region, items: Vec<Item>, gutter: f32, out: &mut Vec<Leaf>) {
     }
 }
 
+/// Líneas mínimas de cada parte para leerla como texto corrido.
+const RUNNING_LINES: usize = 6;
+/// Proporción de las líneas de una parte que continúan la anterior para que sea texto
+/// corrido (un índice o un glosario).
+const RUNNING_SHARE: f32 = 0.5;
+/// Ancho mínimo de la parte más estrecha frente a la más ancha: las columnas de un
+/// índice son iguales; una tabla de rótulo y descripción, no.
+const RUNNING_WIDTH: f32 = 0.6;
+/// Hueco, en interlineados habituales de la parte, a partir del cual una línea abre
+/// un bloque (una fila de tabla, una sección).
+const START_GAP: f32 = 1.4;
+
+/// ¿Es la parte texto corrido? Al menos `RUNNING_LINES` líneas y la mayoría continúa la
+/// anterior: empieza en minúscula o con una cifra tras una línea sin puntuación final,
+/// como las subentradas y los números de página de un índice.
+fn running(region: &Region, part: &[usize]) -> bool {
+    if part.len() < RUNNING_LINES {
+        return false;
+    }
+    let continued = part
+        .windows(2)
+        .filter(|w| {
+            let next = region.lines[w[1]].text();
+            !terminal(&region.lines[w[0]].text())
+                && next
+                    .trim_start()
+                    .chars()
+                    .next()
+                    .is_some_and(|c| c.is_lowercase() || c.is_ascii_digit())
+        })
+        .count();
+    continued as f32 >= RUNNING_SHARE * (part.len() - 1) as f32
+}
+
+/// Líneas de la parte que abren un bloque, sin contar la primera: las que siguen a un
+/// hueco mayor que `START_GAP` interlineados habituales.
+fn starts(region: &Region, part: &[usize]) -> Vec<f32> {
+    let gaps: Vec<f32> = part
+        .windows(2)
+        .map(|w| region.lines[w[1]].base - region.lines[w[0]].base)
+        .collect();
+    let usual = median(gaps.clone());
+    part.windows(2)
+        .zip(gaps)
+        .filter(|(_, g)| *g > START_GAP * usual)
+        .map(|(w, _)| region.lines[w[1]].base)
+        .collect()
+}
+
+/// Dos columnas de texto corrido de ancho parecido cuyos bloques no empiezan a la vez,
+/// como las de un índice o un glosario: no son filas de una tabla. En una tabla, cada
+/// fila abre un bloque en todas sus columnas.
+fn running_columns(region: &Region, l: &[usize], r: &[usize]) -> bool {
+    let width = |a: &[usize]| {
+        let x0 = a
+            .iter()
+            .map(|&i| region.lines[i].x0)
+            .fold(f32::MAX, f32::min);
+        let x1 = a
+            .iter()
+            .map(|&i| region.lines[i].x1)
+            .fold(f32::MIN, f32::max);
+        x1 - x0
+    };
+    let (wl, wr) = (width(l), width(r));
+    if !running(region, l) || !running(region, r) || wl.min(wr) < RUNNING_WIDTH * wl.max(wr) {
+        return false;
+    }
+    let (sl, sr) = (starts(region, l), starts(region, r));
+    let (few, many) = if sl.len() <= sr.len() {
+        (sl, sr)
+    } else {
+        (sr, sl)
+    };
+    if few.is_empty() {
+        return true;
+    }
+    let size = median(l.iter().map(|&i| region.lines[i].size).collect());
+    let shared = few
+        .iter()
+        .filter(|a| many.iter().any(|b| (*b - **a).abs() <= 0.3 * size))
+        .count();
+    (shared as f32) < 0.5 * few.len() as f32
+}
+
 /// Dos partes con líneas alineadas fila a fila y al menos una de ellas con líneas
-/// breves forman una tabla, no dos columnas de texto.
+/// breves forman una tabla, no dos columnas de texto, salvo que sean dos columnas de
+/// texto corrido (`running_columns`).
 fn table_like(region: &Region, left: &[Item], right: &[Item]) -> bool {
     let lines = |items: &[Item]| -> Vec<usize> {
         items
@@ -703,8 +789,14 @@ fn table_like(region: &Region, left: &[Item], right: &[Item]) -> bool {
             })
             .collect()
     };
-    let (l, r) = (lines(left), lines(right));
+    let (mut l, mut r) = (lines(left), lines(right));
     if l.is_empty() || r.is_empty() || l.len() + r.len() < 3 {
+        return false;
+    }
+    for part in [&mut l, &mut r] {
+        part.sort_by(|&a, &b| region.lines[a].base.total_cmp(&region.lines[b].base));
+    }
+    if running_columns(region, &l, &r) {
         return false;
     }
     // La alineación se mide en la franja vertical que comparten las dos partes.
@@ -2251,6 +2343,109 @@ mod tests {
             "Escribir bien ayuda a potenciar el perfil profesional Expresarse sin errores genera credibilidad"
         ));
         assert!(text.contains("Darle valor a la importancia de la autoría de un texto"));
+    }
+
+    /// Columna de un índice: entradas al margen, subentradas sangradas; una letra de
+    /// sección deja un hueco antes.
+    fn index_column(x: f32, top: f32, entries: &[&str]) -> Vec<Glyph> {
+        let mut g = Vec::new();
+        let mut base = top;
+        for e in entries {
+            if let Some(letter) = e.strip_prefix('#') {
+                base += 8.0;
+                g.extend(text_at(letter, x, base, 10.0, true));
+            } else if let Some(sub) = e.strip_prefix("  ") {
+                g.extend(text_at(sub, x + 8.0, base, 10.0, false));
+            } else {
+                g.extend(text_at(e, x, base, 10.0, false));
+            }
+            base += 12.0;
+        }
+        g
+    }
+
+    #[test]
+    fn index_columns_are_read_as_columns_not_as_a_table() {
+        let left = [
+            "agents 12",
+            "  building with tools 14",
+            "  memory and recall 20",
+            "  planning 31",
+            "#B",
+            "batch runs 40",
+            "  installing 41",
+            "  running locally 42",
+            "behavior trees 50",
+            "  custom actions 52",
+            "  knowledge 55",
+            "  file uploads 57",
+        ];
+        let right = [
+            "memory 70",
+            "  compression 72",
+            "  retrieval 75",
+            "  semantic 77",
+            "  overview of 83",
+            "#N",
+            "native functions 91",
+            "  applying 93",
+            "  embedding 95",
+            "nonplayer roles 98",
+            "  scripted 99",
+            "  web APIs 101",
+        ];
+        let mut g = index_column(50.0, 60.0, &left);
+        g.extend(index_column(240.0, 60.0, &right));
+        let out = order(&g);
+        assert!(out.iter().all(|b| !b.starts_with("[[")), "{out:?}");
+        let text = out.join(" ");
+        let at = |s: &str| text.find(s).unwrap_or_else(|| panic!("{s}: {text}"));
+        // La columna izquierda entera antes que la derecha.
+        assert!(at("file uploads 57") < at("memory 70"), "{text}");
+        assert!(at("agents 12") < at("batch runs 40"), "{text}");
+        assert!(at("memory 70") < at("native functions 91"), "{text}");
+    }
+
+    #[test]
+    fn wrapped_two_column_table_keeps_its_rows() {
+        // Celdas de dos líneas que continúan su frase en las dos columnas, con un
+        // hueco entre filas: los comienzos de fila coinciden en las dos columnas.
+        let rows = [
+            (
+                "el primer elemento",
+                "tiene una descripción",
+                "de la tabla",
+                "que sigue abajo",
+            ),
+            (
+                "el segundo elemento",
+                "describe otra cosa",
+                "con dos líneas",
+                "también partida",
+            ),
+            (
+                "el tercer elemento",
+                "cierra la serie",
+                "de la tabla",
+                "con su texto",
+            ),
+            (
+                "el cuarto elemento",
+                "añade una fila",
+                "más al final",
+                "de la tabla",
+            ),
+        ];
+        let mut g = Vec::new();
+        for (k, (a1, b1, a2, b2)) in rows.iter().enumerate() {
+            let base = 60.0 + k as f32 * 34.0;
+            g.extend(text_at(a1, 50.0, base, 10.0, false));
+            g.extend(text_at(b1, 240.0, base, 10.0, false));
+            g.extend(text_at(a2, 50.0, base + 12.0, 10.0, false));
+            g.extend(text_at(b2, 240.0, base + 12.0, 10.0, false));
+        }
+        let out = order(&g);
+        assert!(out.len() == 1 && out[0].starts_with("[["), "{out:?}");
     }
 
     #[test]

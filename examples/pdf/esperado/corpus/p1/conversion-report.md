@@ -1,15 +1,15 @@
 ---
 converter_version: "0.1.0"
 converter_commit: "<commit>"
-profile_version: "1.18.0"
+profile_version: "1.19.0"
 conversion_settings:
   max_image_pixels: 33554432
   ocr:
     enabled: false
 settings_sha256: "ad1d7709796a5172b6ad18d538b1bef5780b44279dd787d15ecc82ede959ef16"
-conversion_id: "07a91e01c7171129e48a351d91ed6ba96203da119fe7e620877fbe8795627a31"
+conversion_id: "5bd8831c0882f9e7e268e55b2f9926b18cca1ca009cf9a2e61773eb0cd0a7c4e"
 type: "Conversion Report"
-unit_id: "07a91e01c7171129e48a351d91ed6ba96203da119fe7e620877fbe8795627a31/conversion-report.md"
+unit_id: "5bd8831c0882f9e7e268e55b2f9926b18cca1ca009cf9a2e61773eb0cd0a7c4e/conversion-report.md"
 title: "Informe de conversión"
 generated:
   by: "process:document-conversion"
@@ -23,7 +23,7 @@ sha256: "d899d9a5395ad0e75fa655b7327936a23bbffbfd9407239809cce77671f76324"
 
 - Estado: `complete`
 - Páginas: 53 (texto digital: 39; mixtas: 13; escaneadas: 0; escaneadas con OCR previo: 0; solo visuales: 0; en blanco: 1)
-- Unidades representadas: 357 (párrafos, listas, tablas, imágenes y notas de página)
+- Unidades representadas: 364 (párrafos, listas, tablas, imágenes y notas de página)
 - Conceptos: 3 concepto(s), divididos por los encabezados de nivel 2
 - Encabezados: 12 (inferidos por tamaño de letra: 12)
 - Tablas reconstruidas: 7; imágenes adjuntas: 24; vistas de página: 0
@@ -81,7 +81,7 @@ Información sobre la conversión que no afecta el estado.
 
 - Páginas 5–8, 11, 23, 24, 36, 42, 46 y 50–52: texto con imágenes grandes; no se aplica OCR de página: se conserva su texto digital y sus imágenes se tratan como las demás imágenes de contenido
 - Página 40: en blanco o solo con encabezado, pie o número de página
-- Páginas 8, 10, 11, 30, 37, 38 y 42: varias columnas; el orden de lectura se infiere de la disposición (columna por columna, de izquierda a derecha)
+- Páginas 8, 10, 11, 24, 30, 37, 38 y 42: varias columnas; el orden de lectura se infiere de la disposición (columna por columna, de izquierda a derecha)
 - 3 párrafo(s) unidos con su continuación en otra columna o página (la frase sigue en minúscula con el mismo formato): páginas 4, 31, 45
 - Páginas 9, 24, 28, 30, 37, 45 y 48: tabla reconstruida por la alineación de sus celdas; puede no coincidir con las líneas de la tabla original
 - Páginas 1, 3, 17–20, 33–35 y 53: encabezado inferido por su tamaño de letra (mayor que el texto corriente); el nivel sale del tamaño
