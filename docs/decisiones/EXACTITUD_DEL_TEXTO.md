@@ -120,7 +120,7 @@ Sin el OCR, el escaneo de una página da el 3,75 % de completitud; las medidas s
 
 Lo que la revisión encontró, por forma y sin reproducir contenido:
 
-- **Texto corrido y artículo:** completitud del 99,8 % al 100 % y estructura al 100 %. El orden interno baja por párrafos que cruzan de página: el conversor reparte las palabras del final de una página en el inicio de la siguiente (se vio en el artículo, el documento de 13 páginas, el PDF de 346 y el de 575).
+- **Texto corrido y artículo:** completitud del 99,8 % al 100 % y estructura al 100 %. Los párrafos que cruzan de página salen unidos y su localizador cubre las dos páginas, con una caja en cada una, como pide la regla del perfil 1.17.0; la medición usa el bloque entero en cada página que cubre. Los borradores de `--draft` sí partían mal algunos de esos bloques (ponían el final de una página al inicio de la siguiente, en el artículo, el documento de 13 páginas, el PDF de 346 y el de 575); la revisión lo corrigió en las referencias.
 - **Índices de dos columnas (PDF de 346 páginas):** las entradas de la columna izquierda y la derecha salen intercaladas y las letras de sección quedan dentro de tablas. Es la causa de las 30 tablas falsas y del orden del 75 %.
 - **Diapositivas con diagramas y notas (presentación):** las notas adhesivas contiguas se funden en tablas línea a línea, dos capas de texto solapadas producen palabras mezcladas, y el texto de los diagramas llega en orden de fila entre columnas.
 - **Capturas de código (PDF de 575 páginas):** el texto de las capturas lleva errores de OCR en el código, las comillas y los números; es la causa del 31,63 % de líneas de código.
