@@ -176,6 +176,46 @@
       }
     }
   },
+  "examples/pdf/muestras/figura_diagrama.pdf": {
+    "completeness": {
+      "measured": 100.0,
+      "minimum": 99.5
+    },
+    "order": {
+      "measured": 100.0,
+      "minimum": 99.5
+    },
+    "inner_order": {
+      "measured": 100.0,
+      "minimum": 99.5
+    },
+    "contiguity": {
+      "measured": 100.0,
+      "minimum": 99.5
+    },
+    "structure": {
+      "false_tables": {
+        "measured": 0,
+        "maximum": 0
+      },
+      "heading_levels": {
+        "measured": 100.0,
+        "minimum": 99.5
+      },
+      "heading_precision": {
+        "measured": 100.0,
+        "minimum": 99.5
+      },
+      "headings": {
+        "measured": 100.0,
+        "minimum": 99.5
+      },
+      "table_cells": {
+        "measured": 100.0,
+        "minimum": 99.5
+      }
+    }
+  },
   "examples/pdf/muestras/imagenes_con_texto.pdf": {
     "ocr": true,
     "completeness": {

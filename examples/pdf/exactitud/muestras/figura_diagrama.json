@@ -1,0 +1,40 @@
+{
+  "document": "examples/pdf/muestras/figura_diagrama.pdf",
+  "source": "examples/pdf/create_samples.py",
+  "pages": {
+    "1": "Flujo de una conversión\nLa conversión pasa por tres etapas, que la figura siguiente resume con las tareas de cada una y lo que\nentrega a la siguiente.\nEntrada\nlee el archivo\nvalida el formato\nArchivo leído\nProceso\nconvierte el texto\nordena las páginas\nTexto ordenado\nSalida\nescribe el bundle\nregistra el informe\nBundle escrito\nFigura 1. Etapas de la conversión y su resultado.\nTabla 1. Plazos de cada etapa\nEtapa\nPlazo\nResponsable\nEntrada\n2 días\nRecepción\nProceso\n5 días\nConversión\nSalida\n1 día\nPublicación\nLos plazos se cuentan en días hábiles desde que la etapa anterior entrega su resultado."
+  },
+  "blocks": [
+    {
+      "page": 1,
+      "type": "title",
+      "text": "Flujo de una conversión"
+    },
+    {
+      "page": 1,
+      "type": "table",
+      "rows": [
+        [
+          "Etapa",
+          "Plazo",
+          "Responsable"
+        ],
+        [
+          "Entrada",
+          "2 días",
+          "Recepción"
+        ],
+        [
+          "Proceso",
+          "5 días",
+          "Conversión"
+        ],
+        [
+          "Salida",
+          "1 día",
+          "Publicación"
+        ]
+      ]
+    }
+  ]
+}
