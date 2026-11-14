@@ -1,0 +1,18 @@
+{
+  "concept": "contenido/texto.md",
+  "source_spans": [
+    {"id": "u-2", "source_id": "original", "kind": "pdf_pages", "from": 1, "to": 1, "boxes": [{"page": 1, "x0": 72.00, "top": 100.50, "x1": 528.29, "bottom": 123.00}]},
+    {"id": "u-3", "source_id": "original", "kind": "pdf_pages", "from": 1, "to": 1, "boxes": [{"page": 1, "x0": 72.00, "top": 145.45, "x1": 105.51, "bottom": 154.45}]},
+    {"id": "u-4", "source_id": "original", "kind": "pdf_pages", "from": 1, "to": 1, "boxes": [{"page": 1, "x0": 72.00, "top": 169.45, "x1": 138.02, "bottom": 202.45}]},
+    {"id": "u-5", "source_id": "original", "kind": "pdf_pages", "from": 1, "to": 1, "boxes": [{"page": 1, "x0": 72.00, "top": 217.45, "x1": 131.46, "bottom": 226.45}]},
+    {"id": "u-6", "source_id": "original", "kind": "pdf_pages", "from": 1, "to": 1, "boxes": [{"page": 1, "x0": 232.00, "top": 145.45, "x1": 267.51, "bottom": 154.45}]},
+    {"id": "u-7", "source_id": "original", "kind": "pdf_pages", "from": 1, "to": 1, "boxes": [{"page": 1, "x0": 232.00, "top": 169.45, "x1": 307.99, "bottom": 202.45}]},
+    {"id": "u-8", "source_id": "original", "kind": "pdf_pages", "from": 1, "to": 1, "boxes": [{"page": 1, "x0": 232.00, "top": 217.45, "x1": 299.51, "bottom": 226.45}]},
+    {"id": "u-9", "source_id": "original", "kind": "pdf_pages", "from": 1, "to": 1, "boxes": [{"page": 1, "x0": 392.00, "top": 145.45, "x1": 418.51, "bottom": 154.45}]},
+    {"id": "u-10", "source_id": "original", "kind": "pdf_pages", "from": 1, "to": 1, "boxes": [{"page": 1, "x0": 392.00, "top": 169.45, "x1": 464.02, "bottom": 202.45}]},
+    {"id": "u-11", "source_id": "original", "kind": "pdf_pages", "from": 1, "to": 1, "boxes": [{"page": 1, "x0": 392.00, "top": 217.45, "x1": 454.51, "bottom": 226.45}]},
+    {"id": "u-12", "source_id": "original", "kind": "pdf_pages", "from": 1, "to": 1, "boxes": [{"page": 1, "x0": 72.00, "top": 255.45, "x1": 280.53, "bottom": 330.45}]},
+    {"id": "u-13", "source_id": "original", "kind": "pdf_pages", "from": 1, "to": 1, "boxes": [{"page": 1, "x0": 72.00, "top": 341.50, "x1": 434.24, "bottom": 399.50}]},
+    {"id": "u-14", "source_id": "original", "kind": "pdf_pages", "from": 1, "to": 1, "boxes": [{"page": 1, "x0": 72.00, "top": 417.50, "x1": 465.44, "bottom": 427.50}]}
+  ]
+}

@@ -1,6 +1,6 @@
 ---
 type: "Source Document"
-unit_id: "106ff43daccf9d0bbfc0d3a2a860f97ebc0e6fa820e486bec9e343602e0f6152/documento.md"
+unit_id: "49ea4750804c727a4603915e666a6ae50e741ee72ca928890cd1806ffb40d07b/documento.md"
 title: "Tarea No. 2 - Evaluación estratégica de alternativas de aprovisionamiento de GenAI"
 description: "Documento fuente d2.docx convertido a conceptos OKF por secciones."
 sources:
@@ -11,10 +11,10 @@ generated:
   at: "<generado>"
 converter_version: "0.1.0"
 converter_commit: "<commit>"
-profile_version: "1.19.0"
+profile_version: "1.20.0"
 conversion_settings: {}
 settings_sha256: "44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a"
-conversion_id: "106ff43daccf9d0bbfc0d3a2a860f97ebc0e6fa820e486bec9e343602e0f6152"
+conversion_id: "49ea4750804c727a4603915e666a6ae50e741ee72ca928890cd1806ffb40d07b"
 source_file:
   path: "references/original.docx"
   sha256: "e7f8806c591ab9b085feb2606bd46ae24d8a260ff2fae50eee09f82542a4f0f0"

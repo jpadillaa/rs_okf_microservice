@@ -74,6 +74,7 @@ Por defecto convierte con `target/release/okf-microservice` (`--binary` cambia e
 | `informe_tecnico.pdf` | 100 | 100 | 100 | 100 |
 | `imagenes_con_texto.pdf`, con OCR (perfil 1.18.0) | 100 | 100 | 100 | 100 |
 | `indice_columnas.pdf` (perfil 1.19.0) | 100 | 100 | 100 | 100 |
+| `figura_diagrama.pdf` (perfil 1.20.0) | 100 | 100 | 100 | 100 |
 
 Estructura, con las mismas muestras (perfil 1.17.0): `articulo_columnas`, `breve`, `escaneado_mixto` e `informe_tecnico` dan el 100 % en todas sus métricas y ninguna tabla falsa. La muestra escaneada con OCR, cuyo texto es exacto, no conserva su estructura: encabezados 85,71 %, niveles 60 %, elementos de lista 66,67 % y líneas de código 0 %. Los niveles salen de tamaños de letra medidos por la tinta, que varían entre líneas; un encabezado de tercer nivel y un elemento de lista no se reconocen como tales, y el OCR no distingue la fuente monoespaciada del código. Los mínimos fijan estas cifras para que no empeoren; su corrección corresponde al plan 4. `imagenes_con_texto` da el 100 % en encabezados, su precisión y sus niveles, sin tablas falsas; el texto de las capturas es un bloque de líneas y su referencia no le declara estructura. Sin el OCR de imágenes (perfil 1.17.0), su completitud era del 45,9 %: solo el título y los párrafos digitales.
 
@@ -145,6 +146,14 @@ En los originales privados (OCR activo):
 | Presentación de 53 páginas | 84,87 → 85,65 | 94,93 → 96,27 | 90,08 → 91,43 | - | 9 → 8 |
 
 Los otros cinco originales no cambian. En la presentación mejoran dos diapositivas: dos notas de una cuadrícula de cuatro y la mitad derecha de un diagrama se leen ya como texto. Las tablas falsas que quedan salen de figuras y diagramas (13), tablas de contenido (5: el conversor solo reconstruye fragmentos de cada una, que no llegan a la mitad de sus palabras), diapositivas (8) y un formulario (1). Las entradas de un índice se escriben seguidas en un párrafo por sección, no una por línea.
+
+## Figuras con pie (plan 4, Q3, perfil 1.20.0)
+
+Los rótulos de un diagrama suelen estar alineados fila a fila, como las celdas de una tabla, y la maquetación los convertía en tablas Markdown. Desde el perfil 1.20.0, una zona que parece una tabla y tiene debajo un pie de figura numerado («Figure 1.1», «Figura 3», «Fig. 2»), sin texto corrido ni una imagen grande entre los dos, es una figura: sus rótulos se leen por columnas o celda a celda (especificación, §5). El pie se busca solo debajo y puede empezar en el margen, fuera de la zona; encima suele estar el párrafo que cita la figura.
+
+La muestra `figura_diagrama.pdf` (`create_samples.py`) tiene un diagrama de tres columnas de cajas con su pie y, debajo, una tabla real con su título encima. Da el 100 % en todas sus métricas: el diagrama se lee columna a columna, la tabla conserva sus celdas y no hay tablas falsas. Las pruebas `a_captioned_figure_is_read_by_columns_not_as_a_table` y `a_grid_without_a_figure_caption_stays_a_table` cubren los dos casos. El pie y el título de la tabla salen unidos en un párrafo: dos líneas aisladas de la misma letra se unen, un comportamiento anterior a este cambio.
+
+En los originales privados (OCR activo), el PDF de 346 páginas pasa de 16 a 9 tablas falsas, el orden del 87,91 % al 89,03 %, el orden interno del 94,99 % al 96,95 % y la contigüidad del 94,14 % al 94,83 %; los otros seis no cambian. Las figuras del libro con pie «Figure» dejan de ser tablas; queda una figura sin pie numerado (su título va encima), además de las tablas de contenido, las diapositivas y el formulario.
 
 ## Límites
 

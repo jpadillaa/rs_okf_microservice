@@ -1,6 +1,6 @@
 ---
 type: "Source Document"
-unit_id: "cd740f5196344f5c0de4f163678c34235812267e250f177c0e0ae94a6bb7abee/documento.md"
+unit_id: "eac7609b3356b9b5498ff37df8d355260d00ad26c15518ac12397ce9109a70bb/documento.md"
 title: "MISW4411 - Temario 2026"
 description: "Documento fuente d1.docx convertido a conceptos OKF por secciones."
 sources:
@@ -11,10 +11,10 @@ generated:
   at: "<generado>"
 converter_version: "0.1.0"
 converter_commit: "<commit>"
-profile_version: "1.19.0"
+profile_version: "1.20.0"
 conversion_settings: {}
 settings_sha256: "44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a"
-conversion_id: "cd740f5196344f5c0de4f163678c34235812267e250f177c0e0ae94a6bb7abee"
+conversion_id: "eac7609b3356b9b5498ff37df8d355260d00ad26c15518ac12397ce9109a70bb"
 source_file:
   path: "references/original.docx"
   sha256: "e71802d60de17116877a9e9c9a2a8ad4a72ecf8375e4fd2491f7724a033944fb"

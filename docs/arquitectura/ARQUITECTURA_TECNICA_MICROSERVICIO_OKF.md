@@ -537,7 +537,7 @@ que incluye texto del original, como el texto alternativo de una imagen ausente 
 DOCX, no se marca. El validador común exige que cada marcador vaya seguido de un
 bloque. El validador PDF reconoce las notas iniciales de un concepto por lo que sigue al
 marcador. La prueba `removing_generated_notes_loses_no_original_words`
-(`src/coverage.rs`) quita cada marcador y su bloque de los 29 ejemplos y comprueba que
+(`src/coverage.rs`) quita cada marcador y su bloque de los 30 ejemplos y comprueba que
 la cobertura frente a la referencia independiente no cambia.
 
 ### Permisos recibidos (plan 3, I7)
@@ -584,7 +584,7 @@ Aplican los límites `OKF_MAX_ZIP_*` y los rlimits de C4. El original privado co
 en un bundle sigue siendo parte de este: el validador no lo publica ni lo transmite.
 
 Los árboles golden guardan huellas de binarios, no sus bytes; la prueba reconstruye
-los bundles desde los 29 ejemplos y valida tanto sus ZIP como sus directorios,
+los bundles desde los 30 ejemplos y valida tanto sus ZIP como sus directorios,
 además de rechazar alteraciones. Se mantienen las pruebas editoriales específicas
 por formato que usan la misma función de validación.
 

@@ -574,9 +574,94 @@ fn table_band(region: &Region, items: &[Item]) -> Option<(f32, f32, Vec<Leaf>)> 
         {
             continue;
         }
+        let (x0, x1) = selected.iter().flat_map(|l| l.items.iter()).fold(
+            (f32::MAX, f32::MIN),
+            |(a, b), &i| {
+                let r = region.rect(i);
+                (a.min(r.x0), b.max(r.x1))
+            },
+        );
+        if captioned_figure(
+            region,
+            Rect {
+                x0,
+                top,
+                x1,
+                bottom,
+            },
+        ) {
+            continue;
+        }
         return Some((top, bottom, selected));
     }
     None
+}
+
+/// Caracteres máximos de un rótulo de figura: una línea más larga entre la zona y el
+/// pie es texto corrido, y el pie ya no es de la zona.
+const FIGURE_LABEL_CHARS: usize = 60;
+/// Distancia máxima, en tamaños de letra de la zona, entre la zona y su pie de figura:
+/// un diagrama puede ocupar media página por debajo de sus primeras filas alineadas.
+const FIGURE_REACH: f32 = 60.0;
+
+/// ¿Empieza el texto como un pie de figura numerado: «Figure 1.1», «Figura 3»,
+/// «Fig. 2»?
+fn figure_caption(text: &str) -> bool {
+    let t = text.trim_start();
+    ["Figure ", "Figura ", "Fig. ", "Fig "].iter().any(|p| {
+        t.strip_prefix(p)
+            .is_some_and(|rest| rest.starts_with(|c: char| c.is_ascii_digit()))
+    })
+}
+
+/// ¿Es la zona una figura con rótulos? Debajo hay un pie de figura numerado (puede
+/// empezar en el margen, fuera de la zona) y entre los dos, de lo que se solapa con la
+/// zona en horizontal, solo hay rótulos breves, sin una imagen que ocupe la mitad de su
+/// ancho (esa imagen sería la figura del pie). Una figura con texto no se convierte en
+/// tabla, aunque sus rótulos estén alineados fila a fila. Solo se mira debajo: encima
+/// suele estar el párrafo que la cita («Figure 8.2 shows…»).
+fn captioned_figure(region: &Region, zone: Rect) -> bool {
+    let overlaps = |r: &Rect| r.x1 > zone.x0 && r.x0 < zone.x1;
+    let inside = |r: &Rect| r.x0 >= zone.x0 - 1.0 && r.x1 <= zone.x1 + 1.0;
+    let size = median(
+        region
+            .lines
+            .iter()
+            .filter(|l| l.top() >= zone.top - 1.0 && l.bottom() <= zone.bottom + 1.0)
+            .filter(|l| inside(&l.rect()))
+            .map(|l| l.size)
+            .collect(),
+    )
+    .max(4.0);
+    let reach = FIGURE_REACH * size;
+    let mut below: Vec<&Line> = region
+        .lines
+        .iter()
+        .filter(|l| {
+            l.top() >= zone.bottom - 0.5 * l.size
+                && (overlaps(&l.rect()) || figure_caption(&l.text()))
+        })
+        .collect();
+    below.sort_by(|a, b| a.top().total_cmp(&b.top()));
+    for line in below {
+        if line.top() - zone.bottom > reach {
+            return false;
+        }
+        let text = line.text();
+        if figure_caption(&text) {
+            let width = zone.x1 - zone.x0;
+            return !region.pictures.iter().any(|p| {
+                p.top >= zone.bottom - 1.0
+                    && p.bottom <= line.top() + 1.0
+                    && overlaps(p)
+                    && p.x1 - p.x0 >= 0.5 * width
+            });
+        }
+        if text.trim().chars().count() > FIGURE_LABEL_CHARS {
+            return false;
+        }
+    }
+    false
 }
 
 fn cut(region: &Region, items: Vec<Item>, gutter: f32, out: &mut Vec<Leaf>) {
@@ -797,6 +882,23 @@ fn table_like(region: &Region, left: &[Item], right: &[Item]) -> bool {
         part.sort_by(|&a, &b| region.lines[a].base.total_cmp(&region.lines[b].base));
     }
     if running_columns(region, &l, &r) {
+        return false;
+    }
+    let zone = l.iter().chain(&r).map(|&i| region.lines[i].rect()).fold(
+        Rect {
+            x0: f32::MAX,
+            top: f32::MAX,
+            x1: f32::MIN,
+            bottom: f32::MIN,
+        },
+        |a, b| Rect {
+            x0: a.x0.min(b.x0),
+            top: a.top.min(b.top),
+            x1: a.x1.max(b.x1),
+            bottom: a.bottom.max(b.bottom),
+        },
+    );
+    if captioned_figure(region, zone) {
         return false;
     }
     // La alineación se mide en la franja vertical que comparten las dos partes.
@@ -1573,9 +1675,12 @@ fn flow_blocks(region: &Region, leaves: &[Leaf]) -> Vec<(Block, Rect, usize)> {
             && let Some(cols) = table_columns(region, leaf, next)
         {
             let (rows, rect, used) = table(region, leaves, k, &cols);
-            out.push((Block::Table(rows), rect, k));
-            k = used + 1;
-            continue;
+            // Los rótulos de una figura con pie se escriben celda a celda.
+            if !captioned_figure(region, rect) {
+                out.push((Block::Table(rows), rect, k));
+                k = used + 1;
+                continue;
+            }
         }
         if leaf.row {
             // Celdas sueltas una junto a otra: cada una es un bloque.
@@ -2404,6 +2509,65 @@ mod tests {
         assert!(at("file uploads 57") < at("memory 70"), "{text}");
         assert!(at("agents 12") < at("batch runs 40"), "{text}");
         assert!(at("memory 70") < at("native functions 91"), "{text}");
+    }
+
+    /// Diagrama de tres columnas de cajas con rótulos breves alineados fila a fila,
+    /// y debajo `caption`.
+    fn diagram(caption: &str) -> Vec<Glyph> {
+        let columns = [
+            [
+                "Entrada",
+                "lee el archivo",
+                "valida el formato",
+                "Archivo leído",
+            ],
+            [
+                "Proceso",
+                "convierte el texto",
+                "ordena las páginas",
+                "Texto ordenado",
+            ],
+            [
+                "Salida",
+                "escribe el bundle",
+                "registra el informe",
+                "Bundle escrito",
+            ],
+        ];
+        let mut g = Vec::new();
+        for (c, col) in columns.iter().enumerate() {
+            for (r, label) in col.iter().enumerate() {
+                g.extend(text_at(
+                    label,
+                    50.0 + c as f32 * 130.0,
+                    60.0 + r as f32 * 30.0,
+                    9.0,
+                    false,
+                ));
+            }
+        }
+        g.extend(text_at(caption, 50.0, 200.0, 9.0, true));
+        g
+    }
+
+    #[test]
+    fn a_captioned_figure_is_read_by_columns_not_as_a_table() {
+        let out = order(&diagram("Figura 3. Etapas de la conversión"));
+        assert!(out.iter().all(|b| !b.starts_with("[[")), "{out:?}");
+        let text = out.join(" | ");
+        let at = |s: &str| text.find(s).unwrap_or_else(|| panic!("{s}: {text}"));
+        // Cada columna del diagrama entera, de izquierda a derecha.
+        assert!(at("Archivo leído") < at("Proceso"), "{text}");
+        assert!(at("Texto ordenado") < at("Salida"), "{text}");
+        assert!(at("Bundle escrito") < at("Figura 3."), "{text}");
+    }
+
+    #[test]
+    fn a_grid_without_a_figure_caption_stays_a_table() {
+        let out = order(&diagram(
+            "La tabla anterior resume las etapas de la conversión.",
+        ));
+        assert!(out[0].starts_with("[["), "{out:?}");
     }
 
     #[test]

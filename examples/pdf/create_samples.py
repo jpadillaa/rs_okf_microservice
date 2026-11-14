@@ -25,6 +25,11 @@ muestras/indice_columnas.pdf        a back-of-book index in two columns (plan 4,
                                     numbers and indented subentries. The lines of both
                                     columns are aligned row by row, but each column is
                                     read whole, left then right, and is not a table.
+muestras/figura_diagrama.pdf        a diagram of three columns of boxes whose labels are
+                                    aligned row by row, with its numbered caption below
+                                    (plan 4, Q3): it is a figure, read column by column,
+                                    not a table. Below it, a real table with its title
+                                    above stays a table.
 muestras/escaneado_mixto.pdf        page classes: digital text with a rotated margin
                                     note, a scanned page without text, a page with only
                                     its number, a vector drawing without text and a page
@@ -577,10 +582,60 @@ def indice():
     ])
 
 
+# Diagram: three columns of boxes, each with a stage, two steps and a result.
+DIAGRAM = [
+    ["Entrada", "lee el archivo", "valida el formato", "Archivo leído"],
+    ["Proceso", "convierte el texto", "ordena las páginas", "Texto ordenado"],
+    ["Salida", "escribe el bundle", "registra el informe", "Bundle escrito"],
+]
+DEADLINES = [
+    ["Etapa", "Plazo", "Responsable"],
+    ["Entrada", "2 días", "Recepción"],
+    ["Proceso", "5 días", "Conversión"],
+    ["Salida", "1 día", "Publicación"],
+]
+
+
+def figura():
+    left = 72
+    p = Page()
+    p.text(left, 60, "Flujo de una conversión", "F2", 18)
+    y = p.paragraph(left, 100, "La conversión pasa por tres etapas, que la figura siguiente resume con las tareas de cada una y lo que entrega a la siguiente.", 468)
+    top = y + 20
+    before = len(p.truth)
+    for c, column in enumerate(DIAGRAM):
+        x = left + c * 160
+        p.rect(x - 6, top - 6, 132, 4 * 24 + 4, 0.92)
+        for r, label in enumerate(column):
+            p.text(x, top + r * 24, label, "F2" if r in (0, 3) else "F1", 9)
+    labels = len(p.truth) - before
+    p.text(left, top + 4 * 24 + 14, "Figura 1. Etapas de la conversión y su resultado.", "F2", 9)
+    y = top + 4 * 24 + 80
+    p.text(left, y, "Tabla 1. Plazos de cada etapa", "F2", 9)
+    for r, row in enumerate(DEADLINES):
+        for c, cell in enumerate(row):
+            p.text(left + c * 150, y + 20 + r * 16, cell, "F2" if r == 0 else "F1", 10)
+    y += 20 + len(DEADLINES) * 16 + 12
+    p.paragraph(left, y, "Los plazos se cuentan en días hábiles desde que la etapa anterior entrega su resultado.", 468)
+    Pdf().save(OUT / "figura_diagrama.pdf", [p], {"Title": "Flujo de una conversión"})
+    # La figura se lee columna a columna; la tabla, fila a fila.
+    assert labels == sum(len(c) for c in DIAGRAM)
+    p.truth = (
+        p.truth[:before]
+        + [label for column in DIAGRAM for label in column]
+        + p.truth[before + labels:]
+    )
+    write_truth(["figura_diagrama"], [p], [
+        {"page": 1, "type": "title", "text": "Flujo de una conversión"},
+        {"page": 1, "type": "table", "rows": DEADLINES},
+    ])
+
+
 if __name__ == "__main__":
     OUT.mkdir(parents=True, exist_ok=True)
     breve()
     articulo()
     informe()
     indice()
+    figura()
     escaneado()

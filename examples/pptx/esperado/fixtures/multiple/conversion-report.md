@@ -1,7 +1,7 @@
 ---
 converter_version: "0.1.0"
 converter_commit: "<commit>"
-profile_version: "1.19.0"
+profile_version: "1.20.0"
 conversion_settings:
   view_font_sha256: "<fuente>"
 settings_sha256: "<huella>"

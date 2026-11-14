@@ -1,6 +1,6 @@
 ---
 type: "Source Text"
-unit_id: "c49df74ff8f2d9503ea60becebc61f637f87dbf5e8ec81ecc2bf8b6c2b84d760/contenido/texto.md"
+unit_id: "cd68b7e948d751b9a3c96e8470aa3c85c707b56fea90cda0c3d3b2491584e545/contenido/texto.md"
 parent: "documento.md"
 title: "Anexo de capturas"
 description: "Texto completo de imagenes_con_texto.pdf. Este anexo reúne capturas de pantalla de otros documentos de prueba. Su texto solo está en las imágenes."
