@@ -28,15 +28,18 @@ Este plan tiene tres trabajos, uno por hueco. Tamaños relativos, como en los pl
 
 ### Q2. Referencias revisadas de originales reales y exactitud de la estructura (M)
 
-**Estado:** en curso.
+**Estado:** hecho (13 de noviembre); cifras en [exactitud](../decisiones/EXACTITUD_DEL_TEXTO.md#referencias-revisadas-de-los-originales-privados-plan-4-q2).
 - **Hecho (10 de noviembre):**
   - las referencias de las muestras declaran sus bloques;
   - las métricas de estructura están en `tools/exactitud.py` y en `src/exactness.rs`, con sus mínimos;
   - `--draft` escribe borradores con vistas y hoja de revisión;
   - ya hay borradores de 67 páginas de los siete originales privados en `datos_de_prueba/referencias/`.
+- **Hecho (13 de noviembre):**
+  - las 67 páginas están revisadas contra su vista y marcadas `"reviewed": true`: 14 de prioridad alta y 11 media una por una, y las 42 de prioridad baja con la vista las que tienen estructura, código o figuras y por coincidencia con pdfium el resto;
+  - los mínimos locales están en `datos_de_prueba/referencias/exactitud-thresholds.local.json` (no se versiona), medidos con el perfil 1.18.0 y el OCR activo;
+  - la revisión la hizo un agente, no una persona: las cifras son una línea base, y una corrección posterior de una referencia mueve las cifras.
 - **Falta:**
-  - la revisión humana de esos borradores;
-  - los mínimos locales de los originales privados.
+  - una segunda lectura humana de las páginas de texto corrido (artículo de 9 páginas y parte del documento de 13), que solo se compararon con pdfium por palabras, orden y bordes de página.
 
 La estructura ya detectó que la muestra escaneada con OCR conserva el texto, pero no sus niveles de encabezado, un elemento de lista ni el código ([exactitud](../decisiones/EXACTITUD_DEL_TEXTO.md#línea-base-perfil-1170)).
 
@@ -73,7 +76,7 @@ El mayor hueco de completitud.
   - el límite de imágenes es una variable propia, `OKF_OCR_MAX_IMAGES` (300), en vez de contar imágenes en `OKF_OCR_MAX_PAGES`: una página escaneada cuesta varias veces lo que una captura, y un límite común dejaría sin OCR los escaneos de documentos con muchas figuras;
   - las vistas no se transcriben. En las páginas con texto digital, el OCR de la vista entera duplicaría el texto que ya se lee y el de sus imágenes, que ahora se transcriben. Queda pendiente el texto dibujado como trazos vectoriales, sin capa de texto ni imagen, que solo la vista contiene; hace falta medir cuánto hay antes de abordarlo;
   - los modelos se cargan una vez por documento y los comparten los hilos; la memoria crece por las páginas que se detectan a la vez, no por copias del motor.
-- **Falta:** comprobar con una muestra revisada de `Q2` que el texto de las imágenes de los originales privados no es ruido.
+- **Falta:** medir el ruido del texto de las imágenes de los originales privados. Con las referencias de `Q2`, la completitud de la presentación de 53 páginas sube del 92,76 % al 98,86 % al activar el OCR, pero la métrica no cuenta las palabras añadidas que no están en la referencia.
 
 **Problema.** El texto de diagramas, capturas de pantalla, diapositivas hechas como imagen y fotografías de documentos no llega al Markdown. Los escaneos de más de unas 40 páginas quedan sin texto en su mayor parte.
 
