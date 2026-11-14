@@ -129,7 +129,7 @@ Lo que la revisión encontró, por forma y sin reproducir contenido:
 - **Formularios y tablas de seguimiento (cuaderno):** una palabra pegada a la siguiente en un formulario, una palabra en la celda equivocada de una tabla de cinco columnas y una tabla de trece columnas casi vacía.
 - **Texto que el PDF contiene pero la vista no muestra:** dos diapositivas de la presentación traen palabras que no se ven. La referencia las deja fuera; que el contrato las conserve o no es una decisión pendiente.
 
-Convenciones de las referencias: el texto dentro de imágenes cuenta; los errores de ortografía del autor se conservan; se omiten logotipos, números de página, encabezados corrientes y la navegación lateral; las palabras partidas por un salto de línea se reúnen; cada columna o bloque va seguido, no intercalado por filas.
+Convenciones de las referencias: el texto dentro de imágenes cuenta; los errores de ortografía del autor se conservan; se omiten logotipos, números de página, encabezados corrientes y la navegación lateral; las palabras partidas por un salto de línea se reúnen; cada columna o bloque va seguido, no intercalado por filas; una tabla de contenido es una tabla de número, título y página, con una fila por entrada (también las subsecciones que el original separa con «■») y el número vacío en las que no lo tienen.
 
 ## Columnas de texto corrido (plan 4, Q3, perfil 1.19.0)
 
@@ -144,7 +144,7 @@ En los originales privados (OCR activo):
 | PDF de 346 páginas | 75,32 → 87,91 | 91,14 → 94,99 | 89,84 → 94,14 | 52,38 → 95,24 | 30 → 16 |
 | Presentación de 53 páginas | 84,87 → 85,65 | 94,93 → 96,27 | 90,08 → 91,43 | - | 9 → 8 |
 
-Los otros cinco originales no cambian. En la presentación mejoran dos diapositivas: dos notas de una cuadrícula de cuatro y la mitad derecha de un diagrama se leen ya como texto. Las tablas falsas que quedan salen de figuras y diagramas (13), tablas de contenido (5), diapositivas (8) y un formulario (1). Las entradas de un índice se escriben seguidas en un párrafo por sección, no una por línea.
+Los otros cinco originales no cambian. En la presentación mejoran dos diapositivas: dos notas de una cuadrícula de cuatro y la mitad derecha de un diagrama se leen ya como texto. Las tablas falsas que quedan salen de figuras y diagramas (13), tablas de contenido (5: el conversor solo reconstruye fragmentos de cada una, que no llegan a la mitad de sus palabras), diapositivas (8) y un formulario (1). Las entradas de un índice se escriben seguidas en un párrafo por sección, no una por línea.
 
 ## Límites
 
