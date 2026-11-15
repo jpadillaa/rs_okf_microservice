@@ -1,6 +1,6 @@
 ---
 type: "Source Text"
-unit_id: "7a789c32079944b51f61a202e0d3f3c8b144f99d2b5bbfc977e315532f187368/contenido/texto.md"
+unit_id: "b43cd5976c5150c54b2c8d3c6bfcd164d1dc36095a6867cc60ec0a32b70414e3/contenido/texto.md"
 parent: "documento.md"
 title: "Habilidades de comunicación"
 description: "Texto completo de rotulos_partidos.pdf. El esquema resume tres grupos de habilidades. El nombre de cada grupo se parte en dos líneas dentro de su caja."

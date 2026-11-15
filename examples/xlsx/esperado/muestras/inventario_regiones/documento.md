@@ -1,6 +1,6 @@
 ---
 type: "Source Document"
-unit_id: "0e76b5f234501a22542ae215163603422eb6e3c07928cf91914c171658fe837f/documento.md"
+unit_id: "02c958cae1473b792a8dbb3e2789e792bc3e560a05917c59db1ac91c244d3de3/documento.md"
 title: "Inventario por almacén"
 description: "Libro inventario_regiones.xlsx convertido a conceptos OKF por hojas y regiones."
 sources:
@@ -11,10 +11,10 @@ generated:
   at: "<generado>"
 converter_version: "0.1.0"
 converter_commit: "<commit>"
-profile_version: "1.21.0"
+profile_version: "1.22.0"
 conversion_settings: {}
 settings_sha256: "44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a"
-conversion_id: "0e76b5f234501a22542ae215163603422eb6e3c07928cf91914c171658fe837f"
+conversion_id: "02c958cae1473b792a8dbb3e2789e792bc3e560a05917c59db1ac91c244d3de3"
 source_file:
   path: "references/original.xlsx"
   sha256: "9c522156b40fd3386cf9fdf9c237f544387ffa0e46d973d806c7398a34b2715d"

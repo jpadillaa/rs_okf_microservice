@@ -75,6 +75,18 @@ const MARKER_GAP: f32 = 3.0;
 const SCRIPT_CHARS: usize = 6;
 /// Distancia a partir de la cual se supone un espacio que el PDF no escribe.
 const IMPLICIT_SPACE: f32 = 0.3;
+/// Un espacio escrito entre dos letras no separa palabras si las letras se tocan (hueco
+/// de hasta `TOUCHING` tamaños de letra) y el espacio tiene anchura (más de `ZERO_WIDTH`
+/// tamaños): la expansión de una ligadura («Th is», «de ﬁnition») o un corte de palabra
+/// de la capa de texto («serv ing»). Un espacio de ancho nulo marca una posición, no una
+/// ligadura, y un espacio que cabe en un hueco real («matches movie») es un espacio.
+const TOUCHING: f32 = 0.03;
+const ZERO_WIDTH: f32 = 0.05;
+/// Tampoco separa palabras un espacio que casi toca a la letra anterior (hueco menor que
+/// `GLUED_GAP` tamaños) y que la siguiente letra solapa en `OVERLAP` tamaños o más: un
+/// ajuste de interletraje («T each»).
+const GLUED_GAP: f32 = 0.15;
+const OVERLAP: f32 = 0.5;
 
 fn find(parent: &mut [usize], mut i: usize) -> usize {
     while parent[i] != i {
@@ -290,13 +302,29 @@ fn line_from(glyphs: &[&Glyph]) -> Option<Line> {
     let mono = visible.iter().all(|g| g.mono);
     let mut pending_spaces = 0;
     let mut sizes: Vec<(f32, usize)> = Vec::new();
+    // Último espacio escrito desde la letra anterior.
+    let mut space: Option<&Glyph> = None;
     for g in glyphs {
         if g.c.is_whitespace() {
             pending_spaces += usize::from(prev.is_some());
+            space = Some(g);
             continue;
         }
+        // Un espacio escrito entre dos letras que se tocan no separa palabras: es la
+        // expansión de una ligadura («Th») o un ajuste de interletraje («T each»).
+        let glued = |p: &Glyph| {
+            let Some(s) = space else { return false };
+            let size = p.size.min(g.size);
+            let (gap, width) = (g.x0 - p.x1, s.x1 - s.x0);
+            !mono
+                && p.c.is_alphanumeric()
+                && g.c.is_alphanumeric()
+                && ((width > ZERO_WIDTH * size && gap <= TOUCHING * size)
+                    || (gap < GLUED_GAP * size && s.x1 - g.x0 >= OVERLAP * size))
+        };
         if let Some(p) = prev
-            && (pending_spaces > 0 || g.x0 - p.x1 > IMPLICIT_SPACE * p.size.min(g.size))
+            && ((pending_spaces > 0 && !glued(p))
+                || g.x0 - p.x1 > IMPLICIT_SPACE * p.size.min(g.size))
             && let Some(r) = runs.last_mut()
             && !r.text.ends_with(' ')
         {
@@ -2464,6 +2492,134 @@ mod tests {
                 "la columna derecha tiene también su propio texto, que ocupa tres líneas y termina."
             ]
         );
+    }
+
+    /// Glifo con la caja dada, como los entrega pdf_oxide.
+    fn glyph_at(c: char, x0: f32, x1: f32, span: usize) -> Glyph {
+        Glyph {
+            c,
+            x0,
+            x1,
+            base: 100.0,
+            size: 11.5,
+            bold: false,
+            italic: false,
+            mono: false,
+            rotated: false,
+            span,
+            link: None,
+        }
+    }
+
+    fn line_text(glyphs: &[Glyph]) -> String {
+        let (lines, _) = lines(glyphs);
+        lines
+            .iter()
+            .map(|l| l.text())
+            .collect::<Vec<_>>()
+            .join(" | ")
+    }
+
+    #[test]
+    fn a_ligature_expanded_with_a_space_over_its_own_box_is_one_word() {
+        // La ligadura «Th» llega como «T», «h» y un espacio con la caja de la «h»:
+        // la siguiente letra empieza donde acaba esa caja, sin hueco.
+        let mut g = vec![
+            glyph_at('T', 117.72, 123.84, 16),
+            glyph_at('h', 123.84, 129.96, 16),
+            glyph_at(' ', 123.84, 129.96, 17),
+            glyph_at('i', 129.96, 132.92, 17),
+            glyph_at('s', 132.92, 136.63, 17),
+            glyph_at(' ', 136.63, 139.51, 17),
+        ];
+        g.extend(
+            "book"
+                .chars()
+                .enumerate()
+                .map(|(k, c)| glyph_at(c, 139.51 + k as f32 * 5.6, 145.11 + k as f32 * 5.6, 17)),
+        );
+        assert_eq!(line_text(&g), "This book");
+    }
+
+    #[test]
+    fn a_space_that_overlaps_the_next_letter_is_not_a_word_break() {
+        // «T each»: el espacio mide más que el hueco real, y la «e» empieza dentro de él.
+        let mut g = vec![
+            glyph_at('T', 344.54, 348.83, 152),
+            glyph_at(' ', 348.76, 353.99, 152),
+        ];
+        for (k, c) in "each".chars().enumerate() {
+            g.push(glyph_at(
+                c,
+                349.52 + k as f32 * 3.9,
+                353.42 + k as f32 * 3.9,
+                152,
+            ));
+        }
+        // La figura dibuja este texto en cuerpo 7.
+        g.iter_mut().for_each(|x| x.size = 7.0);
+        assert_eq!(line_text(&g), "Teach");
+    }
+
+    #[test]
+    fn a_zero_width_space_between_touching_letters_is_kept() {
+        // «Artificial Intelligence» en una tabla: las letras se tocan y el espacio mide
+        // cero; marca una posición, no una ligadura.
+        let mut g: Vec<Glyph> = "Artificia"
+            .chars()
+            .enumerate()
+            .map(|(k, c)| glyph_at(c, 100.0 + k as f32 * 1.6, 101.6 + k as f32 * 1.6, 17))
+            .collect();
+        g.push(glyph_at('l', 114.4, 117.36, 17));
+        g.push(glyph_at(' ', 117.36, 117.36, 17));
+        for (k, c) in "Intelligence".chars().enumerate() {
+            g.push(glyph_at(
+                c,
+                117.36 + k as f32 * 1.7,
+                119.06 + k as f32 * 1.7,
+                17,
+            ));
+        }
+        assert_eq!(line_text(&g), "Artificial Intelligence");
+    }
+
+    #[test]
+    fn a_narrow_space_that_fits_a_real_gap_keeps_the_words_apart() {
+        // «matches movie»: hay un hueco real de 1,08 y el espacio cabe justo en él.
+        let mut g: Vec<Glyph> = "matches"
+            .chars()
+            .enumerate()
+            .map(|(k, c)| glyph_at(c, 424.0 + k as f32 * 3.6, 427.6 + k as f32 * 3.6, 71))
+            .collect();
+        g.push(glyph_at(' ', 449.22, 450.30, 71));
+        for (k, c) in "movie".chars().enumerate() {
+            g.push(glyph_at(
+                c,
+                450.30 + k as f32 * 4.0,
+                454.30 + k as f32 * 4.0,
+                71,
+            ));
+        }
+        assert_eq!(line_text(&g), "matches movie");
+    }
+
+    #[test]
+    fn a_real_space_keeps_the_words_apart() {
+        // «PT Nexus»: el espacio avanza y la «N» empieza donde él termina.
+        let mut g = vec![
+            glyph_at('P', 191.08, 197.12, 34),
+            glyph_at('T', 197.12, 204.38, 34),
+            glyph_at(' ', 204.38, 207.13, 34),
+        ];
+        for (k, c) in "Nexus".chars().enumerate() {
+            g.push(glyph_at(
+                c,
+                207.13 + k as f32 * 4.8,
+                211.93 + k as f32 * 4.8,
+                34,
+            ));
+        }
+        assert_eq!(line_text(&g), "PT Nexus");
     }
 
     #[test]
