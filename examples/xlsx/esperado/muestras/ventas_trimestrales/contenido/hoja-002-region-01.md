@@ -1,6 +1,6 @@
 ---
 type: "Sheet Region"
-unit_id: "f9e0a103770531c62a30a48653c20cc296fdba6dac6cd1a72ea3e6dc1cc7717a/contenido/hoja-002-region-01.md"
+unit_id: "3b0a7a5400feb84508989916cc269bd9f09e3f037bcc98196eb4735db4437874/contenido/hoja-002-region-01.md"
 parent: "contenido/hoja-002.md"
 title: "Tabla «TablaDetalle»"
 description: "Región A1:G301 de la hoja «Detalle» del libro ventas_trimestrales.xlsx: 300 filas de datos y 7 columnas, con datos completos en CSV."

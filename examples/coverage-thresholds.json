@@ -55,6 +55,10 @@
     "measured": 100.0,
     "minimum": 99.5
   },
+  "examples/pdf/muestras/contenido_breve.pdf": {
+    "measured": 100.0,
+    "minimum": 99.5
+  },
   "examples/pdf/muestras/escaneado_mixto.pdf": {
     "measured": 100.0,
     "minimum": 99.5

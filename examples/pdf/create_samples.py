@@ -34,6 +34,10 @@ muestras/rotulos_partidos.pdf       labels of a diagram that wrap over two lines
                                     side by side (plan 4, Q3): each label is read whole and
                                     column by column, they are not a table. Below them, a
                                     real table of three rows stays a table.
+muestras/contenido_breve.pdf        a brief table of contents (plan 4, Q3): chapter number,
+                                    title and page, where each page number follows its
+                                    title at a distance that depends on the title's length.
+                                    It is one table of number, title and page.
 muestras/escaneado_mixto.pdf        page classes: digital text with a rotated margin
                                     note, a scanned page without text, a page with only
                                     its number, a vector drawing without text and a page
@@ -667,6 +671,35 @@ def rotulos():
     ])
 
 
+CONTENTS = [
+    ("1", "Introducción a los agentes", "1"),
+    ("2", "Aprovechar el poder de los modelos de lenguaje", "14"),
+    ("3", "Asistentes con GPT", "39"),
+    ("4", "Sistemas de varios agentes", "68"),
+    ("5", "Dar acciones a los agentes", "98"),
+    ("6", "Asistentes autónomos", "129"),
+    ("7", "Montar y usar una plataforma de agentes", "160"),
+    ("8", "Memoria y conocimiento", "180"),
+]
+
+
+def contenido():
+    left = 72
+    p = Page()
+    p.text(left, 60, "Contenido breve", "F2", 18)
+    top = 110
+    for r, (number, title, page) in enumerate(CONTENTS):
+        y = top + r * 17
+        p.text(left, y, number, "F1", 10)
+        p.text(left + 32, y, title, "F1", 11)
+        p.text(left + 32 + width(title, "F1", 11) + 12, y, page, "F1", 11)
+    Pdf().save(OUT / "contenido_breve.pdf", [p], {"Title": "Contenido breve"})
+    write_truth(["contenido_breve"], [p], [
+        {"page": 1, "type": "title", "text": "Contenido breve"},
+        {"page": 1, "type": "table", "rows": [list(row) for row in CONTENTS]},
+    ])
+
+
 if __name__ == "__main__":
     OUT.mkdir(parents=True, exist_ok=True)
     breve()
@@ -675,4 +708,5 @@ if __name__ == "__main__":
     indice()
     figura()
     rotulos()
+    contenido()
     escaneado()
