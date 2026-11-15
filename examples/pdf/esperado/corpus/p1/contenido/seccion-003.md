@@ -1,6 +1,6 @@
 ---
 type: "Source Section"
-unit_id: "8fc867909c5ef7aaf06c470b8b911b0db8d1da02c1fc0a29787d53419ee009f2/contenido/seccion-003.md"
+unit_id: "7dceb25bbac8a837c45a0a8f1a3ff3877371ef926b227db2386c43c3741f455b/contenido/seccion-003.md"
 parent: "documento.md"
 previous: "contenido/seccion-002.md"
 title: "COMUNICACIÓN EFECTIVA EN ENTORNOS LABORALES"
@@ -167,7 +167,7 @@ _Página 40 sin contenido propio: solo tiene encabezado, pie o número de págin
 **5 min**
 
 <!-- okf-source-span: u-299 -->
-Comunicar laIdsen tiifidcare esatratseg iads dee le cftuora rpamra caom prcenldaer rlosa ob jyetiv oas dse deesremtpiveñoa la beoranl situaciones
+Comunicar laIdsentiifidcareesatratsegiads dee lecftuora rpamra caomprcenldaer rlosaobjyetivoas dse deesremtpiveñoalabeoranl situaciones
 
 <!-- okf-source-span: u-300 -->
 laborales implica escucha activa y empática con sus pares así como comprender el entorno y definir las maneras más eficaces de comunicar.

@@ -1,8 +1,8 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "urn:okf-microservice:perfil:1.21.0:frontmatter",
-  "title": "Frontmatter del perfil documental OKF 1.21.0",
-  "description": "Frontmatter, leído como JSON, de documento.md, conversion-report.md y cada concepto de contenido/ en un bundle del perfil 1.21.0. Los índices no tienen frontmatter salvo el raíz (okf_version), que OKF regula. Los localizadores de bloque PDF están en el archivo que nombra block_spans y se describen en $defs/blockSpansFile. Cada tipo admite solo sus campos: un campo nuevo o que cambia de significado exige otra versión del perfil y de este esquema (especificación, §2).",
+  "$id": "urn:okf-microservice:perfil:1.22.0:frontmatter",
+  "title": "Frontmatter del perfil documental OKF 1.22.0",
+  "description": "Frontmatter, leído como JSON, de documento.md, conversion-report.md y cada concepto de contenido/ en un bundle del perfil 1.22.0. Los índices no tienen frontmatter salvo el raíz (okf_version), que OKF regula. Los localizadores de bloque PDF están en el archivo que nombra block_spans y se describen en $defs/blockSpansFile. Cada tipo admite solo sus campos: un campo nuevo o que cambia de significado exige otra versión del perfil y de este esquema (especificación, §2).",
   "oneOf": [
     {
       "$ref": "#/$defs/sourceDocument"
@@ -852,7 +852,7 @@
       "pattern": "^([0-9a-f]{40}|unknown)$"
     },
     "id_profile_version": {
-      "const": "1.21.0"
+      "const": "1.22.0"
     },
     "id_conversion_settings": {
       "$ref": "#/$defs/conversionSettings"

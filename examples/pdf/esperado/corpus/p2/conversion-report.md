@@ -1,15 +1,15 @@
 ---
 converter_version: "0.1.0"
 converter_commit: "<commit>"
-profile_version: "1.21.0"
+profile_version: "1.22.0"
 conversion_settings:
   max_image_pixels: 33554432
   ocr:
     enabled: false
 settings_sha256: "ad1d7709796a5172b6ad18d538b1bef5780b44279dd787d15ecc82ede959ef16"
-conversion_id: "21aa4b1ae93d6f11e08c5df86049d4de19ce069408dcedbd70e650014cbd84e0"
+conversion_id: "bb5b60e0310674c47668f4d148388231c640608757abca952e47815e52199a07"
 type: "Conversion Report"
-unit_id: "21aa4b1ae93d6f11e08c5df86049d4de19ce069408dcedbd70e650014cbd84e0/conversion-report.md"
+unit_id: "bb5b60e0310674c47668f4d148388231c640608757abca952e47815e52199a07/conversion-report.md"
 title: "Informe de conversión"
 generated:
   by: "process:document-conversion"
@@ -75,7 +75,7 @@ Información sobre la conversión que no afecta el estado.
 - Página 8: tabla reconstruida por la alineación de sus celdas; puede no coincidir con las líneas de la tabla original
 - Páginas 2–9: cabeceras o pies variables separados por su alineación con un folio confirmado y su posición tipográfica recurrente; textos y páginas registrados en documento.md
 - Encabezados tomados de los marcadores del PDF (9 de 9 encontrados en el texto)
-- Encabezados y pies de página registrados una vez en documento.md: 3 texto(s) y 0 imagen(es) repetidas
+- Encabezados y pies de página registrados una vez en documento.md: 2 texto(s) y 0 imagen(es) repetidas
 - Números de página impresos detectados en 8 página(s) y registrados en \`page\_labels\`
 - 2 imagen(es) de menos del 1 % de la página consideradas decorativas; no se adjuntan
 - Título del documento tomado del primer encabezado de la primera página, único de su nivel y de rango superior a los demás: «Artificial intelligence‑assisted academic writing: recommendations for ethical use»

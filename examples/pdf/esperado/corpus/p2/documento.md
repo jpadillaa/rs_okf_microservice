@@ -1,6 +1,6 @@
 ---
 type: "Source Document"
-unit_id: "21aa4b1ae93d6f11e08c5df86049d4de19ce069408dcedbd70e650014cbd84e0/documento.md"
+unit_id: "bb5b60e0310674c47668f4d148388231c640608757abca952e47815e52199a07/documento.md"
 title: "Artificial intelligence‑assisted academic writing: recommendations for ethical use"
 description: "Documento fuente p2.pdf convertido a conceptos OKF por secciones."
 sources:
@@ -11,13 +11,13 @@ generated:
   at: "<generado>"
 converter_version: "0.1.0"
 converter_commit: "<commit>"
-profile_version: "1.21.0"
+profile_version: "1.22.0"
 conversion_settings:
   max_image_pixels: 33554432
   ocr:
     enabled: false
 settings_sha256: "ad1d7709796a5172b6ad18d538b1bef5780b44279dd787d15ecc82ede959ef16"
-conversion_id: "21aa4b1ae93d6f11e08c5df86049d4de19ce069408dcedbd70e650014cbd84e0"
+conversion_id: "bb5b60e0310674c47668f4d148388231c640608757abca952e47815e52199a07"
 source_file:
   path: "references/original.pdf"
   sha256: "49ec606d9b25c9775c58749a7246c0451ba962124c8d34890815a011603ff015"
@@ -89,6 +89,5 @@ Esquema de navegación del original; sus entradas determinan los encabezados.
 
 Texto e imágenes que se repiten en las páginas; no forman parte del flujo del documento.
 
-- Páginas 1, 2, 4, 6 y 8: Cheng et al. Advances in Simulation (2025) 10:22
+- Páginas 1–9: Cheng et al. Advances in Simulation (2025) 10:22
 - Páginas 2–9: Page N of 9
-- Páginas 3, 5, 7 y 9: C heng et al. Advances in Simulation (2025) 10:22
