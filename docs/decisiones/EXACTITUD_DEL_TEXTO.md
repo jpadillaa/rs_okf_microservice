@@ -75,6 +75,7 @@ Por defecto convierte con `target/release/okf-microservice` (`--binary` cambia e
 | `imagenes_con_texto.pdf`, con OCR (perfil 1.18.0) | 100 | 100 | 100 | 100 |
 | `indice_columnas.pdf` (perfil 1.19.0) | 100 | 100 | 100 | 100 |
 | `figura_diagrama.pdf` (perfil 1.20.0) | 100 | 100 | 100 | 100 |
+| `rotulos_partidos.pdf` (perfil 1.21.0) | 100 | 100 | 100 | 100 |
 
 Estructura, con las mismas muestras (perfil 1.17.0): `articulo_columnas`, `breve`, `escaneado_mixto` e `informe_tecnico` dan el 100 % en todas sus métricas y ninguna tabla falsa. La muestra escaneada con OCR, cuyo texto es exacto, no conserva su estructura: encabezados 85,71 %, niveles 60 %, elementos de lista 66,67 % y líneas de código 0 %. Los niveles salen de tamaños de letra medidos por la tinta, que varían entre líneas; un encabezado de tercer nivel y un elemento de lista no se reconocen como tales, y el OCR no distingue la fuente monoespaciada del código. Los mínimos fijan estas cifras para que no empeoren; su corrección corresponde al plan 4. `imagenes_con_texto` da el 100 % en encabezados, su precisión y sus niveles, sin tablas falsas; el texto de las capturas es un bloque de líneas y su referencia no le declara estructura. Sin el OCR de imágenes (perfil 1.17.0), su completitud era del 45,9 %: solo el título y los párrafos digitales.
 
@@ -154,6 +155,14 @@ Los rótulos de un diagrama suelen estar alineados fila a fila, como las celdas 
 La muestra `figura_diagrama.pdf` (`create_samples.py`) tiene un diagrama de tres columnas de cajas con su pie y, debajo, una tabla real con su título encima. Da el 100 % en todas sus métricas: el diagrama se lee columna a columna, la tabla conserva sus celdas y no hay tablas falsas. Las pruebas `a_captioned_figure_is_read_by_columns_not_as_a_table` y `a_grid_without_a_figure_caption_stays_a_table` cubren los dos casos. El pie y el título de la tabla salen unidos en un párrafo: dos líneas aisladas de la misma letra se unen, un comportamiento anterior a este cambio.
 
 En los originales privados (OCR activo), el PDF de 346 páginas pasa de 16 a 9 tablas falsas, el orden del 87,91 % al 89,03 %, el orden interno del 94,99 % al 96,95 % y la contigüidad del 94,14 % al 94,83 %; los otros seis no cambian. Las figuras del libro con pie «Figure» dejan de ser tablas; queda una figura sin pie numerado (su título va encima), además de las tablas de contenido, las diapositivas y el formulario.
+
+## Rótulos partidos en una sola fila (plan 4, Q3, perfil 1.21.0)
+
+Un rótulo de diagrama que se parte en dos líneas, o una caja y un párrafo lado a lado, tienen sus líneas alineadas fila a fila y la maquetación los convertía en una tabla de una o dos filas. Desde el perfil 1.21.0, si las filas que quedan tras reunir las continuaciones son una sola, o cada una continúa el texto de la anterior y en cada columna las líneas se siguen con el interlineado normal (hasta 1,6 tamaños de letra), los rótulos son párrafos partidos en líneas y se escriben por columnas, no como tabla (especificación, §5). La segunda condición separa una tabla real de celdas en minúscula, donde cada fila deja un hueco mayor que el interlineado.
+
+La muestra `rotulos_partidos.pdf` (`create_samples.py`) tiene tres rótulos de dos líneas en una fila, una pareja de rótulos partidos y, debajo, una tabla real de tres filas con su título: da el 100 % en todas sus métricas, los rótulos salen enteros y por columnas y la tabla conserva sus celdas. Las pruebas `a_wrapped_pair_of_labels_is_read_by_columns_not_as_a_table` y `a_single_row_of_labels_is_not_a_table` fallaban antes del cambio; `wrapped_two_column_table_keeps_its_rows` fija el límite.
+
+En los originales privados (OCR activo): la presentación de 53 páginas pasa de 8 a 4 tablas falsas, con el orden del 85,65 % al 86,03 %, el orden interno del 96,27 % al 96,84 % y la contigüidad del 91,43 % al 92,10 %; el PDF de 346 páginas, de 9 a 5 tablas falsas, sin cambiar sus demás cifras; los otros cinco no cambian. En la presentación se resuelven las diapositivas de un diagrama de Venn, de una caja con un párrafo y dos de rótulos de un proceso; quedan una cuadrícula de notas adhesivas y una tabla de nueve filas que el conversor solo reconstruye en dos fragmentos.
 
 ## Límites
 

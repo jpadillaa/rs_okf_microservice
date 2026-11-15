@@ -1,6 +1,6 @@
 ---
 type: "Source Document"
-unit_id: "06850b8ea810a382a27bf27d64b2df8a2f7e02c3a0c9833c0af6277e5c1284df/documento.md"
+unit_id: "e1d224d39f15b7aa44ccbce8bf526f7f81b7a0b2ae85955e251c10dd02729b33/documento.md"
 title: "Informe de evaluación del asistente RAG"
 description: "Documento fuente informe_revisado.docx convertido a conceptos OKF por secciones."
 sources:
@@ -11,10 +11,10 @@ generated:
   at: "<generado>"
 converter_version: "0.1.0"
 converter_commit: "<commit>"
-profile_version: "1.20.0"
+profile_version: "1.21.0"
 conversion_settings: {}
 settings_sha256: "44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a"
-conversion_id: "06850b8ea810a382a27bf27d64b2df8a2f7e02c3a0c9833c0af6277e5c1284df"
+conversion_id: "e1d224d39f15b7aa44ccbce8bf526f7f81b7a0b2ae85955e251c10dd02729b33"
 source_file:
   path: "references/original.docx"
   sha256: "db067ec3e6bb0b5c5cf94a315689645f6e52c5e557a1b89570e2856c971a8821"
