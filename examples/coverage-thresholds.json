@@ -80,6 +80,10 @@
     "measured": 99.35,
     "minimum": 98.85
   },
+  "examples/pdf/muestras/rotulos_partidos.pdf": {
+    "measured": 100.0,
+    "minimum": 99.5
+  },
   "examples/pptx/corpus/s1.pptx": {
     "measured": 97.11,
     "minimum": 96.61

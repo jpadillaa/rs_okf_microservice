@@ -1675,7 +1675,20 @@ fn flow_blocks(region: &Region, leaves: &[Leaf]) -> Vec<(Block, Rect, usize)> {
             && let Some(cols) = table_columns(region, leaf, next)
         {
             let (rows, rect, used) = table(region, leaves, k, &cols);
-            // Los rótulos de una figura con pie se escriben celda a celda.
+            // Los rótulos de una figura con pie se escriben celda a celda; una sola fila
+            // lógica, por columnas: no hay tabla donde no hay filas que comparar.
+            if let Some(columns) = column_leaves(region, &leaves[k..=used], &cols)
+                && single_row(&rows)
+                && (rows.len() <= 1 || normal_leading(region, &columns))
+            {
+                out.extend(
+                    flow_blocks(region, &columns)
+                        .into_iter()
+                        .map(|(b, r, _)| (b, r, k)),
+                );
+                k = used + 1;
+                continue;
+            }
             if !captioned_figure(region, rect) {
                 out.push((Block::Table(rows), rect, k));
                 k = used + 1;
@@ -1835,6 +1848,69 @@ fn table_columns(region: &Region, a: &Leaf, b: &Leaf) -> Option<Vec<(f32, f32)>>
         .then_some(cols)
 }
 
+/// ¿Sigue la fila `row` el texto de la fila de `above`? Toda celda con texto empieza en
+/// minúscula o con paréntesis bajo una celda que no cierra la frase (rótulos de un
+/// diagrama o celdas de varias líneas). Una fila con un número, o bajo uno (las páginas
+/// de un índice, en cifras o en romanos), es una entrada propia.
+fn continues_row(above: &[String], row: &[String]) -> bool {
+    row.iter().any(|t| !t.is_empty())
+        && !row.iter().chain(above).any(|t| ends_in_number(t))
+        && row.iter().zip(above).all(|(t, a)| {
+            t.is_empty()
+                || (!a.is_empty()
+                    && !terminal(a)
+                    && t.starts_with(|c: char| c.is_lowercase() || c == '('))
+        })
+}
+
+/// ¿Forman las filas una sola fila lógica? Una fila sola, o cada una continuando el texto
+/// de la anterior: no hay filas que comparar y los rótulos, que se parten en varias
+/// líneas, no son una tabla.
+fn single_row(rows: &[Vec<String>]) -> bool {
+    rows.len() <= 1 || rows.windows(2).all(|w| continues_row(&w[0], &w[1]))
+}
+
+/// ¿Se siguen las líneas de cada columna con el interlineado normal, sin el hueco que
+/// separa las filas de una tabla? Entonces cada columna es un párrafo partido en líneas.
+fn normal_leading(region: &Region, columns: &[Leaf]) -> bool {
+    columns.iter().all(|leaf| {
+        let mut lines: Vec<&Line> = leaf
+            .items
+            .iter()
+            .filter_map(|i| match i {
+                Item::Line(k) => Some(&region.lines[*k]),
+                Item::Picture(_) => None,
+            })
+            .collect();
+        lines.sort_by(|a, b| a.base.total_cmp(&b.base));
+        lines
+            .windows(2)
+            .all(|w| w[1].base - w[0].base <= 1.6 * w[0].size.max(w[1].size))
+    })
+}
+
+/// Las hojas de una tabla leídas por columnas: los elementos de cada columna, en orden,
+/// como una hoja de texto corrido. `None` si algún elemento no cae en una columna.
+fn column_leaves(region: &Region, leaves: &[Leaf], cols: &[(f32, f32)]) -> Option<Vec<Leaf>> {
+    let edges: Vec<f32> = cols.windows(2).map(|w| w[1].0 - 1.0).collect();
+    let col_of = |r: &Rect| {
+        (0..cols.len()).find(|&i| {
+            (i == 0 || r.x0 >= edges[i - 1] - 1.0)
+                && (i == cols.len() - 1 || r.x1 <= edges[i] + 1.0)
+        })
+    };
+    let mut per: Vec<Vec<Item>> = vec![Vec::new(); cols.len()];
+    for it in leaves.iter().flat_map(|l| l.items.iter().copied()) {
+        per[col_of(&region.rect(it))?].push(it);
+    }
+    Some(
+        per.into_iter()
+            .filter(|v| !v.is_empty())
+            .map(Leaf::flow)
+            .collect(),
+    )
+}
+
 fn table(
     region: &Region,
     leaves: &[Leaf],
@@ -1929,16 +2005,9 @@ fn table(
             // no cierra la frase (rótulos de un diagrama o celdas de varias líneas). Una
             // fila con un número, o bajo uno (las páginas de un índice, en cifras o en
             // romanos), es una entrada propia.
-            let continues = rows.last().is_some_and(|above: &Vec<String>| {
-                row.iter().any(|t| !t.is_empty())
-                    && !row.iter().chain(above).any(|t| ends_in_number(t))
-                    && row.iter().zip(above).all(|(t, a)| {
-                        t.is_empty()
-                            || (!a.is_empty()
-                                && !terminal(a)
-                                && t.starts_with(|c: char| c.is_lowercase() || c == '('))
-                    })
-            });
+            let continues = rows
+                .last()
+                .is_some_and(|above: &Vec<String>| continues_row(above, &row));
             if !rows.is_empty()
                 && (row[0].is_empty() || (multiline && close(1.4)) || (continues && close(1.35)))
             {
@@ -2610,6 +2679,39 @@ mod tests {
         }
         let out = order(&g);
         assert!(out.len() == 1 && out[0].starts_with("[["), "{out:?}");
+    }
+
+    #[test]
+    fn a_wrapped_pair_of_labels_is_read_by_columns_not_as_a_table() {
+        // Dos rótulos que se parten en dos líneas cada uno: la segunda línea continúa la
+        // primera en las dos columnas, así que es una sola fila lógica, no una tabla.
+        let mut g = text_at("Saludar, pedir el favor,", 50.0, 60.0, 10.0, false);
+        g.extend(text_at("¿Con qué", 240.0, 60.0, 10.0, false));
+        g.extend(text_at("dar las gracias", 50.0, 76.0, 10.0, false));
+        g.extend(text_at("asocias el", 240.0, 76.0, 10.0, false));
+        let out = order(&g);
+        assert!(out.iter().all(|b| !b.starts_with("[[")), "{out:?}");
+        let text = out.join(" | ");
+        assert!(
+            text.contains("Saludar, pedir el favor, dar las gracias"),
+            "{text}"
+        );
+        assert!(text.contains("¿Con qué asocias el"), "{text}");
+    }
+
+    #[test]
+    fn a_single_row_of_labels_is_not_a_table() {
+        // Dos rótulos de dos líneas con interlineado normal: las líneas se unen en una
+        // sola fila, y una fila no es una tabla.
+        let mut g = text_at("Habilidades de", 50.0, 60.0, 10.0, false);
+        g.extend(text_at("Lenguaje", 240.0, 60.0, 10.0, false));
+        g.extend(text_at("escucha", 50.0, 72.0, 10.0, false));
+        g.extend(text_at("dinámico", 240.0, 72.0, 10.0, false));
+        let out = order(&g);
+        assert!(out.iter().all(|b| !b.starts_with("[[")), "{out:?}");
+        let text = out.join(" | ");
+        assert!(text.contains("Habilidades de escucha"), "{text}");
+        assert!(text.contains("Lenguaje dinámico"), "{text}");
     }
 
     #[test]

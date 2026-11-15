@@ -30,6 +30,10 @@ muestras/figura_diagrama.pdf        a diagram of three columns of boxes whose la
                                     (plan 4, Q3): it is a figure, read column by column,
                                     not a table. Below it, a real table with its title
                                     above stays a table.
+muestras/rotulos_partidos.pdf       labels of a diagram that wrap over two lines and sit
+                                    side by side (plan 4, Q3): each label is read whole and
+                                    column by column, they are not a table. Below them, a
+                                    real table of three rows stays a table.
 muestras/escaneado_mixto.pdf        page classes: digital text with a rotated margin
                                     note, a scanned page without text, a page with only
                                     its number, a vector drawing without text and a page
@@ -631,6 +635,38 @@ def figura():
     ])
 
 
+# Labels that wrap over two lines, side by side: one logical row, not a table.
+LABELS = [["Habilidades de", "escucha"], ["Lenguaje", "dinámico"], ["Interacciones", "sociales"]]
+QUESTIONS = [["Saludar, pedir", "el favor"], ["¿Con qué", "asocias el concepto"]]
+DURATIONS = [["Grupo", "Duración", "Modalidad"], ["Escucha", "5 min", "Individual"],
+             ["Diálogo", "10 min", "En parejas"], ["Escritura", "15 min", "En grupos"]]
+
+
+def rotulos():
+    left = 72
+    p = Page()
+    p.text(left, 60, "Habilidades de comunicación", "F2", 18)
+    y = p.paragraph(left, 100, "El esquema resume tres grupos de habilidades. El nombre de cada grupo se parte en dos líneas dentro de su caja.", 468)
+    top = y + 24
+    for c, label in enumerate(LABELS):
+        for r, line in enumerate(label):
+            p.text(left + c * 170, top + r * 13, line, "F2", 10)
+    top += 70
+    for c, label in enumerate(QUESTIONS):
+        for r, line in enumerate(label):
+            p.text(left + c * 170, top + r * 13, line, "F1", 10)
+    top += 70
+    p.text(left, top, "Tabla 1. Duración de cada grupo", "F2", 9)
+    for r, row in enumerate(DURATIONS):
+        for c, cell in enumerate(row):
+            p.text(left + c * 150, top + 20 + r * 16, cell, "F2" if r == 0 else "F1", 10)
+    Pdf().save(OUT / "rotulos_partidos.pdf", [p], {"Title": "Habilidades de comunicación"})
+    write_truth(["rotulos_partidos"], [p], [
+        {"page": 1, "type": "title", "text": "Habilidades de comunicación"},
+        {"page": 1, "type": "table", "rows": DURATIONS},
+    ])
+
+
 if __name__ == "__main__":
     OUT.mkdir(parents=True, exist_ok=True)
     breve()
@@ -638,4 +674,5 @@ if __name__ == "__main__":
     informe()
     indice()
     figura()
+    rotulos()
     escaneado()

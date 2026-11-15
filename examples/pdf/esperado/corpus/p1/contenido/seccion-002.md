@@ -1,6 +1,6 @@
 ---
 type: "Source Section"
-unit_id: "5ca9325b29c518116db5a03c8672cffe801842e393b6847d766234880bc6c74e/contenido/seccion-002.md"
+unit_id: "8fc867909c5ef7aaf06c470b8b911b0db8d1da02c1fc0a29787d53419ee009f2/contenido/seccion-002.md"
 parent: "documento.md"
 previous: "contenido/seccion-001.md"
 next: "contenido/seccion-003.md"
@@ -112,160 +112,158 @@ Tipos de texto Párrafos Ortografía y vocabulario Coherencia y cohesión
 **Trato formal y cuidadoso**
 
 <!-- okf-source-span: u-149 -->
-| Saludar, pedir el favor, | ¿Con qué |
-| --- | --- |
-| dar las gracias | asocias el |
+**Saludar, pedir el favor, dar las gracias**
 
 <!-- okf-source-span: u-150 -->
-**Adecuada ortografía Concordancia y**
+¿Con qué asocias el concepto de **asertividad**?
 
 <!-- okf-source-span: u-151 -->
-concepto de **asertividad**?
+**Adecuada ortografía Concordancia y cohesión en las ideas**
 
 <!-- okf-source-span: u-152 -->
-**cohesión en las ideas**
-
-<!-- okf-source-span: u-153 -->
 ¿Cómo me comunico con los demás en escenarios laborales por **escrito**?
 
-<!-- okf-source-span: u-154 -->
+<!-- okf-source-span: u-153 -->
 **Lenguaje claro, conciso, respetuoso y formal Uso de conectores**
 
-<!-- okf-source-span: u-155 -->
+<!-- okf-source-span: u-154 -->
 **Adecuada ortografía Concordancia y cohesión en las ideas Estructura del texto**
 
-<!-- okf-source-span: u-156 -->
+<!-- okf-source-span: u-155 -->
 ¿Qué tan asertivos somos? Más allá de una lista de chequeo
+
+<!-- okf-source-span: u-156 -->
+**Individualmente responda y justique en una hoja**
 
 <!-- okf-source-span: u-157 -->
-**Individualmente responda y justique en una hoja**
-
-<!-- okf-source-span: u-158 -->
 **¿Es fácil para mí pedir lo que necesito?**
 
-<!-- okf-source-span: u-159 -->
+<!-- okf-source-span: u-158 -->
 **¿Suelo comunicar de forma sincera y directa lo que pienso y siento?**
 
-<!-- okf-source-span: u-160 -->
+<!-- okf-source-span: u-159 -->
 **¿Defiendo mis derechos y necesidades?**
 
-<!-- okf-source-span: u-161 -->
+<!-- okf-source-span: u-160 -->
 **¿Respeto los derechos y necesidades de los demás?**
 
-<!-- okf-source-span: u-162 -->
+<!-- okf-source-span: u-161 -->
 **¿Comunico lo que pienso, quiero y siento de forma firme, tranquila, empática, directa y respetuosa?**
 
-<!-- okf-source-span: u-163 -->
+<!-- okf-source-span: u-162 -->
 **¿Digo que no cuando quiero decir que no?**
 
-<!-- okf-source-span: u-164 -->
+<!-- okf-source-span: u-163 -->
 **¿Digo que sí cuando quiero decir que sí?**
 
-<!-- okf-source-span: u-165 -->
+<!-- okf-source-span: u-164 -->
 **¿Soy flexible y busco acuerdos gana-gana?**
 
-<!-- okf-source-span: u-166 -->
+<!-- okf-source-span: u-165 -->
 **5 min**
 
-<!-- okf-source-span: u-167 -->
+<!-- okf-source-span: u-166 -->
 ¿Qué tan asertivos somos? Más allá de una lista de chequeo
 
-<!-- okf-source-span: u-168 -->
+<!-- okf-source-span: u-167 -->
 **Individualmente responda y justique en una hoja**
 
-<!-- okf-source-span: u-169 -->
+<!-- okf-source-span: u-168 -->
 **¿Puedo mantener la calma y comunicarme con respeto y empatía cuando los demás se equivocan o no cumplen mis expectativas?**
 
-<!-- okf-source-span: u-170 -->
+<!-- okf-source-span: u-169 -->
 **¿Puedo defenderme con firmeza cuando los demás me critican?**
 
-<!-- okf-source-span: u-171 -->
+<!-- okf-source-span: u-170 -->
 **¿Siento seguridad para expresar mis ideas y sentimientos?**
 
-<!-- okf-source-span: u-172 -->
+<!-- okf-source-span: u-171 -->
 **¿Mantengo la compostura en momentos difíciles y regulo mis emociones para comunicarme asertivamente? ¿Pido lo que necesito y manifiesto lo que siento de forma específica, directa, honesta y sin sarcasmo?**
 
-<!-- okf-source-span: u-173 -->
+<!-- okf-source-span: u-172 -->
 **¿Afronto las conversaciones difíciles con respeto y honestidad?**
 
-<!-- okf-source-span: u-174 -->
+<!-- okf-source-span: u-173 -->
 **¿Puedo describir lo que siento cuando hago un reclamo o tengo un conflicto?**
 
-<!-- okf-source-span: u-175 -->
+<!-- okf-source-span: u-174 -->
 **5 min**
 
-<!-- okf-source-span: u-176 -->
+<!-- okf-source-span: u-175 -->
 ¿Qué es la comunicación asertiva?
+
+<!-- okf-source-span: u-176 -->
+**10 min**
 
 <!-- okf-source-span: u-177 -->
-**10 min**
-
-<!-- okf-source-span: u-178 -->
 Conjunto de comportamientos que expresan ideas, opiniones, sentimientos y emociones –hacer peticiones o refutar solicitudes de otros—de forma clara, específica, razonable y calmada, reconociendo los derechos propios y los de otros. No demuestra o solicita obligación pero si debe evidenciar importancia.
 
-<!-- okf-source-span: u-179 -->
+<!-- okf-source-span: u-178 -->
 Aprender a comunicarnos asertivamente no garantiza que se cumplan nuestras necesidades, pero lo hace más posible, y puede mejorar las relaciones interpersonales.
 
-<!-- okf-source-span: u-180 -->
+<!-- okf-source-span: u-179 -->
 ![Imagen de la página 27](../assets/pagina-027-imagen-01.png)
 
-<!-- okf-source-span: u-181 -->
+<!-- okf-source-span: u-180 -->
 ¿Qué es la comunicación asertiva?
 
-<!-- okf-source-span: u-182 -->
+<!-- okf-source-span: u-181 -->
 **10 min**
 
-<!-- okf-source-span: u-183 -->
+<!-- okf-source-span: u-182 -->
 **Pensar:** tus necesidades no tienen ninguna importancia
 
-<!-- okf-source-span: u-184 -->
+<!-- okf-source-span: u-183 -->
 **Reconocer:** tus necesidades importan tanto como las de los demás
 
-<!-- okf-source-span: u-185 -->
+<!-- okf-source-span: u-184 -->
 **Pensar:** tus necesidades son las únicas que importan
 
-<!-- okf-source-span: u-186 -->
+<!-- okf-source-span: u-185 -->
 | Adjudica. | Respeta. | Arrebata y exige. |
 | --- | --- | --- |
 | No habla, no es escuchado. | Habla y escucha. | Perturba a la gente al hablar. |
 
-<!-- okf-source-span: u-187 -->
+<!-- okf-source-span: u-186 -->
 | Trata de mantener la calma. | Asegura la justicia para todos. | Vela solo para la persona. |
 | --- | --- | --- |
 | Permite que lo acosen. | Se defiende. | Acosa a otros. |
 
-<!-- okf-source-span: u-188 -->
+<!-- okf-source-span: u-187 -->
 No dice lo que piensa o no dice nada. Daña las relaciones: otras personas lo irrespetan.
 
-<!-- okf-source-span: u-189 -->
+<!-- okf-source-span: u-188 -->
 Daña tu autoestima.
 
-<!-- okf-source-span: u-190 -->
+<!-- okf-source-span: u-189 -->
 Expresa la idea con claridad y seguridad.
 
-<!-- okf-source-span: u-191 -->
+<!-- okf-source-span: u-190 -->
 Puede dar lugar a gritos, agresión y violencia.
 
-<!-- okf-source-span: u-192 -->
+<!-- okf-source-span: u-191 -->
 Mejora las relaciones: otras personas saben a qué atenerse.
 
-<!-- okf-source-span: u-193 -->
+<!-- okf-source-span: u-192 -->
 Daña las relaciones: a otras personas no les gusta la agresión, se alejan.
 
-<!-- okf-source-span: u-194 -->
+<!-- okf-source-span: u-193 -->
 Fortalece la autoestima.
 
-<!-- okf-source-span: u-195 -->
+<!-- okf-source-span: u-194 -->
 Daña la autoestima de los demás.
 
-<!-- okf-source-span: u-196 -->
+<!-- okf-source-span: u-195 -->
 Evita el conflicto en todo momento. Busca complacer a otros.
 
-<!-- okf-source-span: u-197 -->
+<!-- okf-source-span: u-196 -->
 Busca: contribuir, llegar a un acuerdo y ser honesto.
 
-<!-- okf-source-span: u-198 -->
+<!-- okf-source-span: u-197 -->
 Clave: ganar Ignora o rechaza la opinión de otros.
+
+<!-- okf-source-span: u-198 -->
+![Imagen de la página 28](../assets/pagina-027-imagen-01.png)
 
 <!-- okf-source-span: u-199 -->
 ![Imagen de la página 28](../assets/pagina-027-imagen-01.png)
@@ -274,160 +272,161 @@ Clave: ganar Ignora o rechaza la opinión de otros.
 ![Imagen de la página 28](../assets/pagina-027-imagen-01.png)
 
 <!-- okf-source-span: u-201 -->
-![Imagen de la página 28](../assets/pagina-027-imagen-01.png)
-
-<!-- okf-source-span: u-202 -->
 Actividad grupal
 
-<!-- okf-source-span: u-203 -->
+<!-- okf-source-span: u-202 -->
 Requerimientos Asignación de presupuesto Distribución de tareas en eventos Negociación con proveedores
 
-<!-- okf-source-span: u-204 -->
+<!-- okf-source-span: u-203 -->
 **Actividad - grupos de tres personas**
 
+<!-- okf-source-span: u-204 -->
+**3 rondas para rotar en los 3 roles**
+
 <!-- okf-source-span: u-205 -->
-| 3 rondas para rotar | Persona 1: quien interpreta Lee la situación. Es la única persona que ve el texto original. Lo lee y registra en su ficha el tema, el propósito y la manera en que el |
-| --- | --- |
-| en los 3 roles | texto evidencia o no la importancia del asunto.También, la acción concreta que se solicita y cómo evidencia el texto la importancia del |
+**Persona 1: quien interpreta**
 
 <!-- okf-source-span: u-206 -->
-asunto; si no la evidencia, escribe la razón que a su juicio faltó.También puede agregar un dato que considere indispensable no perder.
+Lee la situación. Es la única persona que ve el texto original.
 
 <!-- okf-source-span: u-207 -->
-Luego explica la situación oralmente alla persona 2.
+Lo lee y registra en su ficha el tema, el propósito y la manera en que el texto evidencia o no la importancia del asunto.También, la acción concreta que se solicita y cómo evidencia el texto la importancia del asunto; si no la evidencia, escribe la razón que a su juicio faltó.También puede agregar un dato que considere indispensable no perder.
 
 <!-- okf-source-span: u-208 -->
-**4 min**
+Luego explica la situación oralmente alla persona 2.
 
 <!-- okf-source-span: u-209 -->
-**Persona 3: quien propone soluciones (sale del salón durante 10 min durante la interacción de los roles 1 y 2)**
-
-<!-- okf-source-span: u-210 -->
-No ve el mensaje original y no escucha al rol 1 y ni el 2. Lee solamente el mensaje que recibe, define la solución al requerimiento y consigna cómo percibe el estilo y el efecto del mensaje. Podría adicionar qué faltó.
-
-<!-- okf-source-span: u-211 -->
-**5 min**
-
-<!-- okf-source-span: u-212 -->
-**Persona 4: observador/a**
-
-<!-- okf-source-span: u-213 -->
-Observa las situaciones comunicativas que se están presentando y analiza qué ocurre con la asertividad (si está presente o no, y a qué se debe esto) en cada una de ellas. Anota las consecuencias de su presencia o ausencia.
-
-<!-- okf-source-span: u-214 -->
-**Persona 2: quien redacta**
-
-<!-- okf-source-span: u-215 -->
-No ve el mensaje original en ningún momento. Escucha a la persona 1 y redacta un mensaje escrito dirigido a la persona 3 con la explicación que recibe.
-
-<!-- okf-source-span: u-216 -->
 **4 min**
 
+<!-- okf-source-span: u-210 -->
+**Persona 3: quien propone soluciones (sale del salón durante 10 min durante la interacción de los roles 1 y 2)**
+
+<!-- okf-source-span: u-211 -->
+No ve el mensaje original y no escucha al rol 1 y ni el 2. Lee solamente el mensaje que recibe, define la solución al requerimiento y consigna cómo percibe el estilo y el efecto del mensaje. Podría adicionar qué faltó.
+
+<!-- okf-source-span: u-212 -->
+**5 min**
+
+<!-- okf-source-span: u-213 -->
+**Persona 4: observador/a**
+
+<!-- okf-source-span: u-214 -->
+Observa las situaciones comunicativas que se están presentando y analiza qué ocurre con la asertividad (si está presente o no, y a qué se debe esto) en cada una de ellas. Anota las consecuencias de su presencia o ausencia.
+
+<!-- okf-source-span: u-215 -->
+**Persona 2: quien redacta**
+
+<!-- okf-source-span: u-216 -->
+No ve el mensaje original en ningún momento. Escucha a la persona 1 y redacta un mensaje escrito dirigido a la persona 3 con la explicación que recibe.
+
 <!-- okf-source-span: u-217 -->
-**¿Cómo les fue? socialización**
+**4 min**
 
 <!-- okf-source-span: u-218 -->
-**Ronda 4**
+**¿Cómo les fue? socialización**
 
 <!-- okf-source-span: u-219 -->
-**En grupo:**
+**Ronda 4**
 
 <!-- okf-source-span: u-220 -->
-**Lectura del texto 3 Luego del texto 2**
+**En grupo:**
 
 <!-- okf-source-span: u-221 -->
-Requerimientos
+**Lectura del texto 3 Luego del texto 2**
 
 <!-- okf-source-span: u-222 -->
-Grupo 1
+Requerimientos
 
 <!-- okf-source-span: u-223 -->
-Grupo 2
+Grupo 1
 
 <!-- okf-source-span: u-224 -->
-Grupo 3
+Grupo 2
 
 <!-- okf-source-span: u-225 -->
-**Luego el texto 1**
+Grupo 3
 
 <!-- okf-source-span: u-226 -->
-**Luego el original**
+**Luego el texto 1**
 
 <!-- okf-source-span: u-227 -->
-Asignación de presupuesto
+**Luego el original**
 
 <!-- okf-source-span: u-228 -->
-Agresiva
+Asignación de presupuesto
 
 <!-- okf-source-span: u-229 -->
-Asertivo
+Agresiva
 
 <!-- okf-source-span: u-230 -->
-Pasivo
+Asertivo
 
 <!-- okf-source-span: u-231 -->
-¿Cómo le fue a cada uno cumpliendo el rol asignado?
+Pasivo
 
 <!-- okf-source-span: u-232 -->
-Distribución de
+¿Cómo le fue a cada uno cumpliendo el rol asignado?
 
 <!-- okf-source-span: u-233 -->
-¿Hubo alguna clase de malentendido
+Distribución de
 
 <!-- okf-source-span: u-234 -->
-tareas en eventos
+¿Hubo alguna clase de malentendido
 
 <!-- okf-source-span: u-235 -->
-Asertivo
+tareas en eventos
 
 <!-- okf-source-span: u-236 -->
-Pasivo
-
-<!-- okf-source-span: u-237 -->
-Agresivo
-
-<!-- okf-source-span: u-238 -->
-o dificultas en la comunicación establecida para resolver el caso? ¿Qué efectos generó?
-
-<!-- okf-source-span: u-239 -->
-Negociación
-
-<!-- okf-source-span: u-240 -->
-Al final, ¿hubo algún caso que tuviera
-
-<!-- okf-source-span: u-241 -->
-con proveedores
-
-<!-- okf-source-span: u-242 -->
-Pasivo
-
-<!-- okf-source-span: u-243 -->
-Agresivo
-
-<!-- okf-source-span: u-244 -->
 Asertivo
 
+<!-- okf-source-span: u-237 -->
+Pasivo
+
+<!-- okf-source-span: u-238 -->
+Agresivo
+
+<!-- okf-source-span: u-239 -->
+o dificultas en la comunicación establecida para resolver el caso? ¿Qué efectos generó?
+
+<!-- okf-source-span: u-240 -->
+Negociación
+
+<!-- okf-source-span: u-241 -->
+Al final, ¿hubo algún caso que tuviera
+
+<!-- okf-source-span: u-242 -->
+con proveedores
+
+<!-- okf-source-span: u-243 -->
+Pasivo
+
+<!-- okf-source-span: u-244 -->
+Agresivo
+
 <!-- okf-source-span: u-245 -->
-una solución más atinada o pertinente? ¿A qué se debió esto?
+Asertivo
 
 <!-- okf-source-span: u-246 -->
-¿Qué papel jugó la asetividad tanto en la forma en que recibieron el mensaje y lo interpretaron como en las respuestas que produjeron?
+una solución más atinada o pertinente? ¿A qué se debió esto?
 
 <!-- okf-source-span: u-247 -->
-Cierre a modo de plenaria
+¿Qué papel jugó la asetividad tanto en la forma en que recibieron el mensaje y lo interpretaron como en las respuestas que produjeron?
 
 <!-- okf-source-span: u-248 -->
-**10 min**
+Cierre a modo de plenaria
 
 <!-- okf-source-span: u-249 -->
-**¿Que nos permite la comunicación asertiva y clara en el equipo por escrito?**
+**10 min**
 
 <!-- okf-source-span: u-250 -->
-A nivel institucional
+**¿Que nos permite la comunicación asertiva y clara en el equipo por escrito?**
 
 <!-- okf-source-span: u-251 -->
-A nivel interpersonal
+A nivel institucional
 
 <!-- okf-source-span: u-252 -->
+A nivel interpersonal
+
+<!-- okf-source-span: u-253 -->
 ## ¡Gracias!
 

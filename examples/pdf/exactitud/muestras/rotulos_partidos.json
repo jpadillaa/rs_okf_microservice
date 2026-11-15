@@ -1,0 +1,40 @@
+{
+  "document": "examples/pdf/muestras/rotulos_partidos.pdf",
+  "source": "examples/pdf/create_samples.py",
+  "pages": {
+    "1": "Habilidades de comunicación\nEl esquema resume tres grupos de habilidades. El nombre de cada grupo se parte en dos líneas dentro\nde su caja.\nHabilidades de\nescucha\nLenguaje\ndinámico\nInteracciones\nsociales\nSaludar, pedir\nel favor\n¿Con qué\nasocias el concepto\nTabla 1. Duración de cada grupo\nGrupo\nDuración\nModalidad\nEscucha\n5 min\nIndividual\nDiálogo\n10 min\nEn parejas\nEscritura\n15 min\nEn grupos"
+  },
+  "blocks": [
+    {
+      "page": 1,
+      "type": "title",
+      "text": "Habilidades de comunicación"
+    },
+    {
+      "page": 1,
+      "type": "table",
+      "rows": [
+        [
+          "Grupo",
+          "Duración",
+          "Modalidad"
+        ],
+        [
+          "Escucha",
+          "5 min",
+          "Individual"
+        ],
+        [
+          "Diálogo",
+          "10 min",
+          "En parejas"
+        ],
+        [
+          "Escritura",
+          "15 min",
+          "En grupos"
+        ]
+      ]
+    }
+  ]
+}
