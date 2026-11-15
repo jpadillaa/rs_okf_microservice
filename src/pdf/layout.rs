@@ -1696,6 +1696,12 @@ fn flow_blocks(region: &Region, leaves: &[Leaf]) -> Vec<(Block, Rect, usize)> {
     let mut k = 0;
     while k < leaves.len() {
         let leaf = &leaves[k];
+        // Filas consecutivas de una tabla de contenido: número, título y página.
+        if let Some((rows, rect, used)) = contents_run(region, leaves, k) {
+            out.push((Block::Table(rows), rect, k));
+            k = used + 1;
+            continue;
+        }
         // Filas consecutivas de varias celdas de texto: tabla.
         let text_row = |l: &Leaf| l.row && l.items.iter().all(|i| matches!(i, Item::Line(_)));
         if text_row(leaf)
@@ -1874,6 +1880,114 @@ fn table_columns(region: &Region, a: &Leaf, b: &Leaf) -> Option<Vec<(f32, f32)>>
     cols.windows(2)
         .all(|w| w[0].1 + 1.0 < w[1].0)
         .then_some(cols)
+}
+
+/// Filas mínimas de una tabla de contenido.
+const CONTENTS_ROWS: usize = 3;
+/// Separación máxima, en tamaños de letra, entre dos filas seguidas de un contenido.
+const CONTENTS_PITCH: f32 = 3.5;
+
+/// ¿Es el texto un número de página, en cifras o en romanos en minúscula?
+fn page_number(t: &str) -> bool {
+    let t = t.trim();
+    !t.is_empty()
+        && t.chars().count() <= 5
+        && (t.chars().all(|c| c.is_ascii_digit()) || t.chars().all(|c| "ivxlc".contains(c)))
+}
+
+/// ¿Es el texto un número de sección o de capítulo («2», «2.3», «10»)?
+fn section_number(t: &str) -> bool {
+    let t = t.trim();
+    t.chars().count() <= 7
+        && t.starts_with(|c: char| c.is_ascii_digit())
+        && t.ends_with(|c: char| c.is_ascii_digit())
+        && t.chars().all(|c| c.is_ascii_digit() || c == '.')
+}
+
+/// Celdas de una fila de contenido, con una sola línea cada una: `[número, título,
+/// página]` o `[título, página]`; el número se deja vacío si falta.
+fn contents_cells(region: &Region, leaf: &Leaf) -> Option<[String; 3]> {
+    if !leaf.row || leaf.cells.iter().any(|c| c.len() != 1) {
+        return None;
+    }
+    let text: Vec<String> = leaf
+        .cells
+        .iter()
+        .map(|c| match c[0] {
+            Item::Line(i) => Some(region.lines[i].text().trim().to_string()),
+            Item::Picture(_) => None,
+        })
+        .collect::<Option<_>>()?;
+    let titled = |t: &str| t.chars().any(char::is_alphabetic) && !page_number(t);
+    match text.as_slice() {
+        [number, title, page] if section_number(number) && titled(title) && page_number(page) => {
+            Some([number.clone(), title.clone(), page.clone()])
+        }
+        [title, page] if titled(title) && !section_number(title) && page_number(page) => {
+            Some([String::new(), title.clone(), page.clone()])
+        }
+        _ => None,
+    }
+}
+
+/// Una tabla de contenido que empieza en la hoja `from`: al menos `CONTENTS_ROWS` filas
+/// seguidas de número, título y página, donde la página sigue al título a la distancia
+/// que deja su longitud. Las columnas de dos filas vecinas se solapan, así que se
+/// reconocen por su papel y no por su posición. Solo si todas las filas con forma de
+/// entrada de la página están en la racha. Devuelve las filas, el rectángulo y la última
+/// hoja usada.
+fn contents_run(
+    region: &Region,
+    leaves: &[Leaf],
+    from: usize,
+) -> Option<(Vec<Vec<String>>, Rect, usize)> {
+    let mut rows: Vec<[String; 3]> = Vec::new();
+    let mut rect: Option<Rect> = None;
+    let mut last = from;
+    for (k, leaf) in leaves.iter().enumerate().skip(from) {
+        let Some(cells) = contents_cells(region, leaf) else {
+            break;
+        };
+        let r = cell_rect(region, &leaf.items)?;
+        if let Some(b) = rect
+            && r.top - b.bottom > CONTENTS_PITCH * region.size(leaf.items[0]).max(4.0)
+        {
+            break;
+        }
+        rect = Some(match rect {
+            None => r,
+            Some(o) => Rect {
+                x0: o.x0.min(r.x0),
+                top: o.top.min(r.top),
+                x1: o.x1.max(r.x1),
+                bottom: o.bottom.max(r.bottom),
+            },
+        });
+        rows.push(cells);
+        last = k;
+    }
+    // Solo una página cuyo contenido es una sola lista de entradas: si otras filas con
+    // forma de entrada quedan fuera de la racha (los subapartados de un contenido
+    // detallado la interrumpen), un tramo suelto sería un fragmento de tabla.
+    let entries = leaves
+        .iter()
+        .filter(|l| contents_cells(region, l).is_some())
+        .count();
+    if rows.len() < CONTENTS_ROWS || rows.len() != entries {
+        return None;
+    }
+    let numbered = rows.iter().any(|r| !r[0].is_empty());
+    let rows = rows
+        .into_iter()
+        .map(|r| {
+            if numbered {
+                r.to_vec()
+            } else {
+                r[1..].to_vec()
+            }
+        })
+        .collect();
+    Some((rows, rect?, last))
 }
 
 /// ¿Sigue la fila `row` el texto de la fila de `above`? Toda celda con texto empieza en
@@ -2620,6 +2734,114 @@ mod tests {
             ));
         }
         assert_eq!(line_text(&g), "PT Nexus");
+    }
+
+    /// Fila de contenido: número, título y página, con la página pegada al título.
+    fn contents_row(g: &mut Vec<Glyph>, base: f32, number: Option<&str>, title: &str, page: &str) {
+        let mut x = 100.0;
+        if let Some(n) = number {
+            g.extend(text_at(n, x, base, 10.0, false));
+        }
+        x = 130.0;
+        g.extend(text_at(title, x, base, 10.0, false));
+        g.extend(text_at(
+            page,
+            x + title.chars().count() as f32 * 5.0 + 12.0,
+            base,
+            10.0,
+            false,
+        ));
+    }
+
+    #[test]
+    fn contents_rows_with_trailing_page_numbers_form_a_table() {
+        // El número de página sigue a cada título a distinta distancia: las columnas de
+        // dos filas vecinas se solapan, pero cada fila es número, título y página.
+        let mut g = Vec::new();
+        contents_row(&mut g, 100.0, Some("1"), "Introduction to agents", "1");
+        contents_row(
+            &mut g,
+            118.0,
+            Some("2"),
+            "Harnessing the power of large language models",
+            "14",
+        );
+        contents_row(&mut g, 136.0, Some("3"), "Engaging GPT assistants", "39");
+        contents_row(&mut g, 154.0, Some("10"), "Agent reasoning", "244");
+        let out = order(&g);
+        assert_eq!(out.len(), 1, "{out:?}");
+        assert_eq!(
+            out[0],
+            r#"[["1", "Introduction to agents", "1"], ["2", "Harnessing the power of large language models", "14"], ["3", "Engaging GPT assistants", "39"], ["10", "Agent reasoning", "244"]]"#
+        );
+    }
+
+    #[test]
+    fn contents_rows_without_numbers_keep_two_columns() {
+        let mut g = Vec::new();
+        contents_row(&mut g, 100.0, None, "preface", "xiii");
+        contents_row(&mut g, 114.0, None, "acknowledgments", "xv");
+        contents_row(&mut g, 128.0, None, "about this book", "xvii");
+        let out = order(&g);
+        assert_eq!(
+            out,
+            [r#"[["preface", "xiii"], ["acknowledgments", "xv"], ["about this book", "xvii"]]"#]
+        );
+    }
+
+    #[test]
+    fn contents_runs_split_by_other_text_are_not_a_table() {
+        // Un contenido detallado: las entradas se interrumpen con otro texto (los
+        // subapartados), y un tramo suelto sería un fragmento de tabla.
+        let mut g = Vec::new();
+        contents_row(&mut g, 100.0, Some("1"), "Introduction to agents", "1");
+        contents_row(
+            &mut g,
+            118.0,
+            Some("2"),
+            "Harnessing the power of models",
+            "14",
+        );
+        contents_row(&mut g, 136.0, Some("3"), "Engaging GPT assistants", "39");
+        g.extend(text_at(
+            "Subentries come here in a longer line of plain text",
+            140.0,
+            154.0,
+            10.0,
+            false,
+        ));
+        contents_row(
+            &mut g,
+            172.0,
+            Some("4"),
+            "Exploring multi-agent systems",
+            "68",
+        );
+        contents_row(
+            &mut g,
+            190.0,
+            Some("5"),
+            "Empowering agents with actions and more tools",
+            "98",
+        );
+        contents_row(&mut g, 208.0, Some("6"), "Building assistants", "129");
+        let out = order(&g);
+        assert!(out.iter().all(|b| !b.starts_with("[[")), "{out:?}");
+    }
+
+    #[test]
+    fn two_contents_rows_are_not_enough_for_a_table() {
+        let mut g = Vec::new();
+        contents_row(&mut g, 100.0, Some("1"), "Introduction to agents", "1");
+        contents_row(
+            &mut g,
+            118.0,
+            Some("2"),
+            "Harnessing the power of large language models",
+            "14",
+        );
+        let out = order(&g);
+        assert!(out.iter().all(|b| !b.starts_with("[[")), "{out:?}");
     }
 
     #[test]

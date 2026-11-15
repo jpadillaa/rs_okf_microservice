@@ -1,0 +1,60 @@
+{
+  "document": "examples/pdf/muestras/contenido_breve.pdf",
+  "source": "examples/pdf/create_samples.py",
+  "pages": {
+    "1": "Contenido breve\n1\nIntroducción a los agentes\n1\n2\nAprovechar el poder de los modelos de lenguaje\n14\n3\nAsistentes con GPT\n39\n4\nSistemas de varios agentes\n68\n5\nDar acciones a los agentes\n98\n6\nAsistentes autónomos\n129\n7\nMontar y usar una plataforma de agentes\n160\n8\nMemoria y conocimiento\n180"
+  },
+  "blocks": [
+    {
+      "page": 1,
+      "type": "title",
+      "text": "Contenido breve"
+    },
+    {
+      "page": 1,
+      "type": "table",
+      "rows": [
+        [
+          "1",
+          "Introducción a los agentes",
+          "1"
+        ],
+        [
+          "2",
+          "Aprovechar el poder de los modelos de lenguaje",
+          "14"
+        ],
+        [
+          "3",
+          "Asistentes con GPT",
+          "39"
+        ],
+        [
+          "4",
+          "Sistemas de varios agentes",
+          "68"
+        ],
+        [
+          "5",
+          "Dar acciones a los agentes",
+          "98"
+        ],
+        [
+          "6",
+          "Asistentes autónomos",
+          "129"
+        ],
+        [
+          "7",
+          "Montar y usar una plataforma de agentes",
+          "160"
+        ],
+        [
+          "8",
+          "Memoria y conocimiento",
+          "180"
+        ]
+      ]
+    }
+  ]
+}
