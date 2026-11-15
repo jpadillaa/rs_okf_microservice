@@ -99,14 +99,21 @@ El mayor hueco de completitud.
 
 Defectos ya localizados, cada uno con su muestra y su mínimo.
 
-**Estado:** en curso.
+**Estado:** cerrado el 15 de noviembre de 2026 con alcance reducido: se hizo lo que el corpus mostraba y era del tamaño de una regla; lo demás queda registrado como pendiente, con su coste, en el [estado del proyecto](../estado/ESTADO_DEL_PROYECTO.md#6-roadmap-pendiente).
 - **Hecho (14 de noviembre, perfil 1.19.0):** el trabajo 1 en los índices de dos columnas. Dos partes de texto corrido de ancho parecido cuyos bloques no empiezan a la vez se leen como columnas; muestra `indice_columnas.pdf` con mínimos. En el PDF de 346 páginas las tablas falsas pasan de 30 a 16, el orden del 75,32 % al 87,91 % y los encabezados del 52,38 % al 95,24 %; en la presentación, de 9 a 8 tablas falsas; los demás originales no cambian ([exactitud](../decisiones/EXACTITUD_DEL_TEXTO.md#columnas-de-texto-corrido-plan-4-q3-perfil-1190)).
 - **Hecho (14 de noviembre, perfil 1.20.0):** el trabajo 1 en las figuras con pie numerado. Los rótulos alineados de una figura con un pie «Figure/Figura/Fig. N» debajo se leen por columnas y no forman tabla; muestra `figura_diagrama.pdf` con mínimos. En el PDF de 346 páginas las tablas falsas pasan de 16 a 9 y el orden del 87,91 % al 89,03 %; los demás originales no cambian ([exactitud](../decisiones/EXACTITUD_DEL_TEXTO.md#figuras-con-pie-plan-4-q3-perfil-1200)).
 - **Hecho (15 de noviembre, perfil 1.21.0):** el trabajo 1 en los rótulos de una sola fila. Una fila de celdas cuyas líneas se continúan en cada columna con el interlineado normal se escribe por columnas y no como tabla; muestra `rotulos_partidos.pdf` con mínimos. La presentación pasa de 8 a 4 tablas falsas y el PDF de 346 páginas de 9 a 5; los demás originales no cambian ([exactitud](../decisiones/EXACTITUD_DEL_TEXTO.md#rótulos-partidos-en-una-sola-fila-plan-4-q3-perfil-1210)).
 - **Hecho (15 de noviembre, perfil 1.22.0):** los trabajos 2 y 3 en lo que el corpus muestra. No hay capitales sueltas en los originales; sí espacios entre letras que se tocan (ligaduras expandidas, interletraje, cortes de la capa de texto), que el perfil 1.22.0 deja de escribir. El PDF de 346 páginas sube del 99,86 % al 99,97 % de completitud ([exactitud](../decisiones/EXACTITUD_DEL_TEXTO.md#espacios-entre-letras-que-se-tocan-plan-4-q3-perfil-1220)).
 - **Hecho (15 de noviembre, perfil 1.23.0):** el trabajo 1 en las tablas de contenido limpias. Tres o más filas de número, título y página se escriben como una tabla por el papel de sus celdas, si todas las de la página forman una racha; muestra `contenido_breve.pdf` con mínimos. En el PDF de 346 páginas, la página de contenido breve sale completa, las tablas falsas pasan de 5 a 4 y las celdas correctas, del 0 al 8,23 %; los demás originales no cambian ([exactitud](../decisiones/EXACTITUD_DEL_TEXTO.md#tablas-de-contenido-plan-4-q3-perfil-1230)).
 - **Descartado:** los párrafos que cruzan de página salen unidos y con su localizador en las dos páginas; las palabras desplazadas venían de los borradores de `--draft`.
-- **Falta:** el resto del trabajo 1 (las páginas de contenido detalladas, que necesitan partir subapartados, reunir títulos partidos y unir números sueltos; la tabla de celdas centradas, que necesitaría las reglas dibujadas; y la cuadrícula de notas adhesivas), las capitales grandes si aparecen en otro original, y los trabajos 4 y 5 (texto girado y títulos repetidos). Las tablas de contenido se escriben como tabla de número, título y página (convención fijada el 14 de noviembre); hoy el conversor reconstruye solo fragmentos de dos a cuatro filas por página, que cuentan como tablas falsas.
+- **Pendiente tras el cierre**, con lo que el corpus de `Q2` muestra de cada uno:
+  - **Títulos repetidos (trabajo 5).** Existe y es el pendiente más acotado: los tres conceptos de la presentación llevan el mismo título (el encabezado que se repite en sus páginas) y el PDF de 346 páginas tiene dos con el mismo título de portada. La aceptación (secciones de la presentación con títulos distintos) se puede medir con las referencias actuales.
+  - **Contenidos detallados** (cuatro páginas del PDF de 346 páginas, cuatro tablas falsas): faltan partir los subapartados que comparten línea, reunir un título partido en dos líneas con su página y volver a unir los números de sección que la maquetación deja en una hoja aparte. Es un analizador de contenidos propio, no una regla de filas.
+  - **Tabla de celdas centradas** (presentación, dos tablas falsas): sus filas con celdas de varias líneas dispersan el orden de lectura; haría falta usar las reglas dibujadas de la tabla, que hoy solo se usan en las exportaciones por diapositivas.
+  - **Cuadrícula de notas adhesivas** (presentación, dos tablas falsas) y **formulario** del cuaderno (una): casos heterogéneos sin una regla común.
+  - **Texto girado (trabajo 4):** solo aparece como navegación lateral del cuaderno de 65 páginas, escrita al final de cada página; las referencias la omiten, así que ninguna cifra la mide. No se toca hasta que un original traiga texto girado de contenido.
+  - **Capitales (trabajo 2):** ninguna en el corpus; se retoma si aparece una.
+- Las tablas de contenido se escriben como tabla de número, título y página (convención fijada el 14 de noviembre).
 
 **Problema.** Quedan defectos de exactitud concretos que la medición de `Q2` puede comprobar:
 - tablas falsas en índices a dos columnas, capturas y cajas de diapositivas;
@@ -131,6 +138,16 @@ Cada corrección añade su caso a `create_samples.py` con referencia exacta y m�
 - Las secciones de la presentación, con títulos distintos.
 - Ninguna métrica de los originales privados empeora más de 0,1 puntos en ningún documento.
 - Cada regla nueva o cambiada de la especificación sube el perfil.
+
+**Cumplimiento de la aceptación (cierre).**
+
+| Criterio | Resultado |
+| --- | --- |
+| Cero tablas falsas en las páginas revisadas de `Q2` | No cumplido: pasaron de unas 40 a 9 (PDF de 346 páginas, 30 a 4; presentación, 9 a 4; cuaderno, 1). |
+| Capitales, ligaduras y textos girados exactos | Ligaduras y espacios: hecho (perfil 1.22.0). Capitales: no hay casos. Textos girados: no medidos. |
+| Secciones de la presentación con títulos distintos | No cumplido: los tres conceptos comparten título. |
+| Ninguna métrica de los originales privados empeora más de 0,1 puntos | Cumplido: el mayor descenso es de 0,10 de orden en el PDF de 346 páginas. |
+| Cada regla nueva o cambiada sube el perfil | Cumplido: perfiles 1.19.0 a 1.23.0. |
 
 **Coste y riesgo.** Las heurísticas de tablas y columnas afectan a muchos documentos. Por eso cada cambio se mide con todo el conjunto de `Q2` y no solo con su caso.
 
