@@ -45,6 +45,7 @@ flowchart TD
 | Documento | Qué resuelve |
 | --- | --- |
 | [Especificación OKF documental](especificacion/ESPECIFICACION_OKF.md) | Archivos, frontmatter, recursos, procedencia, reglas por formato y validación, con el registro de cambios de cada versión del perfil. |
+| [Especificación propuesta del microservicio de segmentación para RAG](especificacion/SEGMENTACION_PARA_RAG.md) | Contrato del consumidor de bundles OKF, fragmentos citables por formato y criterios de aceptación del primer MVP. |
 | [Esquema del frontmatter, perfil 1.23.0](especificacion/perfil-1.23.0.schema.json) | JSON Schema de los campos de `documento.md`, el informe y cada tipo de concepto, y del archivo de localizadores de bloque PDF, para comprobarlos mecánicamente. La carpeta guarda el de la versión actual y los anteriores cuyo contenido difiere; los de 1.10.0 a 1.15.0 eran idénticos al 1.16.0 salvo su número y siguen en el historial de Git. Vale también para los perfiles 1.18.0 a 1.22.0, cuyos esquemas solo diferían en el número. |
 | [Esquema del frontmatter, perfil 1.17.0](especificacion/perfil-1.17.0.schema.json) | Esquema anterior compatible para los bundles ya publicados, sin `ocr.max_images` en la configuración. |
 | [Esquema del frontmatter, perfil 1.16.0](especificacion/perfil-1.16.0.schema.json) | Esquema anterior compatible para los bundles ya publicados, con los localizadores de bloque PDF en el frontmatter; vale también para los perfiles 1.10.0 a 1.15.0. |
@@ -55,6 +56,7 @@ flowchart TD
 | --- | --- |
 | [Arquitectura conceptual](arquitectura/ARQUITECTURA_CONCEPTUAL_MICROSERVICIO_OKF.md) | Responsabilidades, recorrido de una conversión, modelos de lectura y de salida, y estados. Incluye el diagrama del flujo. |
 | [Arquitectura técnica](arquitectura/ARQUITECTURA_TECNICA_MICROSERVICIO_OKF.md) | Dos procesos, almacenamiento local, trabajo durable, reintentos, límites y publicación; diagrama de los procesos, frontera y aislamiento del proceso de conversión (por qué no tiene red ni credenciales) y derivación de los identificadores deterministas. |
+| [Arquitectura técnica propuesta del segmentador para RAG](arquitectura/ARQUITECTURA_TECNICA_SEGMENTACION_PARA_RAG.md) | Despliegue del MVP, validación del bundle, construcción de citas por formato, entrega del ZIP y operación bajo concurrencia y fallos. |
 
 ### Decisiones y mediciones
 
@@ -80,6 +82,7 @@ flowchart TD
 | [Plan 2: calidad y robustez](planes/PLAN_2_CALIDAD_Y_ROBUSTEZ.md) | Regresión, entradas hostiles, operación y contrato: bundles de referencia, aislamiento, fuzzing, salud, retención y versiones. |
 | [Plan 3: contrato de salida para el RAG](planes/PLAN_3_CONTRATO_DE_SALIDA_PARA_RAG.md) | Lo que faltaba del contrato que pide el pipeline RAG: identificadores de conversión y de unidad, versiones del documento, configuración usada, relaciones entre unidades, referencias no resueltas, coordenadas, permisos, texto generado y esquema del frontmatter. |
 | [Plan 4: completitud y exactitud del texto](planes/PLAN_4_COMPLETITUD_Y_EXACTITUD_DEL_TEXTO.md) | Tres trabajos: referencias revisadas de originales reales y métricas de estructura, texto dentro de imágenes y escaneos largos, y defectos de maquetación residuales. |
+| [Plan 5. Implementación del MVP de segmentación para RAG](planes/PLAN_5_MVP_SEGMENTACION_PARA_RAG.md) | Siete etapas con dependencias y criterios de aceptación, desde el validador compartido hasta la verificación de citas en los cuatro formatos. |
 
 ## Ejemplos por formato
 
