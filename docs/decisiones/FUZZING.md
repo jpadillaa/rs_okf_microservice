@@ -27,8 +27,11 @@ python3 tools/fuzz_run.py docx --minutos 120 -- -timeout=300 -rss_limit_mb=500 -
 
 Se repite con `pptx`, `xlsx` y `pdf`; para `pdf` se añade
 `-entropic_scale_per_exec_time=1` (ver [Carga del corpus PDF](#carga-del-corpus-pdf)).
-`tools/fuzz_run.py` ejecuta el objetivo compilado con esas opciones durante los minutos
-indicados, vuelve a empezar tras un defecto conocido y deja el log y el resultado en
+`tools/fuzz_run.py` recibe sus opciones antes de `--` y reenvía al binario las que siguen
+al separador. El primer intento puede usar un presupuesto breve. El margen de tres minutos
+se reserva para los reinicios tras un defecto conocido. Si el lanzador no registra ninguna
+ejecución de mutación, devuelve un error, incluso cuando el binario termina con código cero.
+El lanzador deja el log y el resultado en
 `fuzz/` (ver [Rotación semanal por formato](#rotación-semanal-por-formato)). Para una
 prueba breve sigue sirviendo `cargo +nightly-2026-11-01 fuzz run FORMATO --codegen-units 16
 -- -max_total_time=300 …` con las mismas opciones.
@@ -253,9 +256,8 @@ fórmulas y no cuentan para XLSX: sumaban 1821 s de mutación sin fallos.
 
 ### Registro de C5
 
-Mutación sin fallos nuevos por formato, desde el 6 de noviembre (objetivo: 7200 s). Se
-actualiza con `python3 tools/fuzz_report.py` tras cada
-ejecución semanal:
+La tabla recoge las ejecuciones de GitHub Actions desde el 6 de noviembre. El objetivo
+por formato es de 7200 s de mutación. Se actualiza con `python3 tools/fuzz_report.py`.
 
 | Formato | Acumulado | Origen | Estado |
 | --- | ---: | --- | --- |
@@ -263,6 +265,14 @@ ejecución semanal:
 | PPTX | 69 s | Noche del 7 de noviembre; las demás solo cargaron el corpus. | Pendiente |
 | DOCX | 1796 s | Ocho ejecuciones, del 7 al 12 de noviembre. | Pendiente |
 | PDF | 1066 s | Cuatro ejecuciones, cada una hasta el pánico conocido. | Pendiente; además espera la corrección de `pdf_oxide` |
+
+**Verificación local de XLSX del 18 de noviembre de 2026.** Tras corregir la lectura de
+argumentos del lanzador, una campaña en Linux ARM64 con las tres semillas estáticas públicas
+completó 5 095 302 ejecuciones y 7201 s de mutación. El proceso terminó con código 0 y
+resultado `sin fallos`. Se usaron el nightly y los límites del flujo semanal, con LLD para
+el enlace en ARM64. La campaña se ejecutó sin red y solo se conservaron sus contadores.
+Esta medición local cumple el objetivo de dos horas de XLSX y se registra por separado
+del acumulado de GitHub Actions.
 
 ## Primera campaña completa y hallazgo pendiente
 

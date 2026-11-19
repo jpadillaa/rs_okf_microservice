@@ -1301,7 +1301,7 @@ pub(crate) fn build_bundle(
     attempt: &FsPath,
 ) -> Result<Built> {
     let started = Instant::now();
-    let generated = chrono_now();
+    let generated = utc_timestamp(crate::now());
     let mut z_in = ZipArchive::new(Cursor::new(bytes))?;
     enforce_package_limits(&mut z_in)?;
     let wb = read::workbook(&mut z_in)?;
@@ -1714,7 +1714,7 @@ mod tests {
         let mut dst = zip::ZipWriter::new(fs::File::create(&path).unwrap());
         for i in 0..src.len() {
             let mut e = src.by_index(i).unwrap();
-            let name = e.name().to_string();
+            let name = e.name().unwrap().into_owned();
             let mut data = Vec::new();
             e.read_to_end(&mut data).unwrap();
             if name == "xl/worksheets/sheet1.xml" {
@@ -1752,7 +1752,7 @@ mod tests {
         let mut dst = zip::ZipWriter::new(fs::File::create(&path).unwrap());
         for i in 0..src.len() {
             let mut e = src.by_index(i).unwrap();
-            let name = e.name().to_string();
+            let name = e.name().unwrap().into_owned();
             let mut data = Vec::new();
             e.read_to_end(&mut data).unwrap();
             let text = String::from_utf8_lossy(&data).into_owned();
@@ -1810,7 +1810,7 @@ mod tests {
         let mut z = ZipArchive::new(fs::File::open(&zip).unwrap()).unwrap();
         let mut out = HashMap::new();
         for i in 0..z.len() {
-            let name = z.by_index(i).unwrap().name().to_string();
+            let name = z.by_index(i).unwrap().name().unwrap().into_owned();
             if name.ends_with(".md") || name.ends_with(".csv") || name.ends_with(".jsonl") {
                 out.insert(name.clone(), read_text(&mut z, &name).unwrap());
             }

@@ -32,7 +32,7 @@ jobs:
       # Avisos de seguridad de las dependencias; las excepciones justificadas están en deny.toml.
       - uses: EmbarkStudios/cargo-deny-action@v2
         with:
-          command: check advisories
+          command: check advisories bans
 
   fuzz:
     if: github.event_name == 'workflow_dispatch' || github.event.schedule == '0 6 * * 1'

@@ -14,6 +14,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 import argparse
 import json
+import math
 import os
 import re
 import subprocess
@@ -63,7 +64,9 @@ def main() -> int:
     parser.add_argument("--minutos", type=float, required=True)
     parser.add_argument("--binario", type=Path)
     parser.add_argument("libfuzzer", nargs="*")
-    args = parser.parse_args()
+    args = parser.parse_intermixed_args()
+    if not math.isfinite(args.minutos) or args.minutos <= 0:
+        parser.error("--minutos debe ser un número positivo y finito")
     fmt = args.formato
     binary = args.binario
     if binary is None:
@@ -82,7 +85,9 @@ def main() -> int:
     code, result = 0, "sin fallos"
     panics: set[str] = set()
     with open(ROOT / "fuzz" / f"{fmt}.log", "w") as log:
-        while (remaining := int(deadline - time.monotonic())) >= MIN_ATTEMPT_S:
+        while (remaining := math.ceil(deadline - time.monotonic())) > 0:
+            if known and remaining < MIN_ATTEMPT_S:
+                break
             cmd = [str(binary), f"-artifact_prefix={artifacts}/", f"-max_total_time={remaining}"]
             cmd += [*args.libfuzzer, str(corpus)]
             rc, output, a_load, a_mutation, a_runs = attempt(cmd, log)
@@ -102,6 +107,11 @@ def main() -> int:
                 continue
             code, result = rc or 1, "fallo"
             break
+
+    if runs == 0:
+        mutation = 0.0
+        if code == 0:
+            code, result = 1, "sin ejecuciones de mutación"
 
     record = {
         "formato": fmt,

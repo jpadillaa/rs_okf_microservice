@@ -490,15 +490,15 @@ pub(crate) fn serial_date(raw: &str, date: bool, time: bool, date1904: bool) -> 
         secs -= 86_400;
     }
     let base = if date1904 {
-        chrono::NaiveDate::from_ymd_opt(1904, 1, 1)?
+        time::macros::date!(1904 - 01 - 01)
     } else {
         // El sistema 1900 cuenta el inexistente 29 de febrero de 1900 (serie 60).
         if days < 61 {
             days += 1;
         }
-        chrono::NaiveDate::from_ymd_opt(1899, 12, 30)?
+        time::macros::date!(1899 - 12 - 30)
     };
-    let d = base.checked_add_signed(chrono::TimeDelta::days(days))?;
+    let d = base.checked_add(time::Duration::days(days))?;
     let t = format!(
         "{:02}:{:02}:{:02}",
         secs / 3600,
@@ -506,9 +506,9 @@ pub(crate) fn serial_date(raw: &str, date: bool, time: bool, date1904: bool) -> 
         secs % 60
     );
     Some(match (date, time) {
-        (true, true) => format!("{} {t}", d.format("%Y-%m-%d")),
+        (true, true) => format!("{d} {t}"),
         (false, true) => t,
-        _ => d.format("%Y-%m-%d").to_string(),
+        _ => d.to_string(),
     })
 }
 
@@ -1299,8 +1299,13 @@ mod tests {
             "14:30:00"
         );
         assert_eq!(serial_date("59", true, false, false).unwrap(), "1900-02-28");
+        assert_eq!(serial_date("60", true, false, false).unwrap(), "1900-03-01");
         assert_eq!(serial_date("61", true, false, false).unwrap(), "1900-03-01");
         assert_eq!(serial_date("0", true, false, true).unwrap(), "1904-01-01");
+        assert_eq!(
+            serial_date("2958466", true, false, true).unwrap(),
+            "+10004-01-02"
+        );
         assert_eq!(display(Kind::Number, "0.035", &Fmt::Percent, false), "3.5%");
         assert_eq!(unescape_x("a_x000D_\nb_x0041_"), "a\nbA");
     }

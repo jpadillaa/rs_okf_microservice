@@ -327,7 +327,7 @@ pub(crate) fn extract(bytes: &[u8], attempt: &FsPath, max_slides: usize) -> Resu
     let mut slides = Vec::new();
     let mut all_issues = Vec::new();
     for i in 0..z.len() {
-        let name = z.by_index(i)?.name().to_string().to_ascii_lowercase();
+        let name = z.by_index(i)?.name()?.to_ascii_lowercase();
         if name.starts_with("ppt/embeddings/") {
             all_issues.push(Issue::loss(format!(
                 "Objeto incrustado no interpretado: {name}"
@@ -1057,7 +1057,7 @@ pub(crate) fn build_bundle(
     if ppt.slides().len() != slides.len() {
         bail!("cantidad de vistas no coincide con diapositivas")
     }
-    let generated = chrono_now();
+    let generated = utc_timestamp(crate::now());
     let mut allissues = extraction.issues.clone();
     let mut unresolved = Vec::new();
     let mut out = BundleWriter::create(Format::Pptx, attempt, source, &settings)?;
@@ -1546,7 +1546,7 @@ mod tests {
         let mut w = zip::ZipWriter::new(Cursor::new(Vec::new()));
         for i in 0..src.len() {
             let mut f = src.by_index(i).unwrap();
-            let name = f.name().to_string();
+            let name = f.name().unwrap().into_owned();
             let mut data = Vec::new();
             f.read_to_end(&mut data).unwrap();
             // Las partes binarias solo pueden quitarse; las de texto, también editarse.

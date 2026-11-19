@@ -500,9 +500,7 @@ async fn versions(
                 status: r.try_get(1)?,
                 sha256: r.try_get(2)?,
                 conversion_id: r.try_get(3)?,
-                created_at: chrono::DateTime::from_timestamp(created, 0)
-                    .unwrap_or_default()
-                    .to_rfc3339_opts(chrono::SecondsFormat::Secs, true),
+                created_at: bundle::utc_timestamp(created),
             })
         })
         .collect::<Result<Vec<_>, _>>()
@@ -1052,7 +1050,7 @@ mod tests {
         let mut z = ZipWriter::new(fs::File::create(&bad).unwrap());
         for i in 0..original.len() {
             let mut entry = original.by_index(i).unwrap();
-            let name = entry.name().to_string();
+            let name = entry.name().unwrap().into_owned();
             if name == "assets/slide-001.png" {
                 continue;
             }
@@ -1291,7 +1289,7 @@ mod tests {
         let mut z = ZipWriter::new(fs::File::create(dst).unwrap());
         for i in 0..original.len() {
             let mut entry = original.by_index(i).unwrap();
-            let name = entry.name().to_string();
+            let name = entry.name().unwrap().into_owned();
             let mut content = Vec::new();
             entry.read_to_end(&mut content).unwrap();
             if name.ends_with(".md") || name.ends_with(".csv") || name.ends_with(".json") {

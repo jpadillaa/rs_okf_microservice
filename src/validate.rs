@@ -36,9 +36,9 @@ pub(crate) fn path(path: &Path) -> Result<()> {
     let mut total = 0u64;
     for i in 0..zip.len() {
         let entry = zip.by_index(i)?;
-        if !safe_name(entry.name()) || entry.is_symlink() || !names.insert(entry.name().to_owned())
-        {
-            bail!("ruta insegura o repetida en el bundle: {}", entry.name())
+        let name = entry.name()?;
+        if !safe_name(&name) || entry.is_symlink() || !names.insert(name.clone().into_owned()) {
+            bail!("ruta insegura o repetida en el bundle: {name}")
         }
         let declared = entry.size();
         if declared > limits.entry_bytes() {
@@ -90,7 +90,7 @@ mod tests {
             let mut zip = zip::ZipArchive::new(fs::File::open(&built.path).unwrap()).unwrap();
             for i in 0..zip.len() {
                 let mut e = zip.by_index(i).unwrap();
-                let target = tree.join(e.name());
+                let target = tree.join(e.name().unwrap().as_ref());
                 fs::create_dir_all(target.parent().unwrap()).unwrap();
                 std::io::copy(&mut e, &mut fs::File::create(target).unwrap()).unwrap();
             }

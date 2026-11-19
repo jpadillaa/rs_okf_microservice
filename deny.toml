@@ -43,11 +43,22 @@ allow-registry = ["https://github.com/rust-lang/crates.io-index"]
 [bans]
 multiple-versions = "allow"
 
+[[bans.features]]
+name = "zip"
+version = "8"
+deny = ["aes-crypto", "legacy-zip"]
+reason = "Las excepciones 0545 y 0547 de BetterOffice dependen de que estas funciones estén desactivadas"
+
 [advisories]
 # Cada excepción explica por qué el aviso no afecta al servicio; un aviso nuevo hace
 # fallar el flujo programado hasta que se corrige o se justifica aquí.
 ignore = [
-    { id = "RUSTSEC-2026-0429", reason = "zip 4/8: solo afecta a ZipArchive::extract con enlaces simbólicos; ni el servicio ni betteroffice-opc llaman a extract, leen entradas en memoria. Revalidar si se incorpora extracción a disco" },
+    { id = "RUSTSEC-2026-0429", allow = ["betteroffice-opc@0.5.1"], reason = "BetterOffice lee las entradas de zip 8 en memoria por índice y no llama a ZipArchive::extract" },
+    { id = "RUSTSEC-2026-0543", allow = ["pdf_oxide@0.3.78"], reason = "pdf_oxide requiere chrono para fechas. Es un aviso de mantenimiento sin versión corregida. El servicio usa time directamente" },
+    { id = "RUSTSEC-2026-0545", allow = ["betteroffice-opc@0.5.1"], reason = "El renderizador requiere zip 8 con Deflate. La lectura de entradas AES está desactivada y se comprueba en bans.features" },
+    { id = "RUSTSEC-2026-0546", allow = ["betteroffice-opc@0.5.1"], reason = "BetterOffice lee las entradas en memoria por índice. No utiliza ZipArchive::extract para escribir el paquete en disco" },
+    { id = "RUSTSEC-2026-0547", allow = ["betteroffice-opc@0.5.1"], reason = "El renderizador usa Deflate. Los decodificadores afectados requieren legacy-zip, desactivado y comprobado en bans.features" },
+    { id = "RUSTSEC-2026-0548", allow = ["betteroffice-opc@0.5.1"], reason = "BetterOffice lee los nombres y el contenido mediante ZipArchive y el directorio central. No utiliza ZipStreamReader" },
     { id = "RUSTSEC-2026-0367", reason = "zip: solo afecta a la extracción a disco (ZipArchive::extract, ZipStreamReader::extract), que el servicio no usa; los paquetes se leen entrada a entrada en memoria" },
     { id = "RUSTSEC-2026-0368", reason = "zip: solo afecta a ZipArchive::extract, que el servicio no usa" },
     { id = "RUSTSEC-2026-0369", reason = "zip: solo afecta a ZipArchive::extract y ZipStreamReader::extract, que el servicio no usa" },

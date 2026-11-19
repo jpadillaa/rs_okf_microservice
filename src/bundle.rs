@@ -485,8 +485,8 @@ pub(crate) fn markdown_blocks(md: &str) -> Vec<&str> {
 pub(crate) fn validate_bundle(path: &FsPath) -> Result<()> {
     let mut z = ZipArchive::new(fs::File::open(path)?)?;
     let names: std::collections::HashSet<String> = (0..z.len())
-        .map(|i| z.by_index(i).map(|e| e.name().to_string()))
-        .collect::<std::result::Result<_, _>>()?;
+        .map(|i| Ok(z.by_index(i)?.name()?.into_owned()))
+        .collect::<zip::result::ZipResult<_>>()?;
     // El original conservado determina el formato y sus comprobaciones propias.
     let originals: Vec<&String> = names
         .iter()
@@ -718,8 +718,16 @@ pub(crate) fn read_text(z: &mut ZipArchive<fs::File>, name: &str) -> Result<Stri
     z.by_name(name)?.read_to_string(&mut s)?;
     Ok(s)
 }
-pub(crate) fn chrono_now() -> String {
-    chrono::Utc::now().to_rfc3339_opts(chrono::SecondsFormat::Secs, true)
+pub(crate) fn utc_timestamp(seconds: i64) -> String {
+    let utc = time::OffsetDateTime::from_unix_timestamp(seconds)
+        .unwrap_or(time::OffsetDateTime::UNIX_EPOCH);
+    format!(
+        "{}T{:02}:{:02}:{:02}Z",
+        utc.date(),
+        utc.hour(),
+        utc.minute(),
+        utc.second()
+    )
 }
 
 #[cfg(test)]

@@ -29,6 +29,8 @@ jobs:
       OKF_REQUIRE_OCR_MODELS: "1"
     steps:
       - uses: actions/checkout@v5
+      - name: Argumentos del lanzador semanal
+        run: python3 tests/test_fuzz_run.py
       # Debe coincidir con `rust-version` de Cargo.toml.
       - uses: dtolnay/rust-toolchain@master
         with:

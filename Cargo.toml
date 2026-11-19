@@ -9,7 +9,6 @@ publish = false
 anyhow = "1"
 axum = { version = "0.8", default-features = false, features = ["http1", "json", "multipart", "query", "tokio", "tracing"] }
 betteroffice-pptx = { version = "0.5", features = ["raster"] }
-chrono = { version = "0.4", default-features = false, features = ["clock"] }
 clap = { version = "4", features = ["derive"] }
 dotenvy = "0.15"
 libc = "0.2"
@@ -26,13 +25,14 @@ tokio = { version = "1", features = ["fs", "io-util", "macros", "process", "rt-m
 # Sirve el bundle por partes, sin cargarlo entero en memoria.
 tokio-util = { version = "0.7", default-features = false, features = ["io"] }
 tempfile = "3"
+time = { version = "0.3.55", features = ["large-dates", "macros"] }
 tracing = "0.1"
 tracing-subscriber = { version = "0.3", features = ["env-filter"] }
 utoipa = "6"
 utoipa-swagger-ui = { version = "10", default-features = false, features = ["axum", "vendored", "minified"] }
 uuid = { version = "1", features = ["v4"] }
 yaml_serde = "0.10.7"
-zip = { version = "4", default-features = false, features = ["deflate"] }
+zip = { version = "9.2.1", default-features = false, features = ["deflate"] }
 
 [dev-dependencies]
 tower = { version = "0.5", features = ["util"] }

@@ -2948,7 +2948,7 @@ pub(crate) fn build_bundle(
     attempt: &FsPath,
 ) -> Result<Built> {
     let started = Instant::now();
-    let generated = chrono_now();
+    let generated = utc_timestamp(crate::now());
     let settings = Settings::pdf(cfg);
     let mut out = BundleWriter::create(Format::Pdf, attempt, source, &settings)?;
     let mut ex = extract(bytes, cfg, out.zip())?;
@@ -4457,11 +4457,12 @@ mod tests {
         let mut names = HashSet::new();
         for i in 0..z.len() {
             let mut e = z.by_index(i).unwrap();
-            names.insert(e.name().to_string());
-            if e.name().ends_with(".md") || e.name().ends_with(".json") {
+            let name = e.name().unwrap().into_owned();
+            names.insert(name.clone());
+            if name.ends_with(".md") || name.ends_with(".json") {
                 let mut s = String::new();
                 e.read_to_string(&mut s).unwrap();
-                md.insert(e.name().to_string(), s);
+                md.insert(name, s);
             }
         }
         (state, md, names)
@@ -4559,7 +4560,7 @@ mod tests {
                         .filter(|l| !l.contains("at: \"") && !l.starts_with("- Duración"))
                         .collect();
                     (
-                        e.name().to_string(),
+                        e.name().unwrap().into_owned(),
                         hex(&Sha256::digest(stable.as_bytes())),
                     )
                 })
@@ -4592,7 +4593,7 @@ mod tests {
             let mut z = ZipWriter::new(fs::File::create(&bad).unwrap());
             for i in 0..original.len() {
                 let mut entry = original.by_index(i).unwrap();
-                let name = entry.name().to_string();
+                let name = entry.name().unwrap().into_owned();
                 let mut content = Vec::new();
                 entry.read_to_end(&mut content).unwrap();
                 let content = match String::from_utf8(content.clone()) {

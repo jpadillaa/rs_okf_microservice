@@ -129,7 +129,7 @@ pub(crate) fn bundle_files_with(doc: &Path, cfg: &Config) -> BTreeMap<String, St
     let mut resources = Vec::new();
     for i in 0..z.len() {
         let mut e = z.by_index(i).unwrap();
-        let name = e.name().to_string();
+        let name = e.name().unwrap().into_owned();
         let mut data = Vec::new();
         e.read_to_end(&mut data).unwrap();
         if [".md", ".csv", ".json", ".jsonl"]
