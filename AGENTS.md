@@ -15,6 +15,7 @@
 
 - Antes de cada commit, ejecuta `cargo fmt`, `cargo clippy --all-targets --locked -- -D warnings` y `cargo test --locked`.
 - `src/golden.rs` compara cada documento de `examples/` con su bundle de referencia en `examples/<formato>/esperado/`. Tras un cambio intencionado, regenera con `OKF_UPDATE_GOLDEN=1 cargo test golden` y revisa la diferencia antes de hacer commit.
+- Para comprobar un XLSX por la API, compara el estado de `GET /jobs/{id}` y el ZIP de `GET /jobs/{id}/bundle` con `examples/xlsx/esperado/muestras/<nombre>/`. Compara los datos y las incidencias completos. Aplica a los Markdown la normalización de fecha, commit y duración de `src/golden.rs` y comprueba las huellas de los binarios en `recursos.tsv`.
 - Los bundles se escriben solo a través de `src/output.rs` (frontmatter, índices, `documento.md`, informe). Ningún adaptador escribe frontmatter con plantillas de texto.
 - Las variables `OKF_*` se documentan en la tabla de la arquitectura técnica, §5.
 - Un cambio en un adaptador se mide también con `uv run tools/coverage.py` (ver [cobertura](docs/decisiones/COBERTURA_INDEPENDIENTE.md)). Si cambia una cifra, explícala o actualiza las listas con `--write-reference`; la cifra medida y el mínimo de `examples/coverage-thresholds.json` se actualizan a mano.
@@ -24,9 +25,14 @@
 ## Dependencias
 
 - `cargo deny check` debe pasar. Una excepción nueva en `deny.toml` lleva su motivo.
-- Un cambio de dependencias actualiza también `fuzz/Cargo.lock` (`cargo update -w --manifest-path fuzz/Cargo.toml`): el fuzzing nocturno lo usa con `--locked`.
+- Tras cambiar dependencias, sincroniza `fuzz/Cargo.lock` con `cargo update -w --manifest-path fuzz/Cargo.toml`. El flujo semanal descarga con `--locked` y comprueba que ambos lockfiles siguen intactos al terminar.
 - Los modelos del OCR no se versionan (`models/` está ignorado). Se fijan por revisión y SHA-256 en `tools/ocr_models.sh` y en el `Dockerfile`; un cambio de modelo actualiza ambos en el mismo commit y repite las mediciones de [OCR local](docs/decisiones/OCR_LOCAL.md).
 - Las versiones de la imagen (`Dockerfile`) están fijadas por digest y se registran en el stack.
+
+## GitHub Actions
+
+- En cada pull request y push a `main`, la CI comprueba el lanzador semanal con `python3 tests/test_fuzz_run.py`, el formato, Clippy y las pruebas de Rust. También ejecuta `cargo deny check licenses sources`, construye la imagen y ejecuta la prueba de humo. [Flujo CI](.github/workflows/ci.yml)
+- El flujo `Programado` ejecuta `cargo deny check advisories bans` a diario. Cada lunes dedica 120 minutos a un formato, en rotación de XLSX, PPTX, DOCX y PDF. Una ejecución manual sobre `main` comprueba la revisión a la que apunta la rama y permite elegir el formato y los minutos. Al comunicar el resultado, indica el commit y el entorno de la campaña. Si se ejecutó en Actions, enlaza la ejecución. [Flujo Programado](.github/workflows/scheduled.yml) · [Criterio de cierre de C5](docs/decisiones/FUZZING.md#ci-y-criterio-de-cierre)
 
 ## Datos de prueba y privacidad
 
