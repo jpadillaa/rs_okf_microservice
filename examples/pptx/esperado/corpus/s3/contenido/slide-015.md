@@ -18,15 +18,7 @@ source_spans:
     kind: "pptx_slide"
     slide_index: 15
     slide_id: 270
-  - id: "f-345"
-    source_id: "original"
-    kind: "pptx_shape"
-    slide_index: 15
-    shape_id: 345
-    x: 1596175
-    y: 2108200
-    cx: 10106400
-    cy: 4203600
+block_spans: "/contenido/slide-015.spans.json"
 ---
 
 # Retrieval Augmented Generation Assessment

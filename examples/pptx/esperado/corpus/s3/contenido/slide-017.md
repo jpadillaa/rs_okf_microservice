@@ -18,15 +18,7 @@ source_spans:
     kind: "pptx_slide"
     slide_index: 17
     slide_id: 272
-  - id: "f-359"
-    source_id: "original"
-    kind: "pptx_shape"
-    slide_index: 17
-    shape_id: 359
-    x: 1596175
-    y: 2108200
-    cx: 10106400
-    cy: 4203600
+block_spans: "/contenido/slide-017.spans.json"
 ---
 
 # RAGAs: Evaluación por componentes

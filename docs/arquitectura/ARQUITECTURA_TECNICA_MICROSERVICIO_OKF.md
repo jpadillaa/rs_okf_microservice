@@ -520,6 +520,12 @@ En PPTX, `parse_part` guarda junto a cada bloque su origen (`Origin`): el `id` d
 elementos (`Item`) que salen de un bloque heredan su origen. `markdown_slide` escribe un
 localizador `pptx_shape` por forma y su marcador antes del primer elemento, cerrando la
 lista anterior. El título de la diapositiva, que va al frontmatter, no lleva marcador.
+Desde el perfil 1.24.0 `markdown_slide` devuelve los localizadores de forma aparte del
+frontmatter, que conserva solo el `pptx_slide`, y `build_bundle` los escribe con
+`BundleWriter::block_spans` en `contenido/slide-NNN.spans.json`, como PDF; una diapositiva
+sin formas con contenido no lleva el archivo. `pptx::validate` lee los localizadores con
+`bundle::concept_spans`, de modo que valida igual un bundle anterior al 1.24.0 (formas en
+el frontmatter) y uno nuevo.
 
 `pdf::validate` comprueba que cada caja esté en una página de su localizador, una por
 página, y dentro de la página con medio punto de margen. `pptx::validate` comprueba

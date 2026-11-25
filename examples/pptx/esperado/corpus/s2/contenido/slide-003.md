@@ -18,24 +18,7 @@ source_spans:
     kind: "pptx_slide"
     slide_index: 3
     slide_id: 258
-  - id: "f-264"
-    source_id: "original"
-    kind: "pptx_shape"
-    slide_index: 3
-    shape_id: 264
-    x: 1550225
-    y: 1344950
-    cx: 10106400
-    cy: 4415400
-  - id: "f-265"
-    source_id: "original"
-    kind: "pptx_shape"
-    slide_index: 3
-    shape_id: 265
-    x: 2254772
-    y: 2148150
-    cx: 8368598
-    cy: 4709851
+block_spans: "/contenido/slide-003.spans.json"
 ---
 
 # Retrieval Augmented Generation

@@ -1,6 +1,6 @@
 ---
 type: "Source Text"
-unit_id: "c8d9e8e18ea8010adfe90c0c8d08bdae893d5d6e5198798cfbd7434f4f23403d/contenido/texto.md"
+unit_id: "9c613fce36fa53876aecadb26ff527a96d3a7d46f048df390fa0c04557514081/contenido/texto.md"
 parent: "documento.md"
 title: "Flujo de una conversión"
 description: "Texto completo de figura_diagrama.pdf. La conversión pasa por tres etapas, que la figura siguiente resume con las tareas de cada una y lo que entrega a la siguiente."

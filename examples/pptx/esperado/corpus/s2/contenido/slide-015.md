@@ -18,15 +18,7 @@ source_spans:
     kind: "pptx_slide"
     slide_index: 15
     slide_id: 270
-  - id: "f-347"
-    source_id: "original"
-    kind: "pptx_shape"
-    slide_index: 15
-    shape_id: 347
-    x: 1596175
-    y: 3163530
-    cx: 10106400
-    cy: 2655900
+block_spans: "/contenido/slide-015.spans.json"
 ---
 
 # El reto de ingeniería de software con el chunking

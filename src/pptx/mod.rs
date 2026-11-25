@@ -800,8 +800,14 @@ fn shape_marker(id: u32) -> String {
     format!("f-{id}")
 }
 
-/// Frontmatter y cuerpo del concepto de una diapositiva.
-pub(crate) fn markdown_slide(s: &Slide, deck: &str, instant: &str) -> (Fields, String) {
+/// Frontmatter, cuerpo y localizadores de forma del concepto de una diapositiva. El
+/// frontmatter conserva solo el localizador de la diapositiva; los de forma
+/// (`pptx_shape`) van aparte para `BundleWriter::block_spans` (perfil 1.24.0).
+pub(crate) fn markdown_slide(
+    s: &Slide,
+    deck: &str,
+    instant: &str,
+) -> (Fields, String, Vec<Fields>) {
     let slide_span = span(&format!("slide-{}", s.idx), "pptx_slide")
         .with("slide_index", s.idx)
         .with_opt("slide_id", s.slide_id)
@@ -830,9 +836,6 @@ pub(crate) fn markdown_slide(s: &Slide, deck: &str, instant: &str) -> (Fields, S
             shapes.push(f);
         }
     }
-    let mut spans = vec![slide_span];
-    spans.extend(shapes);
-    let span = spans;
     let fields = concept_fields(
         Format::Pptx,
         "Slide",
@@ -840,7 +843,7 @@ pub(crate) fn markdown_slide(s: &Slide, deck: &str, instant: &str) -> (Fields, S
         &slide_description(s, deck),
         instant,
     )
-    .with("source_spans", span)
+    .with("source_spans", vec![slide_span])
     .flag("title_inferred", s.title_inferred)
     .with_opt("kicker", s.kicker.as_ref())
     .with_opt("section", s.section.as_ref())
@@ -933,7 +936,7 @@ pub(crate) fn markdown_slide(s: &Slide, deck: &str, instant: &str) -> (Fields, S
         out.push('\n');
         out.push_str(&comments_markdown(&s.comments));
     }
-    (fields, out)
+    (fields, out, shapes)
 }
 
 /// Autores de comentarios: `commentAuthors.xml` (clásico) y `authors.xml` (moderno).
@@ -1077,7 +1080,7 @@ pub(crate) fn build_bundle(
                 s.idx, rendered.skipped_images
             )));
         }
-        let (fields, mut md) = markdown_slide(s, filename, &generated);
+        let (fields, mut md, shapes) = markdown_slide(s, filename, &generated);
         md.push_str(&format!(
             "\n## Vista visual\n\n![Vista de la diapositiva {}](../assets/slide-{:03}.png)\n",
             s.idx, s.idx
@@ -1091,7 +1094,9 @@ pub(crate) fn build_bundle(
         if md.contains(UNRESOLVED) {
             unresolved.push(s.idx);
         }
-        out.concept(&format!("contenido/slide-{:03}.md", s.idx), &fields, &md)?;
+        let path = format!("contenido/slide-{:03}.md", s.idx);
+        let fields = out.block_spans(&path, fields, shapes)?;
+        out.concept(&path, &fields, &md)?;
     }
     if !unresolved.is_empty() {
         allissues.push(Issue::note(format!(
@@ -1297,10 +1302,14 @@ pub(crate) fn validate(
             )
         }
         let fm = frontmatter(&md)?;
-        let span = fm
-            .get("source_spans")
-            .and_then(YamlValue::as_sequence)
-            .and_then(|s| s.first())
+        if fm.get("source_spans").is_none() {
+            bail!("{name} carece de source_spans")
+        }
+        // Los del frontmatter van primero: el de la diapositiva y, desde el perfil
+        // 1.24.0, los de forma en el archivo `block_spans`.
+        let spans = concept_spans(z, names, name, &fm)?;
+        let span = spans
+            .first()
             .with_context(|| format!("{name} carece de source_spans"))?;
         let index = span.get("slide_index").and_then(YamlValue::as_u64);
         let slide_id = span.get("slide_id").and_then(YamlValue::as_u64);
@@ -1313,7 +1322,7 @@ pub(crate) fn validate(
         // Localizadores de forma (plan 3, I6): de esta diapositiva, `f-<id>`, un `id` de
         // forma único y un tamaño no negativo.
         let mut shapes = std::collections::HashSet::new();
-        for s in fm["source_spans"].as_sequence().into_iter().flatten() {
+        for s in &spans {
             if s.get("kind").and_then(YamlValue::as_str) != Some("pptx_shape") {
                 continue;
             }
@@ -1365,7 +1374,7 @@ mod tests {
         let md = slides
             .iter()
             .map(|s| {
-                let (fields, body) = markdown_slide(s, name, "2026-01-01T00:00:00Z");
+                let (fields, body, _) = markdown_slide(s, name, "2026-01-01T00:00:00Z");
                 fields.frontmatter() + &body
             })
             .collect();
@@ -1467,12 +1476,36 @@ mod tests {
             && i.text.contains("MISO – Maestría en Ingeniería de Software")));
     }
     #[test]
+    fn the_frontmatter_keeps_the_slide_span_and_the_shapes_go_apart() {
+        let tmp = tempfile::tempdir().unwrap();
+        let extraction = extract(&example("rich"), tmp.path(), usize::MAX).unwrap();
+        let s = &extraction.slides[0];
+        let (fields, md, shapes) = markdown_slide(s, "rich.pptx", "2026-01-01T00:00:00Z");
+        let front = fields.frontmatter();
+        assert!(front.contains("kind: \"pptx_slide\""), "{front}");
+        assert!(!front.contains("pptx_shape"), "{front}");
+        assert!(!shapes.is_empty());
+        assert!(
+            shapes
+                .iter()
+                .all(|f| f.get_str("kind") == Some("pptx_shape"))
+        );
+        // Cada forma conserva su marcador en el cuerpo, que resuelve contra el archivo.
+        for f in &shapes {
+            let id = f.get_str("id").unwrap();
+            assert!(
+                md.contains(&format!("<!-- okf-source-span: {id} -->")),
+                "{id}"
+            );
+        }
+    }
+    #[test]
     fn equations_comments_and_alt_text_are_kept_without_duplicates() {
         let bytes = example("rich");
         let tmp = tempfile::tempdir().unwrap();
         let extraction = extract(&bytes, tmp.path(), usize::MAX).unwrap();
         let s = &extraction.slides[0];
-        let (_, md) = markdown_slide(s, "rich.pptx", "2026-01-01T00:00:00Z");
+        let (_, md, _) = markdown_slide(s, "rich.pptx", "2026-01-01T00:00:00Z");
         assert!(md.contains("- `E=mc^2+a/b`"), "{md}");
         // La imagen de mc:Fallback representa la misma ecuación: no se adjunta.
         assert!(s.image_paths.is_empty());

@@ -17,15 +17,7 @@ source_spans:
     kind: "pptx_slide"
     slide_index: 1
     slide_id: 256
-  - id: "f-2"
-    source_id: "original"
-    kind: "pptx_shape"
-    slide_index: 1
-    shape_id: 2
-    x: 457200
-    y: 1650000
-    cx: 8200000
-    cy: 1500000
+block_spans: "/contenido/slide-001.spans.json"
 ---
 
 # A simple OKF test deck

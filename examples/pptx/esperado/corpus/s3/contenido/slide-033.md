@@ -18,15 +18,7 @@ source_spans:
     kind: "pptx_slide"
     slide_index: 33
     slide_id: 288
-  - id: "f-476"
-    source_id: "original"
-    kind: "pptx_shape"
-    slide_index: 33
-    shape_id: 476
-    x: 1682650
-    y: 1858175
-    cx: 10106400
-    cy: 4152300
+block_spans: "/contenido/slide-033.spans.json"
 ---
 
 # Cómo se manifiestan los errores

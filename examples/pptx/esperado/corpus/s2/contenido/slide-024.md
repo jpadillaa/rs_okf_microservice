@@ -18,15 +18,7 @@ source_spans:
     kind: "pptx_slide"
     slide_index: 24
     slide_id: 279
-  - id: "f-409"
-    source_id: "original"
-    kind: "pptx_shape"
-    slide_index: 24
-    shape_id: 409
-    x: 1682650
-    y: 2345000
-    cx: 10106400
-    cy: 3665400
+block_spans: "/contenido/slide-024.spans.json"
 ---
 
 # El reto de ingeniería de software con las bases de datos vectoriales

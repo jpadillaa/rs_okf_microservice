@@ -1,0 +1,6 @@
+{
+  "concept": "contenido/slide-002.md",
+  "source_spans": [
+    {"id": "f-2", "source_id": "original", "kind": "pptx_shape", "slide_index": 2, "shape_id": 2, "x": 457200, "y": 1650000, "cx": 8200000, "cy": 1500000}
+  ]
+}

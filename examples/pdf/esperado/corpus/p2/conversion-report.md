@@ -1,15 +1,15 @@
 ---
 converter_version: "0.1.0"
 converter_commit: "<commit>"
-profile_version: "1.23.0"
+profile_version: "1.24.0"
 conversion_settings:
   max_image_pixels: 33554432
   ocr:
     enabled: false
 settings_sha256: "ad1d7709796a5172b6ad18d538b1bef5780b44279dd787d15ecc82ede959ef16"
-conversion_id: "8943f58d41a81230de4fb871633de3e1b40395be11508664a0d78bc34f8be711"
+conversion_id: "4bbe30b190d92973a826121f371f79cc393d1fb27434feedf6899a96aef904c5"
 type: "Conversion Report"
-unit_id: "8943f58d41a81230de4fb871633de3e1b40395be11508664a0d78bc34f8be711/conversion-report.md"
+unit_id: "4bbe30b190d92973a826121f371f79cc393d1fb27434feedf6899a96aef904c5/conversion-report.md"
 title: "Informe de conversión"
 generated:
   by: "process:document-conversion"

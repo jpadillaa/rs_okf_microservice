@@ -1,0 +1,16 @@
+{
+  "concept": "contenido/slide-028.md",
+  "source_spans": [
+    {"id": "f-12", "source_id": "original", "kind": "pptx_shape", "slide_index": 28, "shape_id": 12, "x": 2238494, "y": 3581400, "cx": 933212, "cy": 381000},
+    {"id": "f-15", "source_id": "original", "kind": "pptx_shape", "slide_index": 28, "shape_id": 15, "x": 5161479, "y": 3581400, "cx": 1636717, "cy": 381000},
+    {"id": "f-18", "source_id": "original", "kind": "pptx_shape", "slide_index": 28, "shape_id": 18, "x": 8169116, "y": 3581400, "cx": 2144744, "cy": 381000},
+    {"id": "f-21", "source_id": "original", "kind": "pptx_shape", "slide_index": 28, "shape_id": 21, "x": 11546801, "y": 3581400, "cx": 1838539, "cy": 381000},
+    {"id": "f-24", "source_id": "original", "kind": "pptx_shape", "slide_index": 28, "shape_id": 24, "x": 14560748, "y": 3581400, "cx": 2332553, "cy": 381000},
+    {"id": "f-26", "source_id": "original", "kind": "pptx_shape", "slide_index": 28, "shape_id": 26, "x": 1314450, "y": 5029200, "cx": 3918585, "cy": 228600},
+    {"id": "f-27", "source_id": "original", "kind": "pptx_shape", "slide_index": 28, "shape_id": 27, "x": 1314450, "y": 5372100, "cx": 3669221, "cy": 1155383},
+    {"id": "f-29", "source_id": "original", "kind": "pptx_shape", "slide_index": 28, "shape_id": 29, "x": 5756910, "y": 5052060, "cx": 7451598, "cy": 228600},
+    {"id": "f-31", "source_id": "original", "kind": "pptx_shape", "slide_index": 28, "shape_id": 31, "x": 13411200, "y": 5029200, "cx": 3918585, "cy": 228600},
+    {"id": "f-32", "source_id": "original", "kind": "pptx_shape", "slide_index": 28, "shape_id": 32, "x": 13411200, "y": 5372100, "cx": 3669221, "cy": 782955},
+    {"id": "f-35", "source_id": "original", "kind": "pptx_shape", "slide_index": 28, "shape_id": 35, "x": 1939290, "y": 7686675, "cx": 8262818, "cy": 381000}
+  ]
+}

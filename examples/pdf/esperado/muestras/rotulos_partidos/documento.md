@@ -1,6 +1,6 @@
 ---
 type: "Source Document"
-unit_id: "4340162c536bb743ad521c7dfb000db33e74604177b333596c1391926f4cdcd6/documento.md"
+unit_id: "76dad1cde57b2099c89d72aa3a073be656ab31bbf11e0895d13f8c228da4ae45/documento.md"
 title: "Habilidades de comunicación"
 description: "Documento fuente rotulos_partidos.pdf convertido a conceptos OKF por secciones."
 sources:
@@ -11,13 +11,13 @@ generated:
   at: "<generado>"
 converter_version: "0.1.0"
 converter_commit: "<commit>"
-profile_version: "1.23.0"
+profile_version: "1.24.0"
 conversion_settings:
   max_image_pixels: 33554432
   ocr:
     enabled: false
 settings_sha256: "ad1d7709796a5172b6ad18d538b1bef5780b44279dd787d15ecc82ede959ef16"
-conversion_id: "4340162c536bb743ad521c7dfb000db33e74604177b333596c1391926f4cdcd6"
+conversion_id: "76dad1cde57b2099c89d72aa3a073be656ab31bbf11e0895d13f8c228da4ae45"
 source_file:
   path: "references/original.pdf"
   sha256: "4786856b548c40a8a1178c59141f884c1969bb657055ce6c9c1cda7276ecea37"

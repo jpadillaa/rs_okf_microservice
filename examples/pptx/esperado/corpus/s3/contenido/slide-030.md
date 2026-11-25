@@ -18,15 +18,7 @@ source_spans:
     kind: "pptx_slide"
     slide_index: 30
     slide_id: 285
-  - id: "f-455"
-    source_id: "original"
-    kind: "pptx_shape"
-    slide_index: 30
-    shape_id: 455
-    x: 1596175
-    y: 2341558
-    cx: 10106400
-    cy: 3477900
+block_spans: "/contenido/slide-030.spans.json"
 ---
 
 # Otras métricas

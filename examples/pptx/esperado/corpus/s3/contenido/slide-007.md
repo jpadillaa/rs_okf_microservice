@@ -18,15 +18,7 @@ source_spans:
     kind: "pptx_slide"
     slide_index: 7
     slide_id: 262
-  - id: "f-289"
-    source_id: "original"
-    kind: "pptx_shape"
-    slide_index: 7
-    shape_id: 289
-    x: 1682650
-    y: 1766175
-    cx: 10106400
-    cy: 4244100
+block_spans: "/contenido/slide-007.spans.json"
 ---
 
 # Consecuencias

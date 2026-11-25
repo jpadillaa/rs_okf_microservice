@@ -18,15 +18,7 @@ source_spans:
     kind: "pptx_slide"
     slide_index: 3
     slide_id: 258
-  - id: "f-264"
-    source_id: "original"
-    kind: "pptx_shape"
-    slide_index: 3
-    shape_id: 264
-    x: 1596179
-    y: 4319194
-    cx: 10106400
-    cy: 1500300
+block_spans: "/contenido/slide-003.spans.json"
 ---
 
 # El problema de la dimensionalidad de los embeddings

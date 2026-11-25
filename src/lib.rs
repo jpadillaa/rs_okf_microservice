@@ -1328,8 +1328,10 @@ mod tests {
                 }
             }),
             ("localizador de forma inválido o repetido", &|n, md| {
-                if n == "contenido/slide-003.md" {
-                    md.replace("shape_id: 11\n", "shape_id: 10\n")
+                // Desde el perfil 1.24.0 los localizadores de forma están en el archivo
+                // `block_spans` de la diapositiva.
+                if n == "contenido/slide-003.spans.json" {
+                    md.replace("\"shape_id\": 11", "\"shape_id\": 10")
                 } else {
                     md
                 }

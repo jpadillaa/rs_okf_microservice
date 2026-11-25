@@ -18,15 +18,7 @@ source_spans:
     kind: "pptx_slide"
     slide_index: 26
     slide_id: 281
-  - id: "f-422"
-    source_id: "original"
-    kind: "pptx_shape"
-    slide_index: 26
-    shape_id: 422
-    x: 340700
-    y: 93550
-    cx: 11656327
-    cy: 6553198
+block_spans: "/contenido/slide-026.spans.json"
 visual_only: true
 status: "draft"
 ---

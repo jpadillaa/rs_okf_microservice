@@ -17,24 +17,7 @@ source_spans:
     kind: "pptx_slide"
     slide_index: 3
     slide_id: 258
-  - id: "f-10"
-    source_id: "original"
-    kind: "pptx_shape"
-    slide_index: 3
-    shape_id: 10
-    x: 457200
-    y: 1600000
-    cx: 3000000
-    cy: 1000000
-  - id: "f-11"
-    source_id: "original"
-    kind: "pptx_shape"
-    slide_index: 3
-    shape_id: 11
-    x: 4000000
-    y: 2000000
-    cx: 1000000
-    cy: 1000000
+block_spans: "/contenido/slide-003.spans.json"
 ---
 
 # Hidden slide contains table and image

@@ -18,15 +18,7 @@ source_spans:
     kind: "pptx_slide"
     slide_index: 22
     slide_id: 277
-  - id: "f-395"
-    source_id: "original"
-    kind: "pptx_shape"
-    slide_index: 22
-    shape_id: 395
-    x: 1682650
-    y: 1806825
-    cx: 10106400
-    cy: 4203600
+block_spans: "/contenido/slide-022.spans.json"
 ---
 
 # Los metadatos

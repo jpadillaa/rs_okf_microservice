@@ -18,15 +18,7 @@ source_spans:
     kind: "pptx_slide"
     slide_index: 20
     slide_id: 275
-  - id: "f-380"
-    source_id: "original"
-    kind: "pptx_shape"
-    slide_index: 20
-    shape_id: 380
-    x: 1596179
-    y: 4319194
-    cx: 10106400
-    cy: 1500300
+block_spans: "/contenido/slide-020.spans.json"
 ---
 
 # Métricas de Ragas
