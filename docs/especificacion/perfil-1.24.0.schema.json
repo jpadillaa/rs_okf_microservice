@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "urn:okf-microservice:perfil:1.24.0:frontmatter",
   "title": "Frontmatter del perfil documental OKF 1.24.0",
-  "description": "Frontmatter, leído como JSON, de documento.md, conversion-report.md y cada concepto de contenido/ en un bundle del perfil 1.24.0. Los índices no tienen frontmatter salvo el raíz (okf_version), que OKF regula. Los localizadores de bloque PDF, PPTX y DOCX están en el archivo que nombra block_spans y se describen en $defs/blockSpansFile. Cada tipo admite solo sus campos: un campo nuevo o que cambia de significado exige otra versión del perfil y de este esquema (especificación, §2).",
+  "description": "Frontmatter, leído como JSON, de documento.md, conversion-report.md y cada concepto de contenido/ en un bundle del perfil 1.24.0. Los índices no tienen frontmatter salvo el raíz (okf_version), que OKF regula. Los localizadores de bloque PDF, PPTX, DOCX y XLSX están en el archivo que nombra block_spans y se describen en $defs/blockSpansFile. Cada tipo admite solo sus campos: un campo nuevo o que cambia de significado exige otra versión del perfil y de este esquema (especificación, §2).",
   "oneOf": [
     {
       "$ref": "#/$defs/sourceDocument"
@@ -785,6 +785,11 @@
         "source_spans": {
           "$ref": "#/$defs/spans"
         },
+        "block_spans": {
+          "type": "string",
+          "pattern": "^/contenido/[^/]+\\.spans\\.json$",
+          "description": "Ruta, desde la raíz del bundle, del archivo con los localizadores de los bloques del concepto (<concepto>.spans.json); sus identificadores resuelven los marcadores okf-source-span del cuerpo (especificación, §3)."
+        },
         "status": {
           "$ref": "#/$defs/concept_status"
         }
@@ -844,6 +849,11 @@
         "source_spans": {
           "$ref": "#/$defs/spans"
         },
+        "block_spans": {
+          "type": "string",
+          "pattern": "^/contenido/[^/]+\\.spans\\.json$",
+          "description": "Ruta, desde la raíz del bundle, del archivo con los localizadores de los bloques del concepto (<concepto>.spans.json); sus identificadores resuelven los marcadores okf-source-span del cuerpo (especificación, §3)."
+        },
         "status": {
           "$ref": "#/$defs/concept_status"
         }
@@ -897,7 +907,7 @@
       "const": "draft"
     },
     "blockSpansFile": {
-      "description": "Archivo <concepto>.spans.json de un concepto PDF, PPTX o DOCX: el concepto al que pertenece y los localizadores de sus bloques, con la misma forma que source_spans.",
+      "description": "Archivo <concepto>.spans.json de un concepto PDF, PPTX, DOCX o XLSX: el concepto al que pertenece y los localizadores de sus bloques, con la misma forma que source_spans.",
       "type": "object",
       "required": [
         "concept",

@@ -1520,17 +1520,17 @@ mod tests {
             (
                 "la celda Resumen!A8 del original no está en ninguna región",
                 Box::new(only(
-                    "contenido/hoja-001.md",
-                    "range: \"A1:F8\"",
-                    "range: \"A1:F7\"",
+                    "contenido/hoja-001.spans.json",
+                    "\"range\": \"A1:F8\"",
+                    "\"range\": \"A1:F7\"",
                 )),
             ),
             (
                 "tiene un rango A10:A13 fuera del rango de la hoja",
                 Box::new(only(
-                    "contenido/hoja-001.md",
-                    "range: \"A10:A12\"",
-                    "range: \"A10:A13\"",
+                    "contenido/hoja-001.spans.json",
+                    "\"range\": \"A10:A12\"",
+                    "\"range\": \"A10:A13\"",
                 )),
             ),
             (
@@ -1553,8 +1553,16 @@ mod tests {
                 "localiza la hoja «Notas» y pertenece a «Supuestos»",
                 Box::new(only(
                     "contenido/hoja-003.md",
-                    "sheet: \"Supuestos\"\n    range: \"A1:C4\"\n---",
-                    "sheet: \"Notas\"\n    range: \"A1:C4\"\n---",
+                    "sheet: \"Supuestos\"\n    range: \"A1:C4\"\nblock_spans",
+                    "sheet: \"Notas\"\n    range: \"A1:C4\"\nblock_spans",
+                )),
+            ),
+            (
+                "localiza la hoja «Notas» y pertenece a «Supuestos»",
+                Box::new(only(
+                    "contenido/hoja-003.spans.json",
+                    "\"sheet\": \"Supuestos\"",
+                    "\"sheet\": \"Notas\"",
                 )),
             ),
             (

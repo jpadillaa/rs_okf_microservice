@@ -20,11 +20,7 @@ source_spans:
     kind: "xlsx_range"
     sheet: "Supuestos"
     range: "A1:C4"
-  - id: "r-1"
-    source_id: "original"
-    kind: "xlsx_range"
-    sheet: "Supuestos"
-    range: "A1:C4"
+block_spans: "/contenido/hoja-003.spans.json"
 ---
 
 # Supuestos

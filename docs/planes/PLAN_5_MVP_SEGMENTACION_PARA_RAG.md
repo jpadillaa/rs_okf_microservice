@@ -20,7 +20,7 @@ El primer hito observable es SEG3. El PDF `informe_tecnico` ya tiene un fragment
 
 ## SEG1. Extraer el validador y preparar las entradas
 
-**Entrega.** Extraer del conversor una biblioteca Rust versionada que valide el contenedor, el original incluido, las identidades, las relaciones y los localizadores. Mantener el comando existente como consumidor de la biblioteca. Añadir en el segmentador la admisión explícita del perfil y la validación en ejecución del frontmatter y de los archivos PDF, PPTX y DOCX `block_spans` contra el esquema empacado. Preparar la generación de ZIP a partir de los originales públicos y registrar la revisión y configuración del productor. [Validador del productor](../../src/validate.rs) · [Esquema del perfil](../especificacion/perfil-1.24.0.schema.json)
+**Entrega.** Extraer del conversor una biblioteca Rust versionada que valide el contenedor, el original incluido, las identidades, las relaciones y los localizadores. Mantener el comando existente como consumidor de la biblioteca. Añadir en el segmentador la admisión explícita del perfil y la validación en ejecución del frontmatter y de los archivos PDF, PPTX, DOCX y XLSX `block_spans` contra el esquema empacado. Preparar la generación de ZIP a partir de los originales públicos y registrar la revisión y configuración del productor. [Validador del productor](../../src/validate.rs) · [Esquema del perfil](../especificacion/perfil-1.24.0.schema.json)
 
 **Criterios de aceptación**
 

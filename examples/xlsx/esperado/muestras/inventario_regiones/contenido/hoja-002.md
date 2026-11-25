@@ -19,11 +19,7 @@ source_spans:
     kind: "xlsx_range"
     sheet: "Dinámica"
     range: "A1:B6"
-  - id: "r-1"
-    source_id: "original"
-    kind: "xlsx_range"
-    sheet: "Dinámica"
-    range: "A1:B6"
+block_spans: "/contenido/hoja-002.spans.json"
 ---
 
 # Dinámica

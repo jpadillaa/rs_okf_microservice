@@ -19,11 +19,7 @@ source_spans:
     kind: "xlsx_range"
     sheet: "Formatos"
     range: "A1:C15"
-  - id: "r-1"
-    source_id: "original"
-    kind: "xlsx_range"
-    sheet: "Formatos"
-    range: "A1:C15"
+block_spans: "/contenido/hoja-003.spans.json"
 ---
 
 # Formatos

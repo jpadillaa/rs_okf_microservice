@@ -18,16 +18,7 @@ source_spans:
     kind: "xlsx_range"
     sheet: "Resumen"
     range: "A1:F12"
-  - id: "r-1"
-    source_id: "original"
-    kind: "xlsx_range"
-    sheet: "Resumen"
-    range: "A1:F8"
-  - id: "r-2"
-    source_id: "original"
-    kind: "xlsx_range"
-    sheet: "Resumen"
-    range: "A10:A12"
+block_spans: "/contenido/hoja-001.spans.json"
 ---
 
 # Resumen

@@ -18,11 +18,7 @@ source_spans:
     kind: "xlsx_range"
     sheet: "Notas"
     range: "A1:A7"
-  - id: "r-1"
-    source_id: "original"
-    kind: "xlsx_range"
-    sheet: "Notas"
-    range: "A1:A7"
+block_spans: "/contenido/hoja-004.spans.json"
 ---
 
 # Notas

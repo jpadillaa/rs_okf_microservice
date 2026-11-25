@@ -1,0 +1,6 @@
+{
+  "concept": "contenido/hoja-002-region-01.md",
+  "source_spans": [
+    {"id": "muestra", "source_id": "original", "kind": "xlsx_range", "sheet": "Detalle", "range": "A1:G11"}
+  ]
+}

@@ -19,21 +19,7 @@ source_spans:
     kind: "xlsx_range"
     sheet: "Precios"
     range: "A1:D8"
-  - id: "r-1"
-    source_id: "original"
-    kind: "xlsx_range"
-    sheet: "Precios"
-    range: "A1:D4"
-  - id: "r-2"
-    source_id: "original"
-    kind: "xlsx_range"
-    sheet: "Precios"
-    range: "A6:B6"
-  - id: "r-3"
-    source_id: "original"
-    kind: "xlsx_range"
-    sheet: "Precios"
-    range: "A8"
+block_spans: "/contenido/hoja-001.spans.json"
 ---
 
 # Precios

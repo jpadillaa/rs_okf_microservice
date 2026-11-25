@@ -17,11 +17,7 @@ source_spans:
     kind: "xlsx_range"
     sheet: "Detalle"
     range: "A1:G301"
-  - id: "muestra"
-    source_id: "original"
-    kind: "xlsx_range"
-    sheet: "Detalle"
-    range: "A1:G11"
+block_spans: "/contenido/hoja-002-region-01.spans.json"
 ---
 
 # Tabla «TablaDetalle»

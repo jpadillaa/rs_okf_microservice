@@ -671,10 +671,8 @@ impl Builder<'_> {
             layout.data_rows.len(),
             self.table_md(sh, r, layout, &sample, links)
         ));
-        let spans = vec![
-            range_span("region", &info.name, &r.rect),
-            range_span("muestra", &info.name, &sample_rect),
-        ];
+        let spans = vec![range_span("region", &info.name, &r.rect)];
+        let blocks = vec![range_span("muestra", &info.name, &sample_rect)];
         let missing = cells.iter().any(|c| c.kind == Kind::NoValue);
         let description = format!(
             "Región {} de la hoja «{}» del libro {}: {} y {}, con datos completos en CSV.",
@@ -695,6 +693,9 @@ impl Builder<'_> {
         );
         let file = format!("{base}.md");
         self.note_unresolved(&info.name, &body);
+        let fields = self
+            .out
+            .block_spans(&format!("contenido/{file}"), fields, blocks)?;
         // Una región grande es hija del concepto de su hoja.
         self.out.concept_in(
             &format!("contenido/{file}"),
@@ -861,6 +862,7 @@ impl Builder<'_> {
         let part = info.part.clone();
         let mut body = format!("# {}\n\n", escape_inline(&info.name));
         let mut spans = Vec::new();
+        let mut blocks = Vec::new();
         match (&info.kind, part) {
             (SheetKind::Chart, Some(part)) => {
                 let rels = relationships(&mut self.z_in, &part);
@@ -906,6 +908,7 @@ impl Builder<'_> {
                     &mut summary,
                     &mut body,
                     &mut spans,
+                    &mut blocks,
                     &mut losses,
                     &mut notes,
                     &hidden_note,
@@ -954,8 +957,9 @@ impl Builder<'_> {
             spans,
         );
         self.note_unresolved(&info.name, &body);
-        self.out
-            .concept(&format!("contenido/{file}"), &fields, &body)?;
+        let path = format!("contenido/{file}");
+        let fields = self.out.block_spans(&path, fields, blocks)?;
+        self.out.concept(&path, &fields, &body)?;
         Ok(summary)
     }
 
@@ -983,6 +987,7 @@ impl Builder<'_> {
         summary: &mut SheetSummary,
         body: &mut String,
         spans: &mut Vec<Fields>,
+        blocks: &mut Vec<Fields>,
         losses: &mut Vec<String>,
         notes: &mut Vec<String>,
         hidden_note: &str,
@@ -1072,7 +1077,7 @@ impl Builder<'_> {
             }
             self.t.inline_regions += 1;
             let id = format!("r-{k}");
-            spans.push(range_span(&id, &info.name, &r.rect));
+            blocks.push(range_span(&id, &info.name, &r.rect));
             body.push_str(&format!(
                 "## {heading}\n\n<!-- okf-source-span: {id} -->\n{}\n",
                 self.region_block(sh, r, &layout, &links)
@@ -1590,12 +1595,8 @@ pub(crate) fn validate(
             if k == 0 && fm.get("title").and_then(YamlValue::as_str) != Some(info.name.as_str()) {
                 bail!("{f} no lleva el nombre exacto de la hoja «{}»", info.name)
             }
-            for s in fm
-                .get("source_spans")
-                .and_then(YamlValue::as_sequence)
-                .map(Vec::as_slice)
-                .unwrap_or_default()
-            {
+            let spans = concept_spans(z, names, f, &fm)?;
+            for s in &spans {
                 let (sheet, rect) = span_rect(s)
                     .with_context(|| format!("{f} tiene un localizador xlsx_range mal formado"))?;
                 if sheet != info.name {
@@ -1612,13 +1613,9 @@ pub(crate) fn validate(
                 }
             }
             if k > 0 {
-                let region = fm
-                    .get("source_spans")
-                    .and_then(YamlValue::as_sequence)
-                    .and_then(|s| {
-                        s.iter()
-                            .find(|s| s.get("id").and_then(YamlValue::as_str) == Some("region"))
-                    })
+                let region = spans
+                    .iter()
+                    .find(|s| s.get("id").and_then(YamlValue::as_str) == Some("region"))
                     .and_then(span_rect)
                     .map(|(_, r)| r)
                     .with_context(|| format!("{f} carece de un localizador «region» válido"))?;
@@ -1811,11 +1808,56 @@ mod tests {
         let mut out = HashMap::new();
         for i in 0..z.len() {
             let name = z.by_index(i).unwrap().name().unwrap().into_owned();
-            if name.ends_with(".md") || name.ends_with(".csv") || name.ends_with(".jsonl") {
+            if [".md", ".csv", ".jsonl", ".spans.json"]
+                .iter()
+                .any(|e| name.ends_with(e))
+            {
                 out.insert(name.clone(), read_text(&mut z, &name).unwrap());
             }
         }
         (state, out)
+    }
+
+    #[test]
+    fn the_frontmatter_keeps_the_range_and_the_inline_regions_and_sample_go_apart() {
+        let (_, md) = convert_example("examples/xlsx/muestras/ventas_trimestrales.xlsx");
+        let blocks = |name: &str| -> Vec<String> {
+            let json: serde_json::Value = serde_json::from_str(&md[name]).unwrap();
+            assert_eq!(json["concept"], name.replace(".spans.json", ".md"));
+            json["source_spans"]
+                .as_array()
+                .unwrap()
+                .iter()
+                .map(|b| {
+                    assert_eq!(b["kind"], "xlsx_range");
+                    b["id"].as_str().unwrap().to_string()
+                })
+                .collect()
+        };
+        // La hoja conserva `hoja` y las regiones en línea pasan al archivo.
+        let sheet = &md["contenido/hoja-001.md"];
+        assert!(sheet.contains("block_spans: \"/contenido/hoja-001.spans.json\""));
+        assert!(sheet.contains("id: \"hoja\""));
+        // La región con concepto propio conserva `region` y su muestra pasa al archivo.
+        let region = &md["contenido/hoja-002-region-01.md"];
+        assert!(region.contains("id: \"region\""));
+        let ids = [
+            ("contenido/hoja-001.spans.json", vec!["r-1", "r-2"]),
+            ("contenido/hoja-002-region-01.spans.json", vec!["muestra"]),
+        ];
+        for (file, expected) in ids {
+            let found = blocks(file);
+            assert_eq!(found, expected, "{file}");
+            let concept = &md[&file.replace(".spans.json", ".md")];
+            for id in found {
+                // Cada bloque conserva su marcador en el cuerpo y no queda en el frontmatter.
+                assert!(
+                    concept.contains(&format!("<!-- okf-source-span: {id} -->")),
+                    "{id}"
+                );
+                assert!(!concept.contains(&format!("id: \"{id}\"")), "{id}");
+            }
+        }
     }
 
     #[test]

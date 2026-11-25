@@ -533,6 +533,14 @@ solo el de la sección, y `build_bundle` los escribe con `BundleWriter::block_sp
 `docx::validate` los reúne con `bundle::concept_spans` y mantiene la comprobación de que
 cada uno cae dentro de su sección.
 
+En XLSX, desde el 1.24.0, el frontmatter de la hoja conserva `hoja` y el de una región
+grande conserva `region`; las regiones en línea (`r-<k>`, que `sheet_cells` acumula en
+`blocks`) y la muestra (`muestra`) se escriben con `BundleWriter::block_spans` en
+`contenido/hoja-NNN.spans.json` y `contenido/hoja-NNN-region-KK.spans.json`. `xlsx::validate`
+reúne unos y otros con `bundle::concept_spans` y aplica las mismas reglas: el rango `hoja`
+delimita la hoja, ningún otro sale de él y `region` fija las filas del CSV. `documento.md`
+conserva sus `hoja-<n>`.
+
 `pdf::validate` comprueba que cada caja esté en una página de su localizador, una por
 página, y dentro de la página con medio punto de margen. `pptx::validate` comprueba
 que cada localizador de forma sea de su diapositiva, se llame `f-<id>`, tenga un `id`

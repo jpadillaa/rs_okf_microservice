@@ -1,0 +1,9 @@
+{
+  "concept": "contenido/hoja-001.md",
+  "source_spans": [
+    {"id": "r-1", "source_id": "original", "kind": "xlsx_range", "sheet": "Almacenes", "range": "A1:C7"},
+    {"id": "r-2", "source_id": "original", "kind": "xlsx_range", "sheet": "Almacenes", "range": "E1:G4"},
+    {"id": "r-3", "source_id": "original", "kind": "xlsx_range", "sheet": "Almacenes", "range": "A10:D15"},
+    {"id": "r-4", "source_id": "original", "kind": "xlsx_range", "sheet": "Almacenes", "range": "J20"}
+  ]
+}
