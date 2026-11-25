@@ -527,6 +527,12 @@ sin formas con contenido no lleva el archivo. `pptx::validate` lee los localizad
 `bundle::concept_spans`, de modo que valida igual un bundle anterior al 1.24.0 (formas en
 el frontmatter) y uno nuevo.
 
+En DOCX, desde el 1.24.0, `Render::concept` devuelve igualmente los localizadores de bloque
+(`b-<desde>-<hasta>`, uno por marcador del cuerpo) aparte del frontmatter, que conserva
+solo el de la sección, y `build_bundle` los escribe con `BundleWriter::block_spans`.
+`docx::validate` los reúne con `bundle::concept_spans` y mantiene la comprobación de que
+cada uno cae dentro de su sección.
+
 `pdf::validate` comprueba que cada caja esté en una página de su localizador, una por
 página, y dentro de la página con medio punto de margen. `pptx::validate` comprueba
 que cada localizador de forma sea de su diapositiva, se llame `f-<id>`, tenga un `id`

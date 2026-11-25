@@ -18,31 +18,7 @@ source_spans:
     kind: "docx_blocks"
     from: 22
     to: 29
-  - id: "b-23"
-    source_id: "original"
-    kind: "docx_blocks"
-    from: 23
-    to: 23
-  - id: "b-24"
-    source_id: "original"
-    kind: "docx_blocks"
-    from: 24
-    to: 24
-  - id: "b-25"
-    source_id: "original"
-    kind: "docx_blocks"
-    from: 25
-    to: 25
-  - id: "b-26-28"
-    source_id: "original"
-    kind: "docx_blocks"
-    from: 26
-    to: 28
-  - id: "b-29"
-    source_id: "original"
-    kind: "docx_blocks"
-    from: 29
-    to: 29
+block_spans: "/contenido/seccion-004.spans.json"
 ---
 
 # De dónde viene el término

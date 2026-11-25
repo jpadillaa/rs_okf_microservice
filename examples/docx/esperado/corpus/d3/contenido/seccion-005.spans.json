@@ -1,0 +1,7 @@
+{
+  "concept": "contenido/seccion-005.md",
+  "source_spans": [
+    {"id": "b-31", "source_id": "original", "kind": "docx_blocks", "from": 31, "to": 31},
+    {"id": "b-32-37", "source_id": "original", "kind": "docx_blocks", "from": 32, "to": 37}
+  ]
+}

@@ -17,41 +17,7 @@ source_spans:
     kind: "docx_blocks"
     from: 8
     to: 15
-  - id: "b-9"
-    source_id: "original"
-    kind: "docx_blocks"
-    from: 9
-    to: 9
-  - id: "b-10"
-    source_id: "original"
-    kind: "docx_blocks"
-    from: 10
-    to: 10
-  - id: "b-11"
-    source_id: "original"
-    kind: "docx_blocks"
-    from: 11
-    to: 11
-  - id: "b-12"
-    source_id: "original"
-    kind: "docx_blocks"
-    from: 12
-    to: 12
-  - id: "b-13"
-    source_id: "original"
-    kind: "docx_blocks"
-    from: 13
-    to: 13
-  - id: "b-14"
-    source_id: "original"
-    kind: "docx_blocks"
-    from: 14
-    to: 14
-  - id: "b-15"
-    source_id: "original"
-    kind: "docx_blocks"
-    from: 15
-    to: 15
+block_spans: "/contenido/seccion-002.spans.json"
 ---
 
 # Anexo B. Material externo

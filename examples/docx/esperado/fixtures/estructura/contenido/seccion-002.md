@@ -17,26 +17,7 @@ source_spans:
     kind: "docx_blocks"
     from: 9
     to: 13
-  - id: "b-10"
-    source_id: "original"
-    kind: "docx_blocks"
-    from: 10
-    to: 10
-  - id: "b-11"
-    source_id: "original"
-    kind: "docx_blocks"
-    from: 11
-    to: 11
-  - id: "b-12"
-    source_id: "original"
-    kind: "docx_blocks"
-    from: 12
-    to: 12
-  - id: "b-13"
-    source_id: "original"
-    kind: "docx_blocks"
-    from: 13
-    to: 13
+block_spans: "/contenido/seccion-002.spans.json"
 ---
 
 # Datos

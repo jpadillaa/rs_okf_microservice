@@ -1450,8 +1450,10 @@ mod tests {
                 },
             ),
             ("localizador de bloque fuera de su sección", &|n, md| {
-                if n == "contenido/seccion-002.md" {
-                    md.replace("from: 10\n    to: 10\n", "from: 3\n    to: 3\n")
+                // Desde el perfil 1.24.0 los localizadores de bloque están en el archivo
+                // `block_spans` del concepto.
+                if n == "contenido/seccion-002.spans.json" {
+                    md.replace("\"from\": 10, \"to\": 10", "\"from\": 3, \"to\": 3")
                 } else {
                     md
                 }

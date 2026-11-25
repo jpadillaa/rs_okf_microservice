@@ -18,36 +18,7 @@ source_spans:
     kind: "docx_blocks"
     from: 48
     to: 60
-  - id: "b-49"
-    source_id: "original"
-    kind: "docx_blocks"
-    from: 49
-    to: 49
-  - id: "b-50-54"
-    source_id: "original"
-    kind: "docx_blocks"
-    from: 50
-    to: 54
-  - id: "b-55"
-    source_id: "original"
-    kind: "docx_blocks"
-    from: 55
-    to: 55
-  - id: "b-57"
-    source_id: "original"
-    kind: "docx_blocks"
-    from: 57
-    to: 57
-  - id: "b-58-59"
-    source_id: "original"
-    kind: "docx_blocks"
-    from: 58
-    to: 59
-  - id: "b-60"
-    source_id: "original"
-    kind: "docx_blocks"
-    from: 60
-    to: 60
+block_spans: "/contenido/seccion-007.spans.json"
 ---
 
 # El harness frente al resto de la arquitectura

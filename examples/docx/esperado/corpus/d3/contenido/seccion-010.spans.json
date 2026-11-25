@@ -1,0 +1,13 @@
+{
+  "concept": "contenido/seccion-010.md",
+  "source_spans": [
+    {"id": "b-117", "source_id": "original", "kind": "docx_blocks", "from": 117, "to": 117},
+    {"id": "b-119", "source_id": "original", "kind": "docx_blocks", "from": 119, "to": 119},
+    {"id": "b-120", "source_id": "original", "kind": "docx_blocks", "from": 120, "to": 120},
+    {"id": "b-122", "source_id": "original", "kind": "docx_blocks", "from": 122, "to": 122},
+    {"id": "b-123-126", "source_id": "original", "kind": "docx_blocks", "from": 123, "to": 126},
+    {"id": "b-127", "source_id": "original", "kind": "docx_blocks", "from": 127, "to": 127},
+    {"id": "b-129", "source_id": "original", "kind": "docx_blocks", "from": 129, "to": 129},
+    {"id": "b-130", "source_id": "original", "kind": "docx_blocks", "from": 130, "to": 130}
+  ]
+}

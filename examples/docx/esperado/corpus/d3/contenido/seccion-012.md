@@ -17,11 +17,7 @@ source_spans:
     kind: "docx_blocks"
     from: 137
     to: 144
-  - id: "b-138-144"
-    source_id: "original"
-    kind: "docx_blocks"
-    from: 138
-    to: 144
+block_spans: "/contenido/seccion-012.spans.json"
 ---
 
 # Referencias

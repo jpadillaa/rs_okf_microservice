@@ -17,21 +17,7 @@ source_spans:
     kind: "docx_blocks"
     from: 25
     to: 30
-  - id: "b-26"
-    source_id: "original"
-    kind: "docx_blocks"
-    from: 26
-    to: 26
-  - id: "b-27"
-    source_id: "original"
-    kind: "docx_blocks"
-    from: 27
-    to: 27
-  - id: "b-28-30"
-    source_id: "original"
-    kind: "docx_blocks"
-    from: 28
-    to: 30
+block_spans: "/contenido/seccion-004.spans.json"
 ---
 
 # 3. Conclusiones

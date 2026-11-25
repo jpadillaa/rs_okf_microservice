@@ -18,36 +18,7 @@ source_spans:
     kind: "docx_blocks"
     from: 25
     to: 38
-  - id: "b-26"
-    source_id: "original"
-    kind: "docx_blocks"
-    from: 26
-    to: 26
-  - id: "b-27"
-    source_id: "original"
-    kind: "docx_blocks"
-    from: 27
-    to: 27
-  - id: "b-28"
-    source_id: "original"
-    kind: "docx_blocks"
-    from: 28
-    to: 28
-  - id: "b-29-31"
-    source_id: "original"
-    kind: "docx_blocks"
-    from: 29
-    to: 31
-  - id: "b-32"
-    source_id: "original"
-    kind: "docx_blocks"
-    from: 32
-    to: 32
-  - id: "b-33-38"
-    source_id: "original"
-    kind: "docx_blocks"
-    from: 33
-    to: 38
+block_spans: "/contenido/seccion-003.spans.json"
 ---
 
 # Semana 3: Fundamentos de RAG (Pipeline de recuperación)

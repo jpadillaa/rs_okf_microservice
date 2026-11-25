@@ -18,26 +18,7 @@ source_spans:
     kind: "docx_blocks"
     from: 80
     to: 93
-  - id: "b-81"
-    source_id: "original"
-    kind: "docx_blocks"
-    from: 81
-    to: 81
-  - id: "b-82-88"
-    source_id: "original"
-    kind: "docx_blocks"
-    from: 82
-    to: 88
-  - id: "b-89"
-    source_id: "original"
-    kind: "docx_blocks"
-    from: 89
-    to: 89
-  - id: "b-90-93"
-    source_id: "original"
-    kind: "docx_blocks"
-    from: 90
-    to: 93
+block_spans: "/contenido/seccion-007.spans.json"
 ---
 
 # Semana 7: Seguridad

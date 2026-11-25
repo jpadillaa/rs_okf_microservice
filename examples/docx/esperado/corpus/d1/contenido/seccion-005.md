@@ -18,56 +18,7 @@ source_spans:
     kind: "docx_blocks"
     from: 43
     to: 64
-  - id: "b-44"
-    source_id: "original"
-    kind: "docx_blocks"
-    from: 44
-    to: 44
-  - id: "b-45"
-    source_id: "original"
-    kind: "docx_blocks"
-    from: 45
-    to: 45
-  - id: "b-46"
-    source_id: "original"
-    kind: "docx_blocks"
-    from: 46
-    to: 46
-  - id: "b-47-50"
-    source_id: "original"
-    kind: "docx_blocks"
-    from: 47
-    to: 50
-  - id: "b-51"
-    source_id: "original"
-    kind: "docx_blocks"
-    from: 51
-    to: 51
-  - id: "b-52-58"
-    source_id: "original"
-    kind: "docx_blocks"
-    from: 52
-    to: 58
-  - id: "b-59"
-    source_id: "original"
-    kind: "docx_blocks"
-    from: 59
-    to: 59
-  - id: "b-60-61"
-    source_id: "original"
-    kind: "docx_blocks"
-    from: 60
-    to: 61
-  - id: "b-62"
-    source_id: "original"
-    kind: "docx_blocks"
-    from: 62
-    to: 62
-  - id: "b-63-64"
-    source_id: "original"
-    kind: "docx_blocks"
-    from: 63
-    to: 64
+block_spans: "/contenido/seccion-005.spans.json"
 ---
 
 # Semana 5: RAG Avanzado

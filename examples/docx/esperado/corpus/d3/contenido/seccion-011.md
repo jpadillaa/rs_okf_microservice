@@ -18,31 +18,7 @@ source_spans:
     kind: "docx_blocks"
     from: 131
     to: 136
-  - id: "b-132"
-    source_id: "original"
-    kind: "docx_blocks"
-    from: 132
-    to: 132
-  - id: "b-133"
-    source_id: "original"
-    kind: "docx_blocks"
-    from: 133
-    to: 133
-  - id: "b-134"
-    source_id: "original"
-    kind: "docx_blocks"
-    from: 134
-    to: 134
-  - id: "b-135"
-    source_id: "original"
-    kind: "docx_blocks"
-    from: 135
-    to: 135
-  - id: "b-136"
-    source_id: "original"
-    kind: "docx_blocks"
-    from: 136
-    to: 136
+block_spans: "/contenido/seccion-011.spans.json"
 ---
 
 # El harness como plano de control

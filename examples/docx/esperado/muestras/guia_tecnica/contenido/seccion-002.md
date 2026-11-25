@@ -18,36 +18,7 @@ source_spans:
     kind: "docx_blocks"
     from: 4
     to: 11
-  - id: "b-5"
-    source_id: "original"
-    kind: "docx_blocks"
-    from: 5
-    to: 5
-  - id: "b-6"
-    source_id: "original"
-    kind: "docx_blocks"
-    from: 6
-    to: 6
-  - id: "b-7"
-    source_id: "original"
-    kind: "docx_blocks"
-    from: 7
-    to: 7
-  - id: "b-8"
-    source_id: "original"
-    kind: "docx_blocks"
-    from: 8
-    to: 8
-  - id: "b-9"
-    source_id: "original"
-    kind: "docx_blocks"
-    from: 9
-    to: 9
-  - id: "b-10"
-    source_id: "original"
-    kind: "docx_blocks"
-    from: 10
-    to: 10
+block_spans: "/contenido/seccion-002.spans.json"
 ---
 
 # Fundamentos

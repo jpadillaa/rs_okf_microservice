@@ -17,11 +17,7 @@ source_spans:
     kind: "docx_blocks"
     from: 1
     to: 2
-  - id: "b-2"
-    source_id: "original"
-    kind: "docx_blocks"
-    from: 2
-    to: 2
+block_spans: "/contenido/seccion-001.spans.json"
 ---
 
 # Harness en agentes de inteligencia artificial

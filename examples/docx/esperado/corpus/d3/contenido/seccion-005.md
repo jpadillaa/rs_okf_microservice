@@ -18,16 +18,7 @@ source_spans:
     kind: "docx_blocks"
     from: 30
     to: 37
-  - id: "b-31"
-    source_id: "original"
-    kind: "docx_blocks"
-    from: 31
-    to: 31
-  - id: "b-32-37"
-    source_id: "original"
-    kind: "docx_blocks"
-    from: 32
-    to: 37
+block_spans: "/contenido/seccion-005.spans.json"
 ---
 
 # Lo que un harness no es

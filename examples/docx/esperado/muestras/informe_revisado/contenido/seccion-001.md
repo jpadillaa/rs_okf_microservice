@@ -17,16 +17,7 @@ source_spans:
     kind: "docx_blocks"
     from: 1
     to: 7
-  - id: "b-2"
-    source_id: "original"
-    kind: "docx_blocks"
-    from: 2
-    to: 2
-  - id: "b-3-7"
-    source_id: "original"
-    kind: "docx_blocks"
-    from: 3
-    to: 7
+block_spans: "/contenido/seccion-001.spans.json"
 ---
 
 # Informe de evaluación del asistente RAG

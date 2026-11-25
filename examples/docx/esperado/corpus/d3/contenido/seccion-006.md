@@ -18,36 +18,7 @@ source_spans:
     kind: "docx_blocks"
     from: 38
     to: 47
-  - id: "b-39"
-    source_id: "original"
-    kind: "docx_blocks"
-    from: 39
-    to: 39
-  - id: "b-40-43"
-    source_id: "original"
-    kind: "docx_blocks"
-    from: 40
-    to: 43
-  - id: "b-44"
-    source_id: "original"
-    kind: "docx_blocks"
-    from: 44
-    to: 44
-  - id: "b-45"
-    source_id: "original"
-    kind: "docx_blocks"
-    from: 45
-    to: 45
-  - id: "b-46"
-    source_id: "original"
-    kind: "docx_blocks"
-    from: 46
-    to: 46
-  - id: "b-47"
-    source_id: "original"
-    kind: "docx_blocks"
-    from: 47
-    to: 47
+block_spans: "/contenido/seccion-006.spans.json"
 ---
 
 # Cuándo un sistema puede considerarse un harness

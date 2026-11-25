@@ -17,36 +17,7 @@ source_spans:
     kind: "docx_blocks"
     from: 94
     to: 106
-  - id: "b-95"
-    source_id: "original"
-    kind: "docx_blocks"
-    from: 95
-    to: 95
-  - id: "b-96"
-    source_id: "original"
-    kind: "docx_blocks"
-    from: 96
-    to: 96
-  - id: "b-97"
-    source_id: "original"
-    kind: "docx_blocks"
-    from: 97
-    to: 97
-  - id: "b-98-99"
-    source_id: "original"
-    kind: "docx_blocks"
-    from: 98
-    to: 99
-  - id: "b-100"
-    source_id: "original"
-    kind: "docx_blocks"
-    from: 100
-    to: 100
-  - id: "b-101-104"
-    source_id: "original"
-    kind: "docx_blocks"
-    from: 101
-    to: 104
+block_spans: "/contenido/seccion-008.spans.json"
 ---
 
 # Semana 8: Varios

@@ -17,66 +17,7 @@ source_spans:
     kind: "docx_blocks"
     from: 40
     to: 70
-  - id: "b-41"
-    source_id: "original"
-    kind: "docx_blocks"
-    from: 41
-    to: 41
-  - id: "b-43"
-    source_id: "original"
-    kind: "docx_blocks"
-    from: 43
-    to: 43
-  - id: "b-44"
-    source_id: "original"
-    kind: "docx_blocks"
-    from: 44
-    to: 44
-  - id: "b-45-52"
-    source_id: "original"
-    kind: "docx_blocks"
-    from: 45
-    to: 52
-  - id: "b-53"
-    source_id: "original"
-    kind: "docx_blocks"
-    from: 53
-    to: 53
-  - id: "b-55"
-    source_id: "original"
-    kind: "docx_blocks"
-    from: 55
-    to: 55
-  - id: "b-56"
-    source_id: "original"
-    kind: "docx_blocks"
-    from: 56
-    to: 56
-  - id: "b-57-65"
-    source_id: "original"
-    kind: "docx_blocks"
-    from: 57
-    to: 65
-  - id: "b-66"
-    source_id: "original"
-    kind: "docx_blocks"
-    from: 66
-    to: 66
-  - id: "b-68"
-    source_id: "original"
-    kind: "docx_blocks"
-    from: 68
-    to: 68
-  - id: "b-69"
-    source_id: "original"
-    kind: "docx_blocks"
-    from: 69
-    to: 69
-  - id: "b-70"
-    source_id: "original"
-    kind: "docx_blocks"
-    from: 70
-    to: 70
+block_spans: "/contenido/seccion-007.spans.json"
 ---
 
 # Entregables

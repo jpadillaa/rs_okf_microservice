@@ -18,16 +18,7 @@ source_spans:
     kind: "docx_blocks"
     from: 39
     to: 42
-  - id: "b-40"
-    source_id: "original"
-    kind: "docx_blocks"
-    from: 40
-    to: 40
-  - id: "b-41-42"
-    source_id: "original"
-    kind: "docx_blocks"
-    from: 41
-    to: 42
+block_spans: "/contenido/seccion-004.spans.json"
 ---
 
 # Semana 4: Observabilidad

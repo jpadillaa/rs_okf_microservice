@@ -18,21 +18,7 @@ source_spans:
     kind: "docx_blocks"
     from: 30
     to: 33
-  - id: "b-31"
-    source_id: "original"
-    kind: "docx_blocks"
-    from: 31
-    to: 31
-  - id: "b-32"
-    source_id: "original"
-    kind: "docx_blocks"
-    from: 32
-    to: 32
-  - id: "b-33"
-    source_id: "original"
-    kind: "docx_blocks"
-    from: 33
-    to: 33
+block_spans: "/contenido/seccion-005.spans.json"
 ---
 
 # Paso No. 3 - Análisis comparativo de costo-beneficio entre APIs de IA generativa y despliegue on-premise

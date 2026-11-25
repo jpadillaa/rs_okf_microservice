@@ -17,31 +17,7 @@ source_spans:
     kind: "docx_blocks"
     from: 1
     to: 7
-  - id: "b-3"
-    source_id: "original"
-    kind: "docx_blocks"
-    from: 3
-    to: 3
-  - id: "b-4"
-    source_id: "original"
-    kind: "docx_blocks"
-    from: 4
-    to: 4
-  - id: "b-5"
-    source_id: "original"
-    kind: "docx_blocks"
-    from: 5
-    to: 5
-  - id: "b-6"
-    source_id: "original"
-    kind: "docx_blocks"
-    from: 6
-    to: 6
-  - id: "b-7"
-    source_id: "original"
-    kind: "docx_blocks"
-    from: 7
-    to: 7
+block_spans: "/contenido/seccion-001.spans.json"
 ---
 
 # Anexo A. Proceso de evaluación

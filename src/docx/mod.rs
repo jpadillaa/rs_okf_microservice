@@ -933,9 +933,15 @@ impl Render<'_> {
         format!("{}\n", table_markdown(&rows))
     }
 
-    /// Markdown del concepto `k` y la lista de sus localizadores de bloque.
-    /// Frontmatter y cuerpo del concepto de la sección `k`.
-    fn concept(&mut self, k: usize, filename: &str, generated: &str) -> (Fields, String) {
+    /// Frontmatter, cuerpo y localizadores de bloque del concepto de la sección `k`. El
+    /// frontmatter conserva solo el localizador de la sección; los de bloque van aparte
+    /// para `BundleWriter::block_spans` (perfil 1.24.0).
+    fn concept(
+        &mut self,
+        k: usize,
+        filename: &str,
+        generated: &str,
+    ) -> (Fields, String, Vec<Fields>) {
         let outline = self.outline;
         let ex = self.ex;
         let sec = &outline.sections[k];
@@ -1199,8 +1205,8 @@ impl Render<'_> {
         let blocks = |id: &str, from: usize, to: usize| {
             span(id, "docx_blocks").with("from", from).with("to", to)
         };
-        let mut source_spans = vec![blocks("seccion", sec.from + 1, sec.to + 1)];
-        source_spans.extend(spans.iter().map(|(id, a, b)| blocks(id, *a, *b)));
+        let source_spans = vec![blocks("seccion", sec.from + 1, sec.to + 1)];
+        let block_spans: Vec<Fields> = spans.iter().map(|(id, a, b)| blocks(id, *a, *b)).collect();
         let kind = if outline.split.is_some() {
             "Source Section"
         } else {
@@ -1221,7 +1227,7 @@ impl Render<'_> {
         }
         out.push_str(&aux);
         let out = self.resolve_refs(&out, false);
-        (fields, out)
+        (fields, out, block_spans)
     }
 
     /// Sustituye los enlaces internos de un texto ya escrito: el que apunta a un marcador
@@ -1290,9 +1296,11 @@ pub(crate) fn build_bundle(
     let mut entries = String::new();
     let mut content_entries = String::new();
     for k in 0..outline.sections.len() {
-        let (fields, md) = r.concept(k, filename, &generated);
+        let (fields, md, spans) = r.concept(k, filename, &generated);
         let file = outline.file(k);
-        out.concept(&format!("contenido/{file}"), &fields, &md)?;
+        let path = format!("contenido/{file}");
+        let fields = out.block_spans(&path, fields, spans)?;
+        out.concept(&path, &fields, &md)?;
         let sec = &outline.sections[k];
         entries.push_str(&index_entry(sec, &format!("contenido/{file}")));
         content_entries.push_str(&index_entry(sec, &file));
@@ -1693,10 +1701,11 @@ pub(crate) fn validate(
     let mut next = 1u64;
     for name in &expected {
         let fm = frontmatter(&read_text(z, name)?)?;
-        let spans = fm
-            .get("source_spans")
-            .and_then(YamlValue::as_sequence)
-            .with_context(|| format!("{name} carece de source_spans"))?;
+        if fm.get("source_spans").is_none() {
+            bail!("{name} carece de source_spans")
+        }
+        // El de la sección y, desde el perfil 1.24.0, los de bloque del archivo `block_spans`.
+        let spans = concept_spans(z, names, name, &fm)?;
         let section = spans
             .iter()
             .find(|s| s.get("id").and_then(YamlValue::as_str) == Some("seccion"))
@@ -1710,7 +1719,7 @@ pub(crate) fn validate(
                 section.0
             )
         }
-        for s in spans {
+        for s in &spans {
             match span_range(s) {
                 Some((a, b)) if a >= section.0 && b <= section.1 => {}
                 _ => bail!("{name} tiene un localizador de bloque fuera de su sección"),
@@ -1756,6 +1765,11 @@ mod tests {
 
     /// Convierte un DOCX y devuelve el contenido de cada entrada Markdown del bundle.
     fn convert_example(path: &str) -> (Extraction, String, HashMap<String, String>) {
+        convert_files(path, ".md")
+    }
+
+    /// Como `convert_example`, pero con los archivos del bundle que terminan en `suffix`.
+    fn convert_files(path: &str, suffix: &str) -> (Extraction, String, HashMap<String, String>) {
         let bytes = fs::read(path).unwrap_or_else(|e| panic!("no se pudo leer {path}: {e}"));
         let ex = extract(&bytes, 50_000).unwrap();
         let tmp = tempfile::tempdir().unwrap();
@@ -1780,7 +1794,7 @@ mod tests {
         let mut md = HashMap::new();
         for i in 0..z.len() {
             let name = z.by_index(i).unwrap().name().unwrap().into_owned();
-            if name.ends_with(".md") {
+            if name.ends_with(suffix) {
                 md.insert(name.clone(), read_text(&mut z, &name).unwrap());
             }
         }
@@ -2042,6 +2056,32 @@ mod tests {
         assert!(report.contains("Bloque 10: tabla con celdas combinadas"));
         assert!(report.contains("Bloque 11: cuadros de texto"));
         assert!(md["documento.md"].contains("- Encabezado: Informe interno"));
+    }
+
+    #[test]
+    fn the_frontmatter_keeps_the_section_span_and_the_blocks_go_apart() {
+        let path = "examples/docx/muestras/informe_revisado.docx";
+        let (_, _, md) = convert_example(path);
+        let (_, _, files) = convert_files(path, ".spans.json");
+        let section = &md["contenido/seccion-002.md"];
+        assert!(section.contains("block_spans: \"/contenido/seccion-002.spans.json\""));
+        let json: serde_json::Value =
+            serde_json::from_str(&files["contenido/seccion-002.spans.json"]).unwrap();
+        assert_eq!(json["concept"], "contenido/seccion-002.md");
+        let blocks = json["source_spans"].as_array().unwrap();
+        assert!(!blocks.is_empty());
+        for b in blocks {
+            // Cada bloque conserva su marcador en el cuerpo y no queda en el frontmatter.
+            let id = b["id"].as_str().unwrap();
+            assert_eq!(b["kind"], "docx_blocks");
+            assert!(
+                section.contains(&format!("<!-- okf-source-span: {id} -->")),
+                "{id}"
+            );
+            assert!(!section.contains(&format!("id: \"{id}\"")), "{id}");
+        }
+        // El frontmatter conserva el localizador de la sección.
+        assert!(section.contains("id: \"seccion\""));
     }
 
     #[test]
