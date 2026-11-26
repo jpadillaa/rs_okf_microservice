@@ -274,6 +274,37 @@ el enlace en ARM64. La campaña se ejecutó sin red y solo se conservaron sus co
 Esta medición local cumple el objetivo de dos horas de XLSX y se registra por separado
 del acumulado de GitHub Actions.
 
+**Verificación local de PPTX, DOCX y XLSX del 25 y 26 de noviembre de 2026.** Se repitió
+la campaña local tras mover las referencias de bloque a ficheros `.spans.json` (perfil
+1.24.0), sobre el commit `a265bda`, en Docker con Linux ARM64, `nightly-2026-11-01`, LLD
+y las opciones del flujo semanal (`-timeout=300 -rss_limit_mb=500 -max_len=104857600`).
+Ninguna campaña encontró fallos:
+
+| Formato | Ejecuciones | Mutación medida por el lanzador | Reloj de libFuzzer |
+| --- | ---: | ---: | ---: |
+| DOCX | 1 080 562 | 6241 s (carga de 78 s) | 7201 s |
+| XLSX | 1 872 286 | 6251 s (carga de 68 s) | 7201 s |
+| PPTX | 255 662 | 7143 s (carga de 59 s) | 7201 s |
+
+- **PPTX** cumple el objetivo de dos horas con el criterio del lanzador (presupuesto de
+  7200 s menos la carga) y sin ninguna suspensión del equipo.
+- **DOCX y XLSX** son la segunda tanda de ese día, tras una primera invalidada porque el
+  Mac se durmió y la máquina virtual de Docker se suspendió. En la segunda, el lanzador
+  mide con un reloj monotónico que excluye el tiempo suspendido, y libFuzzer con el reloj
+  de pared; la diferencia de unos 880 s indica que el equipo volvió a suspenderse una
+  parte de la ejecución. Con la medición del lanzador, DOCX queda unos 960 s por debajo
+  de las dos horas y no cierra su objetivo; XLSX ya lo cerró el 18 de noviembre.
+- **PPTX necesitó `-rss_limit_mb=1000`.** Con 500 MB una entrada del corpus agotó la
+  memoria del arnés (421 MB con el código nuevo y 438 MB con el anterior para la misma
+  entrada), así que no depende de este cambio. La rotación semanal de PPTX en la CI usa
+  500 MB y puede toparse con el mismo límite; el flujo no se ha modificado.
+- Dos intentos de PPTX se descartaron antes de esta campaña: uno por la suspensión del
+  equipo, y otro porque el corpus había crecido a 1734 entradas (194 MB) y su carga
+  provocó un `timeout` espurio. La campaña válida partió de las siete semillas estáticas
+  y con el equipo conectado a la corriente, y no sufrió suspensiones.
+- Para repetir una campaña larga en macOS hay que conectar el equipo a la corriente:
+  `caffeinate` no impide la suspensión con batería.
+
 ## Primera campaña completa y hallazgo pendiente
 
 La campaña local del 2 de noviembre, con el corpus ampliado durante las pruebas
