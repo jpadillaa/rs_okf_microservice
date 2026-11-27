@@ -2,7 +2,7 @@
 
 **Estado al 19 de noviembre de 2026.** Plan propuesto. Las siete etapas están pendientes.
 
-**Objetivo.** Entregar un microservicio que reciba por HTTP un bundle OKF publicado y devuelva fragmentos cuya evidencia pueda localizarse en el original. El MVP implementará el contrato `1.0`, el perfil documental `1.24.0` y la estrategia `estructura-1` para PDF, DOCX, PPTX y XLSX. La entrega termina en el ZIP verificado que recibe el cliente de ingesta. La creación del índice y la evaluación de recuperación pertenecen a la siguiente fase del pipeline. [Especificación del MVP](../especificacion/SEGMENTACION_PARA_RAG.md) · [Arquitectura técnica](../arquitectura/ARQUITECTURA_TECNICA_SEGMENTACION_PARA_RAG.md)
+**Objetivo.** Entregar un microservicio que reciba por HTTP un bundle OKF publicado y devuelva fragmentos cuya evidencia pueda localizarse en el original. El MVP implementará el contrato `1.0`, los perfiles documentales `1.24.0` y `1.25.0` y la estrategia `estructura-1` para PDF, DOCX, PPTX y XLSX. La entrega termina en el ZIP verificado que recibe el cliente de ingesta. La creación del índice y la evaluación de recuperación pertenecen a la siguiente fase del pipeline. [Especificación del MVP](../especificacion/SEGMENTACION_PARA_RAG.md) · [Arquitectura técnica](../arquitectura/ARQUITECTURA_TECNICA_SEGMENTACION_PARA_RAG.md)
 
 ## Secuencia de implementación
 
@@ -20,7 +20,7 @@ El primer hito observable es SEG3. El PDF `informe_tecnico` ya tiene un fragment
 
 ## SEG1. Extraer el validador y preparar las entradas
 
-**Entrega.** Extraer del conversor una biblioteca Rust versionada que valide el contenedor, el original incluido, las identidades, las relaciones y los localizadores. Mantener el comando existente como consumidor de la biblioteca. Añadir en el segmentador la admisión explícita del perfil y la validación en ejecución del frontmatter y de los archivos PDF, PPTX, DOCX y XLSX `block_spans` contra el esquema empacado. Preparar la generación de ZIP a partir de los originales públicos y registrar la revisión y configuración del productor. [Validador del productor](../../src/validate.rs) · [Esquema del perfil](../especificacion/perfil-1.24.0.schema.json)
+**Entrega.** Extraer del conversor una biblioteca Rust versionada que valide el contenedor, el original incluido, las identidades, las relaciones y los localizadores. Mantener el comando existente como consumidor de la biblioteca. Añadir en el segmentador la admisión explícita de los perfiles y la validación en ejecución del frontmatter y de los archivos PDF, PPTX, DOCX y XLSX `block_spans` contra el esquema empacado de la versión de cada bundle. Preparar la generación de ZIP a partir de los originales públicos y registrar la revisión y configuración del productor. [Validador del productor](../../src/validate.rs) · [Esquema del perfil](../especificacion/perfil-1.25.0.schema.json)
 
 **Criterios de aceptación**
 

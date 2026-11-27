@@ -1,6 +1,6 @@
 # Microservicio de segmentación de bundles OKF para RAG
 
-Propuesta de diseño del 19 de noviembre de 2026. La versión `1.0` del contrato del segmentador consume el perfil documental OKF `1.24.0`.
+Propuesta de diseño del 19 de noviembre de 2026. La versión `1.0` del contrato del segmentador consume los perfiles documentales OKF `1.24.0` y `1.25.0` (ampliado el 27 de noviembre de 2026).
 
 El servicio recibe un bundle OKF y produce fragmentos de texto que un índice de búsqueda puede incorporar. Cada fragmento conserva una ruta de regreso al archivo original, con la precisión que permite la fuente. Por ejemplo, al recuperar el importe de una venta, el consumidor podrá mostrar el valor junto con su hoja y celda. El mismo contrato permite señalar un párrafo en un PDF o una forma en una diapositiva.
 
@@ -12,10 +12,10 @@ El conversor extrae y valida el documento. El segmentador decide qué texto agru
 
 | Dato | Fuente y regla de admisión |
 | --- | --- |
-| Formato y versión | `index.md` declara OKF `0.2`. Se admite el perfil `1.24.0` y los formatos `pdf`, `docx`, `pptx` y `xlsx`. Un perfil anterior o posterior recibe el diagnóstico `unsupported_profile` para que el cliente distinga incompatibilidad de corrupción. |
+| Formato y versión | `index.md` declara OKF `0.2`. Se admiten los perfiles `1.24.0` y `1.25.0` y los formatos `pdf`, `docx`, `pptx` y `xlsx`. Los dos perfiles tienen los mismos campos, localizadores y archivos; el `1.25.0` solo cambia cómo el adaptador PDF infiere encabezados y lee el texto, de modo que el segmentador los trata igual. Un perfil anterior o posterior recibe el diagnóstico `unsupported_profile` para que el cliente distinga incompatibilidad de corrupción. |
 | Identidad | `documento.md` y `conversion-report.md` deben concordar en perfil, conversor, configuración, `conversion_id` y, cuando existan, `document_key`, `access` y `reproducible`. Se comprueban la huella del original incluido, la derivación de `conversion_id` y el `unit_id` de cada concepto según el perfil. |
 | Estado de origen | Se aceptan `complete` y `partial` del frontmatter del informe. Un bundle parcial válido aporta evidencia utilizable. Su estado y su informe acompañan el resultado. Un trabajo fallido del conversor carece de bundle publicable. |
-| Integridad | Se exige la conformidad del bundle con el perfil, incluido su esquema, relaciones, marcadores, localizadores y recursos referenciados. Las rutas de las entradas ZIP deben ser internas y únicas. Un enlace del perfil como `/contenido/texto.spans.json` se resuelve desde la raíz **del bundle**. Los enlaces externos se tratan como datos. [Esquema admitido](perfil-1.24.0.schema.json) |
+| Integridad | Se exige la conformidad del bundle con el perfil, incluido su esquema, relaciones, marcadores, localizadores y recursos referenciados. Las rutas de las entradas ZIP deben ser internas y únicas. Un enlace del perfil como `/contenido/texto.spans.json` se resuelve desde la raíz **del bundle**. Los enlaces externos se tratan como datos. Cada bundle se valida con el esquema de su versión: el del `1.24.0` coincide con el del `1.25.0` salvo la constante de `profile_version`, y se conserva en el historial de Git (anterior al commit `158069e`). [Esquema admitido](perfil-1.25.0.schema.json) |
 
 ### Respuestas HTTP
 
@@ -131,7 +131,7 @@ En `ventas_trimestrales.xlsx`, la pregunta «¿Qué importe figura para el cacao
 
 ## 6. Alcance y aceptación del primer MVP
 
-La primera entrega comprende una operación HTTP, un perfil de entrada, una estrategia fija y los cuatro formatos. Su resultado se puede inspeccionar y comprobar antes de elegir un motor de búsqueda. La generación de embeddings, la indexación, la recuperación y la selección de la versión vigente corresponden a etapas posteriores. El MVP usa los recursos y las transcripciones que ya produjo OKF.
+La primera entrega comprende una operación HTTP, dos perfiles de entrada con la misma estructura, una estrategia fija y los cuatro formatos. Su resultado se puede inspeccionar y comprobar antes de elegir un motor de búsqueda. La generación de embeddings, la indexación, la recuperación y la selección de la versión vigente corresponden a etapas posteriores. El MVP usa los recursos y las transcripciones que ya produjo OKF.
 
 | Prueba de aceptación | Resultado exigido |
 | --- | --- |
