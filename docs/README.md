@@ -11,7 +11,7 @@ Elige según lo que necesites.
 | Si quieres... | Lee primero | Después |
 | --- | --- | --- |
 | Probar el servicio | [Guía visual del repositorio](../README.md) | [Estado del proyecto](estado/ESTADO_DEL_PROYECTO.md), para saber qué esperar de cada formato |
-| Saber exactamente qué contiene un bundle | [Especificación OKF documental](especificacion/ESPECIFICACION_OKF.md) | [Esquema del frontmatter](especificacion/perfil-1.24.0.schema.json), para comprobarlo con una máquina |
+| Saber exactamente qué contiene un bundle | [Especificación OKF documental](especificacion/ESPECIFICACION_OKF.md) | [Esquema del frontmatter](especificacion/perfil-1.25.0.schema.json), para comprobarlo con una máquina |
 | Leer los bundles desde un sistema RAG | [Especificación, §2 y §3](especificacion/ESPECIFICACION_OKF.md) (identidad, procedencia y citas) | [Plan 3](planes/PLAN_3_CONTRATO_DE_SALIDA_PARA_RAG.md), que explica por qué existe cada campo |
 | Entender cómo está diseñado | [Arquitectura conceptual](arquitectura/ARQUITECTURA_CONCEPTUAL_MICROSERVICIO_OKF.md) | [Arquitectura técnica](arquitectura/ARQUITECTURA_TECNICA_MICROSERVICIO_OKF.md) |
 | Saber por qué se eligió una biblioteca o un método | [Stack tecnológico](decisiones/STACK_TECNOLOGICO_MICROSERVICIO_OKF.md) | Las [decisiones y mediciones](#decisiones-y-mediciones) |
@@ -46,7 +46,7 @@ flowchart TD
 | --- | --- |
 | [Especificación OKF documental](especificacion/ESPECIFICACION_OKF.md) | Archivos, frontmatter, recursos, procedencia, reglas por formato y validación, con el registro de cambios de cada versión del perfil. |
 | [Especificación propuesta del microservicio de segmentación para RAG](especificacion/SEGMENTACION_PARA_RAG.md) | Contrato del consumidor de bundles OKF, fragmentos citables por formato y criterios de aceptación del primer MVP. |
-| [Esquema del frontmatter, perfil 1.24.0](especificacion/perfil-1.24.0.schema.json) | JSON Schema de los campos de `documento.md`, el informe y cada tipo de concepto, y del archivo de localizadores de bloque PDF, PPTX, DOCX y XLSX, para comprobarlos mecánicamente. La carpeta guarda el de la versión actual y los anteriores cuyo contenido difiere; los de 1.10.0 a 1.15.0 eran idénticos al 1.16.0 salvo su número y siguen en el historial de Git. |
+| [Esquema del frontmatter, perfil 1.25.0](especificacion/perfil-1.25.0.schema.json) | JSON Schema de los campos de `documento.md`, el informe y cada tipo de concepto, y del archivo de localizadores de bloque PDF, PPTX, DOCX y XLSX, para comprobarlos mecánicamente. La carpeta guarda el de la versión actual y los anteriores cuyo contenido difiere; los de 1.10.0 a 1.15.0 eran idénticos al 1.16.0 salvo su número, y el de 1.24.0 al de 1.25.0; siguen en el historial de Git. |
 | [Esquema del frontmatter, perfil 1.23.0](especificacion/perfil-1.23.0.schema.json) | Esquema anterior compatible para los bundles ya publicados, con los localizadores de forma PPTX en el frontmatter; vale también para los perfiles 1.18.0 a 1.22.0, cuyos esquemas solo diferían en el número. |
 | [Esquema del frontmatter, perfil 1.17.0](especificacion/perfil-1.17.0.schema.json) | Esquema anterior compatible para los bundles ya publicados, sin `ocr.max_images` en la configuración. |
 | [Esquema del frontmatter, perfil 1.16.0](especificacion/perfil-1.16.0.schema.json) | Esquema anterior compatible para los bundles ya publicados, con los localizadores de bloque PDF en el frontmatter; vale también para los perfiles 1.10.0 a 1.15.0. |
@@ -72,7 +72,7 @@ flowchart TD
 | [Migración a PostgreSQL](decisiones/MIGRACION_POSTGRESQL.md) | Configuración desde `.env`, concurrencia y despliegue. |
 | [Compilación y empaquetado Docker](decisiones/COMPILACION_DOCKER.md) | Caché de dependencias, BuildKit local y en CI, runtime sobre `scratch` y mediciones de tamaño y reconstrucción. |
 | [OCR local](decisiones/OCR_LOCAL.md) | OCR opcional de los PDF escaneados: motor y modelos elegidos, alternativas, ajustes medidos (enderezado, anchos fijos, tamaño por la tinta), exactitud, tiempo y memoria. |
-| [Pruebas de calidad y carga con PDF reales](decisiones/PRUEBAS_PDF_REALES.md) | Método repetible, evaluación de texto y estructura, recursos y carga con tres PDF privados (346, 65 y 575 páginas); formularios, tablas, diagramas, capturas, listados OCR, carga sostenida y rendimiento de la conversión. |
+| [Pruebas de calidad y carga con PDF reales](decisiones/PRUEBAS_PDF_REALES.md) | Método repetible, evaluación de texto y estructura, recursos y carga con tres PDF privados (346, 65 y 575 páginas); formularios, tablas, diagramas, capturas, listados OCR, carga sostenida y rendimiento de la conversión. Cuatro artículos de arXiv con plantillas de congreso (perfil 1.25.0). |
 
 ### Estado y planes
 

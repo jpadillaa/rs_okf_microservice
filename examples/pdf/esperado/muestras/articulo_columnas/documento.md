@@ -1,6 +1,6 @@
 ---
 type: "Source Document"
-unit_id: "4074bde24e6e7370a61bbd4254bcb0d61e71d6f4482a87cbd5cf0ae85860f6a9/documento.md"
+unit_id: "345ead3f8e2a894a4e883d926b762ea5f4d29267e1915c59e428e32c982bce81/documento.md"
 title: "Lectura de documentos con varias columnas: un estudio con materiales artificiales"
 description: "Documento fuente articulo_columnas.pdf convertido a conceptos OKF por secciones."
 sources:
@@ -11,13 +11,13 @@ generated:
   at: "<generado>"
 converter_version: "0.1.0"
 converter_commit: "<commit>"
-profile_version: "1.24.0"
+profile_version: "1.25.0"
 conversion_settings:
   max_image_pixels: 33554432
   ocr:
     enabled: false
 settings_sha256: "ad1d7709796a5172b6ad18d538b1bef5780b44279dd787d15ecc82ede959ef16"
-conversion_id: "4074bde24e6e7370a61bbd4254bcb0d61e71d6f4482a87cbd5cf0ae85860f6a9"
+conversion_id: "345ead3f8e2a894a4e883d926b762ea5f4d29267e1915c59e428e32c982bce81"
 source_file:
   path: "references/original.pdf"
   sha256: "b08ccb47fae3bff5631bfb60acae93017c7ec3b1cf290d0c6ad871787704fe6c"

@@ -28,6 +28,7 @@ tempfile = "3"
 time = { version = "0.3.55", features = ["large-dates", "macros"] }
 tracing = "0.1"
 tracing-subscriber = { version = "0.3", features = ["env-filter"] }
+unicode-normalization = "0.1"
 utoipa = "6"
 utoipa-swagger-ui = { version = "10", default-features = false, features = ["axum", "vendored", "minified"] }
 uuid = { version = "1", features = ["v4"] }
@@ -38,7 +39,6 @@ zip = { version = "9.2.1", default-features = false, features = ["deflate"] }
 tower = { version = "0.5", features = ["util"] }
 http-body-util = "0.1"
 caseless = "0.2.2"
-unicode-normalization = "0.1"
 regex = "1"
 jsonschema = { version = "0.61.0", default-features = false }
 

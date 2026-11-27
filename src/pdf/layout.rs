@@ -178,7 +178,22 @@ pub(crate) fn lines(glyphs: &[Glyph]) -> (Vec<Line>, Vec<Line>) {
                 let t: String = l.glyphs.iter().map(|g| g.c).collect();
                 list_marker(&format!("{} x", t.trim())).is_some()
             };
-            let reach = if marker { MARKER_GAP } else { FRAGMENT_GAP };
+            // El número de un encabezado («1», «2.3») separado de su título por un
+            // hueco amplio, con el mismo tamaño y en negrita los dos.
+            let numbered = !marker
+                && l.glyphs.iter().all(|g| g.c.is_whitespace() || g.bold)
+                && r.glyphs.iter().all(|g| g.c.is_whitespace() || g.bold)
+                && (a.size - b.size).abs() <= 0.5
+                && heading_label(l.glyphs.iter().map(|g| g.c).collect::<String>().trim())
+                && r.glyphs
+                    .iter()
+                    .find(|g| !g.c.is_whitespace())
+                    .is_some_and(|g| g.c.is_uppercase());
+            let reach = if marker || numbered {
+                MARKER_GAP
+            } else {
+                FRAGMENT_GAP
+            };
             let same_line = (a.base - b.base).abs() <= 0.25 * small
                 && gap <= reach * large
                 && gap >= -0.5 * large;
@@ -1045,7 +1060,7 @@ pub(crate) struct Para {
 }
 
 impl Para {
-    fn new(line: Line) -> Self {
+    pub(crate) fn new(line: Line) -> Self {
         let (marker, line) = match (!line.mono).then(|| list_marker(&line.text())).flatten() {
             Some((label, _)) => (Some(label.clone()), strip_marker(line, &label)),
             None => (None, line),
@@ -1771,6 +1786,20 @@ fn flow_blocks(region: &Region, leaves: &[Leaf]) -> Vec<(Block, Rect, usize)> {
             .iter()
             .map(|&i| region.lines[i].x1)
             .fold(f32::MIN, f32::max);
+        // Borde de un texto justificado: donde terminan al menos la mitad de las líneas.
+        let justified = lines
+            .iter()
+            .map(|&i| {
+                let l = &region.lines[i];
+                let n = lines
+                    .iter()
+                    .filter(|&&j| (region.lines[j].x1 - l.x1).abs() <= 0.3 * l.size)
+                    .count();
+                (n, l.x1)
+            })
+            .max_by(|a, b| a.0.cmp(&b.0).then(b.1.total_cmp(&a.1)))
+            .filter(|(n, _)| lines.len() >= 4 && n * 2 >= lines.len())
+            .map(|(_, x1)| x1);
         let gaps: Vec<f32> = lines
             .windows(2)
             .map(|w| region.lines[w[1]].top() - region.lines[w[0]].bottom())
@@ -1788,7 +1817,7 @@ fn flow_blocks(region: &Region, leaves: &[Leaf]) -> Vec<(Block, Rect, usize)> {
                 Item::Line(l) => &region.lines[l],
             };
             if let Some((p, r)) = current.as_mut()
-                && continues(p, line, right, usual_gap)
+                && continues(p, line, right, justified, usual_gap)
             {
                 p.lines.push(line.clone());
                 *r = Rect {
@@ -1809,13 +1838,42 @@ fn flow_blocks(region: &Region, leaves: &[Leaf]) -> Vec<(Block, Rect, usize)> {
 }
 
 /// ¿La línea sigue el párrafo en curso?
-fn continues(p: &Para, line: &Line, right: f32, usual_gap: f32) -> bool {
+fn continues(p: &Para, line: &Line, right: f32, justified: Option<f32>, usual_gap: f32) -> bool {
     let prev = p.last();
     let text = line.text();
     if list_marker(&text).is_some() || line.mono != p.mono {
         return false;
     }
-    if (line.size - prev.size).abs() > 0.15 * prev.size || line.bold != prev.bold {
+    if (line.size - prev.size).abs() > 0.15 * prev.size {
+        return false;
+    }
+    let prev_text = prev.text();
+    // En texto justificado, la línea que llega a su borde está llena aunque la hoja sea
+    // más ancha (un título a todo el ancho sobre la columna).
+    let full = prev.x1 >= right - prev.size
+        || justified.is_some_and(|edge| (prev.x1 - edge).abs() <= 0.3 * prev.size);
+    // La negrita que cambia entre dos líneas corta el párrafo, salvo que la anterior
+    // llegue al margen sin cerrar la frase y la nueva empiece en minúscula: es un
+    // énfasis que sigue en la línea nueva.
+    if line.bold != prev.bold
+        && (p.mono
+            || terminal(&prev_text)
+            || !full
+            || !text.trim_start().starts_with(char::is_lowercase))
+    {
+        return false;
+    }
+    // Un título numerado breve («2 Related Work») no se une a la línea siguiente de
+    // otro tamaño.
+    if p.lines.len() == 1
+        && p.marker.is_none()
+        && (line.size - prev.size).abs() > 0.5
+        && prev.x1 < right - 3.0 * prev.size
+        && prev_text
+            .split_whitespace()
+            .next()
+            .is_some_and(section_number)
+    {
         return false;
     }
     let gap = line.top() - prev.bottom();
@@ -1833,10 +1891,8 @@ fn continues(p: &Para, line: &Line, right: f32, usual_gap: f32) -> bool {
     }
     // Fin de párrafo: la línea anterior termina la frase y queda corta, o la nueva
     // empieza sangrada.
-    let prev_text = prev.text();
-    if terminal(&prev_text)
-        && (prev.x1 < right - 3.0 * prev.size || line.x0 > prev.x0 + 0.8 * prev.size)
-        && p.marker.is_none()
+    let short = prev.x1 < right - 3.0 * prev.size && !full;
+    if terminal(&prev_text) && (short || line.x0 > prev.x0 + 0.8 * prev.size) && p.marker.is_none()
     {
         return false;
     }
@@ -1893,6 +1949,15 @@ fn page_number(t: &str) -> bool {
     !t.is_empty()
         && t.chars().count() <= 5
         && (t.chars().all(|c| c.is_ascii_digit()) || t.chars().all(|c| "ivxlc".contains(c)))
+}
+
+/// ¿Es el texto el número de un encabezado («2», «2.3») o la letra de un apéndice
+/// («A», «B.2»)?
+fn heading_label(t: &str) -> bool {
+    section_number(t)
+        || t.split_once('.').map_or(t, |(a, _)| a).len() == 1
+            && t.starts_with(|c: char| c.is_ascii_uppercase())
+            && (t.len() == 1 || section_number(&t[2..]) && t[1..].starts_with('.'))
 }
 
 /// ¿Es el texto un número de sección o de capítulo («2», «2.3», «10»)?
@@ -2604,6 +2669,58 @@ mod tests {
                 "Titulo general",
                 "la columna izquierda empieza aquí y sigue con una línea y una palabra partida al final.",
                 "la columna derecha tiene también su propio texto, que ocupa tres líneas y termina."
+            ]
+        );
+    }
+
+    #[test]
+    fn a_heading_number_joins_its_title_but_not_the_next_line() {
+        // «1» y su título, separados por un hueco de 1,5 tamaños, ambos en negrita.
+        let mut g = text_at("1", 50.0, 40.0, 12.0, true);
+        g.extend(text_at("Introduction", 74.0, 40.0, 12.0, true));
+        g.extend(text_at(
+            "Knowledge conflicts in retrieval.",
+            50.0,
+            58.0,
+            11.0,
+            true,
+        ));
+        g.extend(text_at(
+            "El texto corriente sigue en la columna con su propio formato.",
+            50.0,
+            72.0,
+            11.0,
+            false,
+        ));
+        let got = order(&g);
+        assert_eq!(got[0], "1 Introduction");
+        assert_eq!(got[1], "Knowledge conflicts in retrieval.");
+    }
+
+    #[test]
+    fn bold_emphasis_that_fills_a_line_does_not_split_the_paragraph() {
+        let (a, b) = ("This leads to a question: ", "Can a decision model");
+        let mut g = text_at(a, 50.0, 40.0, 10.0, false);
+        g.extend(text_at(b, 50.0 + 5.0 * a.len() as f32, 40.0, 10.0, true));
+        g.extend(text_at(
+            "replace a dedicated reranker while meeting the",
+            50.0,
+            52.0,
+            10.0,
+            true,
+        ));
+        g.extend(text_at(
+            "same goals? A model may fail.",
+            50.0,
+            64.0,
+            10.0,
+            false,
+        ));
+        assert_eq!(
+            order(&g),
+            [
+                "This leads to a question: Can a decision model replace a dedicated reranker \
+              while meeting the same goals? A model may fail."
             ]
         );
     }

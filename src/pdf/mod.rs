@@ -1922,6 +1922,8 @@ pub(crate) struct Outline {
     /// Los encabezados proceden del esquema (marcadores) del PDF.
     pub(crate) from_bookmarks: bool,
     pub(crate) unmatched_bookmarks: usize,
+    /// Encabezados inferidos por su numeración (los demás inferidos, por su tamaño).
+    pub(crate) numbered: usize,
     pub(crate) split: Option<u8>,
     pub(crate) sections: Vec<Section>,
     pub(crate) by_page: bool,
@@ -2096,6 +2098,282 @@ fn prepare_bookmarks(ex: &mut Extraction) {
     }
 }
 
+/// Encabezado inferido por su numeración.
+#[derive(Clone, Copy, Debug)]
+struct Numbered {
+    /// Profundidad de la numeración: 0 para «2», «II.» o «A.»; 1 para «2.1».
+    depth: u8,
+    /// Tamaño de letra (en medios puntos) de la unidad.
+    size: i32,
+    /// Sin número, con el mismo formato que los numerados de primer nivel.
+    companion: bool,
+}
+
+/// Esquema y valores de un número de sección.
+#[derive(Clone, Debug, PartialEq)]
+enum SectionNumber {
+    /// «2», «2.1.», «A.3»; `letter` si el primer componente es la letra de un apéndice
+    /// (que cuenta por su posición en el alfabeto).
+    Decimal { values: Vec<u32>, letter: bool },
+    /// «IV.», en mayúsculas.
+    Roman(u32),
+    /// «C.» o «C)», sin más componentes; `signed` es falso para la letra sola, que solo
+    /// cuenta como apéndice.
+    Letter { n: u32, signed: bool },
+}
+
+fn section_number(token: &str) -> Option<SectionNumber> {
+    if let Some(body) = token.strip_suffix(['.', ')'])
+        && !body.is_empty()
+        && body.len() <= 5
+        && body.chars().all(|c| matches!(c, 'I' | 'V' | 'X'))
+        // «V.» y «X.» son antes letras que números romanos.
+        && (body.len() > 1 || body == "I")
+    {
+        return roman(body).map(SectionNumber::Roman);
+    }
+    let body = token.strip_suffix('.').unwrap_or(token);
+    let parts: Vec<&str> = body.split('.').collect();
+    let letter = parts[0].len() == 1 && parts[0].chars().all(|c| c.is_ascii_uppercase());
+    if letter && parts.len() == 1 {
+        let n = parts[0].chars().next()? as u32 - 'A' as u32 + 1;
+        return Some(SectionNumber::Letter {
+            n,
+            signed: token.len() == 2,
+        });
+    }
+    let mut values = Vec::new();
+    for (k, part) in parts.iter().enumerate() {
+        if k == 0 && letter {
+            values.push(part.chars().next()? as u32 - 'A' as u32 + 1);
+        } else if (1..=2).contains(&part.len()) && part.chars().all(|c| c.is_ascii_digit()) {
+            values.push(part.parse().ok()?);
+        } else {
+            return None;
+        }
+    }
+    (values.iter().all(|&v| v > 0) && values.len() <= 4)
+        .then_some(SectionNumber::Decimal { values, letter })
+}
+
+/// Encabezados de un documento sin marcadores que los numera («1 Introduction»,
+/// «2.3 Results», «IV. EXPERIMENTS», «A. Proofs»), aunque tengan el tamaño del texto.
+///
+/// Un candidato es un párrafo breve (hasta dos líneas y 150 caracteres, sin puntuación
+/// final) que empieza por un número de sección seguido de un título en mayúscula, con
+/// formato propio (todo en negrita, todo en cursiva o el título en mayúsculas) y una
+/// letra de al menos el 75 % del texto corriente. Solo hay encabezados numerados si al
+/// menos tres de primer nivel siguen la serie desde el principio (1, 2, 3 o I, II, III),
+/// cada uno separado del anterior por al menos 100 caracteres de otro texto. Un número
+/// de varios componentes es encabezado si su primer componente es el de la sección en
+/// la que aparece; una letra sola, de un nivel por debajo si la numeración principal es
+/// romana, o de primer nivel tras la última sección (apéndices) si sigue su serie desde
+/// la A. Los párrafos de una línea sin número con el mismo tamaño y formato que los de
+/// primer nivel (en negrita o en mayúsculas), seguidos de texto que no es candidato y
+/// que suma al menos 80 caracteres hasta el siguiente, son encabezados de primer
+/// nivel: «Abstract», «References». Antes de la primera sección numerada solo puede
+/// serlo el último candidato.
+fn numbered_headings(units: &[Unit], body: i32) -> Vec<Option<Numbered>> {
+    struct Candidate {
+        number: Option<SectionNumber>,
+        size: i32,
+        bold: bool,
+        upper: bool,
+    }
+    let style = |u: &Unit| -> Option<(String, Candidate)> {
+        let Kind::Para(p) = &u.kind else { return None };
+        let text = para_text(u)?;
+        let text = text.trim();
+        if p.mono
+            || p.lines.len() > 2
+            || text.chars().count() > INFERRED_HEADING_MAX_CHARS
+            || text.ends_with(['.', ',', ';', ':'])
+            || ((p.size * 2.0).round() as i32) * 4 < body * 3
+        {
+            return None;
+        }
+        let runs = p.runs();
+        let visible = |r: &&Run| r.text.chars().any(char::is_alphanumeric);
+        let bold = runs.iter().filter(visible).all(|r| r.bold);
+        let italic = runs.iter().filter(visible).all(|r| r.italic);
+        let (token, title) = text.split_once(' ').unwrap_or(("", text));
+        let number = section_number(token);
+        let title = if number.is_some() { title.trim() } else { text };
+        let letters: Vec<char> = title.chars().filter(|c| c.is_alphabetic()).collect();
+        let upper = letters.len() >= 3 && letters.iter().all(|c| c.is_uppercase());
+        if !title.starts_with(char::is_uppercase) || !(bold || italic || upper) {
+            return None;
+        }
+        Some((
+            text.to_string(),
+            Candidate {
+                number,
+                size: (p.size * 2.0).round() as i32,
+                bold,
+                upper,
+            },
+        ))
+    };
+    let candidates: Vec<Option<Candidate>> =
+        units.iter().map(|u| style(u).map(|(_, c)| c)).collect();
+    let text_between = |a: usize, b: usize| -> usize {
+        (a + 1..b)
+            .filter(|&i| candidates[i].is_none())
+            .map(|i| unit_chars(&units[i]))
+            .sum()
+    };
+    // Serie de primer nivel: decimal de un componente o romana; en la romana, «V.» y
+    // «X.» (que se leen como letras) valen 5 y 10.
+    let top_value = |c: &Candidate, roman_scheme: bool| match (&c.number, roman_scheme) {
+        (
+            Some(SectionNumber::Decimal {
+                values,
+                letter: false,
+            }),
+            false,
+        ) if values.len() == 1 => Some(values[0]),
+        (Some(SectionNumber::Roman(n)), true) => Some(*n),
+        (
+            Some(SectionNumber::Letter {
+                n: 22,
+                signed: true,
+            }),
+            true,
+        ) => Some(5),
+        (
+            Some(SectionNumber::Letter {
+                n: 24,
+                signed: true,
+            }),
+            true,
+        ) => Some(10),
+        _ => None,
+    };
+    let mut best: Vec<usize> = Vec::new();
+    let mut best_roman = false;
+    for roman_scheme in [false, true] {
+        let mut chain: Vec<usize> = Vec::new();
+        for (i, c) in candidates.iter().enumerate() {
+            let Some(c) = c else { continue };
+            let Some(v) = top_value(c, roman_scheme) else {
+                continue;
+            };
+            let next = chain.len() as u32 + 1;
+            if v == next
+                && chain
+                    .last()
+                    .is_none_or(|&prev| text_between(prev, i) >= 100)
+            {
+                chain.push(i);
+            }
+        }
+        if chain.len() > best.len() {
+            best = chain;
+            best_roman = roman_scheme;
+        }
+    }
+    let mut out: Vec<Option<Numbered>> = vec![None; units.len()];
+    if best.len() < 3 {
+        return out;
+    }
+    let first = candidates[best[0]].as_ref().expect("candidato");
+    let (top_size, top_bold, top_upper) = (first.size, first.bold, first.upper);
+    for &i in &best {
+        out[i] = Some(Numbered {
+            depth: 0,
+            size: candidates[i].as_ref().map_or(top_size, |c| c.size),
+            companion: false,
+        });
+    }
+    // Subapartados de cada sección y apéndices tras la última.
+    let last_top = *best.last().expect("serie");
+    let mut section = 0u32;
+    let mut letter = 0u32;
+    let mut appendix: Option<(u32, usize)> = None;
+    for (i, c) in candidates.iter().enumerate() {
+        if let Some(pos) = best.iter().position(|&b| b == i) {
+            section = pos as u32 + 1;
+            letter = 0;
+            continue;
+        }
+        let Some(c) = c else { continue };
+        let depth = match &c.number {
+            Some(SectionNumber::Decimal {
+                values,
+                letter: false,
+            }) if values.len() >= 2 && !best_roman && values[0] == section => {
+                Some(values.len() - 1)
+            }
+            Some(SectionNumber::Decimal {
+                values,
+                letter: true,
+            }) if values.len() >= 2 && appendix.is_some_and(|(n, _)| n == values[0]) => {
+                Some(values.len() - 1)
+            }
+            Some(SectionNumber::Letter { n, signed: true })
+                if best_roman && section > 0 && *n == letter + 1 =>
+            {
+                letter = *n;
+                Some(1)
+            }
+            Some(SectionNumber::Letter { n, .. })
+                if !best_roman
+                    && i > last_top
+                    && *n == appendix.map_or(1, |(a, _)| a + 1)
+                    && appendix.is_none_or(|(_, at)| text_between(at, i) >= 100) =>
+            {
+                appendix = Some((*n, i));
+                Some(0)
+            }
+            _ => None,
+        };
+        if let Some(depth) = depth {
+            out[i] = Some(Numbered {
+                depth: depth as u8,
+                size: c.size,
+                companion: false,
+            });
+        }
+    }
+    // Encabezados sin número con el formato de los de primer nivel.
+    if top_bold || top_upper {
+        for i in 0..units.len() {
+            let Some(c) = &candidates[i] else { continue };
+            let Kind::Para(p) = &units[i].kind else {
+                continue;
+            };
+            if out[i].is_some()
+                || c.number.is_some()
+                || p.lines.len() != 1
+                || p.marker.is_some()
+                || (c.size - top_size).abs() > 1
+                || c.bold != top_bold
+                || (top_upper && !c.upper)
+            {
+                continue;
+            }
+            let next = (i + 1..units.len()).find(|&k| unit_chars(&units[k]) > 0);
+            let until = (i + 1..units.len())
+                .find(|&k| candidates[k].is_some())
+                .unwrap_or(units.len());
+            // Antes de la primera sección solo vale el inmediato anterior («Abstract»), no
+            // los nombres de los autores en negrita.
+            let before = i < best[0] && (i + 1..best[0]).any(|k| candidates[k].is_some());
+            if !before
+                && next.is_some_and(|k| candidates[k].is_none())
+                && text_between(i, until) >= 80
+            {
+                out[i] = Some(Numbered {
+                    depth: 0,
+                    size: c.size,
+                    companion: true,
+                });
+            }
+        }
+    }
+    out
+}
+
 pub(crate) fn outline(ex: &mut Extraction, filename: &str) -> Outline {
     if ex.slide_export {
         return slide_outline(ex, filename);
@@ -2126,7 +2404,15 @@ pub(crate) fn outline(ex: &mut Extraction, filename: &str) -> Outline {
                 .page
                 .filter(|p| u.from == p + 1)
                 .and_then(|_| unnumbered_heading(&want));
-            let matches = |text: &str| text == want || short == Some(text);
+            // También el párrafo con un número de sección delante de un marcador sin
+            // número («1 Introduction» frente a «Introduction»), en su página.
+            let numbered = |text: &str| {
+                b.page.is_some_and(|p| u.from == p + 1)
+                    && text.split_once(' ').is_some_and(|(n, rest)| {
+                        section_number(&n.to_ascii_uppercase()).is_some() && rest == want
+                    })
+            };
+            let matches = |text: &str| text == want || short == Some(text) || numbered(text);
             if matches(&norm(&para_text(u)?)) {
                 return Some((i, p.lines.len()));
             }
@@ -2162,6 +2448,7 @@ pub(crate) fn outline(ex: &mut Extraction, filename: &str) -> Outline {
         .filter(|b| !norm(&b.title).is_empty())
         .count();
     let from_bookmarks = usable >= 2 && matched * 5 >= usable * 4;
+    let mut numbered = 0;
     if from_bookmarks {
         // Un párrafo cuyo comienzo es el título de un marcador se divide.
         for &(i, k) in splits.iter().rev() {
@@ -2222,18 +2509,55 @@ pub(crate) fn outline(ex: &mut Extraction, filename: &str) -> Outline {
         let mut sizes: Vec<i32> = ex.units.iter().filter_map(candidate).collect();
         sizes.sort_unstable_by(|a, b| b.cmp(a));
         sizes.dedup();
-        let levels: HashMap<i32, u8> = sizes
-            .into_iter()
-            .take(6)
-            .enumerate()
-            .map(|(k, s)| (s, k as u8 + 1))
-            .collect();
-        for (i, u) in ex.units.iter().enumerate() {
-            if let Some(level) = candidate(u).and_then(|s| levels.get(&s)) {
-                headings[i] = Some(Heading {
-                    level: *level,
-                    inferred: true,
-                });
+        let found = body
+            .map(|b| numbered_headings(&ex.units, b))
+            .unwrap_or_default();
+        match found
+            .iter()
+            .flatten()
+            .find(|n| n.depth == 0 && !n.companion)
+        {
+            None => {
+                let levels: HashMap<i32, u8> = sizes
+                    .into_iter()
+                    .take(6)
+                    .enumerate()
+                    .map(|(k, s)| (s, k as u8 + 1))
+                    .collect();
+                for (i, u) in ex.units.iter().enumerate() {
+                    if let Some(level) = candidate(u).and_then(|s| levels.get(&s)) {
+                        headings[i] = Some(Heading {
+                            level: *level,
+                            inferred: true,
+                        });
+                    }
+                }
+            }
+            Some(first) => {
+                // Los tamaños mayores que el de los encabezados numerados de primer
+                // nivel (el título) conservan su rango; los numerados siguen por su
+                // profundidad, y los demás por tamaño, debajo de ellos.
+                let top = first.size;
+                let above = sizes.iter().filter(|&&s| s > top).count();
+                let below: Vec<i32> = sizes.iter().copied().filter(|&s| s < top).collect();
+                for (i, u) in ex.units.iter().enumerate() {
+                    let level = if let Some(n) = &found[i] {
+                        numbered += 1;
+                        above + 1 + n.depth as usize
+                    } else if let Some(s) = candidate(u) {
+                        match sizes.iter().position(|&x| x == s) {
+                            Some(k) if s > top => k + 1,
+                            _ if s == top => above + 1,
+                            _ => above + 2 + below.iter().position(|&x| x == s).unwrap_or(0),
+                        }
+                    } else {
+                        continue;
+                    };
+                    headings[i] = Some(Heading {
+                        level: level.min(6) as u8,
+                        inferred: true,
+                    });
+                }
             }
         }
     }
@@ -2352,6 +2676,7 @@ pub(crate) fn outline(ex: &mut Extraction, filename: &str) -> Outline {
         title_source,
         from_bookmarks,
         unmatched_bookmarks: if from_bookmarks { usable - matched } else { 0 },
+        numbered,
         split,
         sections,
         by_page: false,
@@ -2438,6 +2763,7 @@ fn slide_outline(ex: &mut Extraction, filename: &str) -> Outline {
         },
         from_bookmarks: true,
         unmatched_bookmarks: ex.bookmarks.len() - matched,
+        numbered: 0,
         split: Some(1),
         sections,
         by_page: true,
@@ -2447,6 +2773,7 @@ fn slide_outline(ex: &mut Extraction, filename: &str) -> Outline {
 /// Texto de los tramos con su énfasis en Markdown.
 fn runs_md(runs: &[Run]) -> String {
     let (runs, _) = layout::join_runs(runs);
+    let runs = punctuation_emphasis(runs);
     let mut out = String::new();
     for r in &runs {
         let text = escape_inline(&r.text);
@@ -2478,6 +2805,34 @@ fn runs_md(runs: &[Run]) -> String {
             },
         };
         out.push_str(&format!("{lead}{core}{trail}"));
+    }
+    out
+}
+
+/// Un tramo sin letras ni cifras pierde el énfasis que no comparte con ninguno de sus
+/// vecinos: el punto decimal de una fórmula, en la cursiva matemática, no parte la
+/// cifra («−0*.*56»).
+fn punctuation_emphasis(runs: Vec<Run>) -> Vec<Run> {
+    let bare = |r: &Run| !r.text.chars().any(char::is_alphanumeric);
+    let mut styled = runs.clone();
+    for i in 0..runs.len() {
+        if !bare(&runs[i]) {
+            continue;
+        }
+        let prev = runs[..i].iter().rev().find(|r| !bare(r));
+        let next = runs[i + 1..].iter().find(|r| !bare(r));
+        let shared = |f: fn(&Run) -> bool| prev.is_some_and(f) || next.is_some_and(f);
+        styled[i].bold &= shared(|r| r.bold);
+        styled[i].italic &= shared(|r| r.italic);
+    }
+    let mut out: Vec<Run> = Vec::new();
+    for r in styled {
+        match out.last_mut() {
+            Some(o) if (o.bold, o.italic, &o.link) == (r.bold, r.italic, &r.link) => {
+                o.text.push_str(&r.text)
+            }
+            _ => out.push(r),
+        }
     }
     out
 }
@@ -3570,15 +3925,21 @@ pub(crate) fn build_bundle(
             if outline.from_bookmarks {
                 "de los marcadores del PDF".to_string()
             } else {
-                format!(
-                    "inferidos por tamaño de letra: {}",
-                    outline
-                        .headings
-                        .iter()
-                        .flatten()
-                        .filter(|h| h.inferred)
-                        .count()
-                )
+                let inferred = outline
+                    .headings
+                    .iter()
+                    .flatten()
+                    .filter(|h| h.inferred)
+                    .count();
+                if outline.numbered > 0 {
+                    format!(
+                        "inferidos por tamaño de letra: {}; por su numeración: {}",
+                        inferred - outline.numbered,
+                        outline.numbered
+                    )
+                } else {
+                    format!("inferidos por tamaño de letra: {inferred}")
+                }
             }
         ),
         format!(
@@ -4939,6 +5300,122 @@ mod tests {
         assert!(report.contains("imagen(es) repetidas"));
         // Las duraciones de cada diapositiva no son encabezados de página.
         assert!(md["contenido/seccion-001.md"].contains("7 min"));
+    }
+
+    #[test]
+    fn numbered_headings_need_a_series_and_text_between() {
+        // Encabezados del tamaño del texto (10 pt, en medios puntos 20), en negrita.
+        let unit = |text: &str, bold: bool| {
+            let mut line = margin_line(text, 50.0, 100.0, 10.0);
+            line.bold = bold;
+            line.runs[0].bold = bold;
+            Unit {
+                kind: Kind::Para(layout::Para::new(line)),
+                from: 1,
+                to: 1,
+                boxes: Vec::new(),
+            }
+        };
+        let body = "Texto corriente que separa una sección de la siguiente con más de cien \
+                    caracteres, como cualquier párrafo de un artículo.";
+        let units = vec![
+            unit("Jane Doe", true),
+            unit("Abstract", true),
+            unit(body, false),
+            unit("1 Introduction", true),
+            unit(body, false),
+            unit("2 Method", true),
+            unit("2.1 Data", true),
+            unit(body, false),
+            unit("3 Results", true),
+            unit(body, false),
+            unit("References", true),
+            unit(body, false),
+            unit("A Proofs", true),
+            unit(body, false),
+        ];
+        let found = numbered_headings(&units, 20);
+        let got: Vec<Option<(u8, bool)>> = found
+            .iter()
+            .map(|n| n.map(|n| (n.depth, n.companion)))
+            .collect();
+        assert_eq!(
+            got,
+            [
+                None,
+                Some((0, true)),
+                None,
+                Some((0, false)),
+                None,
+                Some((0, false)),
+                Some((1, false)),
+                None,
+                Some((0, false)),
+                None,
+                Some((0, true)),
+                None,
+                Some((0, false)),
+                None,
+            ]
+        );
+        // Sin texto entre ellos, tres números seguidos son una lista, no secciones.
+        let list = vec![
+            unit("1 First item", true),
+            unit("2 Second item", true),
+            unit("3 Third item", true),
+            unit(body, false),
+        ];
+        assert!(numbered_headings(&list, 20).iter().all(Option::is_none));
+    }
+
+    #[test]
+    fn section_numbers_by_scheme() {
+        use SectionNumber::*;
+        let decimal = |values: &[u32], letter| Decimal {
+            values: values.to_vec(),
+            letter,
+        };
+        assert_eq!(section_number("2"), Some(decimal(&[2], false)));
+        assert_eq!(section_number("3.1."), Some(decimal(&[3, 1], false)));
+        assert_eq!(section_number("B.2"), Some(decimal(&[2, 2], true)));
+        assert_eq!(section_number("IV."), Some(Roman(4)));
+        assert_eq!(section_number("I."), Some(Roman(1)));
+        assert_eq!(
+            section_number("V."),
+            Some(Letter {
+                n: 22,
+                signed: true
+            })
+        );
+        assert_eq!(
+            section_number("A"),
+            Some(Letter {
+                n: 1,
+                signed: false
+            })
+        );
+        for token in ["2026", "1.2.3.4.5", "Fig.", "(a)", "", "0"] {
+            assert_eq!(section_number(token), None, "{token}");
+        }
+    }
+
+    #[test]
+    fn punctuation_loses_emphasis_its_neighbours_lack() {
+        let run = |text: &str, bold, italic| Run {
+            text: text.into(),
+            bold,
+            italic,
+            link: None,
+        };
+        let md = runs_md(&[
+            run("a difference of −0", false, false),
+            run(".", false, true),
+            run("56 and ", false, false),
+            run("Abstract", true, false),
+            run("—", true, false),
+            run("Retrieval", true, false),
+        ]);
+        assert_eq!(md, "a difference of −0.56 and **Abstract—Retrieval**");
     }
 
     #[test]
