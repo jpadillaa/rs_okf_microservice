@@ -894,7 +894,7 @@ pub(crate) fn page_with_aliases(
                 base: my1 - ch.origin_y,
                 size: ch.font_size,
                 bold: ch.font_weight as u16 >= 600,
-                italic: ch.is_italic,
+                italic: ch.is_italic || italic_font(&ch.font_name),
                 mono: ch.is_monospace,
                 rotated: false,
                 span: span_of[k - 1],
@@ -923,7 +923,7 @@ pub(crate) fn page_with_aliases(
             base: my1 - ch.origin_y,
             size: ch.font_size,
             bold: ch.font_weight as u16 >= 600,
-            italic: ch.is_italic,
+            italic: ch.is_italic || italic_font(&ch.font_name),
             mono: ch.is_monospace,
             rotated: ch.rotation_degrees.abs() > 5.0
                 && (ch.rotation_degrees.abs() - 360.0).abs() > 5.0,
@@ -931,6 +931,7 @@ pub(crate) fn page_with_aliases(
             link: None,
         });
     }
+    compose_accents(&mut glyphs);
     apply_links(doc, index, (mx0, my1), &mut glyphs, aliases);
     let page_rect = Rect {
         x0: 0.0,
@@ -979,6 +980,89 @@ pub(crate) fn page_with_aliases(
         pictures,
         ocr_layer,
     })
+}
+
+/// ¿Nombra la fuente una variante cursiva? pdf_oxide no siempre lo deduce de sus
+/// descriptores (`NimbusRomNo9L-ReguItal`, la Times de los artículos en LaTeX).
+fn italic_font(name: &str) -> bool {
+    let name = name.rsplit_once('+').map_or(name, |(_, n)| n);
+    let style = name.rsplit_once(['-', ',']).map_or("", |(_, s)| s);
+    let lower = style.to_ascii_lowercase();
+    lower.contains("ital")
+        || lower.contains("oblique")
+        || lower == "it"
+        || lower.ends_with("it") && lower.len() <= 6 && !lower.ends_with("bit")
+}
+
+/// Marca combinante de un diacrítico que el PDF dibuja como carácter propio.
+fn combining(c: char) -> Option<char> {
+    Some(match c {
+        '\u{00A8}' => '\u{0308}', // diéresis
+        '\u{00B4}' => '\u{0301}', // agudo
+        '`' => '\u{0300}',        // grave
+        '\u{02C6}' => '\u{0302}', // circunflejo
+        '\u{02DC}' => '\u{0303}', // tilde
+        '\u{00AF}' => '\u{0304}', // macrón
+        '\u{02D8}' => '\u{0306}', // breve
+        '\u{02D9}' => '\u{0307}', // punto
+        '\u{02DA}' => '\u{030A}', // anillo
+        '\u{02DD}' => '\u{030B}', // doble agudo
+        '\u{02C7}' => '\u{030C}', // carón
+        '\u{00B8}' => '\u{0327}', // cedilla
+        '\u{02DB}' => '\u{0328}', // ogonek
+        _ => return None,
+    })
+}
+
+/// Un diacrítico dibujado aparte (como hace TeX con `\"u` sin una fuente con la letra
+/// acentuada) se compone con la letra que tiene debajo: el centro del diacrítico cae
+/// dentro de la letra, con su línea base a menos de un tamaño de letra por encima o un
+/// cuarto por debajo. Si la letra con el diacrítico no existe como carácter único, los
+/// dos se conservan como están.
+fn compose_accents(glyphs: &mut Vec<Glyph>) {
+    use unicode_normalization::UnicodeNormalization;
+    let mut drop = vec![false; glyphs.len()];
+    for a in 0..glyphs.len() {
+        let accent = &glyphs[a];
+        let Some(mark) = combining(accent.c) else {
+            continue;
+        };
+        if accent.rotated || accent.mono {
+            continue;
+        }
+        let center = (accent.x0 + accent.x1) / 2.0;
+        let size = accent.size;
+        let target = (0..glyphs.len())
+            .filter(|&i| i != a && !drop[i])
+            .filter(|&i| {
+                let g = &glyphs[i];
+                g.c.is_alphabetic()
+                    && !g.rotated
+                    && g.x0 <= center
+                    && center <= g.x1
+                    && (-size..=0.25 * size).contains(&(accent.base - g.base))
+            })
+            .min_by(|&i, &j| {
+                let d = |k: usize| (glyphs[k].base - accent.base).abs();
+                d(i).total_cmp(&d(j))
+            });
+        let Some(t) = target else { continue };
+        let base = match glyphs[t].c {
+            'ı' => 'i',
+            'ȷ' => 'j',
+            c => c,
+        };
+        let mut composed = [base, mark].into_iter().nfc();
+        if let (Some(c), None) = (composed.next(), composed.next()) {
+            glyphs[t].c = c;
+            drop[a] = true;
+        }
+    }
+    let mut k = 0;
+    glyphs.retain(|_| {
+        k += 1;
+        !drop[k - 1]
+    });
 }
 
 /// Resultado de preparar una imagen para adjuntarla.
@@ -1291,12 +1375,19 @@ pub(crate) fn picture_pixels(
 /// Fragmento armado de forma inconsistente: su rectángulo es mucho más ancho que la
 /// página o sus caracteres visibles retroceden.
 fn malformed(s: &pdf_oxide::layout::TextSpan, chars: &[TextChar], page_width: f32) -> bool {
-    let xs: Vec<f32> = chars
+    let xs: Vec<(f32, f32)> = chars
         .iter()
         .filter(|c| !c.char.is_whitespace())
-        .map(|c| c.bbox.x)
+        .map(|c| (c.bbox.x, c.bbox.width))
         .collect();
-    s.bbox.width > 1.5 * page_width || xs.windows(2).any(|w| w[1] < w[0] - 1.0)
+    // Un carácter que retrocede, o que monta sobre el siguiente más de medio ancho: con
+    // una escala horizontal en la matriz de texto (expansión de microtype), pdf_oxide
+    // puede colocar la primera letra de un `TJ` después del ajuste que la sigue.
+    s.bbox.width > 1.5 * page_width
+        || xs.windows(2).any(|w| {
+            let ((x0, w0), (x1, w1)) = (w[0], w[1]);
+            x1 < x0 - 1.0 || (w0 > 0.0 && w1 > 0.0 && x1 < x0 + 0.5 * w0.min(w1))
+        })
 }
 
 /// Byte WinAnsi (cp1252) de un carácter, si lo tiene.
@@ -1765,6 +1856,60 @@ mod tests {
             Some("mailto:autor@example.org")
         );
         assert_eq!(uri_target("  "), None);
+    }
+
+    fn glyph(c: char, x0: f32, x1: f32, base: f32) -> Glyph {
+        Glyph {
+            c,
+            x0,
+            x1,
+            base,
+            size: 10.0,
+            bold: false,
+            italic: false,
+            mono: false,
+            rotated: false,
+            span: 0,
+            link: None,
+        }
+    }
+
+    #[test]
+    fn accents_drawn_apart_are_composed_with_the_letter_below() {
+        // «J», «u» con la diéresis encima, «n»; y una «e» con el agudo detrás de la coma.
+        let mut g = vec![
+            glyph('J', 0.0, 5.0, 100.0),
+            glyph('u', 5.0, 10.5, 100.0),
+            glyph('n', 10.5, 16.0, 100.0),
+            glyph('\u{a8}', 6.1, 9.4, 99.9),
+            glyph('R', 30.0, 35.0, 100.0),
+            glyph('e', 35.0, 39.0, 100.0),
+            glyph('\u{b4}', 45.0, 48.0, 100.0),
+        ];
+        compose_accents(&mut g);
+        let text: String = g.iter().map(|g| g.c).collect();
+        assert_eq!(text, "JünRe\u{b4}");
+    }
+
+    #[test]
+    fn italic_is_also_read_from_the_font_style() {
+        for name in [
+            "ABCDEF+NimbusRomNo9L-ReguItal",
+            "Helvetica-Oblique",
+            "MinionPro-It",
+            "MinionPro-BoldIt",
+            "Times-Roman,Italic",
+        ] {
+            assert!(italic_font(name), "{name}");
+        }
+        for name in [
+            "NimbusRomNo9L-Regu",
+            "LMRoman10-Regular",
+            "Arial-Light",
+            "CMMI10",
+        ] {
+            assert!(!italic_font(name), "{name}");
+        }
     }
 
     #[test]

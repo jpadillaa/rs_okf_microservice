@@ -436,3 +436,43 @@ En el cuaderno se mantienen las 65 notas de sus vistas de diapositiva, que acomp
 Cada hilo suma la memoria de su copia del documento y de sus páginas, así que cuatro hilos con estos originales necesitan subir `OKF_MAX_MEMORY_MB` (la medición usó 1 500). El pico del PDF de 575 páginas con un hilo varía unos 50 MiB entre ejecuciones del mismo binario (426–484 MiB) y ya rozaba el límite de 500 MiB antes de estos cambios. El valor por defecto sigue siendo un hilo.
 
 Las muestras y el corpus PDF públicos conservan exactamente sus cifras de cobertura. Las referencias golden cambian por el perfil, por el traslado de los localizadores a sus archivos y por dos mejoras de texto en el corpus: celdas que recuperan su texto entero y una referencia bibliográfica unida a su continuación. Pruebas: `cargo fmt`, `cargo clippy --all-targets --locked -- -D warnings` y `OKF_REQUIRE_OCR_MODELS=1 cargo test --locked`, con 134 pruebas de la biblioteca y las de integración sin fallos. No se ejecutó `tools/smoke.sh` con la imagen Docker.
+
+## Artículos de arXiv (perfil 1.25.0)
+
+**Fecha:** 27 de noviembre de 2026. **Originales:** cuatro preprints públicos de arXiv con plantillas de congreso distintas. No se versionan; se describen por su forma. Se convirtieron con el subcomando `convert` y se compararon página a página con sus vistas.
+
+| Original | Forma | Antes (1.24.0) | Después (1.25.0) |
+| --- | --- | --- | --- |
+| 2610.20634v1 | 31 páginas a una columna (clase `article`), 42 marcadores | 19 conceptos y 42 encabezados; el número de cada sección quedaba como párrafo suelto («**1**») delante de su título | 19 conceptos y 43 encabezados, con su número («1 Introduction»); los apéndices «A Per-dataset results»… siguen casando con sus marcadores |
+| 2610.34816v1 | 10 páginas a dos columnas (IEEE), 15 marcadores | un solo concepto y un encabezado: los títulos en versalitas («I. INTRODUCTION») salían como elementos de lista y no casaban con los marcadores sin número | 8 conceptos y los 15 encabezados de los marcadores, con los subapartados «A.»–«E.» |
+| 2610.35868v1 | 21 páginas a dos columnas (ICML), sin marcadores | 19 conceptos y 19 encabezados inferidos por tamaño; ningún subapartado | 19 conceptos y 54 encabezados: 35 subapartados («3.1.») y los apéndices A–G con los suyos («A.1.») |
+| 2610.36915v1 | 15 páginas a dos columnas (ACL), sin marcadores | un solo concepto: los títulos tienen 12 pt sobre texto de 11 pt (menos del 10 % mayor) y su número quedaba separado | 14 conceptos y 19 encabezados: secciones 1–8, «6.1»–«6.5», «Abstract», «Ethics and Broader Impact», «References» y los apéndices A y B |
+
+**Defectos corregidos.**
+
+- **Encabezados numerados del tamaño del texto.** La inferencia solo miraba el tamaño de letra. Ahora, sin marcadores, también son encabezados los párrafos breves con un número de sección y formato propio (negrita, cursiva o mayúsculas), si al menos tres de primer nivel siguen la serie desde el principio con texto entre ellos; sus subapartados, los apéndices por letra y los títulos sin número de igual formato («Abstract», «References») completan la estructura. La serie y el texto intermedio evitan tomar por secciones una lista numerada en negrita, y antes de la primera sección solo vale el último candidato, no los nombres de los autores en negrita.
+- **Número separado del título.** ACL y la clase `article` separan el número del título con un espacio de más de un tamaño de letra; la maquetación los dejaba en líneas distintas. Ahora forman una línea si los dos van en negrita y con el mismo tamaño, y un marcador sin número casa con el párrafo numerado de su página.
+- **Letras desplazadas por microtype.** Con expansión de fuentes, pdf_oxide colocaba la primera letra de algunos `TJ` encima de la siguiente («pAaired», «pArobability», «cAascade» en una lista). Esos fragmentos se leen ahora de `extract_chars`, que los coloca bien.
+- **Diacríticos dibujados aparte.** TeX con fuentes Type 1 dibuja «ü» como «u» más «¨»; salían «Ja¨rvelin», «Ru¨ckle´» o un «**¨**» suelto encima del nombre de un autor. Se componen con la letra que tienen debajo: quedan dos de dieciocho, que pdf_oxide sitúa lejos de su letra.
+- **Cursiva perdida.** pdf_oxide no marca como cursiva `NimbusRomNo9L-ReguItal`, la Times de estos artículos: dos de ellos no tenían ninguna cursiva y los subapartados en cursiva de IEEE no tenían formato propio. Se deduce también del nombre de la fuente.
+- **Énfasis espurio en fórmulas.** El punto decimal en cursiva matemática partía las cifras («−0*.*56», 82 veces en un artículo). Un tramo sin letras ni cifras pierde el énfasis que no comparte con sus vecinos.
+- **Párrafos partidos.** Una frase en negrita que ocupa una línea entera partía el párrafo en tres; y la hoja de la columna izquierda incluye el título a todo el ancho, de modo que una línea llena de la columna parecía corta y cerraba el párrafo tras un punto. Ahora el cambio de negrita no corta si la línea anterior llega al margen sin cerrar la frase y la nueva empieza en minúscula, y en texto justificado la línea que llega al borde de la columna no es corta. Un título numerado breve ya no absorbe la línea siguiente en negrita de otro tamaño.
+
+**Mediciones.** Cobertura de palabras frente a pdfium, con el binario de `main` y con el del cambio en las mismas condiciones:
+
+| Original | Palabras, antes → después | Orden interno | Contigüidad |
+| --- | --- | --- | --- |
+| 2610.20634v1 | 99,78 % → 99,79 % | 99,78 → 99,80 | 99,02 → 99,09 |
+| 2610.34816v1 | 99,60 % → 99,59 % | 99,78 → 99,76 | 98,50 → 98,45 |
+| 2610.35868v1 | 96,07 % → 96,23 % | 98,85 → 98,76 | 93,19 → 93,10 |
+| 2610.36915v1 | 96,43 % → 96,43 % | 95,08 → 95,08 | 93,13 → 93,12 |
+
+Las bajadas de una décima se concentran en las páginas de autores y bibliografía: pdfium deja los diacríticos como palabras sueltas («¨», «al¨»), y la palabra compuesta del bundle («Jünger») ya no coincide con la de la referencia. Las 13 muestras y originales reducidos del repositorio conservan exactamente su cobertura, y las 10 muestras con referencia exacta, su exactitud. Con el OCR activo y sus referencias revisadas, seis de los siete originales privados conservan exactamente su exactitud; el PDF de 346 páginas pasa de 99,97 % a 100 % de completitud y su orden baja de 88,93 a 88,90. En las referencias golden solo cambian tres cursivas recuperadas en el artículo del corpus y el recuento de encabezados de `informe_tecnico` (6 de sus 7 se infieren ahora por su numeración; los encabezados no cambian).
+
+**Pendiente.**
+
+- La página 14 de 2610.36915v1 tiene en las dos columnas recuadros de listados; el corte por columnas no la separa y sus líneas se intercalan (ya ocurría con el 1.24.0).
+- Las tablas grandes con encabezados de dos niveles (la tabla I de 2610.34816v1) se reconstruyen solo en parte; el resto de sus celdas sale como líneas sueltas.
+- En la bibliografía IEEE, una referencia cuya línea termina en dos puntos se parte por la sangría francesa de la siguiente, y otras se unen con la vecina.
+- Los rótulos de un diagrama vectorial se escriben como párrafos sueltos, en el orden de su caja.
+- Una palabra compuesta partida al final de línea pierde el guion si no aparece entera en otra línea («decision-based» → «decisionbased»), como prevé la especificación.

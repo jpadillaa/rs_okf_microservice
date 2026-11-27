@@ -1,15 +1,15 @@
 ---
 converter_version: "0.1.0"
 converter_commit: "<commit>"
-profile_version: "1.24.0"
+profile_version: "1.25.0"
 conversion_settings:
   max_image_pixels: 33554432
   ocr:
     enabled: false
 settings_sha256: "ad1d7709796a5172b6ad18d538b1bef5780b44279dd787d15ecc82ede959ef16"
-conversion_id: "61789143a883a6360c3d582844daefd80f87eb4bfae2cd446186b5ff38c1e0b8"
+conversion_id: "46ba3e5a27f214dec29ba6c63ddb8a4b09e37254b511206b037dde8519ec545a"
 type: "Conversion Report"
-unit_id: "61789143a883a6360c3d582844daefd80f87eb4bfae2cd446186b5ff38c1e0b8/conversion-report.md"
+unit_id: "46ba3e5a27f214dec29ba6c63ddb8a4b09e37254b511206b037dde8519ec545a/conversion-report.md"
 title: "Informe de conversión"
 generated:
   by: "process:document-conversion"
@@ -25,7 +25,7 @@ sha256: "b741d4551fe678d52919b803e637eb796420e175113f447ec683dca107d098e3"
 - Páginas: 2 (texto digital: 2; mixtas: 0; escaneadas: 0; escaneadas con OCR previo: 0; solo visuales: 0; en blanco: 0)
 - Unidades representadas: 26 (párrafos, listas, tablas, imágenes y notas de página)
 - Conceptos: 5 concepto(s), divididos por los encabezados de nivel 2
-- Encabezados: 7 (inferidos por tamaño de letra: 7)
+- Encabezados: 7 (inferidos por tamaño de letra: 1; por su numeración: 6)
 - Tablas reconstruidas: 0; imágenes adjuntas: 0; vistas de página: 0
 - Duración: <duración> ms
 
